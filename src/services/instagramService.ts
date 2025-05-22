@@ -2,7 +2,7 @@
 import { toast } from '@/components/ui/use-toast';
 
 // Estas credenciales deberían guardarse en una variable de entorno en Supabase
-const INSTAGRAM_CLIENT_ID = 'tu-client-id'; // Reemplazar con el ID real
+const INSTAGRAM_CLIENT_ID = 'tu-client-id-aqui'; // Reemplaza con tu ID de Cliente real
 const INSTAGRAM_REDIRECT_URI = window.location.origin + '/auth/instagram/callback';
 const INSTAGRAM_SCOPE = 'user_profile,instagram_graph_user_profile,instagram_manage_messages';
 
