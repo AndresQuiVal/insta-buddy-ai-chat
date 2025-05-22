@@ -113,13 +113,17 @@ export const handleAutomaticResponse = async (
     businessDescription: string;
     tone: string;
     idealClientTraits: string[];
-  }
+  },
+  customPrompt?: string // Nuevo parámetro para permitir un prompt personalizado
 ): Promise<string> => {
   try {
-    // Crear el prompt del sistema basado en la configuración
+    // Usar el prompt personalizado si existe, o crear uno basado en la configuración
+    const systemPromptContent = customPrompt || createSystemPrompt(businessConfig);
+    
+    // Crear el prompt del sistema
     const systemPrompt: ChatMessage = {
       role: 'system',
-      content: createSystemPrompt(businessConfig)
+      content: systemPromptContent
     };
     
     // Añadir el historial de la conversación

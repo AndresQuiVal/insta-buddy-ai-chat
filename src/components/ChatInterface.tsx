@@ -53,13 +53,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     businessDescription: "Asistente virtual que ayuda a filtrar prospectos potenciales.",
     tone: aiConfig.personality === 'amigable' ? 'amigable y cercano' : 
           aiConfig.personality === 'profesional' ? 'profesional y formal' : 'casual y relajado',
-    // Estas características deben venir de ConfigPanel, pero por ahora las dejamos así
-    idealClientTraits: [
-      "Interesado en nuestros productos o servicios",
-      "Tiene presupuesto adecuado para adquirir nuestras soluciones",
-      "Está listo para tomar una decisión de compra",
-      "Se encuentra en nuestra zona de servicio"
-    ]
+    // Cargar las características desde localStorage o usar valores por defecto
+    idealClientTraits: (() => {
+      try {
+        const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+        if (savedTraits) {
+          const traits = JSON.parse(savedTraits);
+          return traits.filter((trait: any) => trait.enabled).map((trait: any) => trait.trait);
+        }
+      } catch (e) {
+        console.error("Error al cargar características del cliente ideal:", e);
+      }
+      return [
+        "Interesado en nuestros productos o servicios",
+        "Tiene presupuesto adecuado para adquirir nuestras soluciones",
+        "Está listo para tomar una decisión de compra",
+        "Se encuentra en nuestra zona de servicio"
+      ];
+    })()
   };
 
   useEffect(() => {
@@ -130,13 +141,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         let responseText = '';
         
         if (useOpenAI) {
-          // Usar OpenAI para generar respuesta
-          const conversationHistory = getOpenAIConversationHistory(messages);
-          responseText = await handleAutomaticResponse(
-            newMessage,
-            conversationHistory,
-            businessConfig
-          );
+          try {
+            // Usar OpenAI para generar respuesta
+            const conversationHistory = getOpenAIConversationHistory(messages);
+            
+            // Verificar si hay un prompt personalizado guardado
+            const savedPrompt = localStorage.getItem('hower-system-prompt');
+            
+            responseText = await handleAutomaticResponse(
+              newMessage,
+              conversationHistory,
+              businessConfig,
+              savedPrompt // Pasar el prompt personalizado si existe
+            );
+          } catch (error) {
+            console.error("Error al generar respuesta con OpenAI:", error);
+            responseText = generateSimpleResponse(newMessage);
+          }
         } else {
           // Usar respuesta simple
           responseText = generateSimpleResponse(newMessage);

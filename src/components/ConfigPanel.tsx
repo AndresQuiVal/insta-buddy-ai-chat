@@ -1,12 +1,11 @@
-
-import React, { useState } from 'react';
-import { Bot, Settings, Zap, Clock, Star, MessageSquare, AlertCircle, Edit2, Save, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bot, Settings, Zap, Clock, Star, MessageSquare, AlertCircle, Edit2, Save, Plus, Trash2, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { initiateInstagramAuth, disconnectInstagram, checkInstagramConnection } from '@/services/instagramService';
-import { isOpenAIConfigured } from '@/services/openaiService';
+import { isOpenAIConfigured, createSystemPrompt } from '@/services/openaiService';
 import { toast } from '@/hooks/use-toast';
 
 interface ConfigPanelProps {
@@ -30,12 +29,20 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
   };
 
   // Lista de características para el cliente ideal
-  const [traits, setTraits] = useState<TraitConfig[]>([
-    { trait: "Interesado en nuestros productos", enabled: true },
-    { trait: "Tiene presupuesto adecuado", enabled: true },
-    { trait: "Listo para comprar", enabled: true },
-    { trait: "Ubicado en nuestra zona de servicio", enabled: true },
-  ]);
+  const [traits, setTraits] = useState<TraitConfig[]>(() => {
+    // Intentar cargar desde localStorage al iniciar
+    const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+    if (savedTraits) {
+      return JSON.parse(savedTraits);
+    }
+    // Valores por defecto
+    return [
+      { trait: "Interesado en nuestros productos", enabled: true },
+      { trait: "Tiene presupuesto adecuado", enabled: true },
+      { trait: "Listo para comprar", enabled: true },
+      { trait: "Ubicado en nuestra zona de servicio", enabled: true },
+    ];
+  });
 
   // Estado para edición de rasgos
   const [editingTrait, setEditingTrait] = useState<number | null>(null);
@@ -52,6 +59,41 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
       ? "Formal, respetuoso y directo. Utiliza un lenguaje preciso y técnico cuando es necesario, manteniendo siempre la cortesía."
       : "Casual y relajado. Utiliza expresiones cotidianas, es dinámico y muestra entusiasmo en la conversación."
   );
+
+  // Estado para el prompt del sistema
+  const [showPrompt, setShowPrompt] = useState<boolean>(false);
+  const [editingPrompt, setEditingPrompt] = useState<boolean>(false);
+  const [systemPrompt, setSystemPrompt] = useState<string>(() => {
+    // Intentar cargar desde localStorage al iniciar
+    const savedPrompt = localStorage.getItem('hower-system-prompt');
+    if (savedPrompt) {
+      return savedPrompt;
+    }
+    // Generar prompt por defecto
+    return createSystemPrompt({
+      businessName: config.name,
+      businessDescription: "Asistente virtual que ayuda a filtrar prospectos potenciales.",
+      tone: personalityDescription,
+      idealClientTraits: traits.filter(t => t.enabled).map(t => t.trait)
+    });
+  });
+
+  // Guardar traits en localStorage cada vez que cambien
+  useEffect(() => {
+    localStorage.setItem('hower-ideal-client-traits', JSON.stringify(traits));
+    
+    // Actualizar el prompt si no está siendo editado manualmente
+    if (!editingPrompt) {
+      const newPrompt = createSystemPrompt({
+        businessName: config.name,
+        businessDescription: "Asistente virtual que ayuda a filtrar prospectos potenciales.",
+        tone: personalityDescription,
+        idealClientTraits: traits.filter(t => t.enabled).map(t => t.trait)
+      });
+      setSystemPrompt(newPrompt);
+      localStorage.setItem('hower-system-prompt', newPrompt);
+    }
+  }, [traits, config.name, personalityDescription, editingPrompt]);
 
   const updateTrait = (index: number, enabled: boolean) => {
     const newTraits = [...traits];
@@ -136,6 +178,31 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
     toast({
       title: "Personalidad actualizada",
       description: "Se ha actualizado la descripción de personalidad."
+    });
+  };
+
+  const saveSystemPrompt = () => {
+    localStorage.setItem('hower-system-prompt', systemPrompt);
+    setEditingPrompt(false);
+    toast({
+      title: "Prompt actualizado",
+      description: "Se ha guardado el prompt del sistema correctamente."
+    });
+  };
+
+  const resetSystemPrompt = () => {
+    const newPrompt = createSystemPrompt({
+      businessName: config.name,
+      businessDescription: "Asistente virtual que ayuda a filtrar prospectos potenciales.",
+      tone: personalityDescription,
+      idealClientTraits: traits.filter(t => t.enabled).map(t => t.trait)
+    });
+    setSystemPrompt(newPrompt);
+    localStorage.setItem('hower-system-prompt', newPrompt);
+    setEditingPrompt(false);
+    toast({
+      title: "Prompt restablecido",
+      description: "Se ha restablecido el prompt del sistema a los valores por defecto."
     });
   };
 
@@ -274,6 +341,77 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
               )}
             </div>
           </CardContent>
+        </Card>
+
+        {/* Prompt del Sistema */}
+        <Card className="border border-gray-200">
+          <CardHeader className="py-3 px-4 bg-gray-50 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <Bot className="w-4 h-4 text-primary" /> Prompt del Sistema
+              </h3>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowPrompt(!showPrompt)}
+                className="h-8 px-2"
+              >
+                {showPrompt ? "Ocultar" : "Ver prompt"}
+              </Button>
+            </div>
+          </CardHeader>
+          {showPrompt && (
+            <CardContent className="p-4 space-y-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">Prompt actual</span>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setEditingPrompt(!editingPrompt)}
+                    className="h-8 px-2"
+                  >
+                    {editingPrompt ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              
+              {editingPrompt ? (
+                <div className="space-y-3">
+                  <Textarea
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    className="w-full min-h-[200px] text-xs"
+                    placeholder="Editar prompt del sistema..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={resetSystemPrompt}
+                    >
+                      Restablecer
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={saveSystemPrompt}
+                    >
+                      Guardar Prompt
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs font-mono bg-gray-50 p-3 rounded-md border border-gray-100 overflow-auto max-h-[200px] whitespace-pre-wrap">
+                  {systemPrompt}
+                </div>
+              )}
+              
+              <div className="text-xs text-gray-600 bg-gray-50/50 p-3 rounded-md border border-gray-100">
+                <p className="font-medium mb-1">Información:</p>
+                <p>Este es el prompt que recibe ChatGPT para definir su comportamiento. Incluye la personalidad configurada y las características de cliente ideal activadas.</p>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* Configuración de OpenAI */}
