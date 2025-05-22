@@ -24,6 +24,10 @@ const Index = () => {
     }
   }, [isOnboarded]);
 
+  const toggleConfigPanel = () => {
+    setShowConfig(prevState => !prevState);
+  };
+
   if (!isOnboarded) {
     // Mostrar pantalla de carga mientras redirige
     return (
@@ -53,7 +57,7 @@ const Index = () => {
             </div>
           </div>
           <button
-            onClick={() => setShowConfig(!showConfig)}
+            onClick={toggleConfigPanel}
             className="p-2 rounded-lg bg-primary text-white hover:bg-primary-dark hover:shadow-lg transition-all duration-200"
           >
             <Settings className="w-5 h-5" />
