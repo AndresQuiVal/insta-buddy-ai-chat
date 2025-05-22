@@ -1,7 +1,8 @@
 import React from 'react';
-import { Bot, Settings, Zap, Clock, Star } from 'lucide-react';
+import { Bot, Settings, Zap, Clock, Star, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { initiateInstagramAuth, disconnectInstagram, checkInstagramConnection } from '@/services/instagramService';
+import { isOpenAIConfigured } from '@/services/openaiService';
 
 interface ConfigPanelProps {
   config: {
@@ -37,6 +38,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
     setTraits(newTraits);
   };
 
+  const [openAIKey, setOpenAIKey] = React.useState<string>('');
+  const [openAIConfigured, setOpenAIConfigured] = React.useState<boolean>(isOpenAIConfigured());
+
   const [instagramConnected, setInstagramConnected] = React.useState<boolean>(checkInstagramConnection());
 
   const handleInstagramConnection = () => {
@@ -50,6 +54,22 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
       // Conectar Instagram
       initiateInstagramAuth();
     }
+  };
+
+  // Simulación de guardar la API key de OpenAI
+  const handleOpenAISetup = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!openAIKey.trim()) {
+      return;
+    }
+    
+    // En una implementación real, esto guardaría la clave en un lugar seguro como Supabase
+    localStorage.setItem('hower-openai-key-demo', openAIKey);
+    setOpenAIConfigured(true);
+    
+    // Limpiar el campo después de guardar
+    setOpenAIKey('');
   };
 
   return (
@@ -90,6 +110,50 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
             <option value="casual">Casual</option>
           </select>
         </div>
+
+        {/* Configuración de OpenAI */}
+        <Card className="border border-gray-200">
+          <CardHeader className="py-3 px-4 bg-gray-50 border-b border-gray-200">
+            <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <MessageSquare className="w-4 h-4 text-primary" /> Configuración de ChatGPT
+            </h3>
+          </CardHeader>
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center justify-between py-1">
+              <span className="text-sm text-gray-600">Estado:</span>
+              <div className="flex items-center gap-1">
+                <span className={`w-2 h-2 ${openAIConfigured ? 'bg-green-500' : 'bg-red-500'} rounded-full`}></span>
+                <span className={`text-xs ${openAIConfigured ? 'text-green-600' : 'text-red-600'}`}>
+                  {openAIConfigured ? 'Configurado' : 'No configurado'}
+                </span>
+              </div>
+            </div>
+
+            {!openAIConfigured && (
+              <form onSubmit={handleOpenAISetup} className="mt-2">
+                <input
+                  type="password"
+                  value={openAIKey}
+                  onChange={(e) => setOpenAIKey(e.target.value)}
+                  placeholder="Ingresa tu API key de OpenAI"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary mb-2"
+                />
+                <button
+                  type="submit"
+                  className="w-full px-3 py-2 bg-primary hover:bg-primary-dark text-white text-sm rounded-lg transition-colors"
+                >
+                  Configurar OpenAI
+                </button>
+              </form>
+            )}
+
+            {openAIConfigured && (
+              <p className="text-xs text-gray-500 mt-1">
+                ChatGPT está configurado y listo para responder automáticamente a tus prospectos.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Características del cliente ideal */}
         <Card className="border border-gray-200">

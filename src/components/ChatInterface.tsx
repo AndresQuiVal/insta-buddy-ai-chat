@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ChatMessage, handleAutomaticResponse, isOpenAIConfigured } from '@/services/openaiService';
 
 interface Message {
   id: string;
@@ -38,6 +38,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     ]
   };
 
+  // Convertir historial de mensajes al formato de OpenAI
+  const getOpenAIConversationHistory = (messages: Message[]): ChatMessage[] => {
+    return messages.map(msg => ({
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: msg.text
+    }));
+  };
+
+  // Business configuration for AI
+  const businessConfig = {
+    businessName: aiConfig.name,
+    businessDescription: "Asistente virtual que ayuda a filtrar prospectos potenciales.",
+    tone: aiConfig.personality === 'amigable' ? 'amigable y cercano' : 
+          aiConfig.personality === 'profesional' ? 'profesional y formal' : 'casual y relajado',
+    idealClientTraits: [
+      "Interesado en nuestros productos o servicios",
+      "Tiene presupuesto adecuado para adquirir nuestras soluciones",
+      "Está listo para tomar una decisión de compra",
+      "Se encuentra en nuestra zona de servicio"
+    ]
+  };
+
   useEffect(() => {
     if (activeConversation && conversationData[activeConversation]) {
       setMessages(conversationData[activeConversation]);
@@ -54,7 +76,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const generateAIResponse = (userMessage: string): string => {
+  const generateSimpleResponse = (userMessage: string): string => {
     const responses = {
       amigable: [
         '¡Hola! Gracias por escribir. ¿En qué puedo ayudarte hoy?',
@@ -99,10 +121,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     if (aiConfig.autoRespond) {
       setIsTyping(true);
       
-      setTimeout(() => {
+      // Determinar si se usa OpenAI o la respuesta simple
+      const useOpenAI = isOpenAIConfigured();
+      
+      setTimeout(async () => {
+        let responseText = '';
+        
+        if (useOpenAI) {
+          // Usar OpenAI para generar respuesta
+          const conversationHistory = getOpenAIConversationHistory(messages);
+          responseText = await handleAutomaticResponse(
+            newMessage,
+            conversationHistory,
+            businessConfig
+          );
+        } else {
+          // Usar respuesta simple
+          responseText = generateSimpleResponse(newMessage);
+        }
+        
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
-          text: generateAIResponse(newMessage),
+          text: responseText,
           sender: 'ai',
           timestamp: new Date()
         };
