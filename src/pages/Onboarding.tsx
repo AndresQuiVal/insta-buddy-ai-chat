@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { initiateInstagramAuth, checkInstagramConnection } from '@/services/instagramService';
+import { toast } from '@/components/ui/use-toast';
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +22,23 @@ const Onboarding: React.FC = () => {
     },
     instagramConnected: false
   });
+
+  useEffect(() => {
+    // Verifica si ya hay una conexión a Instagram
+    if (step === 3) {
+      const isConnected = checkInstagramConnection();
+      if (isConnected) {
+        setOnboardingData(prev => ({
+          ...prev,
+          instagramConnected: true
+        }));
+        toast({
+          title: "Instagram conectado",
+          description: "Tu cuenta de Instagram ya está conectada a Hower."
+        });
+      }
+    }
+  }, [step]);
 
   const handleNext = () => {
     if (step < 4) {
@@ -50,11 +69,17 @@ const Onboarding: React.FC = () => {
   };
 
   const handleInstagramConnect = () => {
-    // Simular conexión con Instagram
-    setOnboardingData({
-      ...onboardingData,
-      instagramConnected: true
-    });
+    // En una implementación real, aquí iniciaríamos el flujo OAuth con Instagram
+    if (onboardingData.instagramConnected) {
+      toast({
+        title: "Ya estás conectado",
+        description: "Tu cuenta de Instagram ya está vinculada con Hower"
+      });
+      return;
+    }
+    
+    // Inicia el flujo de autenticación de Instagram
+    initiateInstagramAuth();
   };
 
   return (

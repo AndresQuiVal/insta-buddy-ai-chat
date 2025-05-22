@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Bot, Settings, Zap, Clock, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { initiateInstagramAuth, disconnectInstagram, checkInstagramConnection } from '@/services/instagramService';
 
 interface ConfigPanelProps {
   config: {
@@ -35,6 +35,21 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
     const newTraits = [...traits];
     newTraits[index].enabled = enabled;
     setTraits(newTraits);
+  };
+
+  const [instagramConnected, setInstagramConnected] = React.useState<boolean>(checkInstagramConnection());
+
+  const handleInstagramConnection = () => {
+    if (instagramConnected) {
+      // Desconectar Instagram
+      const disconnected = disconnectInstagram();
+      if (disconnected) {
+        setInstagramConnected(false);
+      }
+    } else {
+      // Conectar Instagram
+      initiateInstagramAuth();
+    }
   };
 
   return (
@@ -169,15 +184,24 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
           <h3 className="text-sm font-medium text-gray-700 mb-2">🔗 Estado de Instagram</h3>
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-600">
-              Cuenta conectada
+              Cuenta {instagramConnected ? 'conectada' : 'desconectada'}
             </p>
             <div className="flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              <span className="text-xs text-green-600">Activo</span>
+              <span className={`w-2 h-2 ${instagramConnected ? 'bg-green-500' : 'bg-red-500'} rounded-full`}></span>
+              <span className={`text-xs ${instagramConnected ? 'text-green-600' : 'text-red-600'}`}>
+                {instagramConnected ? 'Activo' : 'Inactivo'}
+              </span>
             </div>
           </div>
-          <button className="w-full px-3 py-2 mt-3 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors">
-            Actualizar conexión
+          <button 
+            onClick={handleInstagramConnection}
+            className={`w-full px-3 py-2 mt-3 ${
+              instagramConnected 
+                ? 'bg-red-500 hover:bg-red-600' 
+                : 'bg-primary hover:bg-primary-dark'
+            } text-white text-sm rounded-lg transition-colors`}
+          >
+            {instagramConnected ? 'Desconectar Instagram' : 'Conectar Instagram'}
           </button>
         </div>
       </div>
