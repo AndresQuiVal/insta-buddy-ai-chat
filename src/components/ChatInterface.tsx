@@ -223,7 +223,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     return personalityResponses[Math.floor(Math.random() * personalityResponses.length)];
   };
 
-  // Updated function to analyze conversation with more precise keyword matching
+  // Improved function to analyze conversation with better keyword detection
   const analyzeConversation = (newMessages: Message[]) => {
     if (idealTraits.length === 0) return;
 
@@ -234,53 +234,61 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     // Solo analizar los mensajes del usuario, no los del AI
     const userMessages = newMessages.filter(msg => msg.sender === 'user');
     
-    // Concatenar todos los mensajes del usuario para análisis
-    const conversationText = userMessages.map(msg => msg.text).join(' ').toLowerCase();
+    if (userMessages.length === 0) return;
     
-    // Si no hay texto del usuario para analizar, salir
-    if (conversationText.trim() === '') return;
+    // Analizar cada mensaje del usuario individualmente y concatenarlos
+    const conversationText = userMessages.map(msg => msg.text.toLowerCase()).join(' ');
+    
+    console.log("Analyzing conversation text:", conversationText);
     
     // Verificar cada característica
     const newMetTraits: string[] = [...metTraits];
     
     enabledTraits.forEach(trait => {
-      const traitLower = trait.toLowerCase();
-      
-      // Palabras clave relacionadas con cada característica - más específicas
+      // Palabras clave relacionadas con cada característica - más específicas y con variaciones
       const keywordMap: Record<string, string[]> = {
         "Interesado en nuestros productos o servicios": [
-          "me interesa", "producto", "servicio", "necesito", "busco", 
-          "quiero comprar", "tienen", "ofrecen", "información sobre"
+          "interesa", "producto", "servicio", "necesito", "busco", 
+          "quiero", "comprar", "tienen", "ofrecen", "información",
+          "conocer", "saber", "precio"
         ],
         "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
           "presupuesto", "dispongo", "puedo pagar", "cuesta", "precio", 
-          "inversión", "económico", "financiar", "pago"
+          "inversión", "económico", "financiar", "pago", "costo",
+          "dinero", "gastar", "pagar", "efectivo", "tarjeta"
         ],
         "Está listo para tomar una decisión de compra": [
-          "decidido", "quiero comprar", "adquirir", "cuando puedo", "ahora mismo", 
-          "inmediato", "listo para", "proceder", "compra"
+          "decidido", "comprar", "adquirir", "cuando", "ahora", 
+          "inmediato", "listo", "proceder", "compra", "ya",
+          "hoy", "pronto", "mañana", "semana", "momento"
         ],
         "Se encuentra en nuestra zona de servicio": [
-          "vivo en", "ubicado", "dirección", "ciudad", "zona", "región", 
-          "local", "envío a", "entrega en"
+          "vivo", "ubicado", "dirección", "ciudad", "zona", "región", 
+          "local", "envío", "entrega", "domicilio", "casa",
+          "oficina", "trabajo", "calle", "avenida", "país"
         ]
       };
       
-      // Verifica si alguna palabra clave exacta relacionada con la característica está en la conversación
+      // Obtiene las palabras clave para esta característica
       const keywords = keywordMap[trait] || [];
       
+      // Verifica si alguna palabra clave está contenida en la conversación
       const matchFound = keywords.some(keyword => {
-        const pattern = new RegExp(`\\b${keyword}\\b`, 'i'); // Buscar palabras completas
-        return pattern.test(conversationText);
+        // Buscar la palabra como substring (más permisivo)
+        return conversationText.includes(keyword.toLowerCase());
       });
       
+      console.log(`Trait "${trait}" - Match found: ${matchFound}`);
+      
       if (matchFound && !newMetTraits.includes(trait)) {
+        console.log(`Adding new trait: ${trait}`);
         newMetTraits.push(trait);
       }
     });
     
-    // Actualizar la puntuación de la conversación solo si hay cambios
-    if (newMetTraits.length !== metTraits.length) {
+    // Solo actualizar si hay cambios
+    if (JSON.stringify(newMetTraits) !== JSON.stringify(metTraits)) {
+      console.log("Updating met traits:", newMetTraits);
       setMetTraits(newMetTraits);
       setCurrentMatchPoints(Math.min(newMetTraits.length, 4)); // Máximo 4 puntos
     }
