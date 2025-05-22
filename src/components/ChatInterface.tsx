@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -224,7 +223,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     return personalityResponses[Math.floor(Math.random() * personalityResponses.length)];
   };
 
-  // Analizar la conversación para detectar rasgos del cliente ideal
+  // Updated function to analyze conversation with more precise keyword matching
   const analyzeConversation = (newMessages: Message[]) => {
     if (idealTraits.length === 0) return;
 
@@ -232,8 +231,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     const enabledTraits = idealTraits.filter(t => t.enabled).map(t => t.trait);
     if (enabledTraits.length === 0) return;
 
-    // Concatenar todos los mensajes para análisis
-    const conversationText = newMessages.map(msg => msg.text).join(' ').toLowerCase();
+    // Solo analizar los mensajes del usuario, no los del AI
+    const userMessages = newMessages.filter(msg => msg.sender === 'user');
+    
+    // Concatenar todos los mensajes del usuario para análisis
+    const conversationText = userMessages.map(msg => msg.text).join(' ').toLowerCase();
+    
+    // Si no hay texto del usuario para analizar, salir
+    if (conversationText.trim() === '') return;
     
     // Verificar cada característica
     const newMetTraits: string[] = [...metTraits];
@@ -241,25 +246,44 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     enabledTraits.forEach(trait => {
       const traitLower = trait.toLowerCase();
       
-      // Palabras clave relacionadas con cada característica
+      // Palabras clave relacionadas con cada característica - más específicas
       const keywordMap: Record<string, string[]> = {
-        "Interesado en nuestros productos o servicios": ["interesa", "producto", "servicio", "ofrecen", "venden", "comprar"],
-        "Tiene presupuesto adecuado para adquirir nuestras soluciones": ["presupuesto", "precio", "costo", "pagar", "inversión", "económico"],
-        "Está listo para tomar una decisión de compra": ["decidido", "comprar", "adquirir", "cuando", "ahora", "inmediato", "pronto"],
-        "Se encuentra en nuestra zona de servicio": ["ubicación", "ciudad", "zona", "dirección", "envío", "entrega", "local"]
+        "Interesado en nuestros productos o servicios": [
+          "me interesa", "producto", "servicio", "necesito", "busco", 
+          "quiero comprar", "tienen", "ofrecen", "información sobre"
+        ],
+        "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
+          "presupuesto", "dispongo", "puedo pagar", "cuesta", "precio", 
+          "inversión", "económico", "financiar", "pago"
+        ],
+        "Está listo para tomar una decisión de compra": [
+          "decidido", "quiero comprar", "adquirir", "cuando puedo", "ahora mismo", 
+          "inmediato", "listo para", "proceder", "compra"
+        ],
+        "Se encuentra en nuestra zona de servicio": [
+          "vivo en", "ubicado", "dirección", "ciudad", "zona", "región", 
+          "local", "envío a", "entrega en"
+        ]
       };
       
-      // Verifica si alguna palabra clave relacionada con la característica está en la conversación
-      const keywords = keywordMap[trait] || traitLower.split(' ').filter(w => w.length > 3);
+      // Verifica si alguna palabra clave exacta relacionada con la característica está en la conversación
+      const keywords = keywordMap[trait] || [];
       
-      if (keywords.some(keyword => conversationText.includes(keyword.toLowerCase())) && !newMetTraits.includes(trait)) {
+      const matchFound = keywords.some(keyword => {
+        const pattern = new RegExp(`\\b${keyword}\\b`, 'i'); // Buscar palabras completas
+        return pattern.test(conversationText);
+      });
+      
+      if (matchFound && !newMetTraits.includes(trait)) {
         newMetTraits.push(trait);
       }
     });
     
-    // Actualizar la puntuación de la conversación
-    setMetTraits(newMetTraits);
-    setCurrentMatchPoints(Math.min(newMetTraits.length, 4)); // Máximo 4 puntos
+    // Actualizar la puntuación de la conversación solo si hay cambios
+    if (newMetTraits.length !== metTraits.length) {
+      setMetTraits(newMetTraits);
+      setCurrentMatchPoints(Math.min(newMetTraits.length, 4)); // Máximo 4 puntos
+    }
   };
 
   const sendMessage = async () => {
