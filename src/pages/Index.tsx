@@ -22,6 +22,11 @@ const Index = () => {
       // Redirigir a la página de onboarding
       window.location.href = '/onboarding';
     }
+    
+    // Inicializar estructura para las conversaciones si no existe
+    if (!localStorage.getItem('hower-conversations')) {
+      localStorage.setItem('hower-conversations', JSON.stringify([]));
+    }
   }, [isOnboarded]);
 
   const toggleConfigPanel = () => {

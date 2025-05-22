@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User } from 'lucide-react';
+import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ChatMessage, handleAutomaticResponse, isOpenAIConfigured } from '@/services/openaiService';
 
@@ -21,11 +21,38 @@ interface ChatInterfaceProps {
   };
 }
 
+interface Conversation {
+  id: string;
+  userName: string;
+  lastMessage: string;
+  timestamp: string;
+  unread: boolean;
+  avatar?: string;
+  matchPoints: number;
+  metTraits: string[];
+  messages?: Message[];
+}
+
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiConfig }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
+  const [currentMatchPoints, setCurrentMatchPoints] = useState(0);
+  const [metTraits, setMetTraits] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Cargar las características ideales del cliente
+  useEffect(() => {
+    try {
+      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+      if (savedTraits) {
+        setIdealTraits(JSON.parse(savedTraits));
+      }
+    } catch (e) {
+      console.error("Error al cargar características del cliente ideal:", e);
+    }
+  }, []);
 
   // Simulador de conversaciones por usuario
   const conversationData: { [key: string]: Message[] } = {
@@ -37,6 +64,101 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       { id: '1', text: '¿Cuáles son los precios?', sender: 'user', timestamp: new Date(Date.now() - 900000) },
       { id: '2', text: 'Te puedo ayudar con información sobre precios. Tenemos diferentes planes que se adaptan a distintas necesidades. ¿Podrías contarme un poco más sobre lo que buscas?', sender: 'ai', timestamp: new Date(Date.now() - 898000) }
     ]
+  };
+
+  // Cargar conversación y datos de compatibilidad desde localStorage
+  useEffect(() => {
+    if (activeConversation) {
+      // Cargar mensajes específicos de la conversación
+      if (conversationData[activeConversation]) {
+        setMessages(conversationData[activeConversation]);
+      } else {
+        setMessages([]);
+      }
+
+      // Cargar datos de compatibilidad guardados
+      try {
+        const savedConversations = localStorage.getItem('hower-conversations');
+        if (savedConversations) {
+          const conversations = JSON.parse(savedConversations);
+          const currentConv = conversations.find((conv: Conversation) => conv.id === activeConversation);
+          
+          if (currentConv) {
+            setCurrentMatchPoints(currentConv.matchPoints || 0);
+            setMetTraits(currentConv.metTraits || []);
+            
+            // Si hay mensajes guardados, usarlos en lugar de los del simulador
+            if (currentConv.messages && currentConv.messages.length > 0) {
+              setMessages(currentConv.messages);
+            }
+          } else {
+            // Inicializar para una nueva conversación
+            setCurrentMatchPoints(0);
+            setMetTraits([]);
+          }
+        }
+      } catch (e) {
+        console.error("Error al cargar datos de conversación:", e);
+      }
+    }
+  }, [activeConversation]);
+
+  // Guardar conversación actual con puntos de compatibilidad
+  useEffect(() => {
+    if (activeConversation && messages.length > 0) {
+      try {
+        const savedConversationsStr = localStorage.getItem('hower-conversations');
+        let conversations: Conversation[] = [];
+        
+        if (savedConversationsStr) {
+          conversations = JSON.parse(savedConversationsStr);
+        }
+        
+        // Buscar si esta conversación ya existe
+        const existingIndex = conversations.findIndex(conv => conv.id === activeConversation);
+        const lastMessage = messages[messages.length - 1];
+        
+        if (existingIndex !== -1) {
+          // Actualizar conversación existente
+          conversations[existingIndex] = {
+            ...conversations[existingIndex],
+            lastMessage: lastMessage.text,
+            timestamp: '1m',
+            matchPoints: currentMatchPoints,
+            metTraits: metTraits,
+            messages: messages
+          };
+        } else {
+          // Crear nueva conversación
+          conversations.push({
+            id: activeConversation,
+            userName: `user_${activeConversation}`,
+            lastMessage: lastMessage.text,
+            timestamp: '1m',
+            unread: false,
+            matchPoints: currentMatchPoints,
+            metTraits: metTraits,
+            messages: messages
+          });
+        }
+        
+        // Guardar en localStorage
+        localStorage.setItem('hower-conversations', JSON.stringify(conversations));
+        
+        // Disparar evento para que otros componentes (ConversationList) se actualicen
+        window.dispatchEvent(new Event('storage'));
+      } catch (e) {
+        console.error("Error al guardar conversación:", e);
+      }
+    }
+  }, [activeConversation, currentMatchPoints, metTraits, messages]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // Convertir historial de mensajes al formato de OpenAI
@@ -73,22 +195,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     })()
   };
 
-  useEffect(() => {
-    if (activeConversation && conversationData[activeConversation]) {
-      setMessages(conversationData[activeConversation]);
-    } else if (activeConversation) {
-      setMessages([]);
-    }
-  }, [activeConversation]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const generateSimpleResponse = (userMessage: string): string => {
     const responses = {
       amigable: [
@@ -118,6 +224,44 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     return personalityResponses[Math.floor(Math.random() * personalityResponses.length)];
   };
 
+  // Analizar la conversación para detectar rasgos del cliente ideal
+  const analyzeConversation = (newMessages: Message[]) => {
+    if (idealTraits.length === 0) return;
+
+    // Obtener solo las características habilitadas
+    const enabledTraits = idealTraits.filter(t => t.enabled).map(t => t.trait);
+    if (enabledTraits.length === 0) return;
+
+    // Concatenar todos los mensajes para análisis
+    const conversationText = newMessages.map(msg => msg.text).join(' ').toLowerCase();
+    
+    // Verificar cada característica
+    const newMetTraits: string[] = [...metTraits];
+    
+    enabledTraits.forEach(trait => {
+      const traitLower = trait.toLowerCase();
+      
+      // Palabras clave relacionadas con cada característica
+      const keywordMap: Record<string, string[]> = {
+        "Interesado en nuestros productos o servicios": ["interesa", "producto", "servicio", "ofrecen", "venden", "comprar"],
+        "Tiene presupuesto adecuado para adquirir nuestras soluciones": ["presupuesto", "precio", "costo", "pagar", "inversión", "económico"],
+        "Está listo para tomar una decisión de compra": ["decidido", "comprar", "adquirir", "cuando", "ahora", "inmediato", "pronto"],
+        "Se encuentra en nuestra zona de servicio": ["ubicación", "ciudad", "zona", "dirección", "envío", "entrega", "local"]
+      };
+      
+      // Verifica si alguna palabra clave relacionada con la característica está en la conversación
+      const keywords = keywordMap[trait] || traitLower.split(' ').filter(w => w.length > 3);
+      
+      if (keywords.some(keyword => conversationText.includes(keyword.toLowerCase())) && !newMetTraits.includes(trait)) {
+        newMetTraits.push(trait);
+      }
+    });
+    
+    // Actualizar la puntuación de la conversación
+    setMetTraits(newMetTraits);
+    setCurrentMatchPoints(Math.min(newMetTraits.length, 4)); // Máximo 4 puntos
+  };
+
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeConversation) return;
 
@@ -128,8 +272,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setNewMessage('');
+
+    // Analizar la conversación para detectar rasgos
+    analyzeConversation(newMessages);
 
     if (aiConfig.autoRespond) {
       setIsTyping(true);
@@ -143,7 +291,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         if (useOpenAI) {
           try {
             // Usar OpenAI para generar respuesta
-            const conversationHistory = getOpenAIConversationHistory(messages);
+            const conversationHistory = getOpenAIConversationHistory(newMessages);
             
             // Verificar si hay un prompt personalizado guardado
             const savedPrompt = localStorage.getItem('hower-system-prompt');
@@ -170,8 +318,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
           timestamp: new Date()
         };
         
-        setMessages(prev => [...prev, aiResponse]);
+        const finalMessages = [...newMessages, aiResponse];
+        setMessages(finalMessages);
         setIsTyping(false);
+        
+        // Analizar nuevamente con la respuesta de la IA
+        analyzeConversation(finalMessages);
         
         toast({
           title: "IA Respondió",
@@ -186,6 +338,44 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       e.preventDefault();
       sendMessage();
     }
+  };
+
+  // Renderizar indicadores de compatibilidad
+  const renderCompatibilityIndicator = () => {
+    return (
+      <div className="flex flex-col p-4 border-t border-purple-100">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-sm font-medium text-gray-700">Compatibilidad del prospecto</h4>
+          <div className="flex items-center">
+            {[...Array(4)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-4 h-4 ${
+                  i < currentMatchPoints ? 'fill-primary text-primary' : 'text-gray-300'
+                }`}
+              />
+            ))}
+            <span className="text-xs text-gray-500 ml-1">{currentMatchPoints}/4</span>
+          </div>
+        </div>
+        
+        <div className="space-y-1 mt-1">
+          {idealTraits
+            .filter(trait => trait.enabled)
+            .map((trait, idx) => {
+              const isMet = metTraits.includes(trait.trait);
+              return (
+                <div key={idx} className="flex items-center text-xs">
+                  <div className={`w-2 h-2 rounded-full mr-2 ${isMet ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  <span className={`${isMet ? 'text-gray-800' : 'text-gray-500'}`}>
+                    {trait.trait}
+                  </span>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    );
   };
 
   if (!activeConversation) {
@@ -243,7 +433,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
                 <p className={`text-xs mt-1 ${
                   message.sender === 'user' ? 'text-purple-100' : 'text-gray-500'
                 }`}>
-                  {message.timestamp.toLocaleTimeString()}
+                  {message.timestamp instanceof Date 
+                    ? message.timestamp.toLocaleTimeString() 
+                    : 'Tiempo no disponible'}
                 </p>
               </div>
             </div>
@@ -268,6 +460,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Indicador de compatibilidad */}
+      {renderCompatibilityIndicator()}
 
       {/* Input de mensaje */}
       <div className="p-4 border-t border-purple-100">

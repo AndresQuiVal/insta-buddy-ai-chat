@@ -10,6 +10,7 @@ interface Conversation {
   unread: boolean;
   avatar?: string;
   matchPoints: number; // 0-4 puntos de compatibilidad
+  metTraits?: string[]; // Características cumplidas
 }
 
 interface ConversationListProps {
@@ -28,7 +29,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
       lastMessage: '¡Hola! Me interesa tu producto',
       timestamp: '2 min',
       unread: true,
-      matchPoints: 4
+      matchPoints: 4,
+      metTraits: ['Interesado en nuestros productos o servicios', 'Tiene presupuesto adecuado para adquirir nuestras soluciones', 'Está listo para tomar una decisión de compra', 'Se encuentra en nuestra zona de servicio']
     },
     {
       id: '2',
@@ -36,7 +38,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
       lastMessage: '¿Cuáles son los precios?',
       timestamp: '15 min',
       unread: false,
-      matchPoints: 3
+      matchPoints: 3,
+      metTraits: ['Interesado en nuestros productos o servicios', 'Tiene presupuesto adecuado para adquirir nuestras soluciones', 'Está listo para tomar una decisión de compra']
     },
     {
       id: '3',
@@ -44,7 +47,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
       lastMessage: 'Perfecto, muchas gracias',
       timestamp: '1 h',
       unread: false,
-      matchPoints: 2
+      matchPoints: 2,
+      metTraits: ['Interesado en nuestros productos o servicios', 'Tiene presupuesto adecuado para adquirir nuestras soluciones']
     },
     {
       id: '4',
@@ -52,7 +56,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
       lastMessage: '¿Tienen descuentos?',
       timestamp: '3 h',
       unread: true,
-      matchPoints: 1
+      matchPoints: 1,
+      metTraits: ['Interesado en nuestros productos o servicios']
     },
     {
       id: '5',
@@ -60,9 +65,53 @@ const ConversationList: React.FC<ConversationListProps> = ({
       lastMessage: 'Acabo de conocer tu marca',
       timestamp: '5 h',
       unread: false,
-      matchPoints: 0
+      matchPoints: 0,
+      metTraits: []
     }
   ]);
+
+  // Escuchar actualizaciones de matchPoints desde localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedConversations = localStorage.getItem('hower-conversations');
+      if (savedConversations) {
+        try {
+          const parsedConversations = JSON.parse(savedConversations);
+          setConversations(prevConversations => {
+            // Fusionar las conversaciones guardadas con las existentes
+            const updatedConversations = [...prevConversations];
+            
+            parsedConversations.forEach((savedConv: Conversation) => {
+              const existingIndex = updatedConversations.findIndex(conv => conv.id === savedConv.id);
+              if (existingIndex !== -1) {
+                // Actualizar conversación existente
+                updatedConversations[existingIndex] = {
+                  ...updatedConversations[existingIndex],
+                  matchPoints: savedConv.matchPoints,
+                  metTraits: savedConv.metTraits
+                };
+              } else {
+                // Añadir nueva conversación
+                updatedConversations.push(savedConv);
+              }
+            });
+            
+            return updatedConversations;
+          });
+        } catch (error) {
+          console.error('Error parsing conversations from localStorage:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // Cargar conversaciones guardadas al iniciar
+    handleStorageChange();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   // Ordenar conversaciones por puntos de compatibilidad
   const sortedConversations = [...conversations].sort((a, b) => b.matchPoints - a.matchPoints);
@@ -85,7 +134,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
           lastMessage: messages[Math.floor(Math.random() * messages.length)],
           timestamp: 'ahora',
           unread: true,
-          matchPoints: Math.floor(Math.random() * 5) // 0-4 puntos aleatorios
+          matchPoints: Math.floor(Math.random() * 5), // 0-4 puntos aleatorios
+          metTraits: []
         };
         
         setConversations(prev => [newConversation, ...prev].slice(0, 10));
@@ -96,18 +146,33 @@ const ConversationList: React.FC<ConversationListProps> = ({
   }, []);
 
   // Función para renderizar los indicadores de puntos de compatibilidad
-  const renderMatchPoints = (points: number) => {
+  const renderMatchPoints = (points: number, metTraits?: string[]) => {
     return (
-      <div className="flex items-center gap-1 mt-1">
-        {[...Array(4)].map((_, i) => (
-          <Star
-            key={i}
-            className={`w-3 h-3 ${
-              i < points ? 'fill-primary text-primary' : 'text-gray-300'
-            }`}
-          />
-        ))}
-        <span className="text-xs text-gray-500 ml-1">{points}/4</span>
+      <div>
+        <div className="flex items-center gap-1 mt-1">
+          {[...Array(4)].map((_, i) => (
+            <Star
+              key={i}
+              className={`w-3 h-3 ${
+                i < points ? 'fill-primary text-primary' : 'text-gray-300'
+              }`}
+            />
+          ))}
+          <span className="text-xs text-gray-500 ml-1">{points}/4</span>
+        </div>
+        {metTraits && metTraits.length > 0 && (
+          <div className="mt-1">
+            <div className="text-xs text-gray-500">Criterios cumplidos:</div>
+            <ul className="text-xs text-gray-600 ml-2">
+              {metTraits.slice(0, 2).map((trait, idx) => (
+                <li key={idx} className="truncate">• {trait}</li>
+              ))}
+              {metTraits.length > 2 && (
+                <li className="text-xs text-gray-400">Y {metTraits.length - 2} más...</li>
+              )}
+            </ul>
+          </div>
+        )}
       </div>
     );
   };
@@ -179,7 +244,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
                       }`}>
                         {conversation.lastMessage}
                       </p>
-                      {renderMatchPoints(conversation.matchPoints)}
+                      {renderMatchPoints(conversation.matchPoints, conversation.metTraits)}
                       {conversation.unread && (
                         <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                       )}
