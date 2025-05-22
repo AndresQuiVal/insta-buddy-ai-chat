@@ -11,7 +11,7 @@ const Index = () => {
   const [aiConfig, setAiConfig] = useState({
     name: 'Hower',
     personality: 'amigable',
-    responseDelay: 2000,
+    responseDelay: 10000, // Valor inicial ahora es 10 segundos
     autoRespond: true
   });
   const [isOnboarded, setIsOnboarded] = useState(localStorage.getItem('hower-onboarded') === 'true');

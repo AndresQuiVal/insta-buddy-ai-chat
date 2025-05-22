@@ -240,6 +240,20 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
     setOpenAIKey('');
   };
 
+  // Helper function to format time display
+  const formatTimeDisplay = (milliseconds: number): string => {
+    if (milliseconds < 60000) {
+      // Less than a minute - show in seconds
+      return `${(milliseconds / 1000).toFixed(0)}s`;
+    } else if (milliseconds < 3600000) {
+      // Less than an hour - show in minutes
+      return `${(milliseconds / 60000).toFixed(0)}m`;
+    } else {
+      // More than an hour - show in hours
+      return `${(milliseconds / 3600000).toFixed(1)}h`;
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-lg h-full">
       <div className="p-4 border-b border-gray-200">
@@ -590,19 +604,19 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
             <Clock className="w-4 h-4" />
-            Tiempo de Respuesta (ms)
+            Tiempo de Respuesta
           </label>
           <input
             type="range"
-            min="500"
-            max="5000"
-            step="500"
+            min="10000"
+            max="3600000"
+            step="10000"
             value={config.responseDelay}
             onChange={(e) => updateConfig('responseDelay', parseInt(e.target.value))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
           />
           <div className="text-xs text-gray-500 text-center">
-            {config.responseDelay}ms ({(config.responseDelay / 1000).toFixed(1)}s)
+            {formatTimeDisplay(config.responseDelay)}
           </div>
         </div>
 
