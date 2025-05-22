@@ -25,7 +25,9 @@ const Onboarding: React.FC = () => {
     if (step < 4) {
       setStep(step + 1);
     } else {
-      // Onboarding completo, navegar al dashboard
+      // Marcar el onboarding como completado en localStorage
+      localStorage.setItem('hower-onboarded', 'true');
+      // Navegar al dashboard principal
       navigate('/');
     }
   };
