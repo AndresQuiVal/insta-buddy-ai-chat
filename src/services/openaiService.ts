@@ -1,8 +1,8 @@
 
 import { toast } from '@/hooks/use-toast';
 
-// Esta clave debería guardarse en una variable de entorno en Supabase
-const OPENAI_API_KEY = 'tu-api-key-aqui'; // Reemplaza con tu API key real
+// Using the API key provided by the user
+const OPENAI_API_KEY = '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';
 
 export interface OpenAIConfig {
   apiKey: string;
@@ -92,7 +92,7 @@ No menciones explícitamente que estás evaluando si cumplen con ciertos criteri
  * Verifica si la configuración de OpenAI está completa
  */
 export const isOpenAIConfigured = (): boolean => {
-  return OPENAI_API_KEY !== 'tu-api-key-aqui' && OPENAI_API_KEY.length > 0;
+  return OPENAI_API_KEY !== 'tu-api-key-aqui' && OPENAI_API_KEY.trim() !== '';
 };
 
 /**
@@ -130,4 +130,3 @@ export const handleAutomaticResponse = async (
     return "Lo siento, no pude procesar tu mensaje en este momento.";
   }
 };
-
