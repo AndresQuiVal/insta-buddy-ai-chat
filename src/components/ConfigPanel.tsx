@@ -1,8 +1,13 @@
-import React from 'react';
-import { Bot, Settings, Zap, Clock, Star, MessageSquare } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { Bot, Settings, Zap, Clock, Star, MessageSquare, AlertCircle, Edit2, Save, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { initiateInstagramAuth, disconnectInstagram, checkInstagramConnection } from '@/services/instagramService';
 import { isOpenAIConfigured } from '@/services/openaiService';
+import { toast } from '@/hooks/use-toast';
 
 interface ConfigPanelProps {
   config: {
@@ -24,24 +29,120 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
     onConfigChange({ ...config, [key]: value });
   };
 
-  // Lista simulada de características para el cliente ideal
-  const [traits, setTraits] = React.useState<TraitConfig[]>([
+  // Lista de características para el cliente ideal
+  const [traits, setTraits] = useState<TraitConfig[]>([
     { trait: "Interesado en nuestros productos", enabled: true },
     { trait: "Tiene presupuesto adecuado", enabled: true },
     { trait: "Listo para comprar", enabled: true },
     { trait: "Ubicado en nuestra zona de servicio", enabled: true },
   ]);
 
+  // Estado para edición de rasgos
+  const [editingTrait, setEditingTrait] = useState<number | null>(null);
+  const [traitText, setTraitText] = useState<string>("");
+  const [newTraitText, setNewTraitText] = useState<string>("");
+  const [showAddTrait, setShowAddTrait] = useState<boolean>(false);
+  
+  // Estado para configuración de personalidad
+  const [editingPersonality, setEditingPersonality] = useState<boolean>(false);
+  const [personalityDescription, setPersonalityDescription] = useState<string>(
+    config.personality === 'amigable' 
+      ? "Amigable, cercano y empático. Usa un tono conversacional y cálido, haciendo preguntas abiertas para generar confianza." 
+      : config.personality === 'profesional'
+      ? "Formal, respetuoso y directo. Utiliza un lenguaje preciso y técnico cuando es necesario, manteniendo siempre la cortesía."
+      : "Casual y relajado. Utiliza expresiones cotidianas, es dinámico y muestra entusiasmo en la conversación."
+  );
+
   const updateTrait = (index: number, enabled: boolean) => {
     const newTraits = [...traits];
     newTraits[index].enabled = enabled;
     setTraits(newTraits);
+    toast({
+      title: enabled ? "Característica activada" : "Característica desactivada",
+      description: `${traits[index].trait} ha sido ${enabled ? 'activada' : 'desactivada'}.`,
+    });
   };
 
-  const [openAIKey, setOpenAIKey] = React.useState<string>('');
-  const [openAIConfigured, setOpenAIConfigured] = React.useState<boolean>(isOpenAIConfigured());
+  const startEditTrait = (index: number) => {
+    setEditingTrait(index);
+    setTraitText(traits[index].trait);
+  };
 
-  const [instagramConnected, setInstagramConnected] = React.useState<boolean>(checkInstagramConnection());
+  const saveTrait = () => {
+    if (editingTrait !== null) {
+      if (!traitText.trim()) {
+        toast({
+          title: "Error",
+          description: "La característica no puede estar vacía",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const newTraits = [...traits];
+      newTraits[editingTrait].trait = traitText;
+      setTraits(newTraits);
+      setEditingTrait(null);
+      
+      toast({
+        title: "Característica actualizada",
+        description: "Se ha actualizado la característica correctamente."
+      });
+    }
+  };
+  
+  const addNewTrait = () => {
+    if (!newTraitText.trim()) {
+      toast({
+        title: "Error",
+        description: "La característica no puede estar vacía",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setTraits([...traits, { trait: newTraitText, enabled: true }]);
+    setNewTraitText("");
+    setShowAddTrait(false);
+    
+    toast({
+      title: "Característica añadida",
+      description: "Se ha añadido una nueva característica de cliente ideal."
+    });
+  };
+  
+  const deleteTrait = (index: number) => {
+    if (traits.length <= 1) {
+      toast({
+        title: "No se puede eliminar",
+        description: "Debe haber al menos una característica de cliente ideal.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newTraits = [...traits];
+    newTraits.splice(index, 1);
+    setTraits(newTraits);
+    
+    toast({
+      title: "Característica eliminada",
+      description: "Se ha eliminado la característica correctamente."
+    });
+  };
+
+  const savePersonalityDescription = () => {
+    setEditingPersonality(false);
+    toast({
+      title: "Personalidad actualizada",
+      description: "Se ha actualizado la descripción de personalidad."
+    });
+  };
+
+  const [openAIKey, setOpenAIKey] = useState<string>('');
+  const [openAIConfigured, setOpenAIConfigured] = useState<boolean>(isOpenAIConfigured());
+
+  const [instagramConnected, setInstagramConnected] = useState<boolean>(checkInstagramConnection());
 
   const handleInstagramConnection = () => {
     if (instagramConnected) {
@@ -98,18 +199,82 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
         </div>
 
         {/* Personalidad */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Personalidad de la IA</label>
-          <select
-            value={config.personality}
-            onChange={(e) => updateConfig('personality', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="amigable">Amigable</option>
-            <option value="profesional">Profesional</option>
-            <option value="casual">Casual</option>
-          </select>
-        </div>
+        <Card className="border border-gray-200">
+          <CardHeader className="py-3 px-4 bg-gray-50 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <Bot className="w-4 h-4 text-primary" /> Personalidad de la IA
+              </h3>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-gray-700">Tipo de personalidad</label>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                  {config.personality === 'amigable' ? 'Amigable' : 
+                   config.personality === 'profesional' ? 'Profesional' : 'Casual'}
+                </span>
+              </div>
+              
+              <select
+                value={config.personality}
+                onChange={(e) => updateConfig('personality', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="amigable">Amigable</option>
+                <option value="profesional">Profesional</option>
+                <option value="casual">Casual</option>
+              </select>
+            </div>
+            
+            <div className="space-y-2 pt-2 border-t border-gray-100">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-gray-700">
+                  Descripción detallada
+                </label>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setEditingPersonality(!editingPersonality)}
+                  className="h-8 px-2"
+                >
+                  {editingPersonality ? <Save className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
+                </Button>
+              </div>
+              
+              {editingPersonality ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={personalityDescription}
+                    onChange={(e) => setPersonalityDescription(e.target.value)}
+                    className="w-full min-h-[100px]"
+                    placeholder="Describe la personalidad en detalle..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setEditingPersonality(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={savePersonalityDescription}
+                    >
+                      Guardar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                  {personalityDescription}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Configuración de OpenAI */}
         <Card className="border border-gray-200">
@@ -158,25 +323,104 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
         {/* Características del cliente ideal */}
         <Card className="border border-gray-200">
           <CardHeader className="py-3 px-4 bg-gray-50 border-b border-gray-200">
-            <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
-              <Star className="w-4 h-4 text-primary" /> Características del Cliente Ideal
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <Star className="w-4 h-4 text-primary" /> Características del Cliente Ideal
+              </h3>
+              <div className="flex items-center">
+                <AlertCircle className="w-3.5 h-3.5 text-primary mr-1" />
+                <span className="text-xs text-gray-500">La IA evaluará estos puntos</span>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-4 space-y-2">
+          <CardContent className="p-4 space-y-4">
+            <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-md">
+              La IA evaluará si los prospectos cumplen con estas características durante la conversación, 
+              sin revelarles que están siendo evaluados.
+            </div>
+            
             {traits.map((trait, index) => (
-              <div key={index} className="flex items-center justify-between py-1">
-                <span className="text-sm text-gray-600">{trait.trait}</span>
-                <label className="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={trait.enabled}
-                    onChange={(e) => updateTrait(index, e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                </label>
+              <div key={index} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between">
+                  {editingTrait === index ? (
+                    <div className="flex-1 flex gap-2">
+                      <Input 
+                        value={traitText} 
+                        onChange={(e) => setTraitText(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button variant="ghost" size="sm" onClick={() => setEditingTrait(null)}>
+                        Cancelar
+                      </Button>
+                      <Button size="sm" onClick={saveTrait}>
+                        Guardar
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className={`text-sm ${trait.enabled ? 'text-gray-600' : 'text-gray-400 line-through'}`}>
+                          {trait.trait}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => startEditTrait(index)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => deleteTrait(index)}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <label className="inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={trait.enabled}
+                            onChange={(e) => updateTrait(index, e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
+            
+            {showAddTrait ? (
+              <div className="mt-3 flex gap-2">
+                <Input 
+                  value={newTraitText} 
+                  onChange={(e) => setNewTraitText(e.target.value)}
+                  placeholder="Ingresa una nueva característica"
+                  className="flex-1"
+                />
+                <Button variant="ghost" size="sm" onClick={() => setShowAddTrait(false)}>
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={addNewTrait}>
+                  Añadir
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full mt-2" 
+                onClick={() => setShowAddTrait(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" /> Añadir característica
+              </Button>
+            )}
           </CardContent>
         </Card>
 

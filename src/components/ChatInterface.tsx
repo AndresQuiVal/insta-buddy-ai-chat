@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -52,6 +53,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     businessDescription: "Asistente virtual que ayuda a filtrar prospectos potenciales.",
     tone: aiConfig.personality === 'amigable' ? 'amigable y cercano' : 
           aiConfig.personality === 'profesional' ? 'profesional y formal' : 'casual y relajado',
+    // Estas características deben venir de ConfigPanel, pero por ahora las dejamos así
     idealClientTraits: [
       "Interesado en nuestros productos o servicios",
       "Tiene presupuesto adecuado para adquirir nuestras soluciones",
