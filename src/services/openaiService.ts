@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 
 // Using the API key provided by the user
@@ -92,7 +91,8 @@ No menciones explícitamente que estás evaluando si cumplen con ciertos criteri
  * Verifica si la configuración de OpenAI está completa
  */
 export const isOpenAIConfigured = (): boolean => {
-  return OPENAI_API_KEY !== 'tu-api-key-aqui' && OPENAI_API_KEY.trim() !== '';
+  // Verificamos que la API key no esté vacía después de eliminar espacios
+  return OPENAI_API_KEY.trim() !== '';
 };
 
 /**
