@@ -219,8 +219,11 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onConfigChange }) => 
         setInstagramConnected(false);
       }
     } else {
-      // Conectar Instagram
-      initiateInstagramAuth();
+      // Conectar Instagram usando la versión hardcoded
+      const success = initiateInstagramAuth();
+      if (success) {
+        setInstagramConnected(true);
+      }
     }
   };
 

@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Instagram } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { initiateInstagramAuth, checkInstagramConnection } from '@/services/instagramService';
 import { toast } from '@/components/ui/use-toast';
@@ -69,7 +68,6 @@ const Onboarding: React.FC = () => {
   };
 
   const handleInstagramConnect = () => {
-    // En una implementación real, aquí iniciaríamos el flujo OAuth con Instagram
     if (onboardingData.instagramConnected) {
       toast({
         title: "Ya estás conectado",
@@ -78,8 +76,16 @@ const Onboarding: React.FC = () => {
       return;
     }
     
-    // Inicia el flujo de autenticación de Instagram
-    initiateInstagramAuth();
+    // Usar la versión hardcoded de la autenticación
+    const success = initiateInstagramAuth();
+    
+    // Actualizar el estado si la conexión fue exitosa
+    if (success) {
+      setOnboardingData(prev => ({
+        ...prev,
+        instagramConnected: true
+      }));
+    }
   };
 
   return (
@@ -193,7 +199,7 @@ const Onboarding: React.FC = () => {
               
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/600px-Instagram_icon.png" alt="Instagram" className="w-12 h-12" />
+                  <Instagram className="w-12 h-12 text-pink-600" />
                 </div>
                 
                 {onboardingData.instagramConnected ? (

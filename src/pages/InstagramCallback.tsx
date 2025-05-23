@@ -1,43 +1,29 @@
 
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { handleInstagramCallback } from '@/services/instagramService';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 const InstagramCallback: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [status, setStatus] = useState<string>('Procesando la conexión con Instagram...');
 
   useEffect(() => {
-    async function processCallback() {
-      // Obtener el código de autorización de la URL
-      const params = new URLSearchParams(location.search);
-      const code = params.get('code');
-      
-      if (!code) {
-        setStatus('Error: No se recibió un código de autorización válido');
-        return;
-      }
-      
-      try {
-        const result = await handleInstagramCallback(code);
-        
-        if (result.success) {
-          // Redirigir al usuario a donde estaba antes
-          navigate(result.redirectPath, { replace: true });
-        } else {
-          setStatus(`Error: ${result.error || 'Hubo un problema al conectar con Instagram'}`);
-          // Después de 3 segundos, redirigir al onboarding
-          setTimeout(() => navigate('/onboarding', { replace: true }), 3000);
-        }
-      } catch (error) {
-        setStatus('Error al procesar la autorización. Redirigiendo...');
-        setTimeout(() => navigate('/onboarding', { replace: true }), 3000);
-      }
-    }
-
-    processCallback();
-  }, [location, navigate]);
+    // Simulamos una conexión exitosa inmediatamente
+    console.log('Simulando callback exitoso de Instagram...');
+    
+    // Guardar token simulado
+    localStorage.setItem('hower-instagram-token', `demo-callback-token-${Date.now()}`);
+    
+    // Mostrar mensaje de éxito
+    toast({
+      title: "Conexión exitosa (simulada)",
+      description: "Tu cuenta de Instagram ha sido conectada a Hower."
+    });
+    
+    // Redirigir al dashboard o a la ruta guardada
+    const redirectPath = localStorage.getItem('hower-auth-redirect') || '/';
+    localStorage.removeItem('hower-auth-redirect');
+    navigate(redirectPath, { replace: true });
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
@@ -46,7 +32,7 @@ const InstagramCallback: React.FC = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
         </div>
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Conectando con Instagram</h1>
-        <p className="text-gray-600">{status}</p>
+        <p className="text-gray-600">Procesando autenticación simulada...</p>
       </div>
     </div>
   );

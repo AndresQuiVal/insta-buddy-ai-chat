@@ -14,6 +14,7 @@ export interface InstagramAuthConfig {
 
 /**
  * Inicia el flujo de autenticación de Instagram
+ * HARDCODED: Esta función ahora simula una autenticación exitosa inmediatamente
  */
 export const initiateInstagramAuth = (config: InstagramAuthConfig = {
   clientId: INSTAGRAM_CLIENT_ID,
@@ -21,21 +22,27 @@ export const initiateInstagramAuth = (config: InstagramAuthConfig = {
   scope: INSTAGRAM_SCOPE
 }) => {
   try {
-    // Guarda el estado actual para redirigir después de la autenticación
-    localStorage.setItem('hower-auth-redirect', window.location.pathname);
+    console.log('Simulando autenticación de Instagram...');
     
-    // URL de autenticación de Instagram
-    const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&scope=${encodeURIComponent(config.scope)}&response_type=code`;
+    // Guardar token simulado
+    localStorage.setItem('hower-instagram-token', `demo-token-${Date.now()}`);
     
-    // Redirige al usuario a la página de autenticación de Instagram
-    window.location.href = authUrl;
+    // Mostrar mensaje de éxito
+    toast({
+      title: "Conexión exitosa",
+      description: "Tu cuenta de Instagram ha sido conectada a Hower (simulado)."
+    });
+    
+    // Devolver verdadero para indicar éxito
+    return true;
   } catch (error) {
-    console.error('Error iniciando autenticación de Instagram:', error);
+    console.error('Error simulando autenticación de Instagram:', error);
     toast({
       title: "Error de conexión",
-      description: "No se pudo iniciar la conexión con Instagram. Inténtalo más tarde.",
+      description: "No se pudo simular la conexión con Instagram.",
       variant: "destructive"
     });
+    return false;
   }
 };
 
