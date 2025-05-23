@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import ConversationList from '@/components/ConversationList';
 import ConfigPanel from '@/components/ConfigPanel';
+import Navigation from '@/components/Navigation';
 import { Settings, MessageCircle } from 'lucide-react';
 
 const Index = () => {
@@ -46,56 +47,57 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 text-white" />
-            </div>
-            <div>
+    <div className="min-h-screen flex bg-white">
+      {/* Sidebar Navigation */}
+      <Navigation />
+      
+      {/* Main Content */}
+      <div className="flex-1">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-100 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-primary">
-                Hower
+                Dashboard
               </h1>
-              <p className="text-gray-600 text-sm">Asistente IA para filtrar prospectos</p>
+              <p className="text-gray-600 text-sm">Gestión de conversaciones</p>
             </div>
+            <button
+              onClick={toggleConfigPanel}
+              className="p-2 rounded-lg bg-primary text-white hover:bg-primary-dark hover:shadow-lg transition-all duration-200"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={toggleConfigPanel}
-            className="p-2 rounded-lg bg-primary text-white hover:bg-primary-dark hover:shadow-lg transition-all duration-200"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-180px)]">
-          {/* Lista de conversaciones */}
-          <div className="lg:col-span-1">
-            <ConversationList
-              activeConversation={activeConversation}
-              onSelectConversation={setActiveConversation}
-            />
-          </div>
-
-          {/* Chat principal */}
-          <div className="lg:col-span-2">
-            <ChatInterface
-              activeConversation={activeConversation}
-              aiConfig={aiConfig}
-            />
-          </div>
-
-          {/* Panel de configuración */}
-          <div className="lg:col-span-1">
-            {showConfig && (
-              <ConfigPanel
-                config={aiConfig}
-                onConfigChange={setAiConfig}
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-180px)]">
+            {/* Lista de conversaciones */}
+            <div className="lg:col-span-1">
+              <ConversationList
+                activeConversation={activeConversation}
+                onSelectConversation={setActiveConversation}
               />
-            )}
+            </div>
+
+            {/* Chat principal */}
+            <div className="lg:col-span-2">
+              <ChatInterface
+                activeConversation={activeConversation}
+                aiConfig={aiConfig}
+              />
+            </div>
+
+            {/* Panel de configuración */}
+            <div className="lg:col-span-1">
+              {showConfig && (
+                <ConfigPanel
+                  config={aiConfig}
+                  onConfigChange={setAiConfig}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
