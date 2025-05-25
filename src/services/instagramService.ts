@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,18 +22,22 @@ export const initiateInstagramAuth = (config: InstagramAuthConfig = {
 }) => {
   try {
     console.log('Iniciando autenticación real con Instagram...');
+    console.log('Client ID:', config.clientId);
+    console.log('Redirect URI:', config.redirectUri);
+    console.log('Scope:', config.scope);
     
     // Guardar la ruta actual para redirigir después de la autenticación
     localStorage.setItem('hower-auth-redirect', window.location.pathname);
     
-    // Construir URL de autorización de Instagram
+    // Construir URL de autorización de Instagram usando Basic Display API
     const authUrl = new URL('https://api.instagram.com/oauth/authorize');
     authUrl.searchParams.append('client_id', config.clientId);
     authUrl.searchParams.append('redirect_uri', config.redirectUri);
     authUrl.searchParams.append('scope', config.scope);
     authUrl.searchParams.append('response_type', 'code');
+    authUrl.searchParams.append('state', 'hower-state-' + Date.now()); // Agregar state para seguridad
     
-    console.log('Redirigiendo a Instagram para autorización:', authUrl.toString());
+    console.log('URL de autorización construida:', authUrl.toString());
     
     // Redirigir al usuario a Instagram para autorización
     window.location.href = authUrl.toString();
@@ -44,7 +47,7 @@ export const initiateInstagramAuth = (config: InstagramAuthConfig = {
     console.error('Error iniciando autenticación de Instagram:', error);
     toast({
       title: "Error de conexión",
-      description: "No se pudo iniciar la conexión con Instagram.",
+      description: "No se pudo iniciar la conexión con Instagram. Verifica la configuración de la app.",
       variant: "destructive"
     });
     return false;
@@ -96,7 +99,8 @@ export const handleInstagramCallback = async (code: string) => {
     }
 
     if (data.error) {
-      throw new Error(data.error);
+      console.error('Error de Instagram API:', data.error);
+      throw new Error(data.error_description || data.error);
     }
 
     // Guardar token y datos del usuario
@@ -123,15 +127,17 @@ export const handleInstagramCallback = async (code: string) => {
   } catch (error) {
     console.error('Error procesando callback de Instagram:', error);
     
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    
     toast({
       title: "Error de conexión",
-      description: "No se pudo completar la conexión con Instagram. Inténtalo más tarde.",
+      description: `No se pudo completar la conexión con Instagram: ${errorMessage}`,
       variant: "destructive"
     });
     
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido'
+      error: errorMessage
     };
   }
 };

@@ -25,14 +25,17 @@ serve(async (req) => {
       )
     }
 
-    // Configuración de Instagram
+    // Configuración de Instagram Basic Display API
     const CLIENT_ID = '1059372749433300'
-    const CLIENT_SECRET = Deno.env.get('INSTAGRAM_CLIENT_SECRET') // Se configurará en Supabase secrets
+    const CLIENT_SECRET = Deno.env.get('INSTAGRAM_CLIENT_SECRET')
 
     if (!CLIENT_SECRET) {
       console.error('INSTAGRAM_CLIENT_SECRET no está configurado')
       return new Response(
-        JSON.stringify({ error: 'Configuración del servidor incompleta' }),
+        JSON.stringify({ 
+          error: 'invalid_client_secret', 
+          error_description: 'Configuración del servidor incompleta' 
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -40,7 +43,11 @@ serve(async (req) => {
       )
     }
 
-    // Intercambiar código por token de acceso
+    console.log('Intercambiando código por token...')
+    console.log('Client ID:', CLIENT_ID)
+    console.log('Redirect URI:', redirect_uri)
+
+    // Intercambiar código por token de acceso usando Basic Display API
     const tokenUrl = 'https://api.instagram.com/oauth/access_token'
     
     const formData = new FormData()
@@ -55,11 +62,15 @@ serve(async (req) => {
       body: formData
     })
 
+    const tokenData = await tokenResponse.json()
+    
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.text()
-      console.error('Error de Instagram API:', errorData)
+      console.error('Error de Instagram API:', tokenData)
       return new Response(
-        JSON.stringify({ error: 'Error obteniendo token de Instagram' }),
+        JSON.stringify({ 
+          error: tokenData.error || 'token_exchange_failed',
+          error_description: tokenData.error_description || 'Error obteniendo token de Instagram'
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -67,14 +78,17 @@ serve(async (req) => {
       )
     }
 
-    const tokenData = await tokenResponse.json()
+    console.log('Token obtenido exitosamente')
 
-    // Obtener información básica del usuario
+    // Obtener información básica del usuario usando Basic Display API
     const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token=${tokenData.access_token}`)
     
     let userData = null
     if (userResponse.ok) {
       userData = await userResponse.json()
+      console.log('Datos de usuario obtenidos:', userData)
+    } else {
+      console.error('Error obteniendo datos de usuario:', await userResponse.text())
     }
 
     return new Response(
@@ -90,7 +104,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error en edge function:', error)
     return new Response(
-      JSON.stringify({ error: 'Error interno del servidor' }),
+      JSON.stringify({ 
+        error: 'internal_server_error',
+        error_description: 'Error interno del servidor' 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
