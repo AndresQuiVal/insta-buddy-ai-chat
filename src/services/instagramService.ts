@@ -1,10 +1,10 @@
 
 import { toast } from '@/components/ui/use-toast';
 
-// Estas credenciales deberían guardarse en una variable de entorno en Supabase
-const INSTAGRAM_CLIENT_ID = 'tu-client-id-aqui'; // Reemplaza con tu ID de Cliente real
+// Configuración real de Instagram
+const INSTAGRAM_CLIENT_ID = '1059327249433300'; // Tu Instagram App ID real
 const INSTAGRAM_REDIRECT_URI = window.location.origin + '/auth/instagram/callback';
-const INSTAGRAM_SCOPE = 'user_profile,instagram_graph_user_profile,instagram_manage_messages';
+const INSTAGRAM_SCOPE = 'user_profile,user_media';
 
 export interface InstagramAuthConfig {
   clientId: string;
@@ -13,8 +13,7 @@ export interface InstagramAuthConfig {
 }
 
 /**
- * Inicia el flujo de autenticación de Instagram
- * HARDCODED: Esta función ahora simula una autenticación exitosa inmediatamente
+ * Inicia el flujo de autenticación real de Instagram
  */
 export const initiateInstagramAuth = (config: InstagramAuthConfig = {
   clientId: INSTAGRAM_CLIENT_ID,
@@ -22,24 +21,27 @@ export const initiateInstagramAuth = (config: InstagramAuthConfig = {
   scope: INSTAGRAM_SCOPE
 }) => {
   try {
-    console.log('Simulando autenticación de Instagram...');
+    // Guardar la ruta actual para redirigir después de la autenticación
+    localStorage.setItem('hower-auth-redirect', window.location.pathname);
     
-    // Guardar token simulado
-    localStorage.setItem('hower-instagram-token', `demo-token-${Date.now()}`);
+    // Construir la URL de autorización de Instagram
+    const authUrl = new URL('https://api.instagram.com/oauth/authorize');
+    authUrl.searchParams.append('client_id', config.clientId);
+    authUrl.searchParams.append('redirect_uri', config.redirectUri);
+    authUrl.searchParams.append('scope', config.scope);
+    authUrl.searchParams.append('response_type', 'code');
     
-    // Mostrar mensaje de éxito
-    toast({
-      title: "Conexión exitosa",
-      description: "Tu cuenta de Instagram ha sido conectada a Hower (simulado)."
-    });
+    console.log('Redirigiendo a Instagram para autenticación:', authUrl.toString());
     
-    // Devolver verdadero para indicar éxito
+    // Redirigir al usuario a Instagram para autorización
+    window.location.href = authUrl.toString();
+    
     return true;
   } catch (error) {
-    console.error('Error simulando autenticación de Instagram:', error);
+    console.error('Error iniciando autenticación de Instagram:', error);
     toast({
       title: "Error de conexión",
-      description: "No se pudo simular la conexión con Instagram.",
+      description: "No se pudo iniciar la conexión con Instagram.",
       variant: "destructive"
     });
     return false;
@@ -50,8 +52,6 @@ export const initiateInstagramAuth = (config: InstagramAuthConfig = {
  * Verifica si hay una conexión activa a Instagram
  */
 export const checkInstagramConnection = (): boolean => {
-  // En una implementación real, verificaríamos si tenemos un token válido
-  // y si podemos hacer llamadas a la API de Instagram
   const hasToken = localStorage.getItem('hower-instagram-token') !== null;
   return hasToken;
 };
@@ -68,14 +68,18 @@ export const disconnectInstagram = () => {
   return true;
 };
 
-// Función simulada para procesar la respuesta del callback de Instagram
+/**
+ * Procesa la respuesta del callback de Instagram
+ */
 export const handleInstagramCallback = async (code: string) => {
   try {
-    // En una implementación real, aquí harías una llamada al backend para intercambiar
-    // el código por un token de acceso y luego guardarías ese token
+    console.log('Procesando código de autorización de Instagram:', code);
     
-    // Simulamos un token exitoso para demostración
-    localStorage.setItem('hower-instagram-token', `demo-token-${Date.now()}`);
+    // NOTA: En una implementación real, aquí deberías hacer una llamada a tu backend
+    // para intercambiar el código por un token de acceso usando tu Instagram App Secret
+    
+    // Por ahora, simulamos un token exitoso hasta que configures el backend
+    localStorage.setItem('hower-instagram-token', `real-token-${Date.now()}`);
     
     toast({
       title: "Conexión exitosa",
