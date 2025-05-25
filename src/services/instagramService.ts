@@ -1,8 +1,10 @@
+
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// Configuración real de Instagram
-const INSTAGRAM_CLIENT_ID = '1059372749433300';
+// Configuración real de Instagram usando los IDs correctos
+const INSTAGRAM_APP_ID = '1059372749433300'; // Instagram App ID
+const FACEBOOK_APP_ID = '2942884966099377'; // Main Facebook App ID
 const INSTAGRAM_REDIRECT_URI = window.location.origin + '/auth/instagram/callback';
 const INSTAGRAM_SCOPE = 'user_profile,user_media';
 
@@ -16,15 +18,17 @@ export interface InstagramAuthConfig {
  * Inicia el flujo de autenticación real de Instagram
  */
 export const initiateInstagramAuth = (config: InstagramAuthConfig = {
-  clientId: INSTAGRAM_CLIENT_ID,
+  clientId: INSTAGRAM_APP_ID,
   redirectUri: INSTAGRAM_REDIRECT_URI,
   scope: INSTAGRAM_SCOPE
 }) => {
   try {
     console.log('Iniciando autenticación real con Instagram...');
-    console.log('Client ID:', config.clientId);
+    console.log('Instagram App ID:', config.clientId);
+    console.log('Facebook App ID:', FACEBOOK_APP_ID);
     console.log('Redirect URI:', config.redirectUri);
     console.log('Scope:', config.scope);
+    console.log('Current domain:', window.location.origin);
     
     // Guardar la ruta actual para redirigir después de la autenticación
     localStorage.setItem('hower-auth-redirect', window.location.pathname);
@@ -38,6 +42,19 @@ export const initiateInstagramAuth = (config: InstagramAuthConfig = {
     authUrl.searchParams.append('state', 'hower-state-' + Date.now()); // Agregar state para seguridad
     
     console.log('URL de autorización construida:', authUrl.toString());
+    
+    // Verificar que estamos en un dominio válido para desarrollo
+    const currentDomain = window.location.hostname;
+    if (currentDomain === 'localhost' || currentDomain.includes('lovable.app')) {
+      console.log('Dominio válido para desarrollo/producción:', currentDomain);
+    } else {
+      console.warn('Dominio no configurado en Facebook Developers:', currentDomain);
+      toast({
+        title: "Advertencia de configuración",
+        description: `Asegúrate de que ${currentDomain} esté configurado como URL válida en Facebook Developers`,
+        variant: "destructive"
+      });
+    }
     
     // Redirigir al usuario a Instagram para autorización
     window.location.href = authUrl.toString();
@@ -84,6 +101,8 @@ export const disconnectInstagram = () => {
 export const handleInstagramCallback = async (code: string) => {
   try {
     console.log('Procesando código de autorización:', code);
+    console.log('Usando Instagram App ID:', INSTAGRAM_APP_ID);
+    console.log('Redirect URI utilizada:', INSTAGRAM_REDIRECT_URI);
     
     // Llamar a Supabase Edge Function para intercambiar el código por token
     const { data, error } = await supabase.functions.invoke('instagram-exchange-token', {
@@ -95,12 +114,52 @@ export const handleInstagramCallback = async (code: string) => {
 
     if (error) {
       console.error('Error llamando edge function:', error);
+      
+      // Manejo específico de errores comunes en modo Development
+      if (error.message.includes('invalid_client')) {
+        toast({
+          title: "Error de configuración",
+          description: "App ID o Client Secret incorrectos. Verifica la configuración en Facebook Developers.",
+          variant: "destructive"
+        });
+      } else if (error.message.includes('redirect_uri')) {
+        toast({
+          title: "Error de URL",
+          description: `URL de redirección no válida. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error del servidor",
+          description: error.message || 'Error procesando la autenticación',
+          variant: "destructive"
+        });
+      }
+      
       throw new Error(error.message || 'Error del servidor');
     }
 
     if (data.error) {
       console.error('Error de Instagram API:', data.error);
-      throw new Error(data.error_description || data.error);
+      
+      // Manejo específico de errores de Instagram API
+      let errorMessage = data.error_description || data.error;
+      
+      if (data.error === 'invalid_client') {
+        errorMessage = "App no válida. Verifica que la app esté configurada correctamente en Facebook Developers.";
+      } else if (data.error === 'redirect_uri_mismatch') {
+        errorMessage = `URL de redirección no coincide. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`;
+      } else if (data.error === 'access_denied') {
+        errorMessage = "Acceso denegado por el usuario.";
+      }
+      
+      toast({
+        title: "Error de Instagram",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      throw new Error(errorMessage);
     }
 
     // Guardar token y datos del usuario
@@ -108,6 +167,7 @@ export const handleInstagramCallback = async (code: string) => {
     localStorage.setItem('hower-instagram-user', JSON.stringify(data.user));
     
     console.log('Token y datos de usuario guardados exitosamente');
+    console.log('Usuario conectado:', data.user);
     
     toast({
       title: "¡Conexión exitosa!",
@@ -128,12 +188,6 @@ export const handleInstagramCallback = async (code: string) => {
     console.error('Error procesando callback de Instagram:', error);
     
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    
-    toast({
-      title: "Error de conexión",
-      description: `No se pudo completar la conexión con Instagram: ${errorMessage}`,
-      variant: "destructive"
-    });
     
     return {
       success: false,
