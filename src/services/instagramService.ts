@@ -1,5 +1,6 @@
 
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Configuración real de Instagram
 const INSTAGRAM_CLIENT_ID = '1059372749433300';
@@ -82,23 +83,18 @@ export const handleInstagramCallback = async (code: string) => {
     console.log('Procesando código de autorización:', code);
     
     // Llamar a Supabase Edge Function para intercambiar el código por token
-    const response = await fetch('/api/instagram/exchange-token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('instagram-exchange-token', {
+      body: {
         code: code,
         redirect_uri: INSTAGRAM_REDIRECT_URI
-      })
+      }
     });
 
-    if (!response.ok) {
-      throw new Error(`Error del servidor: ${response.status}`);
+    if (error) {
+      console.error('Error llamando edge function:', error);
+      throw new Error(error.message || 'Error del servidor');
     }
 
-    const data = await response.json();
-    
     if (data.error) {
       throw new Error(data.error);
     }
