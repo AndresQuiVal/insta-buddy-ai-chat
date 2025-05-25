@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { handleInstagramCallback } from '@/services/instagramService';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 const InstagramCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -40,7 +39,6 @@ const InstagramCallback: React.FC = () => {
           variant: "destructive"
         });
         
-        // Esperar un momento antes de redirigir para que el usuario vea el error
         setTimeout(() => {
           navigate('/', { replace: true });
         }, 3000);
@@ -62,16 +60,15 @@ const InstagramCallback: React.FC = () => {
         return;
       }
       
-      console.log('Código recibido, procesando...');
+      console.log('Código recibido, procesando con API real...');
       
-      // Procesar el código de autorización
+      // Procesar el código de autorización con la API real
       const result = await handleInstagramCallback(code);
       
       if (result.success) {
         setStatus('success');
         console.log('Callback procesado exitosamente, redirigiendo...');
         
-        // Pequeña pausa para mostrar el éxito antes de redirigir
         setTimeout(() => {
           navigate(result.redirectPath, { replace: true });
         }, 2000);

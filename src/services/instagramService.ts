@@ -1,7 +1,7 @@
 
 import { toast } from '@/hooks/use-toast';
 
-// Configuración de Instagram (mantenemos para futura migración a API real)
+// Configuración real de Instagram
 const INSTAGRAM_CLIENT_ID = '1059372749433300';
 const INSTAGRAM_REDIRECT_URI = window.location.origin + '/auth/instagram/callback';
 const INSTAGRAM_SCOPE = 'user_profile,user_media';
@@ -13,7 +13,7 @@ export interface InstagramAuthConfig {
 }
 
 /**
- * Inicia el flujo de autenticación simulado de Instagram
+ * Inicia el flujo de autenticación real de Instagram
  */
 export const initiateInstagramAuth = (config: InstagramAuthConfig = {
   clientId: INSTAGRAM_CLIENT_ID,
@@ -21,33 +21,26 @@ export const initiateInstagramAuth = (config: InstagramAuthConfig = {
   scope: INSTAGRAM_SCOPE
 }) => {
   try {
-    console.log('Iniciando simulación de autenticación con Instagram...');
+    console.log('Iniciando autenticación real con Instagram...');
     
     // Guardar la ruta actual para redirigir después de la autenticación
     localStorage.setItem('hower-auth-redirect', window.location.pathname);
     
-    // Simular el proceso de autorización de Instagram
-    // En lugar de redirigir a Instagram, simulamos el callback exitoso
-    setTimeout(() => {
-      // Generar un código simulado
-      const simulatedCode = `AQD${Math.random().toString(36).substring(2, 15)}${Date.now()}`;
-      
-      console.log('Simulando callback exitoso con código:', simulatedCode);
-      
-      // Procesar el "callback" simulado
-      handleInstagramCallback(simulatedCode);
-    }, 1500); // Simular un pequeño delay como si fuera real
+    // Construir URL de autorización de Instagram
+    const authUrl = new URL('https://api.instagram.com/oauth/authorize');
+    authUrl.searchParams.append('client_id', config.clientId);
+    authUrl.searchParams.append('redirect_uri', config.redirectUri);
+    authUrl.searchParams.append('scope', config.scope);
+    authUrl.searchParams.append('response_type', 'code');
     
-    // Mostrar mensaje de progreso
-    toast({
-      title: "Conectando con Instagram",
-      description: "Procesando autenticación...",
-      variant: "default"
-    });
+    console.log('Redirigiendo a Instagram para autorización:', authUrl.toString());
+    
+    // Redirigir al usuario a Instagram para autorización
+    window.location.href = authUrl.toString();
     
     return true;
   } catch (error) {
-    console.error('Error en simulación de autenticación de Instagram:', error);
+    console.error('Error iniciando autenticación de Instagram:', error);
     toast({
       title: "Error de conexión",
       description: "No se pudo iniciar la conexión con Instagram.",
@@ -67,7 +60,7 @@ export const checkInstagramConnection = (): boolean => {
 };
 
 /**
- * Desconecta la cuenta de Instagram (elimina el token)
+ * Desconecta la cuenta de Instagram
  */
 export const disconnectInstagram = () => {
   localStorage.removeItem('hower-instagram-token');
@@ -82,49 +75,57 @@ export const disconnectInstagram = () => {
 };
 
 /**
- * Procesa la respuesta del callback de Instagram (simulado)
+ * Procesa la respuesta del callback de Instagram usando Supabase Edge Function
  */
 export const handleInstagramCallback = async (code: string) => {
   try {
-    console.log('Procesando código de autorización simulado:', code);
+    console.log('Procesando código de autorización:', code);
     
-    // Simular datos de usuario de Instagram
-    const simulatedUser = {
-      id: `ig_user_${Math.random().toString(36).substring(2, 10)}`,
-      username: `usuario_${Math.random().toString(36).substring(2, 6)}`,
-      account_type: 'PERSONAL',
-      media_count: Math.floor(Math.random() * 100) + 10
-    };
+    // Llamar a Supabase Edge Function para intercambiar el código por token
+    const response = await fetch('/api/instagram/exchange-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code: code,
+        redirect_uri: INSTAGRAM_REDIRECT_URI
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error del servidor: ${response.status}`);
+    }
+
+    const data = await response.json();
     
-    // Simular token de acceso
-    const mockToken = `ig_token_${code.substring(3, 13)}_${Date.now()}`;
-    
-    // Guardar datos simulados
-    localStorage.setItem('hower-instagram-token', mockToken);
-    localStorage.setItem('hower-instagram-user', JSON.stringify(simulatedUser));
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    // Guardar token y datos del usuario
+    localStorage.setItem('hower-instagram-token', data.access_token);
+    localStorage.setItem('hower-instagram-user', JSON.stringify(data.user));
     
     console.log('Token y datos de usuario guardados exitosamente');
-    console.log('Usuario simulado:', simulatedUser);
     
     toast({
       title: "¡Conexión exitosa!",
-      description: `Conectado como @${simulatedUser.username}`,
+      description: `Conectado como @${data.user.username}`,
       variant: "default"
     });
     
-    // Redirección al estado guardado (o al dashboard por defecto)
+    // Redirección al estado guardado
     const redirectPath = localStorage.getItem('hower-auth-redirect') || '/';
     localStorage.removeItem('hower-auth-redirect');
-    
-    console.log('Simulación completada exitosamente');
     
     return {
       success: true,
       redirectPath,
-      user: simulatedUser
+      user: data.user
     };
   } catch (error) {
-    console.error('Error procesando simulación de Instagram:', error);
+    console.error('Error procesando callback de Instagram:', error);
     
     toast({
       title: "Error de conexión",
@@ -134,84 +135,62 @@ export const handleInstagramCallback = async (code: string) => {
     
     return {
       success: false,
-      error: 'Error procesando la simulación de Instagram'
+      error: error instanceof Error ? error.message : 'Error desconocido'
     };
   }
 };
 
 /**
- * Obtiene información del usuario conectado
+ * Obtiene información del usuario conectado usando la API real
  */
-export const getInstagramUserInfo = () => {
+export const getInstagramUserInfo = async () => {
   const token = localStorage.getItem('hower-instagram-token');
   if (!token) return null;
   
-  const userDataString = localStorage.getItem('hower-instagram-user');
-  if (userDataString) {
-    return JSON.parse(userDataString);
+  try {
+    const response = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token=${token}`);
+    
+    if (!response.ok) {
+      throw new Error('Error obteniendo información del usuario');
+    }
+    
+    const userData = await response.json();
+    
+    // Actualizar datos guardados
+    localStorage.setItem('hower-instagram-user', JSON.stringify(userData));
+    
+    return userData;
+  } catch (error) {
+    console.error('Error obteniendo información del usuario:', error);
+    
+    // Fallback a datos guardados localmente
+    const userDataString = localStorage.getItem('hower-instagram-user');
+    if (userDataString) {
+      return JSON.parse(userDataString);
+    }
+    
+    return null;
   }
-  
-  // Datos por defecto si no hay información guardada
-  return {
-    id: 'user_default',
-    username: 'usuario_conectado',
-    account_type: 'PERSONAL',
-    media_count: 25
-  };
 };
 
 /**
- * Simula obtener posts recientes del usuario
+ * Obtiene posts recientes del usuario usando la API real
  */
-export const getInstagramPosts = () => {
+export const getInstagramPosts = async () => {
   const token = localStorage.getItem('hower-instagram-token');
   if (!token) return [];
   
-  // Simular posts de Instagram
-  return [
-    {
-      id: '1',
-      caption: 'Mi último post en Instagram 📸',
-      media_type: 'IMAGE',
-      media_url: '/placeholder.svg',
-      timestamp: new Date().toISOString()
-    },
-    {
-      id: '2', 
-      caption: 'Otro post genial 🌟',
-      media_type: 'IMAGE',
-      media_url: '/placeholder.svg',
-      timestamp: new Date(Date.now() - 86400000).toISOString()
-    }
-  ];
-};
-
-/**
- * Función para uso futuro con API real (comentada)
- */
-/*
-export const exchangeCodeForTokenReal = async (code: string) => {
-  // Esta función sería llamada desde tu backend en producción
-  const tokenUrl = 'https://api.instagram.com/oauth/access_token';
-  
-  const formData = new FormData();
-  formData.append('client_id', INSTAGRAM_CLIENT_ID);
-  formData.append('client_secret', 'SECRET_KEY_FROM_BACKEND'); // Nunca en frontend
-  formData.append('grant_type', 'authorization_code');
-  formData.append('redirect_uri', INSTAGRAM_REDIRECT_URI);
-  formData.append('code', code);
-  
   try {
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      body: formData
-    });
+    const response = await fetch(`https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,timestamp&access_token=${token}`);
+    
+    if (!response.ok) {
+      throw new Error('Error obteniendo posts');
+    }
     
     const data = await response.json();
-    return data;
+    return data.data || [];
   } catch (error) {
-    console.error('Error intercambiando código por token:', error);
-    throw error;
+    console.error('Error obteniendo posts de Instagram:', error);
+    return [];
   }
 };
-*/
