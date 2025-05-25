@@ -1,8 +1,8 @@
 
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 // Tu configuración real de Instagram
-const INSTAGRAM_CLIENT_ID = '1059327249433300'; // Tu Instagram App ID real
+const INSTAGRAM_CLIENT_ID = '1059372749433300'; // Tu Instagram App ID real
 const INSTAGRAM_REDIRECT_URI = window.location.origin + '/auth/instagram/callback';
 const INSTAGRAM_SCOPE = 'user_profile,user_media';
 
@@ -81,9 +81,25 @@ export const handleInstagramCallback = async (code: string) => {
   try {
     console.log('Procesando código de autorización de Instagram:', code);
     
-    // NOTA: Aquí normalmente harías una llamada a tu backend para intercambiar
+    // NOTA: En producción, aquí harías una llamada a tu backend para intercambiar
     // el código por un token de acceso usando tu Instagram App Secret
     // Por ahora, guardamos el código para simular un token exitoso
+    
+    // Simular llamada al backend (comentado para desarrollo)
+    /*
+    const response = await fetch('/api/instagram/exchange-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code,
+        client_id: INSTAGRAM_CLIENT_ID,
+        client_secret: 'a6f510e17cefc7608283eab2ed5729dc', // En producción esto debe estar en el backend
+        redirect_uri: INSTAGRAM_REDIRECT_URI
+      })
+    });
+    */
     
     const mockToken = `ig_token_${code.substring(0, 10)}_${Date.now()}`;
     localStorage.setItem('hower-instagram-token', mockToken);
@@ -136,4 +152,32 @@ export const getInstagramUserInfo = () => {
     username: 'usuario_ejemplo',
     account_type: 'PERSONAL'
   };
+};
+
+/**
+ * Función para intercambiar el código por un token real (para uso futuro en backend)
+ */
+export const exchangeCodeForToken = async (code: string) => {
+  // Esta función sería llamada desde tu backend
+  const tokenUrl = 'https://api.instagram.com/oauth/access_token';
+  
+  const formData = new FormData();
+  formData.append('client_id', INSTAGRAM_CLIENT_ID);
+  formData.append('client_secret', 'a6f510e17cefc7608283eab2ed5729dc'); // NUNCA exponer en frontend
+  formData.append('grant_type', 'authorization_code');
+  formData.append('redirect_uri', INSTAGRAM_REDIRECT_URI);
+  formData.append('code', code);
+  
+  try {
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error intercambiando código por token:', error);
+    throw error;
+  }
 };
