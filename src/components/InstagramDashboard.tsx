@@ -213,7 +213,7 @@ const InstagramDashboard: React.FC = () => {
         />
       </div>
 
-      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6">
+      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6" style={{ display: 'none' }}>
         <div className="flex items-center gap-3 mb-4">
           <BarChart3 className="w-6 h-6 text-purple-500" />
           <h3 className="text-lg font-semibold text-gray-800">Resumen de Actividad</h3>
