@@ -16,7 +16,7 @@ serve(async (req) => {
   try {
     console.log('=== INSTAGRAM WEBHOOK RECEIVED ===')
     console.log('Method:', req.method)
-    console.log('Headers:', Object.fromEntries(req.headers.entries()))
+    console.log('URL:', req.url)
 
     // Verificación del webhook (GET request de Facebook)
     if (req.method === 'GET') {
@@ -27,14 +27,13 @@ serve(async (req) => {
 
       console.log('Webhook verification:', { mode, token, challenge })
 
-      // Token de verificación (debes configurar este mismo token en Facebook Developers)
       const VERIFY_TOKEN = 'hower-instagram-webhook-token'
 
       if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-        console.log('Webhook verified successfully')
+        console.log('✓ Webhook verified successfully')
         return new Response(challenge, { status: 200 })
       } else {
-        console.log('Webhook verification failed')
+        console.log('✗ Webhook verification failed')
         return new Response('Forbidden', { status: 403 })
       }
     }
@@ -42,31 +41,65 @@ serve(async (req) => {
     // Procesar mensajes entrantes (POST request)
     if (req.method === 'POST') {
       const body = await req.json()
-      console.log('Webhook payload:', JSON.stringify(body, null, 2))
+      console.log('📨 WEBHOOK PAYLOAD COMPLETO:', JSON.stringify(body, null, 2))
+
+      // Verificar si el payload tiene la estructura esperada
+      if (!body.entry || !Array.isArray(body.entry)) {
+        console.log('⚠️ No se encontró array "entry" en el payload')
+        return new Response('No entry found', { status: 400 })
+      }
+
+      let messagesProcessed = 0
 
       // Procesar cada entrada del webhook
-      for (const entry of body.entry || []) {
-        console.log('Processing entry:', entry.id)
-
-        // Procesar mensajes
-        for (const change of entry.changes || []) {
-          if (change.field === 'messages') {
-            console.log('Message change detected:', change.value)
-            
-            // Procesar cada mensaje
-            for (const message of change.value.messages || []) {
-              await processIncomingMessage(message, entry.id)
+      for (const entry of body.entry) {
+        console.log(`🔍 Procesando entry ID: ${entry.id}`)
+        
+        // Método 1: Procesar mensajes directos (messaging)
+        if (entry.messaging && Array.isArray(entry.messaging)) {
+          console.log(`📱 Encontrados ${entry.messaging.length} mensajes en messaging`)
+          
+          for (const messagingEvent of entry.messaging) {
+            if (messagingEvent.message && messagingEvent.message.text) {
+              console.log('💬 Procesando mensaje directo:', messagingEvent.message.text)
+              await processMessage(messagingEvent, entry.id)
+              messagesProcessed++
             }
           }
         }
 
-        // Procesar menciones
-        for (const messaging of entry.messaging || []) {
-          if (messaging.message) {
-            console.log('Direct message received:', messaging.message)
-            await processDirectMessage(messaging)
+        // Método 2: Procesar cambios (changes)
+        if (entry.changes && Array.isArray(entry.changes)) {
+          console.log(`🔄 Encontrados ${entry.changes.length} cambios`)
+          
+          for (const change of entry.changes) {
+            if (change.field === 'messages' && change.value) {
+              console.log('📝 Procesando cambio de mensaje:', change.value)
+              
+              if (change.value.messages && Array.isArray(change.value.messages)) {
+                for (const message of change.value.messages) {
+                  await processRawMessage(message, entry.id)
+                  messagesProcessed++
+                }
+              }
+            }
           }
         }
+
+        // Método 3: Cualquier estructura de mensaje que llegue
+        if (entry.message || entry.messages) {
+          console.log('📨 Procesando mensaje directo en entry')
+          await processEntryMessage(entry)
+          messagesProcessed++
+        }
+      }
+
+      console.log(`✅ Total mensajes procesados: ${messagesProcessed}`)
+
+      // Si no se procesó ningún mensaje, guardar el payload completo para debug
+      if (messagesProcessed === 0) {
+        console.log('⚠️ NO SE PROCESÓ NINGÚN MENSAJE - Guardando payload para análisis')
+        await saveDebugPayload(body)
       }
 
       return new Response('OK', { 
@@ -81,9 +114,9 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Error in Instagram webhook:', error)
+    console.error('💥 Error in Instagram webhook:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -92,171 +125,179 @@ serve(async (req) => {
   }
 })
 
-async function processIncomingMessage(message: any, pageId: string) {
+// Función para procesar mensajes de la estructura messaging
+async function processMessage(messagingEvent: any, pageId: string) {
   try {
-    console.log('Processing incoming message:', message)
+    console.log('🔄 processMessage iniciado:', messagingEvent)
+
+    const message = messagingEvent.message
+    const senderId = messagingEvent.sender?.id
+    const recipientId = messagingEvent.recipient?.id || pageId
 
     const messageData = {
-      instagram_message_id: message.mid,
-      sender_id: message.from?.id || message.sender?.id,
-      recipient_id: message.to?.id || pageId,
+      instagram_message_id: message.mid || `msg_${Date.now()}_${Math.random()}`,
+      sender_id: senderId || 'unknown_sender',
+      recipient_id: recipientId,
       message_text: message.text || '',
-      timestamp: new Date(message.timestamp || Date.now()),
+      timestamp: new Date(messagingEvent.timestamp || Date.now()).toISOString(),
+      message_type: 'received',
+      raw_data: messagingEvent
+    }
+
+    console.log('💾 Guardando mensaje en BD:', messageData)
+
+    const { data, error } = await supabase
+      .from('instagram_messages')
+      .insert(messageData)
+      .select()
+
+    if (error) {
+      console.error('❌ Error guardando mensaje:', error)
+      return
+    }
+
+    console.log('✅ Mensaje guardado exitosamente:', data)
+
+    // Generar respuesta automática si hay texto
+    if (messageData.message_text && messageData.sender_id) {
+      await generateAutoResponse(messageData.message_text, messageData.sender_id, messageData.instagram_message_id)
+    }
+
+  } catch (error) {
+    console.error('💥 Error en processMessage:', error)
+  }
+}
+
+// Función para procesar mensajes raw
+async function processRawMessage(message: any, pageId: string) {
+  try {
+    console.log('🔄 processRawMessage iniciado:', message)
+
+    const messageData = {
+      instagram_message_id: message.mid || message.id || `raw_${Date.now()}_${Math.random()}`,
+      sender_id: message.from?.id || message.sender_id || 'unknown_sender',
+      recipient_id: message.to?.id || pageId,
+      message_text: message.text || message.message || '',
+      timestamp: new Date(message.timestamp || Date.now()).toISOString(),
       message_type: 'received',
       raw_data: message
     }
 
-    console.log('Saving message to database:', messageData)
+    console.log('💾 Guardando mensaje raw en BD:', messageData)
 
-    // Guardar mensaje en la base de datos
     const { data, error } = await supabase
       .from('instagram_messages')
       .insert(messageData)
       .select()
 
     if (error) {
-      console.error('Error saving message:', error)
+      console.error('❌ Error guardando mensaje raw:', error)
       return
     }
 
-    console.log('Message saved successfully:', data)
-
-    // Generar y enviar respuesta automática
-    if (messageData.message_text && messageData.sender_id) {
-      await generateAndSendAutoResponse(
-        messageData.message_text,
-        messageData.sender_id,
-        messageData.instagram_message_id
-      )
-    }
+    console.log('✅ Mensaje raw guardado exitosamente:', data)
 
   } catch (error) {
-    console.error('Error processing incoming message:', error)
+    console.error('💥 Error en processRawMessage:', error)
   }
 }
 
-async function processDirectMessage(messaging: any) {
+// Función para procesar mensajes directamente en entry
+async function processEntryMessage(entry: any) {
   try {
-    console.log('Processing direct message:', messaging)
+    console.log('🔄 processEntryMessage iniciado:', entry)
 
-    const message = messaging.message
     const messageData = {
-      instagram_message_id: message.mid,
-      sender_id: messaging.sender?.id,
-      recipient_id: messaging.recipient?.id,
-      message_text: message.text || '',
-      timestamp: new Date(messaging.timestamp || Date.now()),
+      instagram_message_id: entry.id || `entry_${Date.now()}_${Math.random()}`,
+      sender_id: entry.sender_id || 'unknown_sender',
+      recipient_id: entry.recipient_id || 'unknown_recipient',
+      message_text: entry.message || entry.text || 'Mensaje sin texto',
+      timestamp: new Date(entry.timestamp || Date.now()).toISOString(),
       message_type: 'received',
-      raw_data: messaging
+      raw_data: entry
     }
 
-    console.log('Saving direct message to database:', messageData)
+    console.log('💾 Guardando mensaje entry en BD:', messageData)
 
-    // Guardar mensaje en la base de datos
     const { data, error } = await supabase
       .from('instagram_messages')
       .insert(messageData)
       .select()
 
     if (error) {
-      console.error('Error saving direct message:', error)
+      console.error('❌ Error guardando mensaje entry:', error)
       return
     }
 
-    console.log('Direct message saved successfully:', data)
-
-    // Generar y enviar respuesta automática
-    if (messageData.message_text && messageData.sender_id) {
-      await generateAndSendAutoResponse(
-        messageData.message_text,
-        messageData.sender_id,
-        messageData.instagram_message_id
-      )
-    }
+    console.log('✅ Mensaje entry guardado exitosamente:', data)
 
   } catch (error) {
-    console.error('Error processing direct message:', error)
+    console.error('💥 Error en processEntryMessage:', error)
   }
 }
 
-async function generateAndSendAutoResponse(
-  messageText: string, 
-  senderId: string, 
-  originalMessageId: string
-) {
+// Función para guardar payload de debug
+async function saveDebugPayload(payload: any) {
   try {
-    console.log('Generating auto response for:', messageText)
-
-    // Obtener configuración del usuario y historial de conversación
-    const conversationHistory = await getConversationHistory(senderId)
-    
-    // Llamar a la función de ChatGPT para generar respuesta
-    const { data: aiResponse, error: aiError } = await supabase.functions.invoke('chatgpt-response', {
-      body: {
-        message: messageText,
-        conversation_history: conversationHistory,
-        sender_id: senderId
-      }
-    })
-
-    if (aiError) {
-      console.error('Error generating AI response:', aiError)
-      return
+    const debugData = {
+      instagram_message_id: `debug_${Date.now()}`,
+      sender_id: 'debug_webhook',
+      recipient_id: 'debug_system',
+      message_text: `DEBUG: Payload no procesado - ${JSON.stringify(payload).substring(0, 100)}...`,
+      timestamp: new Date().toISOString(),
+      message_type: 'received',
+      raw_data: payload
     }
 
-    const responseText = aiResponse?.response || 'Gracias por tu mensaje. Te responderé pronto.'
-    console.log('Generated AI response:', responseText)
-
-    // Enviar respuesta a Instagram
-    await sendInstagramMessage(senderId, responseText, originalMessageId)
-
-  } catch (error) {
-    console.error('Error generating auto response:', error)
-  }
-}
-
-async function getConversationHistory(senderId: string) {
-  try {
     const { data, error } = await supabase
       .from('instagram_messages')
-      .select('*')
-      .eq('sender_id', senderId)
-      .order('timestamp', { ascending: true })
-      .limit(10)
+      .insert(debugData)
+      .select()
 
     if (error) {
-      console.error('Error getting conversation history:', error)
-      return []
+      console.error('❌ Error guardando debug payload:', error)
+    } else {
+      console.log('🐛 Debug payload guardado:', data)
     }
-
-    return data || []
   } catch (error) {
-    console.error('Error in getConversationHistory:', error)
-    return []
+    console.error('💥 Error en saveDebugPayload:', error)
   }
 }
 
-async function sendInstagramMessage(recipientId: string, messageText: string, replyToMessageId?: string) {
+// Función para generar respuesta automática
+async function generateAutoResponse(messageText: string, senderId: string, originalMessageId: string) {
   try {
-    console.log('Sending Instagram message to:', recipientId)
+    console.log('🤖 Generando respuesta automática para:', messageText)
 
-    // Llamar a la función para enviar mensaje
-    const { data, error } = await supabase.functions.invoke('instagram-send-message', {
-      body: {
-        recipient_id: recipientId,
-        message_text: messageText,
-        reply_to_message_id: replyToMessageId
+    // Respuesta simple por ahora
+    const responseText = `Hola! Recibí tu mensaje: "${messageText}". Gracias por contactarnos.`
+
+    // Guardar la respuesta en la BD
+    const responseData = {
+      instagram_message_id: `response_${Date.now()}`,
+      sender_id: 'hower_bot',
+      recipient_id: senderId,
+      message_text: responseText,
+      timestamp: new Date().toISOString(),
+      message_type: 'sent',
+      raw_data: { 
+        original_message_id: originalMessageId,
+        auto_response: true 
       }
-    })
-
-    if (error) {
-      console.error('Error sending Instagram message:', error)
-      return
     }
 
-    console.log('Instagram message sent successfully:', data)
+    const { data, error } = await supabase
+      .from('instagram_messages')
+      .insert(responseData)
+      .select()
+
+    if (error) {
+      console.error('❌ Error guardando respuesta automática:', error)
+    } else {
+      console.log('✅ Respuesta automática guardada:', data)
+    }
 
   } catch (error) {
-    console.error('Error in sendInstagramMessage:', error)
+    console.error('💥 Error en generateAutoResponse:', error)
   }
 }
