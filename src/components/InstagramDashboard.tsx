@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { disconnectInstagram } from '@/services/instagramService';
 import { 
   MessageCircle, 
   Users, 
@@ -10,7 +10,8 @@ import {
   Send,
   Inbox,
   BarChart3,
-  RefreshCw
+  RefreshCw,
+  LogOut
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -52,6 +53,12 @@ const InstagramDashboard: React.FC = () => {
       supabase.removeChannel(subscription);
     };
   }, []);
+
+  const handleLogout = () => {
+    disconnectInstagram();
+    // Recargar la página para que se actualice el estado
+    window.location.reload();
+  };
 
   const loadDashboardStats = async () => {
     try {
@@ -154,13 +161,22 @@ const InstagramDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Dashboard Instagram</h2>
-        <button
-          onClick={loadDashboardStats}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Actualizar
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={loadDashboardStats}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Actualizar
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
