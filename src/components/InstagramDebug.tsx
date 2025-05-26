@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -18,26 +19,55 @@ const InstagramDebug: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [showAdvancedDebug, setShowAdvancedDebug] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+
+  const addLog = (message: string) => {
+    console.log('DEBUG:', message);
+    setLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
 
   const checkConnection = () => {
-    const token = localStorage.getItem('hower-instagram-token');
+    addLog('Verificando conexión...');
+    const token = localStorage.getItem('hower-instagram-token') || localStorage.getItem('instagram_access_token');
     const user = localStorage.getItem('hower-instagram-user');
     
+    addLog(`Token encontrado: ${!!token}`);
+    addLog(`Datos de usuario encontrados: ${!!user}`);
+    
+    let userData = null;
+    try {
+      if (user) {
+        userData = JSON.parse(user);
+        addLog(`Datos parseados exitosamente: ${JSON.stringify(userData, null, 2)}`);
+      }
+    } catch (error) {
+      addLog(`Error parseando datos de usuario: ${error.message}`);
+    }
+
     return {
       hasToken: !!token,
       hasUser: !!user,
       tokenPreview: token ? `${token.substring(0, 20)}...` : null,
-      userData: user ? JSON.parse(user) : null
+      userData: userData,
+      tokenLength: token ? token.length : 0
     };
   };
 
   const checkDatabase = async () => {
+    addLog('Verificando acceso a base de datos...');
     try {
       const { data, error, count } = await supabase
         .from('instagram_messages')
         .select('*', { count: 'exact' })
         .limit(5)
         .order('created_at', { ascending: false });
+
+      if (error) {
+        addLog(`Error de base de datos: ${error.message}`);
+      } else {
+        addLog(`Base de datos accesible. Mensajes encontrados: ${count}`);
+        addLog(`Datos recientes: ${JSON.stringify(data, null, 2)}`);
+      }
 
       return {
         accessible: !error,
@@ -46,6 +76,7 @@ const InstagramDebug: React.FC = () => {
         recentMessages: data || []
       };
     } catch (error) {
+      addLog(`Excepción en checkDatabase: ${error.message}`);
       return {
         accessible: false,
         error: error.message,
@@ -56,19 +87,24 @@ const InstagramDebug: React.FC = () => {
   };
 
   const testWebhook = async () => {
+    addLog('Iniciando test de webhook...');
     setTestingWebhook(true);
     try {
-      const response = await fetch('/api/test-webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ test: true })
+      // Intentar hacer una prueba simple a nuestro edge function
+      const response = await fetch('https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
       });
+      
+      addLog(`Respuesta del webhook: ${response.status} ${response.statusText}`);
       
       return {
         webhookResponse: response.status,
-        webhookWorking: response.ok
+        webhookWorking: response.ok || response.status === 403, // 403 es esperado sin verificación
+        webhookStatus: `${response.status} ${response.statusText}`
       };
     } catch (error) {
+      addLog(`Error en test de webhook: ${error.message}`);
       return {
         webhookResponse: 'Error',
         webhookWorking: false,
@@ -80,20 +116,32 @@ const InstagramDebug: React.FC = () => {
   };
 
   const runDiagnostic = async () => {
+    addLog('=== INICIANDO DIAGNÓSTICO COMPLETO ===');
     setLoading(true);
+    setLogs([]);
     
     try {
+      addLog('Paso 1: Verificando conexión local...');
       const connectionInfo = checkConnection();
+      
+      addLog('Paso 2: Verificando base de datos...');
       const databaseInfo = await checkDatabase();
+      
+      addLog('Paso 3: Probando webhook...');
       const webhookInfo = await testWebhook();
       
-      setDebugInfo({
+      const finalDebugInfo = {
         connection: connectionInfo,
         database: databaseInfo,
         webhook: webhookInfo,
         timestamp: new Date().toISOString()
-      });
+      };
+      
+      addLog(`Diagnóstico completado: ${JSON.stringify(finalDebugInfo, null, 2)}`);
+      setDebugInfo(finalDebugInfo);
+      
     } catch (error) {
+      addLog(`Error en diagnóstico: ${error.message}`);
       toast({
         title: "Error en diagnóstico",
         description: error.message,
@@ -105,26 +153,29 @@ const InstagramDebug: React.FC = () => {
   };
 
   const sendTestMessage = async () => {
+    addLog('Enviando mensaje de prueba...');
     try {
       const { data, error } = await supabase
         .from('instagram_messages')
         .insert({
           instagram_message_id: `test_${Date.now()}`,
-          sender_id: 'test_user_123',
+          sender_id: 'test_user_debug',
           recipient_id: 'me',
-          message_text: 'Mensaje de prueba desde debug',
+          message_text: `Mensaje de prueba - ${new Date().toLocaleString()}`,
           message_type: 'received',
           timestamp: new Date().toISOString(),
-          raw_data: { test: true }
+          raw_data: { test: true, source: 'debug_panel' }
         });
 
       if (error) {
+        addLog(`Error insertando mensaje: ${error.message}`);
         toast({
           title: "Error insertando mensaje",
           description: error.message,
           variant: "destructive"
         });
       } else {
+        addLog('Mensaje de prueba insertado exitosamente');
         toast({
           title: "Mensaje de prueba creado",
           description: "Se insertó un mensaje de prueba en la base de datos"
@@ -132,6 +183,7 @@ const InstagramDebug: React.FC = () => {
         runDiagnostic();
       }
     } catch (error) {
+      addLog(`Excepción enviando mensaje: ${error.message}`);
       toast({
         title: "Error",
         description: error.message,
@@ -141,6 +193,7 @@ const InstagramDebug: React.FC = () => {
   };
 
   useEffect(() => {
+    addLog('Componente montado, ejecutando diagnóstico inicial...');
     runDiagnostic();
   }, []);
 
@@ -152,7 +205,6 @@ const InstagramDebug: React.FC = () => {
   };
 
   const connectionData = debugInfo.connection?.userData;
-  const advancedDebugData = connectionData?.debug_info?.extended_debug;
 
   return (
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 space-y-6">
@@ -167,7 +219,7 @@ const InstagramDebug: React.FC = () => {
             className="flex items-center gap-2 px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
           >
             <Search className="w-4 h-4" />
-            {showAdvancedDebug ? 'Ocultar' : 'Debug Avanzado'}
+            {showAdvancedDebug ? 'Ocultar' : 'Logs'}
           </button>
           <button
             onClick={runDiagnostic}
@@ -179,6 +231,25 @@ const InstagramDebug: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Logs de depuración */}
+      {showAdvancedDebug && (
+        <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+          <div className="flex items-center gap-3 mb-3">
+            <Info className="w-5 h-5 text-orange-600" />
+            <h4 className="font-medium text-orange-800">Logs de Depuración</h4>
+          </div>
+          <div className="bg-black text-green-400 p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
+            {logs.length === 0 ? (
+              <div className="text-gray-400">No hay logs aún...</div>
+            ) : (
+              logs.map((log, idx) => (
+                <div key={idx}>{log}</div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Conexión Instagram */}
       <div className="border border-gray-200 rounded-lg p-4">
@@ -193,6 +264,12 @@ const InstagramDebug: React.FC = () => {
               {debugInfo.connection?.hasToken ? '✓ Sí' : '✗ No'}
             </span>
           </div>
+          {debugInfo.connection?.tokenLength && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Longitud del token:</span>
+              <span className="text-blue-600">{debugInfo.connection.tokenLength} caracteres</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-600">Datos de usuario:</span>
             <span className={debugInfo.connection?.hasUser ? 'text-green-600' : 'text-red-600'}>
@@ -202,7 +279,7 @@ const InstagramDebug: React.FC = () => {
           <div className="flex justify-between">
             <span className="text-gray-600">Instagram conectado:</span>
             <span className={connectionData?.instagram ? 'text-green-600' : 'text-red-600'}>
-              {connectionData?.instagram ? '✓ Sí' : '✗ No - ESTE ES EL PROBLEMA'}
+              {connectionData?.instagram ? '✓ Sí' : '✗ No'}
             </span>
           </div>
           
@@ -223,74 +300,6 @@ const InstagramDebug: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Debug Avanzado */}
-      {showAdvancedDebug && advancedDebugData && (
-        <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
-          <div className="flex items-center gap-3 mb-3">
-            <Info className="w-5 h-5 text-orange-600" />
-            <h4 className="font-medium text-orange-800">Diagnóstico Avanzado</h4>
-          </div>
-          
-          <div className="space-y-3 text-sm">
-            {/* Permisos */}
-            {advancedDebugData.permissions_granted && (
-              <div>
-                <strong className="text-orange-800">Permisos otorgados:</strong>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {advancedDebugData.permissions_granted.map((perm: string, idx: number) => (
-                    <span key={idx} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                      {perm}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Cuentas encontradas */}
-            {advancedDebugData.user_accounts_found && (
-              <div>
-                <strong className="text-orange-800">Páginas de Facebook encontradas: {advancedDebugData.user_accounts_found.length}</strong>
-                {advancedDebugData.user_accounts_found.map((account: any, idx: number) => (
-                  <div key={idx} className="mt-1 p-2 bg-white rounded border text-xs">
-                    <div><strong>Página:</strong> {account.name} (ID: {account.id})</div>
-                    <div className={account.instagram_business_account ? 'text-green-700' : 'text-red-700'}>
-                      <strong>Instagram Business:</strong> {account.instagram_business_account ? '✓ Conectado' : '✗ No conectado'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {/* Intentos de búsqueda */}
-            {advancedDebugData.instagram_search_attempts && (
-              <div>
-                <strong className="text-orange-800">Intentos de búsqueda de Instagram:</strong>
-                {advancedDebugData.instagram_search_attempts.map((attempt: any, idx: number) => (
-                  <div key={idx} className="mt-1 p-2 bg-white rounded border text-xs">
-                    {attempt.page_name && <div><strong>Página:</strong> {attempt.page_name}</div>}
-                    {attempt.has_instagram_business_account !== undefined && (
-                      <div className={attempt.has_instagram_business_account ? 'text-green-700' : 'text-red-700'}>
-                        <strong>Tiene Instagram:</strong> {attempt.has_instagram_business_account ? 'Sí' : 'No'}
-                      </div>
-                    )}
-                    {attempt.error && (
-                      <div className="text-red-700"><strong>Error:</strong> {attempt.error}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <div className="mt-3 p-2 bg-white rounded border">
-              <strong className="text-orange-800">Resultado final:</strong>
-              <span className={advancedDebugData.final_result === 'success' ? 'text-green-700 ml-2' : 'text-red-700 ml-2'}>
-                {advancedDebugData.final_result === 'success' ? 'Instagram encontrado ✓' : 'Instagram NO encontrado ✗'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Base de datos */}
       <div className="border border-gray-200 rounded-lg p-4">
@@ -316,6 +325,25 @@ const InstagramDebug: React.FC = () => {
               Error: {debugInfo.database.error}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Webhook */}
+      <div className="border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <StatusIcon status={debugInfo.webhook?.webhookWorking} />
+          <h4 className="font-medium text-gray-800">Webhook</h4>
+        </div>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Estado:</span>
+            <span className={debugInfo.webhook?.webhookWorking ? 'text-green-600' : 'text-red-600'}>
+              {debugInfo.webhook?.webhookStatus || 'No probado'}
+            </span>
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
+            URL: https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook
+          </div>
         </div>
       </div>
 
@@ -355,6 +383,25 @@ const InstagramDebug: React.FC = () => {
             <MessageSquare className="w-4 h-4" />
             Crear mensaje de prueba
           </button>
+        </div>
+      </div>
+
+      {/* Estado actual */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="font-medium text-blue-800 mb-2">Estado del Diagnóstico</h4>
+        <div className="text-sm text-blue-700">
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              Ejecutando diagnóstico...
+            </div>
+          ) : debugInfo.timestamp ? (
+            <div>
+              Último diagnóstico: {new Date(debugInfo.timestamp).toLocaleString()}
+            </div>
+          ) : (
+            <div>No se ha ejecutado el diagnóstico aún</div>
+          )}
         </div>
       </div>
     </div>
