@@ -43,10 +43,13 @@ serve(async (req) => {
       const body = await req.json()
       console.log('📨 WEBHOOK PAYLOAD COMPLETO:', JSON.stringify(body, null, 2))
 
+      // SIEMPRE guardar el payload para debug
+      await saveDebugPayload(body)
+
       // Verificar si el payload tiene la estructura esperada
       if (!body.entry || !Array.isArray(body.entry)) {
         console.log('⚠️ No se encontró array "entry" en el payload')
-        return new Response('No entry found', { status: 400 })
+        return new Response('OK', { status: 200, headers: corsHeaders })
       }
 
       let messagesProcessed = 0
@@ -85,23 +88,9 @@ serve(async (req) => {
             }
           }
         }
-
-        // Método 3: Cualquier estructura de mensaje que llegue
-        if (entry.message || entry.messages) {
-          console.log('📨 Procesando mensaje directo en entry')
-          await processEntryMessage(entry)
-          messagesProcessed++
-        }
       }
 
       console.log(`✅ Total mensajes procesados: ${messagesProcessed}`)
-
-      // Si no se procesó ningún mensaje, guardar el payload completo para debug
-      if (messagesProcessed === 0) {
-        console.log('⚠️ NO SE PROCESÓ NINGÚN MENSAJE - Guardando payload para análisis')
-        await saveDebugPayload(body)
-      }
-
       return new Response('OK', { 
         status: 200, 
         headers: corsHeaders 
@@ -128,23 +117,24 @@ serve(async (req) => {
 // Función para procesar mensajes de la estructura messaging
 async function processMessage(messagingEvent: any, pageId: string) {
   try {
-    console.log('🔄 processMessage iniciado:', messagingEvent)
+    console.log('🔄 processMessage iniciado con:', JSON.stringify(messagingEvent, null, 2))
 
     const message = messagingEvent.message
-    const senderId = messagingEvent.sender?.id
+    const senderId = messagingEvent.sender?.id || 'unknown_sender'
     const recipientId = messagingEvent.recipient?.id || pageId
+    const messageText = message.text || message.quick_reply?.payload || 'Mensaje sin texto'
 
     const messageData = {
       instagram_message_id: message.mid || `msg_${Date.now()}_${Math.random()}`,
-      sender_id: senderId || 'unknown_sender',
+      sender_id: senderId,
       recipient_id: recipientId,
-      message_text: message.text || '',
+      message_text: messageText,
       timestamp: new Date(messagingEvent.timestamp || Date.now()).toISOString(),
       message_type: 'received',
       raw_data: messagingEvent
     }
 
-    console.log('💾 Guardando mensaje en BD:', messageData)
+    console.log('💾 Intentando guardar mensaje:', JSON.stringify(messageData, null, 2))
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -153,37 +143,39 @@ async function processMessage(messagingEvent: any, pageId: string) {
 
     if (error) {
       console.error('❌ Error guardando mensaje:', error)
-      return
+      console.error('❌ Datos que causaron error:', messageData)
+      throw error
     }
 
     console.log('✅ Mensaje guardado exitosamente:', data)
 
-    // Generar respuesta automática si hay texto
-    if (messageData.message_text && messageData.sender_id) {
-      await generateAutoResponse(messageData.message_text, messageData.sender_id, messageData.instagram_message_id)
+    // Generar respuesta automática
+    if (messageText && senderId !== 'unknown_sender') {
+      await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
     }
 
   } catch (error) {
     console.error('💥 Error en processMessage:', error)
+    console.error('💥 Stack trace:', error.stack)
   }
 }
 
 // Función para procesar mensajes raw
 async function processRawMessage(message: any, pageId: string) {
   try {
-    console.log('🔄 processRawMessage iniciado:', message)
+    console.log('🔄 processRawMessage iniciado con:', JSON.stringify(message, null, 2))
 
     const messageData = {
       instagram_message_id: message.mid || message.id || `raw_${Date.now()}_${Math.random()}`,
       sender_id: message.from?.id || message.sender_id || 'unknown_sender',
-      recipient_id: message.to?.id || pageId,
-      message_text: message.text || message.message || '',
+      recipient_id: message.to?.id || pageId || 'unknown_recipient',
+      message_text: message.text || message.message || 'Mensaje raw sin texto',
       timestamp: new Date(message.timestamp || Date.now()).toISOString(),
       message_type: 'received',
       raw_data: message
     }
 
-    console.log('💾 Guardando mensaje raw en BD:', messageData)
+    console.log('💾 Intentando guardar mensaje raw:', JSON.stringify(messageData, null, 2))
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -192,62 +184,32 @@ async function processRawMessage(message: any, pageId: string) {
 
     if (error) {
       console.error('❌ Error guardando mensaje raw:', error)
-      return
+      console.error('❌ Datos que causaron error:', messageData)
+      throw error
     }
 
     console.log('✅ Mensaje raw guardado exitosamente:', data)
 
   } catch (error) {
     console.error('💥 Error en processRawMessage:', error)
+    console.error('💥 Stack trace:', error.stack)
   }
 }
 
-// Función para procesar mensajes directamente en entry
-async function processEntryMessage(entry: any) {
-  try {
-    console.log('🔄 processEntryMessage iniciado:', entry)
-
-    const messageData = {
-      instagram_message_id: entry.id || `entry_${Date.now()}_${Math.random()}`,
-      sender_id: entry.sender_id || 'unknown_sender',
-      recipient_id: entry.recipient_id || 'unknown_recipient',
-      message_text: entry.message || entry.text || 'Mensaje sin texto',
-      timestamp: new Date(entry.timestamp || Date.now()).toISOString(),
-      message_type: 'received',
-      raw_data: entry
-    }
-
-    console.log('💾 Guardando mensaje entry en BD:', messageData)
-
-    const { data, error } = await supabase
-      .from('instagram_messages')
-      .insert(messageData)
-      .select()
-
-    if (error) {
-      console.error('❌ Error guardando mensaje entry:', error)
-      return
-    }
-
-    console.log('✅ Mensaje entry guardado exitosamente:', data)
-
-  } catch (error) {
-    console.error('💥 Error en processEntryMessage:', error)
-  }
-}
-
-// Función para guardar payload de debug
+// Función para guardar payload de debug - SIEMPRE se ejecuta
 async function saveDebugPayload(payload: any) {
   try {
     const debugData = {
-      instagram_message_id: `debug_${Date.now()}`,
+      instagram_message_id: `debug_${Date.now()}_${Math.random()}`,
       sender_id: 'debug_webhook',
       recipient_id: 'debug_system',
-      message_text: `DEBUG: Payload no procesado - ${JSON.stringify(payload).substring(0, 100)}...`,
+      message_text: `🐛 WEBHOOK PAYLOAD: ${JSON.stringify(payload).substring(0, 200)}...`,
       timestamp: new Date().toISOString(),
       message_type: 'received',
       raw_data: payload
     }
+
+    console.log('🐛 Guardando debug payload:', debugData.message_text)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -257,7 +219,7 @@ async function saveDebugPayload(payload: any) {
     if (error) {
       console.error('❌ Error guardando debug payload:', error)
     } else {
-      console.log('🐛 Debug payload guardado:', data)
+      console.log('✅ Debug payload guardado con ID:', data[0]?.id)
     }
   } catch (error) {
     console.error('💥 Error en saveDebugPayload:', error)
@@ -269,12 +231,10 @@ async function generateAutoResponse(messageText: string, senderId: string, origi
   try {
     console.log('🤖 Generando respuesta automática para:', messageText)
 
-    // Respuesta simple por ahora
-    const responseText = `Hola! Recibí tu mensaje: "${messageText}". Gracias por contactarnos.`
+    const responseText = `¡Hola! Recibí tu mensaje: "${messageText}". Gracias por contactarnos. 🚀`
 
-    // Guardar la respuesta en la BD
     const responseData = {
-      instagram_message_id: `response_${Date.now()}`,
+      instagram_message_id: `response_${Date.now()}_${Math.random()}`,
       sender_id: 'hower_bot',
       recipient_id: senderId,
       message_text: responseText,
@@ -294,7 +254,7 @@ async function generateAutoResponse(messageText: string, senderId: string, origi
     if (error) {
       console.error('❌ Error guardando respuesta automática:', error)
     } else {
-      console.log('✅ Respuesta automática guardada:', data)
+      console.log('✅ Respuesta automática guardada:', data[0]?.id)
     }
 
   } catch (error) {
