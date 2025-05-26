@@ -1,141 +1,134 @@
 
-import React, { useState, useEffect } from 'react';
-import ChatInterface from '@/components/ChatInterface';
-import ConversationList from '@/components/ConversationList';
-import ConfigPanel from '@/components/ConfigPanel';
-import Navigation from '@/components/Navigation';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import InstagramDashboard from '@/components/InstagramDashboard';
 import InstagramMessages from '@/components/InstagramMessages';
-import { Settings, MessageCircle, Bot } from 'lucide-react';
+import { BarChart3, MessageCircle, Settings, Instagram } from 'lucide-react';
 
 const Index = () => {
-  const [activeConversation, setActiveConversation] = useState<string | null>(null);
-  const [showConfig, setShowConfig] = useState(false);
-  const [activeTab, setActiveTab] = useState<'simulator' | 'instagram'>('simulator');
-  const [aiConfig, setAiConfig] = useState({
-    name: 'Hower',
-    personality: 'amigable',
-    responseDelay: 10000,
-    autoRespond: true
-  });
-  const [isOnboarded, setIsOnboarded] = useState(localStorage.getItem('hower-onboarded') === 'true');
-
-  useEffect(() => {
-    if (!isOnboarded) {
-      window.location.href = '/onboarding';
-    }
-    
-    if (!localStorage.getItem('hower-conversations')) {
-      localStorage.setItem('hower-conversations', JSON.stringify([]));
-    }
-  }, [isOnboarded]);
-
-  const toggleConfigPanel = () => {
-    setShowConfig(prevState => !prevState);
-  };
-
-  if (!isOnboarded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex bg-white">
-      <Navigation />
-      
-      <div className="flex-1">
-        <div className="bg-white border-b border-gray-100 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
-                <p className="text-gray-600 text-sm">Gestión de conversaciones</p>
-              </div>
-              
-              {/* Tabs */}
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setActiveTab('simulator')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'simulator'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <Bot className="w-4 h-4" />
-                  Simulador
-                </button>
-                <button
-                  onClick={() => setActiveTab('instagram')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'instagram'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Instagram Real
-                </button>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center">
+              <Instagram className="w-6 h-6 text-white" />
             </div>
-            
-            <button
-              onClick={toggleConfigPanel}
-              className="p-2 rounded-lg bg-primary text-white hover:bg-primary-dark hover:shadow-lg transition-all duration-200"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Hower Instagram AI
+            </h1>
           </div>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Sistema inteligente de respuestas automáticas para Instagram con IA integrada
+          </p>
         </div>
 
-        <div className="p-6">
-          {activeTab === 'simulator' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-180px)]">
-              <div className="lg:col-span-1">
-                <ConversationList
-                  activeConversation={activeConversation}
-                  onSelectConversation={setActiveConversation}
-                />
-              </div>
+        {/* Main Content */}
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
+            <TabsTrigger 
+              value="dashboard" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger 
+              value="messages" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Mensajes
+            </TabsTrigger>
+            <TabsTrigger 
+              value="settings" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
+            >
+              <Settings className="w-4 h-4" />
+              Configuración
+            </TabsTrigger>
+          </TabsList>
 
-              <div className="lg:col-span-2">
-                <ChatInterface
-                  activeConversation={activeConversation}
-                  aiConfig={aiConfig}
-                />
-              </div>
+          <TabsContent value="dashboard" className="space-y-6">
+            <InstagramDashboard />
+          </TabsContent>
 
-              <div className="lg:col-span-1">
-                {showConfig && (
-                  <ConfigPanel
-                    config={aiConfig}
-                    onConfigChange={setAiConfig}
-                  />
-                )}
+          <TabsContent value="messages" className="h-[600px]">
+            <InstagramMessages />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl p-8">
+              <h3 className="text-2xl font-bold text-gray-800 mb-6">Configuración del Sistema</h3>
+              
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-6">
+                  <h4 className="text-lg font-semibold text-gray-700 mb-3">Estado de la Integración</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                      <span className="text-green-800 font-medium">Webhook Instagram</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-green-600 text-sm">Activo</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                      <span className="text-green-800 font-medium">Base de Datos</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-green-600 text-sm">Conectada</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-b border-gray-200 pb-6">
+                  <h4 className="text-lg font-semibold text-gray-700 mb-3">Configuración Requerida</h4>
+                  <div className="space-y-3">
+                    <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <h5 className="font-medium text-yellow-800 mb-2">Token de Acceso de Instagram</h5>
+                      <p className="text-sm text-yellow-700 mb-3">
+                        Necesitas configurar el token de acceso de Instagram en los secretos de Supabase.
+                      </p>
+                      <div className="text-xs text-yellow-600">
+                        Variable: <code className="bg-yellow-100 px-2 py-1 rounded">INSTAGRAM_ACCESS_TOKEN</code>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h5 className="font-medium text-blue-800 mb-2">Webhook URL</h5>
+                      <p className="text-sm text-blue-700 mb-2">
+                        Configura esta URL en Facebook Developers:
+                      </p>
+                      <code className="bg-blue-100 px-3 py-2 rounded text-xs text-blue-800 block">
+                        https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook
+                      </code>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-3">Próximos Pasos</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-gray-600 text-sm">Agregar token de acceso de Instagram</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-gray-600 text-sm">Configurar webhook en Facebook Developers</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-gray-600 text-sm">Verificar permisos de la aplicación</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-180px)]">
-              <div className="lg:col-span-3">
-                <InstagramMessages />
-              </div>
-
-              <div className="lg:col-span-1">
-                {showConfig && (
-                  <ConfigPanel
-                    config={aiConfig}
-                    onConfigChange={setAiConfig}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
