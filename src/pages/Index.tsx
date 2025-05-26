@@ -45,7 +45,7 @@ const Index = () => {
               <Instagram className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Hower Instagram AI
+              Hower Assistant
             </h1>
           </div>
           <p className="text-gray-600 max-w-2xl mx-auto">
