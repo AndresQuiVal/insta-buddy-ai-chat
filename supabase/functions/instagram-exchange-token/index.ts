@@ -116,7 +116,8 @@ serve(async (req) => {
       user_accounts_found: [],
       instagram_search_attempts: [],
       permissions_granted: [],
-      final_result: null
+      final_result: null,
+      detailed_errors: []
     }
 
     if (userResponse.ok) {
@@ -133,59 +134,158 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('Error obteniendo permisos:', error)
+        debugInfo.detailed_errors.push(`Error permisos: ${error.message}`)
       }
 
-      // Intentar obtener cuentas de Instagram conectadas con más detalle
+      // MEJORADO: Búsqueda más completa de Instagram con debug detallado
       try {
-        // Primero buscar todas las cuentas/páginas del usuario
-        const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/${userData.id}/accounts?fields=id,name,instagram_business_account,access_token&access_token=${tokenData.access_token}`)
+        console.log('=== INICIANDO BÚSQUEDA DETALLADA DE INSTAGRAM ===')
+        
+        // Primero buscar todas las cuentas/páginas del usuario con más campos
+        const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/${userData.id}/accounts?fields=id,name,instagram_business_account,access_token,category,about&access_token=${tokenData.access_token}`)
         
         if (accountsResponse.ok) {
           const accountsData = await accountsResponse.json()
-          console.log('Cuentas de Facebook encontradas:', accountsData)
+          console.log('=== PÁGINAS DE FACEBOOK ENCONTRADAS ===')
+          console.log('Total páginas:', accountsData.data?.length || 0)
+          console.log('Páginas completas:', JSON.stringify(accountsData, null, 2))
+          
           debugInfo.user_accounts_found = accountsData.data || []
           
-          // Buscar páginas con Instagram business
+          // Verificar cada página en detalle
           for (const page of accountsData.data || []) {
-            debugInfo.instagram_search_attempts.push({
+            console.log(`\n=== ANALIZANDO PÁGINA: ${page.name} (ID: ${page.id}) ===`)
+            
+            const attemptInfo = {
               page_id: page.id,
               page_name: page.name,
+              page_category: page.category || 'N/A',
               has_instagram_business_account: !!page.instagram_business_account,
-              instagram_account_id: page.instagram_business_account?.id || null
-            })
+              instagram_account_id: page.instagram_business_account?.id || null,
+              attempt_details: [],
+              errors: []
+            }
 
             if (page.instagram_business_account) {
               const instagramAccountId = page.instagram_business_account.id
-              console.log('Intentando obtener datos de Instagram para ID:', instagramAccountId)
+              console.log(`✓ Instagram Business encontrado: ${instagramAccountId}`)
               
               // Usar el token de la página si está disponible, sino usar el token del usuario
               const pageToken = page.access_token || tokenData.access_token
+              console.log(`Usando token: ${pageToken ? 'Token de página' : 'Token de usuario'}`)
               
-              // Obtener información detallada de la cuenta de Instagram
-              const instagramInfoResponse = await fetch(`https://graph.facebook.com/v19.0/${instagramAccountId}?fields=id,username,account_type,media_count,followers_count&access_token=${pageToken}`)
-              
-              if (instagramInfoResponse.ok) {
-                instagramData = await instagramInfoResponse.json()
-                console.log('Datos de Instagram obtenidos exitosamente:', instagramData)
-                debugInfo.final_result = 'success'
-                break // Solo tomar la primera cuenta de Instagram encontrada
-              } else {
-                const instagramError = await instagramInfoResponse.text()
-                console.error('Error obteniendo datos de Instagram:', instagramError)
-                debugInfo.instagram_search_attempts[debugInfo.instagram_search_attempts.length - 1].error = instagramError
+              // MÉTODO 1: Intentar con campos básicos primero
+              console.log('--- Intento 1: Campos básicos ---')
+              try {
+                const basicInfoResponse = await fetch(`https://graph.facebook.com/v19.0/${instagramAccountId}?fields=id,username&access_token=${pageToken}`)
+                const basicInfoText = await basicInfoResponse.text()
+                
+                attemptInfo.attempt_details.push({
+                  method: 'campos_basicos',
+                  url: `https://graph.facebook.com/v19.0/${instagramAccountId}?fields=id,username`,
+                  status: basicInfoResponse.status,
+                  response: basicInfoText
+                })
+                
+                if (basicInfoResponse.ok) {
+                  const basicInfo = JSON.parse(basicInfoText)
+                  console.log('✓ Campos básicos obtenidos:', basicInfo)
+                  instagramData = basicInfo
+                  attemptInfo.success = true
+                } else {
+                  console.log('✗ Error campos básicos:', basicInfoText)
+                  attemptInfo.errors.push(`Campos básicos: ${basicInfoText}`)
+                }
+              } catch (error) {
+                console.log('✗ Excepción campos básicos:', error.message)
+                attemptInfo.errors.push(`Excepción campos básicos: ${error.message}`)
               }
+              
+              // MÉTODO 2: Si no funcionó, intentar con otros campos
+              if (!instagramData) {
+                console.log('--- Intento 2: Campos alternativos ---')
+                try {
+                  const altInfoResponse = await fetch(`https://graph.facebook.com/v19.0/${instagramAccountId}?fields=id,name,profile_picture_url&access_token=${pageToken}`)
+                  const altInfoText = await altInfoResponse.text()
+                  
+                  attemptInfo.attempt_details.push({
+                    method: 'campos_alternativos',
+                    url: `https://graph.facebook.com/v19.0/${instagramAccountId}?fields=id,name,profile_picture_url`,
+                    status: altInfoResponse.status,
+                    response: altInfoText
+                  })
+                  
+                  if (altInfoResponse.ok) {
+                    const altInfo = JSON.parse(altInfoText)
+                    console.log('✓ Campos alternativos obtenidos:', altInfo)
+                    instagramData = altInfo
+                    attemptInfo.success = true
+                  } else {
+                    console.log('✗ Error campos alternativos:', altInfoText)
+                    attemptInfo.errors.push(`Campos alternativos: ${altInfoText}`)
+                  }
+                } catch (error) {
+                  console.log('✗ Excepción campos alternativos:', error.message)
+                  attemptInfo.errors.push(`Excepción campos alternativos: ${error.message}`)
+                }
+              }
+              
+              // MÉTODO 3: Si aún no funciona, intentar solo el ID
+              if (!instagramData) {
+                console.log('--- Intento 3: Solo ID ---')
+                try {
+                  const idOnlyResponse = await fetch(`https://graph.facebook.com/v19.0/${instagramAccountId}?access_token=${pageToken}`)
+                  const idOnlyText = await idOnlyResponse.text()
+                  
+                  attemptInfo.attempt_details.push({
+                    method: 'solo_id',
+                    url: `https://graph.facebook.com/v19.0/${instagramAccountId}`,
+                    status: idOnlyResponse.status,
+                    response: idOnlyText
+                  })
+                  
+                  if (idOnlyResponse.ok) {
+                    const idOnly = JSON.parse(idOnlyText)
+                    console.log('✓ Solo ID obtenido:', idOnly)
+                    instagramData = { id: instagramAccountId, ...idOnly }
+                    attemptInfo.success = true
+                  } else {
+                    console.log('✗ Error solo ID:', idOnlyText)
+                    attemptInfo.errors.push(`Solo ID: ${idOnlyText}`)
+                  }
+                } catch (error) {
+                  console.log('✗ Excepción solo ID:', error.message)
+                  attemptInfo.errors.push(`Excepción solo ID: ${error.message}`)
+                }
+              }
+              
+            } else {
+              console.log('✗ No tiene Instagram Business Account vinculado')
+              attemptInfo.errors.push('Página no tiene Instagram Business Account')
+            }
+            
+            debugInfo.instagram_search_attempts.push(attemptInfo)
+            
+            // Si encontramos Instagram, salir del loop
+            if (instagramData) {
+              console.log('🎉 INSTAGRAM ENCONTRADO - Terminando búsqueda')
+              debugInfo.final_result = 'success'
+              break
             }
           }
         } else {
           const accountsError = await accountsResponse.text()
           console.error('Error obteniendo cuentas de Facebook:', accountsError)
+          debugInfo.detailed_errors.push(`Error obteniendo cuentas: ${accountsError}`)
           debugInfo.instagram_search_attempts.push({
             error: 'No se pudieron obtener cuentas de Facebook',
-            details: accountsError
+            details: accountsError,
+            status: accountsResponse.status
           })
         }
       } catch (instagramError) {
         console.error('Error en búsqueda de Instagram:', instagramError)
+        debugInfo.detailed_errors.push(`Excepción búsqueda: ${instagramError.message}`)
         debugInfo.instagram_search_attempts.push({
           error: 'Excepción durante búsqueda',
           details: instagramError.message
@@ -193,6 +293,7 @@ serve(async (req) => {
       }
     } else {
       console.error('Error obteniendo datos de usuario:', await userResponse.text())
+      debugInfo.detailed_errors.push('Error obteniendo datos de usuario de Facebook')
       // En modo Development, esto puede fallar pero no es crítico
       userData = {
         id: 'development_user',
@@ -202,8 +303,8 @@ serve(async (req) => {
 
     if (!instagramData) {
       debugInfo.final_result = 'no_instagram_found'
-      console.log('=== DIAGNÓSTICO FINAL ===')
-      console.log('Instagram no encontrado. Debug info:', JSON.stringify(debugInfo, null, 2))
+      console.log('=== DIAGNÓSTICO FINAL DETALLADO ===')
+      console.log('Instagram NO encontrado. Debug completo:', JSON.stringify(debugInfo, null, 2))
     }
 
     // Preparar respuesta con datos combinados y debug extendido
