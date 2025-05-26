@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { disconnectInstagram } from '@/services/instagramService';
+import InstagramDebug from './InstagramDebug';
 import { 
   MessageCircle, 
   Users, 
@@ -11,7 +12,8 @@ import {
   Inbox,
   BarChart3,
   RefreshCw,
-  LogOut
+  LogOut,
+  Bug
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -33,6 +35,7 @@ const InstagramDashboard: React.FC = () => {
     todayMessages: 0
   });
   const [loading, setLoading] = useState(true);
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     loadDashboardStats();
@@ -163,6 +166,13 @@ const InstagramDashboard: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-800">Dashboard Instagram</h2>
         <div className="flex gap-2">
           <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            <Bug className="w-4 h-4" />
+            {showDebug ? 'Ocultar' : 'Debug'}
+          </button>
+          <button
             onClick={loadDashboardStats}
             className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
           >
@@ -178,6 +188,8 @@ const InstagramDashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {showDebug && <InstagramDebug />}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
