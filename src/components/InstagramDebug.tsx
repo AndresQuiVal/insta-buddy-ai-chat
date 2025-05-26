@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -11,7 +10,9 @@ import {
   MessageSquare,
   Webhook,
   Info,
-  Search
+  Search,
+  AlertCircle,
+  Phone
 } from 'lucide-react';
 
 const InstagramDebug: React.FC = () => {
@@ -20,6 +21,7 @@ const InstagramDebug: React.FC = () => {
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [showAdvancedDebug, setShowAdvancedDebug] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
+  const [webhookTestResult, setWebhookTestResult] = useState<any>(null);
 
   const addLog = (message: string) => {
     console.log('DEBUG:', message);
@@ -27,21 +29,21 @@ const InstagramDebug: React.FC = () => {
   };
 
   const checkConnection = () => {
-    addLog('Verificando conexión...');
+    addLog('=== VERIFICANDO CONEXIÓN LOCAL ===');
     const token = localStorage.getItem('hower-instagram-token') || localStorage.getItem('instagram_access_token');
     const user = localStorage.getItem('hower-instagram-user');
     
-    addLog(`Token encontrado: ${!!token}`);
-    addLog(`Datos de usuario encontrados: ${!!user}`);
+    addLog(`✓ Token encontrado: ${!!token} (${token ? token.length : 0} chars)`);
+    addLog(`✓ Usuario encontrado: ${!!user}`);
     
     let userData = null;
     try {
       if (user) {
         userData = JSON.parse(user);
-        addLog(`Datos parseados exitosamente: ${JSON.stringify(userData, null, 2)}`);
+        addLog(`✓ Datos parseados: Facebook=${userData.facebook?.name}, Instagram=${userData.instagram?.username || 'NO CONECTADO'}`);
       }
     } catch (error) {
-      addLog(`Error parseando datos de usuario: ${error.message}`);
+      addLog(`✗ Error parseando usuario: ${error.message}`);
     }
 
     return {
@@ -54,19 +56,25 @@ const InstagramDebug: React.FC = () => {
   };
 
   const checkDatabase = async () => {
-    addLog('Verificando acceso a base de datos...');
+    addLog('=== VERIFICANDO BASE DE DATOS ===');
     try {
       const { data, error, count } = await supabase
         .from('instagram_messages')
         .select('*', { count: 'exact' })
-        .limit(5)
+        .limit(10)
         .order('created_at', { ascending: false });
 
       if (error) {
-        addLog(`Error de base de datos: ${error.message}`);
+        addLog(`✗ Error base de datos: ${error.message}`);
       } else {
-        addLog(`Base de datos accesible. Mensajes encontrados: ${count}`);
-        addLog(`Datos recientes: ${JSON.stringify(data, null, 2)}`);
+        addLog(`✓ Base de datos OK. Total mensajes: ${count}`);
+        if (data && data.length > 0) {
+          data.forEach((msg, idx) => {
+            addLog(`  Mensaje ${idx + 1}: ${msg.message_type} - "${msg.message_text}" (${new Date(msg.created_at).toLocaleString()})`);
+          });
+        } else {
+          addLog(`⚠️ NO HAY MENSAJES EN LA BASE DE DATOS`);
+        }
       }
 
       return {
@@ -76,7 +84,7 @@ const InstagramDebug: React.FC = () => {
         recentMessages: data || []
       };
     } catch (error) {
-      addLog(`Excepción en checkDatabase: ${error.message}`);
+      addLog(`✗ Excepción verificando BD: ${error.message}`);
       return {
         accessible: false,
         error: error.message,
@@ -86,62 +94,153 @@ const InstagramDebug: React.FC = () => {
     }
   };
 
-  const testWebhook = async () => {
-    addLog('Iniciando test de webhook...');
+  const testWebhookAdvanced = async () => {
+    addLog('=== PRUEBA AVANZADA DE WEBHOOK ===');
     setTestingWebhook(true);
+    
     try {
-      // Intentar hacer una prueba simple a nuestro edge function
-      const response = await fetch('https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+      const webhookUrl = 'https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook';
+      
+      // Prueba 1: GET request (como lo haría Facebook)
+      addLog('Prueba 1: GET request de verificación...');
+      const getResponse = await fetch(`${webhookUrl}?hub.mode=subscribe&hub.verify_token=hower-instagram-webhook-token&hub.challenge=test123`);
+      addLog(`GET Response: ${getResponse.status} - ${await getResponse.text()}`);
+      
+      // Prueba 2: POST request simulando un mensaje
+      addLog('Prueba 2: POST request simulando mensaje de Instagram...');
+      const testMessage = {
+        object: 'instagram',
+        entry: [{
+          id: 'test_page_id',
+          time: Date.now(),
+          messaging: [{
+            sender: { id: 'test_sender_456' },
+            recipient: { id: 'test_recipient_789' },
+            timestamp: Date.now(),
+            message: {
+              mid: `test_message_${Date.now()}`,
+              text: 'Mensaje de prueba desde el debugger'
+            }
+          }]
+        }]
+      };
+      
+      const postResponse = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testMessage)
       });
       
-      addLog(`Respuesta del webhook: ${response.status} ${response.statusText}`);
+      const postResult = await postResponse.text();
+      addLog(`POST Response: ${postResponse.status} - ${postResult}`);
       
-      return {
-        webhookResponse: response.status,
-        webhookWorking: response.ok || response.status === 403, // 403 es esperado sin verificación
-        webhookStatus: `${response.status} ${response.statusText}`
-      };
+      // Verificar si el mensaje llegó a la BD
+      addLog('Verificando si el mensaje de prueba llegó a la base de datos...');
+      const { data: newMessages } = await supabase
+        .from('instagram_messages')
+        .select('*')
+        .eq('sender_id', 'test_sender_456')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (newMessages && newMessages.length > 0) {
+        addLog(`✓ ¡ÉXITO! El mensaje de prueba llegó a la BD: "${newMessages[0].message_text}"`);
+      } else {
+        addLog(`✗ El mensaje de prueba NO llegó a la base de datos`);
+      }
+      
+      setWebhookTestResult({
+        getStatus: getResponse.status,
+        postStatus: postResponse.status,
+        messageReached: newMessages && newMessages.length > 0,
+        testPassed: getResponse.status === 200 && postResponse.status === 200
+      });
+      
     } catch (error) {
-      addLog(`Error en test de webhook: ${error.message}`);
-      return {
-        webhookResponse: 'Error',
-        webhookWorking: false,
-        webhookError: error.message
-      };
+      addLog(`✗ Error en prueba de webhook: ${error.message}`);
+      setWebhookTestResult({
+        error: error.message,
+        testPassed: false
+      });
     } finally {
       setTestingWebhook(false);
     }
   };
 
-  const runDiagnostic = async () => {
-    addLog('=== INICIANDO DIAGNÓSTICO COMPLETO ===');
-    setLoading(true);
-    setLogs([]);
+  const checkInstagramTokenPermissions = async () => {
+    addLog('=== VERIFICANDO PERMISOS DEL TOKEN ===');
+    const token = localStorage.getItem('hower-instagram-token');
+    
+    if (!token) {
+      addLog('✗ No hay token para verificar');
+      return null;
+    }
     
     try {
-      addLog('Paso 1: Verificando conexión local...');
+      // Verificar permisos del token
+      const permissionsResponse = await fetch(`https://graph.facebook.com/v19.0/me/permissions?access_token=${token}`);
+      const permissions = await permissionsResponse.json();
+      
+      addLog(`Permisos del token:`);
+      if (permissions.data) {
+        permissions.data.forEach(perm => {
+          addLog(`  - ${perm.permission}: ${perm.status}`);
+        });
+      }
+      
+      // Verificar cuentas de Instagram
+      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${token}`);
+      const accounts = await accountsResponse.json();
+      
+      addLog(`Cuentas de Instagram conectadas:`);
+      if (accounts.data && accounts.data.length > 0) {
+        accounts.data.forEach(account => {
+          if (account.instagram_business_account) {
+            addLog(`  ✓ Cuenta encontrada: ${account.instagram_business_account.id}`);
+          }
+        });
+      } else {
+        addLog(`  ✗ NO HAY CUENTAS DE INSTAGRAM BUSINESS CONECTADAS`);
+      }
+      
+      return { permissions, accounts };
+    } catch (error) {
+      addLog(`✗ Error verificando permisos: ${error.message}`);
+      return null;
+    }
+  };
+
+  const runDiagnostic = async () => {
+    addLog('🔍 === DIAGNÓSTICO COMPLETO INICIADO ===');
+    setLoading(true);
+    setLogs([]);
+    setWebhookTestResult(null);
+    
+    try {
+      addLog('Paso 1/4: Verificando conexión local...');
       const connectionInfo = checkConnection();
       
-      addLog('Paso 2: Verificando base de datos...');
+      addLog('Paso 2/4: Verificando base de datos...');
       const databaseInfo = await checkDatabase();
       
-      addLog('Paso 3: Probando webhook...');
-      const webhookInfo = await testWebhook();
+      addLog('Paso 3/4: Verificando permisos de Instagram...');
+      const permissionsInfo = await checkInstagramTokenPermissions();
+      
+      addLog('Paso 4/4: Probando webhook avanzado...');
+      await testWebhookAdvanced();
       
       const finalDebugInfo = {
         connection: connectionInfo,
         database: databaseInfo,
-        webhook: webhookInfo,
+        permissions: permissionsInfo,
         timestamp: new Date().toISOString()
       };
       
-      addLog(`Diagnóstico completado: ${JSON.stringify(finalDebugInfo, null, 2)}`);
+      addLog('🎉 === DIAGNÓSTICO COMPLETADO ===');
       setDebugInfo(finalDebugInfo);
       
     } catch (error) {
-      addLog(`Error en diagnóstico: ${error.message}`);
+      addLog(`💥 Error en diagnóstico: ${error.message}`);
       toast({
         title: "Error en diagnóstico",
         description: error.message,
@@ -152,48 +251,50 @@ const InstagramDebug: React.FC = () => {
     }
   };
 
-  const sendTestMessage = async () => {
-    addLog('Enviando mensaje de prueba...');
+  const sendRealTestMessage = async () => {
+    addLog('📨 Enviando mensaje de prueba REAL...');
     try {
+      const testMessage = {
+        instagram_message_id: `debug_real_${Date.now()}`,
+        sender_id: 'debug_user_real',
+        recipient_id: 'me',
+        message_text: `🔧 MENSAJE DE PRUEBA REAL - ${new Date().toLocaleString()}`,
+        message_type: 'received',
+        timestamp: new Date().toISOString(),
+        raw_data: { 
+          test: true, 
+          source: 'debug_panel_real',
+          timestamp: Date.now()
+        }
+      };
+
       const { data, error } = await supabase
         .from('instagram_messages')
-        .insert({
-          instagram_message_id: `test_${Date.now()}`,
-          sender_id: 'test_user_debug',
-          recipient_id: 'me',
-          message_text: `Mensaje de prueba - ${new Date().toLocaleString()}`,
-          message_type: 'received',
-          timestamp: new Date().toISOString(),
-          raw_data: { test: true, source: 'debug_panel' }
-        });
+        .insert(testMessage)
+        .select();
 
       if (error) {
-        addLog(`Error insertando mensaje: ${error.message}`);
+        addLog(`✗ Error insertando: ${error.message}`);
         toast({
-          title: "Error insertando mensaje",
+          title: "Error",
           description: error.message,
           variant: "destructive"
         });
       } else {
-        addLog('Mensaje de prueba insertado exitosamente');
+        addLog(`✓ Mensaje insertado exitosamente: ID ${data[0].id}`);
         toast({
-          title: "Mensaje de prueba creado",
+          title: "✅ Mensaje de prueba creado",
           description: "Se insertó un mensaje de prueba en la base de datos"
         });
         runDiagnostic();
       }
     } catch (error) {
-      addLog(`Excepción enviando mensaje: ${error.message}`);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
+      addLog(`💥 Excepción: ${error.message}`);
     }
   };
 
   useEffect(() => {
-    addLog('Componente montado, ejecutando diagnóstico inicial...');
+    addLog('🚀 Componente inicializado');
     runDiagnostic();
   }, []);
 
@@ -211,7 +312,7 @@ const InstagramDebug: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <AlertTriangle className="w-6 h-6 text-orange-500" />
-          <h3 className="text-xl font-semibold text-gray-800">Diagnóstico Instagram</h3>
+          <h3 className="text-xl font-semibold text-gray-800">🔍 Diagnóstico Avanzado Instagram</h3>
         </div>
         <div className="flex gap-2">
           <button
@@ -219,7 +320,7 @@ const InstagramDebug: React.FC = () => {
             className="flex items-center gap-2 px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
           >
             <Search className="w-4 h-4" />
-            {showAdvancedDebug ? 'Ocultar' : 'Logs'}
+            {showAdvancedDebug ? 'Ocultar Logs' : 'Ver Logs'}
           </button>
           <button
             onClick={runDiagnostic}
@@ -227,24 +328,45 @@ const InstagramDebug: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Actualizar
+            Diagnóstico Completo
           </button>
         </div>
       </div>
+
+      {/* Resultado del test de webhook */}
+      {webhookTestResult && (
+        <div className={`border rounded-lg p-4 ${webhookTestResult.testPassed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+          <div className="flex items-center gap-3 mb-3">
+            {webhookTestResult.testPassed ? (
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            ) : (
+              <XCircle className="w-5 h-5 text-red-600" />
+            )}
+            <h4 className="font-medium">Resultado Test de Webhook</h4>
+          </div>
+          <div className="space-y-1 text-sm">
+            <div>✓ GET Status: {webhookTestResult.getStatus}</div>
+            <div>✓ POST Status: {webhookTestResult.postStatus}</div>
+            <div className={webhookTestResult.messageReached ? 'text-green-600' : 'text-red-600'}>
+              {webhookTestResult.messageReached ? '✓' : '✗'} Mensaje llegó a BD: {webhookTestResult.messageReached ? 'SÍ' : 'NO'}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Logs de depuración */}
       {showAdvancedDebug && (
         <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
           <div className="flex items-center gap-3 mb-3">
             <Info className="w-5 h-5 text-orange-600" />
-            <h4 className="font-medium text-orange-800">Logs de Depuración</h4>
+            <h4 className="font-medium text-orange-800">Logs Detallados de Depuración</h4>
           </div>
-          <div className="bg-black text-green-400 p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
+          <div className="bg-black text-green-400 p-3 rounded text-xs font-mono max-h-60 overflow-y-auto">
             {logs.length === 0 ? (
-              <div className="text-gray-400">No hay logs aún...</div>
+              <div className="text-gray-400">Ejecutando diagnóstico...</div>
             ) : (
               logs.map((log, idx) => (
-                <div key={idx}>{log}</div>
+                <div key={idx} className="mb-1">{log}</div>
               ))
             )}
           </div>
@@ -372,35 +494,60 @@ const InstagramDebug: React.FC = () => {
         </div>
       )}
 
-      {/* Acciones de prueba */}
+      {/* Acciones de prueba mejoradas */}
       <div className="border border-gray-200 rounded-lg p-4">
-        <h4 className="font-medium text-gray-800 mb-3">Acciones de Prueba</h4>
-        <div className="flex gap-2">
+        <h4 className="font-medium text-gray-800 mb-3">🧪 Acciones de Prueba Avanzadas</h4>
+        <div className="flex gap-2 flex-wrap">
           <button
-            onClick={sendTestMessage}
+            onClick={sendRealTestMessage}
             className="flex items-center gap-2 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm"
           >
             <MessageSquare className="w-4 h-4" />
             Crear mensaje de prueba
           </button>
+          <button
+            onClick={testWebhookAdvanced}
+            disabled={testingWebhook}
+            className="flex items-center gap-2 px-3 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors text-sm disabled:opacity-50"
+          >
+            <Webhook className={`w-4 h-4 ${testingWebhook ? 'animate-spin' : ''}`} />
+            Test Webhook Completo
+          </button>
+        </div>
+      </div>
+
+      {/* Instrucciones específicas */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <Phone className="w-5 h-5 text-blue-600" />
+          <h4 className="font-medium text-blue-800">📋 Para probar mensajes REALES</h4>
+        </div>
+        <div className="text-sm text-blue-700 space-y-2">
+          <p><strong>1.</strong> Desde OTRA cuenta de Instagram, envía un mensaje directo a <strong>@priebashower</strong></p>
+          <p><strong>2.</strong> El mensaje debería aparecer aquí automáticamente</p>
+          <p><strong>3.</strong> Si no aparece, verifica que el webhook esté configurado correctamente en Facebook Developers</p>
+          <div className="mt-3 p-2 bg-blue-100 rounded text-xs">
+            <strong>URL del Webhook:</strong> https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook<br/>
+            <strong>Token:</strong> hower-instagram-webhook-token
+          </div>
         </div>
       </div>
 
       {/* Estado actual */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-medium text-blue-800 mb-2">Estado del Diagnóstico</h4>
+        <h4 className="font-medium text-blue-800 mb-2">📊 Estado del Sistema</h4>
         <div className="text-sm text-blue-700">
           {loading ? (
             <div className="flex items-center gap-2">
               <RefreshCw className="w-4 h-4 animate-spin" />
-              Ejecutando diagnóstico...
+              Ejecutando diagnóstico completo...
             </div>
           ) : debugInfo.timestamp ? (
             <div>
-              Último diagnóstico: {new Date(debugInfo.timestamp).toLocaleString()}
+              ✅ Último diagnóstico: {new Date(debugInfo.timestamp).toLocaleString()}
             </div>
           ) : (
-            <div>No se ha ejecutado el diagnóstico aún</div>
+            <div>⏳ Preparando diagnóstico...</div>
           )}
         </div>
       </div>
