@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InstagramDashboard from '@/components/InstagramDashboard';
 import InstagramMessages from '@/components/InstagramMessages';
 import InstagramDebug from '@/components/InstagramDebug';
-import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Bug } from 'lucide-react';
+import TokenManager from '@/components/TokenManager';
+import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Bug, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,7 +57,7 @@ const Index = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
+          <TabsList className="grid w-full grid-cols-5 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
             <TabsTrigger 
               value="dashboard" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
@@ -78,6 +80,13 @@ const Index = () => {
               Diagnóstico
             </TabsTrigger>
             <TabsTrigger 
+              value="token" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
+            >
+              <Key className="w-4 h-4" />
+              Token
+            </TabsTrigger>
+            <TabsTrigger 
               value="settings" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
             >
@@ -96,6 +105,10 @@ const Index = () => {
 
           <TabsContent value="debug" className="space-y-6">
             <InstagramDebug />
+          </TabsContent>
+
+          <TabsContent value="token" className="space-y-6">
+            <TokenManager />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
