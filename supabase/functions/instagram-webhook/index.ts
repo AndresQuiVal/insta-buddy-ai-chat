@@ -17,6 +17,8 @@ serve(async (req) => {
     console.log('=== INSTAGRAM WEBHOOK RECEIVED ===')
     console.log('Method:', req.method)
     console.log('URL:', req.url)
+    console.log('Headers:', Object.fromEntries(req.headers.entries()))
+    console.log('Timestamp:', new Date().toISOString())
 
     // Verificación del webhook (GET request de Facebook)
     if (req.method === 'GET') {
@@ -25,45 +27,103 @@ serve(async (req) => {
       const token = url.searchParams.get('hub.verify_token')
       const challenge = url.searchParams.get('hub.challenge')
 
-      console.log('Webhook verification:', { mode, token, challenge })
+      console.log('🔍 WEBHOOK VERIFICATION REQUEST:')
+      console.log('Mode:', mode)
+      console.log('Token provided:', token)
+      console.log('Challenge:', challenge)
 
       const VERIFY_TOKEN = 'hower-instagram-webhook-token'
 
       if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-        console.log('✓ Webhook verified successfully')
+        console.log('✅ Webhook verified successfully')
         return new Response(challenge, { status: 200 })
       } else {
-        console.log('✗ Webhook verification failed')
+        console.log('❌ Webhook verification failed')
+        console.log('Expected token:', VERIFY_TOKEN)
+        console.log('Received token:', token)
         return new Response('Forbidden', { status: 403 })
       }
     }
 
     // Procesar mensajes entrantes (POST request)
     if (req.method === 'POST') {
-      const body = await req.json()
-      console.log('📨 Webhook payload recibido:', JSON.stringify(body, null, 2))
+      const contentType = req.headers.get('content-type')
+      console.log('📨 POST REQUEST RECEIVED')
+      console.log('Content-Type:', contentType)
+      
+      let body
+      try {
+        body = await req.json()
+        console.log('📋 RAW PAYLOAD:', JSON.stringify(body, null, 2))
+      } catch (parseError) {
+        console.error('❌ Error parsing JSON:', parseError)
+        const textBody = await req.text()
+        console.log('📄 Raw text body:', textBody)
+        
+        // Guardar error en base de datos para debugging
+        await supabase.from('instagram_messages').insert({
+          instagram_message_id: `error_${Date.now()}`,
+          sender_id: 'webhook_error',
+          recipient_id: 'parse_error',
+          message_text: `Error parsing JSON: ${parseError.message}. Raw body: ${textBody}`,
+          message_type: 'received',
+          timestamp: new Date().toISOString(),
+          raw_data: { error: parseError.message, rawBody: textBody }
+        })
+        
+        return new Response('Error parsing JSON', { status: 400, headers: corsHeaders })
+      }
+
+      // Guardar payload completo para debugging
+      console.log('💾 Saving complete payload for debugging...')
+      await supabase.from('instagram_messages').insert({
+        instagram_message_id: `payload_${Date.now()}`,
+        sender_id: 'webhook_debug',
+        recipient_id: 'full_payload',
+        message_text: `PAYLOAD COMPLETO: ${JSON.stringify(body)}`,
+        message_type: 'received',
+        timestamp: new Date().toISOString(),
+        raw_data: body
+      })
 
       // Verificar si el payload tiene la estructura esperada
       if (!body.entry || !Array.isArray(body.entry)) {
         console.log('⚠️ No se encontró array "entry" en el payload')
+        console.log('📊 Estructura del payload:', Object.keys(body))
+        
+        await supabase.from('instagram_messages').insert({
+          instagram_message_id: `structure_error_${Date.now()}`,
+          sender_id: 'webhook_structure',
+          recipient_id: 'missing_entry',
+          message_text: `No entry array found. Structure: ${Object.keys(body).join(', ')}`,
+          message_type: 'received',
+          timestamp: new Date().toISOString(),
+          raw_data: body
+        })
+        
         return new Response('OK', { status: 200, headers: corsHeaders })
       }
 
       let messagesProcessed = 0
+      console.log(`🎯 Processing ${body.entry.length} entries...`)
 
       // Procesar cada entrada del webhook
       for (const entry of body.entry) {
         console.log(`\n--- PROCESANDO ENTRY ${entry.id} ---`)
+        console.log('Entry keys:', Object.keys(entry))
         
         // Procesar mensajes directos (messaging)
         if (entry.messaging && Array.isArray(entry.messaging)) {
           console.log(`📱 Encontrados ${entry.messaging.length} mensajes en messaging`)
           
           for (const messagingEvent of entry.messaging) {
+            console.log('🔍 Messaging event:', JSON.stringify(messagingEvent, null, 2))
             if (messagingEvent.message && messagingEvent.message.text) {
               console.log('💬 Procesando mensaje de texto:', messagingEvent.message.text)
               const result = await processMessage(messagingEvent, entry.id, 'messaging')
               if (result.success) messagesProcessed++
+            } else {
+              console.log('⚠️ Messaging event sin texto válido:', JSON.stringify(messagingEvent))
             }
           }
         }
@@ -73,6 +133,7 @@ serve(async (req) => {
           console.log(`🔄 Encontrados ${entry.changes.length} cambios`)
           
           for (const change of entry.changes) {
+            console.log('🔍 Change event:', JSON.stringify(change, null, 2))
             if (change.field === 'messages' && change.value) {
               console.log('📝 Procesando cambio de mensaje')
               
@@ -83,9 +144,27 @@ serve(async (req) => {
             }
           }
         }
+
+        // Log si no hay messaging ni changes
+        if (!entry.messaging && !entry.changes) {
+          console.log('⚠️ Entry sin messaging ni changes:', JSON.stringify(entry, null, 2))
+          
+          await supabase.from('instagram_messages').insert({
+            instagram_message_id: `unknown_entry_${Date.now()}`,
+            sender_id: 'webhook_unknown',
+            recipient_id: entry.id || 'unknown_entry',
+            message_text: `Entry sin messaging/changes: ${JSON.stringify(entry)}`,
+            message_type: 'received',
+            timestamp: new Date().toISOString(),
+            raw_data: entry
+          })
+        }
       }
 
-      console.log(`\n🎯 RESUMEN: ${messagesProcessed} mensajes procesados exitosamente`)
+      console.log(`\n🎯 RESUMEN FINAL:`)
+      console.log(`- Entries procesadas: ${body.entry.length}`)
+      console.log(`- Mensajes exitosos: ${messagesProcessed}`)
+      console.log(`- Timestamp: ${new Date().toISOString()}`)
 
       return new Response('OK', { 
         status: 200, 
@@ -93,6 +172,7 @@ serve(async (req) => {
       })
     }
 
+    console.log(`❌ Método no permitido: ${req.method}`)
     return new Response('Method not allowed', { 
       status: 405, 
       headers: corsHeaders 
@@ -100,6 +180,21 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('💥 ERROR CRÍTICO en webhook:', error)
+    
+    // Guardar error crítico en base de datos
+    try {
+      await supabase.from('instagram_messages').insert({
+        instagram_message_id: `critical_error_${Date.now()}`,
+        sender_id: 'webhook_critical_error',
+        recipient_id: 'system_error',
+        message_text: `ERROR CRÍTICO: ${error.message}`,
+        message_type: 'received',
+        timestamp: new Date().toISOString(),
+        raw_data: { error: error.message, stack: error.stack }
+      })
+    } catch (dbError) {
+      console.error('💥 Error guardando error en DB:', dbError)
+    }
     
     return new Response(
       JSON.stringify({ 
