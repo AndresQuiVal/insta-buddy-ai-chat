@@ -154,10 +154,8 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
 
     console.log(`✅ Mensaje guardado exitosamente`)
 
-    // Generar respuesta automática solo para mensajes reales (no de prueba)
-    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
-      await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
-    }
+    // Ya no generamos respuesta automática aquí - se maneja desde el frontend
+    console.log(`📱 Mensaje procesado, respuesta automática se manejará desde el frontend`)
 
     return { success: true, id: data[0]?.id }
 
@@ -214,52 +212,13 @@ async function processChangeMessage(changeValue: any, pageId: string) {
 
     console.log(`✅ Mensaje de change guardado exitosamente`)
 
-    // Generar respuesta automática solo para mensajes reales
-    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
-      await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
-    }
+    // Ya no generamos respuesta automática aquí - se maneja desde el frontend
+    console.log(`📱 Mensaje procesado, respuesta automática se manejará desde el frontend`)
 
     return { success: true, id: data[0]?.id }
 
   } catch (error) {
     console.error(`💥 Error en processChangeMessage:`, error)
     return { success: false, error: error.message }
-  }
-}
-
-// Función para generar respuesta automática
-async function generateAutoResponse(messageText: string, senderId: string, originalMessageId: string) {
-  try {
-    console.log(`🤖 Generando respuesta automática para: "${messageText}"`)
-
-    const responseText = `¡Hola! Recibí tu mensaje: "${messageText}". Te responderemos pronto. 🚀`
-
-    const responseData = {
-      instagram_message_id: `response_${Date.now()}_${Math.random()}`,
-      sender_id: 'hower_bot',
-      recipient_id: senderId,
-      message_text: responseText,
-      timestamp: new Date().toISOString(),
-      message_type: 'sent',
-      raw_data: { 
-        original_message_id: originalMessageId,
-        auto_response: true,
-        generated_at: new Date().toISOString()
-      }
-    }
-
-    const { data, error } = await supabase
-      .from('instagram_messages')
-      .insert(responseData)
-      .select()
-
-    if (error) {
-      console.error(`❌ Error guardando respuesta automática:`, error)
-    } else {
-      console.log(`✅ Respuesta automática guardada`)
-    }
-
-  } catch (error) {
-    console.error(`💥 Error en generateAutoResponse:`, error)
   }
 }
