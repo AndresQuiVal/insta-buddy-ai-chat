@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MessageCircle, Send, User, Bot, RefreshCw } from 'lucide-react';
@@ -27,6 +26,8 @@ const InstagramMessages: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
+  const lastProcessedMessageId = useRef<string | null>(null);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     loadInstagramMessages();
@@ -40,11 +41,20 @@ const InstagramMessages: React.FC = () => {
         table: 'instagram_messages'
       }, (payload) => {
         console.log('Nuevo mensaje recibido:', payload);
+        
+        // Solo mostrar toast si no es la carga inicial y el mensaje es diferente al último procesado
+        if (!isInitialLoad.current && 
+            payload.new?.id !== lastProcessedMessageId.current &&
+            isRealUserMessage(payload.new)) {
+          
+          lastProcessedMessageId.current = payload.new.id;
+          toast({
+            title: "Nuevo mensaje",
+            description: "Se recibió un nuevo mensaje de Instagram",
+          });
+        }
+        
         loadInstagramMessages();
-        toast({
-          title: "Nuevo mensaje",
-          description: "Se recibió un nuevo mensaje de Instagram",
-        });
       })
       .subscribe();
 
@@ -52,6 +62,23 @@ const InstagramMessages: React.FC = () => {
       supabase.removeChannel(subscription);
     };
   }, []);
+
+  const isRealUserMessage = (message: any) => {
+    if (!message) return false;
+    
+    // Filtrar mensajes de debug, webhooks y diagnósticos
+    const debugKeywords = [
+      'webhook_', 'debug', 'error', 'PAYLOAD COMPLETO', 'ERROR:', 
+      'diagnostic_user', 'hower_bot', 'test_sender', 'PRUEBA', 'test',
+      'Mensaje de prueba', 'debugger'
+    ];
+    
+    return !debugKeywords.some(keyword => 
+      message.sender_id?.includes(keyword) || 
+      message.message_text?.includes(keyword) ||
+      message.recipient_id?.includes(keyword)
+    ) && message.message_type === 'received';
+  };
 
   const loadInstagramMessages = async () => {
     try {
@@ -109,6 +136,11 @@ const InstagramMessages: React.FC = () => {
       // Seleccionar la primera conversación si no hay ninguna seleccionada
       if (!selectedConversation && conversationsArray.length > 0) {
         setSelectedConversation(conversationsArray[0].sender_id);
+      }
+
+      // Marcar que ya no es la carga inicial después del primer load
+      if (isInitialLoad.current) {
+        isInitialLoad.current = false;
       }
 
     } catch (error) {
