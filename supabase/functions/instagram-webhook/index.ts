@@ -53,23 +53,22 @@ serve(async (req) => {
 
       // Procesar cada entrada del webhook
       for (const entry of body.entry) {
-        console.log(`\n--- PROCESANDO ENTRY ---`)
-        console.log(`Entry ID: ${entry.id}`)
+        console.log(`\n--- PROCESANDO ENTRY ${entry.id} ---`)
         
-        // Método 1: Procesar mensajes directos (messaging)
+        // Procesar mensajes directos (messaging)
         if (entry.messaging && Array.isArray(entry.messaging)) {
           console.log(`📱 Encontrados ${entry.messaging.length} mensajes en messaging`)
           
           for (const messagingEvent of entry.messaging) {
             if (messagingEvent.message && messagingEvent.message.text) {
-              console.log('💬 Procesando mensaje de texto')
-              const result = await processTextMessage(messagingEvent, entry.id)
+              console.log('💬 Procesando mensaje de texto:', messagingEvent.message.text)
+              const result = await processMessage(messagingEvent, entry.id, 'messaging')
               if (result.success) messagesProcessed++
             }
           }
         }
 
-        // Método 2: Procesar cambios (changes)
+        // Procesar cambios (changes) - Nueva API de Instagram
         if (entry.changes && Array.isArray(entry.changes)) {
           console.log(`🔄 Encontrados ${entry.changes.length} cambios`)
           
@@ -77,9 +76,8 @@ serve(async (req) => {
             if (change.field === 'messages' && change.value) {
               console.log('📝 Procesando cambio de mensaje')
               
-              // Si el change.value tiene estructura de mensaje directo
               if (change.value.message && change.value.message.text) {
-                const result = await processChangeMessage(change.value, entry.id)
+                const result = await processMessage(change.value, entry.id, 'changes')
                 if (result.success) messagesProcessed++
               }
             }
@@ -87,7 +85,7 @@ serve(async (req) => {
         }
       }
 
-      console.log(`\n🎯 RESUMEN: ${messagesProcessed} mensajes procesados`)
+      console.log(`\n🎯 RESUMEN: ${messagesProcessed} mensajes procesados exitosamente`)
 
       return new Response('OK', { 
         status: 200, 
@@ -101,10 +99,14 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('💥 ERROR en webhook:', error)
+    console.error('💥 ERROR CRÍTICO en webhook:', error)
     
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ 
+        error: 'Internal server error', 
+        details: error.message,
+        timestamp: new Date().toISOString()
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -113,35 +115,58 @@ serve(async (req) => {
   }
 })
 
-// Función para procesar mensajes de la estructura messaging
-async function processTextMessage(messagingEvent: any, pageId: string) {
+// Función unificada para procesar mensajes
+async function processMessage(messageEvent: any, pageId: string, source: string) {
   try {
-    console.log(`🔄 Procesando mensaje de texto`)
-
-    const message = messagingEvent.message
-    const senderId = messagingEvent.sender?.id || 'unknown_sender'
-    const recipientId = messagingEvent.recipient?.id || pageId
+    const message = messageEvent.message
+    const senderId = messageEvent.sender?.id || 'unknown_sender'
+    const recipientId = messageEvent.recipient?.id || pageId
     const messageText = message.text || 'Mensaje sin texto'
+    const messageId = message.mid || `msg_${Date.now()}_${Math.random()}`
     
-    // Determinar el nombre del usuario más legible
-    const userName = `Usuario ${senderId.slice(-4)}`
+    console.log(`🔄 Procesando mensaje [${source}]:`)
+    console.log(`   - De: ${senderId}`)
+    console.log(`   - Para: ${recipientId}`)
+    console.log(`   - Texto: "${messageText}"`)
+    console.log(`   - ID: ${messageId}`)
 
+    // Evitar procesar mensajes duplicados
+    const { data: existing } = await supabase
+      .from('instagram_messages')
+      .select('id')
+      .eq('instagram_message_id', messageId)
+      .single()
+
+    if (existing) {
+      console.log(`⚠️ Mensaje ${messageId} ya existe en la base de datos`)
+      return { success: false, reason: 'duplicate' }
+    }
+
+    // Convertir timestamp si es necesario
+    let timestamp = messageEvent.timestamp
+    if (timestamp && timestamp.toString().length === 10) {
+      timestamp = parseInt(timestamp) * 1000
+    }
+
+    // Preparar datos del mensaje
     const messageData = {
-      instagram_message_id: message.mid || `msg_${Date.now()}_${Math.random()}`,
+      instagram_message_id: messageId,
       sender_id: senderId,
       recipient_id: recipientId,
       message_text: messageText,
-      timestamp: new Date(messagingEvent.timestamp || Date.now()).toISOString(),
+      timestamp: new Date(timestamp || Date.now()).toISOString(),
       message_type: 'received',
       raw_data: { 
-        original_event: messagingEvent,
+        original_event: messageEvent,
         processed_at: new Date().toISOString(),
-        source: 'messaging'
+        source: source,
+        page_id: pageId
       }
     }
 
-    console.log(`💾 Guardando mensaje: "${messageText}" de ${userName}`)
+    console.log(`💾 Guardando mensaje en base de datos...`)
 
+    // Guardar en base de datos
     const { data, error } = await supabase
       .from('instagram_messages')
       .insert(messageData)
@@ -152,77 +177,25 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Mensaje guardado exitosamente`)
-
-    // Generar respuesta automática solo para mensajes reales (no de prueba)
-    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
-      await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
-    }
-
-    return { success: true, id: data[0]?.id }
-
-  } catch (error) {
-    console.error(`💥 Error en processTextMessage:`, error)
-    return { success: false, error: error.message }
-  }
-}
-
-// Función para procesar mensajes de changes
-async function processChangeMessage(changeValue: any, pageId: string) {
-  try {
-    console.log(`🔄 Procesando mensaje de change`)
-
-    const message = changeValue.message
-    const senderId = changeValue.sender?.id || 'unknown_sender'
-    const recipientId = changeValue.recipient?.id || pageId
-    const messageText = message?.text || 'Mensaje sin texto'
-    
-    // Determinar el nombre del usuario más legible
-    const userName = `Usuario ${senderId.slice(-4)}`
-
-    // Convertir timestamp de segundos a millisegundos si es necesario
-    let timestamp = changeValue.timestamp
-    if (timestamp && timestamp.toString().length === 10) {
-      timestamp = parseInt(timestamp) * 1000
-    }
-
-    const messageData = {
-      instagram_message_id: message?.mid || `change_${Date.now()}_${Math.random()}`,
-      sender_id: senderId,
-      recipient_id: recipientId,
-      message_text: messageText,
-      timestamp: new Date(timestamp || Date.now()).toISOString(),
-      message_type: 'received',
-      raw_data: { 
-        original_change: changeValue,
-        processed_at: new Date().toISOString(),
-        source: 'changes'
-      }
-    }
-
-    console.log(`💾 Guardando mensaje de change: "${messageText}" de ${userName}`)
-
-    const { data, error } = await supabase
-      .from('instagram_messages')
-      .insert(messageData)
-      .select()
-
-    if (error) {
-      console.error(`❌ Error guardando mensaje de change:`, error)
-      return { success: false, error: error.message }
-    }
-
-    console.log(`✅ Mensaje de change guardado exitosamente`)
+    console.log(`✅ Mensaje guardado exitosamente con ID: ${data[0]?.id}`)
 
     // Generar respuesta automática solo para mensajes reales
-    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
-      await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
+    if (messageText && 
+        !messageText.includes('PRUEBA') && 
+        !messageText.includes('test') &&
+        !messageText.includes('TEST') &&
+        senderId !== 'hower_bot') {
+      
+      console.log(`🤖 Generando respuesta automática...`)
+      await generateAutoResponse(messageText, senderId, messageId)
+    } else {
+      console.log(`⏭️ Saltando respuesta automática (mensaje de prueba o bot)`)
     }
 
     return { success: true, id: data[0]?.id }
 
   } catch (error) {
-    console.error(`💥 Error en processChangeMessage:`, error)
+    console.error(`💥 Error procesando mensaje:`, error)
     return { success: false, error: error.message }
   }
 }
@@ -230,8 +203,6 @@ async function processChangeMessage(changeValue: any, pageId: string) {
 // Función para generar respuesta automática
 async function generateAutoResponse(messageText: string, senderId: string, originalMessageId: string) {
   try {
-    console.log(`🤖 Generando respuesta automática para: "${messageText}"`)
-
     const responseText = `¡Hola! Recibí tu mensaje: "${messageText}". Te responderemos pronto. 🚀`
 
     const responseData = {
@@ -248,10 +219,9 @@ async function generateAutoResponse(messageText: string, senderId: string, origi
       }
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('instagram_messages')
       .insert(responseData)
-      .select()
 
     if (error) {
       console.error(`❌ Error guardando respuesta automática:`, error)
