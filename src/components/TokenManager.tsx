@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,16 +8,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { Key, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
 const TokenManager: React.FC = () => {
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState('EAAp0ic0E6bEBO2mZCzP4ddQsX5OeCx9gKdkO9gIPZBsZCCQlcYELpVzTAToBc3wog6CYL11AZB4BjHbpQvbE7S9G5r1QplWhLBqgRknuzvmpH34blv8l3GR7sMD1cwhx06mkAsxE4iDYJ4UZBSLf8y2qank7kJBGQlwgYZBxA0p3XwCi5Pw8lnuKp2Pz40oKBbZC8ymSPwiUxraoxk1tZB52ZBuZAY2DmyMalMgn16');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
   const { toast } = useToast();
 
+  // Auto-validar el token al cargar el componente
+  useEffect(() => {
+    if (token) {
+      validateTokenDetailed(token);
+    }
+  }, []);
+
   const validateTokenDetailed = async (tokenToTest: string) => {
     setIsValidating(true);
     try {
-      console.log('🔍 Validando token...');
+      console.log('🔍 Validando nuevo token...');
       console.log('Token length:', tokenToTest.length);
       console.log('Token preview:', tokenToTest.substring(0, 20) + '...');
 
@@ -48,12 +55,14 @@ const TokenManager: React.FC = () => {
       
       console.log('📱 Cuentas Instagram:', accountsData);
 
+      const hasInstagramBusiness = accountsData.data && accountsData.data.some(acc => acc.instagram_business_account);
+
       setValidationResult({
         isValid: true,
         user: basicData,
         permissions: permissionsData.data || [],
         instagramAccounts: accountsData.data || [],
-        hasInstagramBusiness: accountsData.data && accountsData.data.some(acc => acc.instagram_business_account)
+        hasInstagramBusiness: hasInstagramBusiness
       });
 
       return true;
@@ -85,21 +94,23 @@ const TokenManager: React.FC = () => {
     try {
       console.log('🚀 Iniciando actualización de token...');
       
-      // Primero validar el token
-      const isValid = await validateTokenDetailed(token);
-      
-      if (!isValid) {
-        toast({
-          title: "Token inválido",
-          description: validationResult?.error || "El token no es válido",
-          variant: "destructive"
-        });
-        return;
+      // Primero validar el token si no lo hemos hecho
+      if (!validationResult || !validationResult.isValid) {
+        const isValid = await validateTokenDetailed(token);
+        
+        if (!isValid) {
+          toast({
+            title: "Token inválido",
+            description: validationResult?.error || "El token no es válido",
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
-      console.log('✅ Token validado, actualizando...');
+      console.log('✅ Token validado, actualizando en servidor...');
 
-      // Actualizar en el servidor
+      // Actualizar en el servidor usando la edge function
       const { data, error } = await supabase.functions.invoke('update-instagram-token', {
         body: { access_token: token }
       });
@@ -122,10 +133,8 @@ const TokenManager: React.FC = () => {
 
       toast({
         title: "¡Token actualizado exitosamente!",
-        description: `Usuario: ${validationResult.user.name}`,
+        description: `Usuario: ${validationResult.user.name || validationResult.user.id}`,
       });
-
-      setToken('');
       
     } catch (error) {
       console.error('💥 Error actualizando token:', error);
@@ -161,26 +170,6 @@ const TokenManager: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {/* Probar token actual */}
-        <div className="p-4 bg-blue-50 rounded-lg">
-          <h4 className="font-medium mb-2">🧪 Probar Token Actual</h4>
-          <Button 
-            onClick={testCurrentToken}
-            disabled={isValidating}
-            variant="outline"
-            className="w-full"
-          >
-            {isValidating ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Validando...
-              </>
-            ) : (
-              'Probar Token Guardado'
-            )}
-          </Button>
-        </div>
-
         {/* Actualizar token */}
         <div className="space-y-2">
           <Label htmlFor="token" className="text-sm font-medium">
@@ -190,7 +179,7 @@ const TokenManager: React.FC = () => {
             <Input
               id="token"
               type="password"
-              placeholder="EAAp0ic0E6bE... (pega tu nuevo token aquí)"
+              placeholder="Token cargado automáticamente..."
               value={token}
               onChange={(e) => {
                 setToken(e.target.value);
@@ -215,8 +204,35 @@ const TokenManager: React.FC = () => {
           disabled={!token.trim() || isUpdating || isValidating}
           className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
         >
-          {isUpdating ? 'Actualizando...' : 'Actualizar Token'}
+          {isUpdating ? (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              Actualizando...
+            </>
+          ) : (
+            'Actualizar Token'
+          )}
         </Button>
+
+        {/* Validar token diferente */}
+        <div className="p-4 bg-blue-50 rounded-lg">
+          <h4 className="font-medium mb-2">🧪 Validar Token</h4>
+          <Button 
+            onClick={() => validateTokenDetailed(token)}
+            disabled={isValidating || !token}
+            variant="outline"
+            className="w-full"
+          >
+            {isValidating ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Validando...
+              </>
+            ) : (
+              'Validar Token Actual'
+            )}
+          </Button>
+        </div>
 
         {/* Resultado de validación */}
         {validationResult && (
@@ -236,6 +252,15 @@ const TokenManager: React.FC = () => {
                     ⚠️ No tienes una cuenta de Instagram Business conectada. Esto es necesario para recibir mensajes.
                   </div>
                 )}
+
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-blue-600">Ver permisos detallados</summary>
+                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                    {validationResult.permissions.map((perm, idx) => (
+                      <div key={idx}>{perm.permission}: {perm.status}</div>
+                    ))}
+                  </div>
+                </details>
               </div>
             ) : (
               <div className="text-sm text-red-700">
@@ -246,7 +271,8 @@ const TokenManager: React.FC = () => {
         )}
 
         <div className="text-sm text-gray-600 space-y-1">
-          <p>• Copia tu token desde <a href="https://developers.facebook.com/tools/explorer/" target="_blank" className="text-blue-600 hover:underline">Meta Graph API Explorer</a></p>
+          <p>• Tu nuevo token está cargado automáticamente</p>
+          <p>• Haz clic en "Actualizar Token" para guardarlo</p>
           <p>• Asegúrate de tener permisos: pages_messaging, instagram_basic</p>
           <p>• Necesitas una cuenta de Instagram Business conectada</p>
         </div>
