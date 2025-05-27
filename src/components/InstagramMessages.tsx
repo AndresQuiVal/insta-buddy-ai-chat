@@ -73,11 +73,22 @@ const InstagramMessages: React.FC = () => {
         return;
       }
 
+      // Filtrar mensajes de payload/debug que no son conversaciones reales
+      const realMessages = data?.filter((message: any) => {
+        // Filtrar mensajes de debug, payload completo, errores, etc.
+        return !message.sender_id.includes('webhook_') && 
+               !message.sender_id.includes('debug') && 
+               !message.sender_id.includes('error') &&
+               !message.message_text.includes('PAYLOAD COMPLETO') &&
+               !message.message_text.includes('ERROR:') &&
+               message.sender_id !== 'diagnostic_user';
+      }) || [];
+
       // Agrupar mensajes por conversación
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
       
-      data?.forEach((message: any) => {
-        const conversationKey = message.sender_id;
+      realMessages.forEach((message: any) => {
+        const conversationKey = message.message_type === 'sent' ? message.recipient_id : message.sender_id;
         if (!conversationGroups[conversationKey]) {
           conversationGroups[conversationKey] = [];
         }
@@ -105,6 +116,15 @@ const InstagramMessages: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Función para obtener nombre de usuario más legible
+  const getUserDisplayName = (senderId: string) => {
+    if (senderId === 'hower_bot') return 'Hower Assistant';
+    if (senderId.length > 8) {
+      return `Usuario ${senderId.slice(-4)}`;
+    }
+    return `Usuario ${senderId}`;
   };
 
   const sendMessage = async () => {
@@ -135,8 +155,8 @@ const InstagramMessages: React.FC = () => {
         .from('instagram_messages')
         .insert({
           instagram_message_id: data.message_id || `sent_${Date.now()}`,
-          sender_id: selectedConversation,
-          recipient_id: 'me', // O tu ID de Instagram
+          sender_id: 'hower_bot',
+          recipient_id: selectedConversation,
           message_text: newMessage.trim(),
           message_type: 'sent',
           timestamp: new Date().toISOString(),
@@ -213,7 +233,7 @@ const InstagramMessages: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-gray-800 truncate">
-                      Usuario {conversation.sender_id.slice(-8)}
+                      {getUserDisplayName(conversation.sender_id)}
                     </h4>
                     <p className="text-sm text-gray-500 truncate">
                       {conversation.last_message.message_text}
@@ -244,7 +264,7 @@ const InstagramMessages: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800">
-                    Usuario {selectedConversation.slice(-8)}
+                    {getUserDisplayName(selectedConversation)}
                   </h3>
                   <p className="text-sm text-green-600">● En línea</p>
                 </div>
