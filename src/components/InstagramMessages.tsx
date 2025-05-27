@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -27,9 +26,10 @@ const InstagramMessages: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
+  const [lastMessageCount, setLastMessageCount] = useState(0);
 
   useEffect(() => {
-    loadInstagramMessages();
+    loadInstagramMessages(false); // No mostrar toast en la carga inicial
     
     // Suscribirse a nuevos mensajes en tiempo real
     const subscription = supabase
@@ -39,12 +39,27 @@ const InstagramMessages: React.FC = () => {
         schema: 'public',
         table: 'instagram_messages'
       }, (payload) => {
-        console.log('Nuevo mensaje recibido:', payload);
-        loadInstagramMessages();
-        toast({
-          title: "Nuevo mensaje",
-          description: "Se recibió un nuevo mensaje de Instagram",
-        });
+        console.log('Nuevo mensaje recibido en tiempo real:', payload);
+        // Solo recargar mensajes y mostrar toast si es un mensaje real, no de debug
+        const newMessage = payload.new as InstagramMessage;
+        
+        // Filtrar mensajes de debug/webhook
+        if (!newMessage.sender_id.includes('webhook_') && 
+            !newMessage.sender_id.includes('debug') && 
+            !newMessage.sender_id.includes('error') &&
+            !newMessage.message_text.includes('PAYLOAD COMPLETO') &&
+            !newMessage.message_text.includes('ERROR:') &&
+            newMessage.sender_id !== 'diagnostic_user' &&
+            newMessage.sender_id !== 'hower_bot') {
+          
+          toast({
+            title: "Nuevo mensaje",
+            description: `Mensaje de ${getUserDisplayName(newMessage.sender_id)}`,
+          });
+        }
+        
+        // Recargar mensajes sin mostrar toast adicional
+        loadInstagramMessages(false);
       })
       .subscribe();
 
@@ -53,7 +68,7 @@ const InstagramMessages: React.FC = () => {
     };
   }, []);
 
-  const loadInstagramMessages = async () => {
+  const loadInstagramMessages = async (showToast = true) => {
     try {
       setLoading(true);
       
@@ -65,11 +80,13 @@ const InstagramMessages: React.FC = () => {
 
       if (error) {
         console.error('Error loading Instagram messages:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los mensajes de Instagram",
-          variant: "destructive"
-        });
+        if (showToast) {
+          toast({
+            title: "Error",
+            description: "No se pudieron cargar los mensajes de Instagram",
+            variant: "destructive"
+          });
+        }
         return;
       }
 
@@ -83,6 +100,17 @@ const InstagramMessages: React.FC = () => {
                !message.message_text.includes('ERROR:') &&
                message.sender_id !== 'diagnostic_user';
       }) || [];
+
+      // Verificar si hay nuevos mensajes reales para mostrar toast solo cuando sea necesario
+      if (showToast && realMessages.length > lastMessageCount && lastMessageCount > 0) {
+        const newMessagesCount = realMessages.length - lastMessageCount;
+        toast({
+          title: "Mensajes actualizados",
+          description: `Se encontraron ${newMessagesCount} mensajes nuevos`,
+        });
+      }
+      
+      setLastMessageCount(realMessages.length);
 
       // Agrupar mensajes por conversación
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
@@ -164,7 +192,7 @@ const InstagramMessages: React.FC = () => {
         });
 
       setNewMessage('');
-      loadInstagramMessages();
+      loadInstagramMessages(false); // No mostrar toast al enviar mensaje
 
       toast({
         title: "Mensaje enviado",
@@ -204,7 +232,7 @@ const InstagramMessages: React.FC = () => {
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-800">Conversaciones Instagram</h3>
             <button
-              onClick={loadInstagramMessages}
+              onClick={() => loadInstagramMessages(true)}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <RefreshCw className="w-4 h-4 text-gray-600" />
