@@ -13,11 +13,13 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
+// Set para trackear mensajes ya procesados (evitar duplicados)
+const processedMessages = new Set<string>()
+
 serve(async (req) => {
   console.log('=== INSTAGRAM WEBHOOK REQUEST ===')
   console.log('Method:', req.method)
   console.log('URL:', req.url)
-  console.log('Headers:', Object.fromEntries(req.headers.entries()))
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -85,6 +87,17 @@ serve(async (req) => {
           for (const messagingEvent of entry.messaging) {
             if (messagingEvent.message && messagingEvent.message.text) {
               console.log('💬 Processing text message')
+              
+              // Crear ID único para evitar duplicados
+              const messageId = messagingEvent.message.mid || `${messagingEvent.sender.id}_${messagingEvent.timestamp}`
+              
+              if (processedMessages.has(messageId)) {
+                console.log(`⚠️ Message ${messageId} already processed, skipping`)
+                continue
+              }
+              
+              processedMessages.add(messageId)
+              
               const result = await processTextMessage(messagingEvent, entry.id)
               if (result.success) messagesProcessed++
             }
@@ -101,6 +114,16 @@ serve(async (req) => {
               
               // Si el change.value tiene estructura de mensaje directo
               if (change.value.message && change.value.message.text) {
+                // Crear ID único para evitar duplicados
+                const messageId = change.value.message.mid || `${change.value.sender?.id}_${change.value.timestamp}`
+                
+                if (processedMessages.has(messageId)) {
+                  console.log(`⚠️ Message ${messageId} already processed, skipping`)
+                  continue
+                }
+                
+                processedMessages.add(messageId)
+                
                 const result = await processChangeMessage(change.value, entry.id)
                 if (result.success) messagesProcessed++
               }
@@ -153,9 +176,22 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
     const senderId = messagingEvent.sender?.id || 'unknown_sender'
     const recipientId = messagingEvent.recipient?.id || pageId
     const messageText = message.text || 'Mensaje sin texto'
+    const messageId = message.mid || `msg_${Date.now()}_${Math.random()}`
+    
+    // Verificar si el mensaje ya existe en la base de datos
+    const { data: existingMessage } = await supabase
+      .from('instagram_messages')
+      .select('id')
+      .eq('instagram_message_id', messageId)
+      .single()
+
+    if (existingMessage) {
+      console.log(`⚠️ Message ${messageId} already exists in database, skipping`)
+      return { success: false, error: 'Message already exists' }
+    }
     
     const messageData = {
-      instagram_message_id: message.mid || `msg_${Date.now()}_${Math.random()}`,
+      instagram_message_id: messageId,
       sender_id: senderId,
       recipient_id: recipientId,
       message_text: messageText,
@@ -182,8 +218,12 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
 
     console.log(`✅ Message saved successfully`)
 
-    // Generar respuesta automática solo para mensajes reales (no de prueba)
-    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
+    // Generar respuesta automática solo para mensajes reales (no de prueba) y que no sean de nuestro bot
+    if (messageText && 
+        !messageText.includes('PRUEBA') && 
+        !messageText.includes('test') && 
+        !messageText.includes('¡Hola! Recibí tu mensaje') &&
+        senderId !== 'hower_bot') {
       await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
     }
 
@@ -204,6 +244,19 @@ async function processChangeMessage(changeValue: any, pageId: string) {
     const senderId = changeValue.sender?.id || 'unknown_sender'
     const recipientId = changeValue.recipient?.id || pageId
     const messageText = message?.text || 'Mensaje sin texto'
+    const messageId = message?.mid || `change_${Date.now()}_${Math.random()}`
+    
+    // Verificar si el mensaje ya existe en la base de datos
+    const { data: existingMessage } = await supabase
+      .from('instagram_messages')
+      .select('id')
+      .eq('instagram_message_id', messageId)
+      .single()
+
+    if (existingMessage) {
+      console.log(`⚠️ Message ${messageId} already exists in database, skipping`)
+      return { success: false, error: 'Message already exists' }
+    }
     
     // Convertir timestamp de segundos a millisegundos si es necesario
     let timestamp = changeValue.timestamp
@@ -212,7 +265,7 @@ async function processChangeMessage(changeValue: any, pageId: string) {
     }
 
     const messageData = {
-      instagram_message_id: message?.mid || `change_${Date.now()}_${Math.random()}`,
+      instagram_message_id: messageId,
       sender_id: senderId,
       recipient_id: recipientId,
       message_text: messageText,
@@ -239,8 +292,12 @@ async function processChangeMessage(changeValue: any, pageId: string) {
 
     console.log(`✅ Change message saved successfully`)
 
-    // Generar respuesta automática solo para mensajes reales
-    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
+    // Generar respuesta automática solo para mensajes reales y que no sean de nuestro bot
+    if (messageText && 
+        !messageText.includes('PRUEBA') && 
+        !messageText.includes('test') && 
+        !messageText.includes('¡Hola! Recibí tu mensaje') &&
+        senderId !== 'hower_bot') {
       await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
     }
 
@@ -256,6 +313,21 @@ async function processChangeMessage(changeValue: any, pageId: string) {
 async function generateAutoResponse(messageText: string, senderId: string, originalMessageId: string) {
   try {
     console.log(`🤖 Generating auto response for: "${messageText}"`)
+
+    // Verificar si ya enviamos una respuesta a este usuario recientemente (últimos 30 segundos)
+    const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString()
+    
+    const { data: recentResponses } = await supabase
+      .from('instagram_messages')
+      .select('id')
+      .eq('sender_id', 'hower_bot')
+      .eq('recipient_id', senderId)
+      .gte('timestamp', thirtySecondsAgo)
+
+    if (recentResponses && recentResponses.length > 0) {
+      console.log(`⚠️ Recent response already sent to user ${senderId}, skipping auto response`)
+      return
+    }
 
     const responseText = `¡Hola! Recibí tu mensaje: "${messageText}". Te responderemos pronto. 🚀`
 
