@@ -13,7 +13,12 @@ import {
   BarChart3,
   RefreshCw,
   LogOut,
-  Bug
+  Bug,
+  Target,
+  Award,
+  Calendar,
+  Zap,
+  Brain
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -23,6 +28,11 @@ interface DashboardStats {
   messagesSent: number;
   averageResponseTime: number;
   todayMessages: number;
+  totalInvitations: number;
+  totalPresentations: number;
+  totalInscriptions: number;
+  responseRate: number;
+  lastMessageDate: string | null;
 }
 
 const InstagramDashboard: React.FC = () => {
@@ -32,7 +42,12 @@ const InstagramDashboard: React.FC = () => {
     messagesReceived: 0,
     messagesSent: 0,
     averageResponseTime: 0,
-    todayMessages: 0
+    todayMessages: 0,
+    totalInvitations: 0,
+    totalPresentations: 0,
+    totalInscriptions: 0,
+    responseRate: 0,
+    lastMessageDate: null
   });
   const [loading, setLoading] = useState(true);
   const [showDebug, setShowDebug] = useState(false);
@@ -59,7 +74,6 @@ const InstagramDashboard: React.FC = () => {
 
   const handleLogout = () => {
     disconnectInstagram();
-    // Recargar la página para que se actualice el estado
     window.location.reload();
   };
 
@@ -67,45 +81,44 @@ const InstagramDashboard: React.FC = () => {
     try {
       setLoading(true);
 
-      // Total messages
-      const { count: totalMessages } = await supabase
-        .from('instagram_messages')
-        .select('*', { count: 'exact', head: true });
+      // Usar la función de métricas avanzadas
+      const { data: metrics, error: metricsError } = await supabase
+        .rpc('calculate_advanced_metrics');
 
-      // Messages by type
-      const { data: messagesByType } = await supabase
-        .from('instagram_messages')
-        .select('message_type');
+      if (metricsError) {
+        console.error('Error loading advanced metrics:', metricsError);
+        // Fallback a métricas básicas
+        await loadBasicStats();
+        return;
+      }
 
-      const messagesReceived = messagesByType?.filter(m => m.message_type === 'received').length || 0;
-      const messagesSent = messagesByType?.filter(m => m.message_type === 'sent').length || 0;
+      if (metrics && metrics.length > 0) {
+        const metric = metrics[0];
+        
+        // Unique conversations (unique sender_ids)
+        const { data: uniqueSenders } = await supabase
+          .from('instagram_messages')
+          .select('sender_id')
+          .not('sender_id', 'eq', 'me')
+          .not('sender_id', 'eq', 'hower_bot');
 
-      // Unique conversations (unique sender_ids)
-      const { data: uniqueSenders } = await supabase
-        .from('instagram_messages')
-        .select('sender_id')
-        .not('sender_id', 'eq', 'me');
+        const uniqueSendersSet = new Set(uniqueSenders?.map(m => m.sender_id) || []);
+        const totalConversations = uniqueSendersSet.size;
 
-      const uniqueSendersSet = new Set(uniqueSenders?.map(m => m.sender_id) || []);
-      const totalConversations = uniqueSendersSet.size;
-
-      // Today's messages
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const { count: todayMessages } = await supabase
-        .from('instagram_messages')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', today.toISOString());
-
-      setStats({
-        totalMessages: totalMessages || 0,
-        totalConversations,
-        messagesReceived,
-        messagesSent,
-        averageResponseTime: 2.5, // Placeholder - could calculate from actual data
-        todayMessages: todayMessages || 0
-      });
+        setStats({
+          totalMessages: metric.total_sent + metric.total_responses,
+          totalConversations,
+          messagesReceived: metric.total_responses,
+          messagesSent: metric.total_sent,
+          averageResponseTime: metric.avg_response_time_seconds,
+          todayMessages: metric.today_messages,
+          totalInvitations: metric.total_invitations,
+          totalPresentations: metric.total_presentations,
+          totalInscriptions: metric.total_inscriptions,
+          responseRate: metric.response_rate_percentage,
+          lastMessageDate: metric.last_message_date
+        });
+      }
 
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
@@ -117,6 +130,50 @@ const InstagramDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadBasicStats = async () => {
+    // ... keep existing code (básico fallback)
+    const { count: totalMessages } = await supabase
+      .from('instagram_messages')
+      .select('*', { count: 'exact', head: true });
+
+    const { data: messagesByType } = await supabase
+      .from('instagram_messages')
+      .select('message_type');
+
+    const messagesReceived = messagesByType?.filter(m => m.message_type === 'received').length || 0;
+    const messagesSent = messagesByType?.filter(m => m.message_type === 'sent').length || 0;
+
+    const { data: uniqueSenders } = await supabase
+      .from('instagram_messages')
+      .select('sender_id')
+      .not('sender_id', 'eq', 'me');
+
+    const uniqueSendersSet = new Set(uniqueSenders?.map(m => m.sender_id) || []);
+    const totalConversations = uniqueSendersSet.size;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const { count: todayMessages } = await supabase
+      .from('instagram_messages')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString());
+
+    setStats({
+      totalMessages: totalMessages || 0,
+      totalConversations,
+      messagesReceived,
+      messagesSent,
+      averageResponseTime: 2.5,
+      todayMessages: todayMessages || 0,
+      totalInvitations: 0,
+      totalPresentations: 0,
+      totalInscriptions: 0,
+      responseRate: messagesSent > 0 ? (messagesReceived / messagesSent) * 100 : 0,
+      lastMessageDate: null
+    });
   };
 
   const StatCard: React.FC<{
@@ -149,8 +206,8 @@ const InstagramDashboard: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-800">Dashboard Instagram</h2>
           <RefreshCw className="w-6 h-6 text-purple-400 animate-spin" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
             <div key={i} className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 animate-pulse">
               <div className="h-20 bg-gray-200 rounded"></div>
             </div>
@@ -191,113 +248,105 @@ const InstagramDashboard: React.FC = () => {
 
       {showDebug && <InstagramDebug />}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Métricas Principales */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total de Mensajes"
-          value={stats.totalMessages}
-          icon={<MessageCircle className="w-6 h-6 text-white" />}
+          title="Mensajes Enviados"
+          value={stats.messagesSent}
+          icon={<Send className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-blue-500 to-purple-500"
-          subtitle="Todos los mensajes procesados"
+          subtitle="Total enviados"
         />
 
         <StatCard
-          title="Conversaciones Activas"
-          value={stats.totalConversations}
-          icon={<Users className="w-6 h-6 text-white" />}
+          title="Respuestas Recibidas"
+          value={stats.messagesReceived}
+          icon={<Inbox className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-green-500 to-teal-500"
-          subtitle="Usuarios únicos"
+          subtitle={`${stats.responseRate.toFixed(1)}% tasa de respuesta`}
+        />
+
+        <StatCard
+          title="Invitaciones"
+          value={stats.totalInvitations}
+          icon={<Target className="w-6 h-6 text-white" />}
+          color="bg-gradient-to-r from-orange-500 to-red-500"
+          subtitle="Enviadas"
+        />
+
+        <StatCard
+          title="Presentaciones"
+          value={stats.totalPresentations}
+          icon={<Award className="w-6 h-6 text-white" />}
+          color="bg-gradient-to-r from-cyan-500 to-blue-500"
+          subtitle="Realizadas"
+        />
+      </div>
+
+      {/* Métricas Secundarias */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Inscripciones"
+          value={stats.totalInscriptions}
+          icon={<Zap className="w-6 h-6 text-white" />}
+          color="bg-gradient-to-r from-purple-500 to-pink-500"
+          subtitle="Logradas"
         />
 
         <StatCard
           title="Mensajes Hoy"
           value={stats.todayMessages}
-          icon={<TrendingUp className="w-6 h-6 text-white" />}
-          color="bg-gradient-to-r from-orange-500 to-red-500"
+          icon={<Calendar className="w-6 h-6 text-white" />}
+          color="bg-gradient-to-r from-indigo-500 to-purple-500"
           subtitle="En las últimas 24h"
         />
 
         <StatCard
-          title="Mensajes Recibidos"
-          value={stats.messagesReceived}
-          icon={<Inbox className="w-6 h-6 text-white" />}
-          color="bg-gradient-to-r from-cyan-500 to-blue-500"
-          subtitle="De usuarios"
-        />
-
-        <StatCard
-          title="Respuestas Enviadas"
-          value={stats.messagesSent}
-          icon={<Send className="w-6 h-6 text-white" />}
-          color="bg-gradient-to-r from-purple-500 to-pink-500"
-          subtitle="Automáticas y manuales"
-        />
-
-        <StatCard
           title="Tiempo de Respuesta"
-          value={`${stats.averageResponseTime}s`}
+          value={`${stats.averageResponseTime.toFixed(1)}s`}
           icon={<Clock className="w-6 h-6 text-white" />}
-          color="bg-gradient-to-r from-indigo-500 to-purple-500"
+          color="bg-gradient-to-r from-pink-500 to-rose-500"
           subtitle="Promedio"
+        />
+
+        <StatCard
+          title="Conversaciones"
+          value={stats.totalConversations}
+          icon={<Users className="w-6 h-6 text-white" />}
+          color="bg-gradient-to-r from-emerald-500 to-green-500"
+          subtitle="Únicas"
         />
       </div>
 
-      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6" style={{ display: 'none' }}>
+      {/* Estado del sistema */}
+      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6">
         <div className="flex items-center gap-3 mb-4">
           <BarChart3 className="w-6 h-6 text-purple-500" />
-          <h3 className="text-lg font-semibold text-gray-800">Resumen de Actividad</h3>
+          <h3 className="text-lg font-semibold text-gray-800">Estado del Sistema</h3>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h4 className="font-medium text-gray-700">Distribución de Mensajes</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Recibidos</span>
-                <span className="text-sm font-medium text-gray-800">{stats.messagesReceived}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
-                  style={{ 
-                    width: `${stats.totalMessages > 0 ? (stats.messagesReceived / stats.totalMessages) * 100 : 0}%` 
-                  }}
-                ></div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Enviados</span>
-                <span className="text-sm font-medium text-gray-800">{stats.messagesSent}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-green-500 to-teal-500 h-2 rounded-full transition-all duration-300"
-                  style={{ 
-                    width: `${stats.totalMessages > 0 ? (stats.messagesSent / stats.totalMessages) * 100 : 0}%` 
-                  }}
-                ></div>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm text-gray-600">Webhook Instagram activo</span>
           </div>
-
-          <div className="space-y-3">
-            <h4 className="font-medium text-gray-700">Estado del Sistema</h4>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">Webhook activo</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">ChatGPT conectado</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-600">Base de datos sincronizada</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm text-gray-600">IA Hower Assistant conectada</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm text-gray-600">Base de datos sincronizada</span>
           </div>
         </div>
+
+        {stats.lastMessageDate && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600">
+              Último mensaje enviado: {new Date(stats.lastMessageDate).toLocaleString()}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

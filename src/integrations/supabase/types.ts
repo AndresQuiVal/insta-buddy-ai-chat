@@ -11,37 +11,52 @@ export type Database = {
     Tables: {
       instagram_messages: {
         Row: {
+          conversation_stage: string | null
           created_at: string
           id: string
           instagram_message_id: string
+          is_inscription: boolean | null
+          is_invitation: boolean | null
+          is_presentation: boolean | null
           message_text: string
           message_type: string
           raw_data: Json | null
           recipient_id: string
+          response_time_seconds: number | null
           sender_id: string
           timestamp: string
           updated_at: string
         }
         Insert: {
+          conversation_stage?: string | null
           created_at?: string
           id?: string
           instagram_message_id: string
+          is_inscription?: boolean | null
+          is_invitation?: boolean | null
+          is_presentation?: boolean | null
           message_text?: string
           message_type: string
           raw_data?: Json | null
           recipient_id: string
+          response_time_seconds?: number | null
           sender_id: string
           timestamp?: string
           updated_at?: string
         }
         Update: {
+          conversation_stage?: string | null
           created_at?: string
           id?: string
           instagram_message_id?: string
+          is_inscription?: boolean | null
+          is_invitation?: boolean | null
+          is_presentation?: boolean | null
           message_text?: string
           message_type?: string
           raw_data?: Json | null
           recipient_id?: string
+          response_time_seconds?: number | null
           sender_id?: string
           timestamp?: string
           updated_at?: string
@@ -53,7 +68,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_advanced_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_sent: number
+          total_responses: number
+          total_invitations: number
+          total_presentations: number
+          total_inscriptions: number
+          messages_per_response: number
+          messages_per_invitation: number
+          messages_per_presentation: number
+          invitations_per_presentation: number
+          messages_per_inscription: number
+          invitations_per_inscription: number
+          presentations_per_inscription: number
+          today_messages: number
+          response_rate_percentage: number
+          avg_response_time_seconds: number
+          last_message_date: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

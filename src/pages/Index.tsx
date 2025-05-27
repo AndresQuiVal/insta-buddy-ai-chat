@@ -1,12 +1,12 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InstagramDashboard from '@/components/InstagramDashboard';
 import InstagramMessages from '@/components/InstagramMessages';
 import InstagramDebug from '@/components/InstagramDebug';
 import InstagramDiagnostic from '@/components/InstagramDiagnostic';
+import AdvancedMetrics from '@/components/AdvancedMetrics';
 import TokenManager from '@/components/TokenManager';
-import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Bug, Key, Stethoscope } from 'lucide-react';
+import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Bug, Key, Stethoscope, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +27,6 @@ const Index = () => {
       return;
     }
 
-    // Simular guardado del token
     localStorage.setItem('instagram_access_token', accessToken);
     setIsTokenSaved(true);
     setAccessToken('');
@@ -58,7 +57,7 @@ const Index = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="diagnostic" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
+          <TabsList className="grid w-full grid-cols-7 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
             <TabsTrigger 
               value="diagnostic" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-orange-500 data-[state=active]:text-white"
@@ -72,6 +71,13 @@ const Index = () => {
             >
               <BarChart3 className="w-4 h-4" />
               Dashboard
+            </TabsTrigger>
+            <TabsTrigger 
+              value="metrics" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
+            >
+              <Brain className="w-4 h-4" />
+              Saber tus Números
             </TabsTrigger>
             <TabsTrigger 
               value="messages" 
@@ -111,6 +117,10 @@ const Index = () => {
             <InstagramDashboard />
           </TabsContent>
 
+          <TabsContent value="metrics" className="space-y-6">
+            <AdvancedMetrics />
+          </TabsContent>
+
           <TabsContent value="messages" className="h-[600px]">
             <InstagramMessages />
           </TabsContent>
@@ -128,7 +138,6 @@ const Index = () => {
               <h3 className="text-2xl font-bold text-gray-800 mb-6">Configuración del Sistema</h3>
               
               <div className="space-y-6">
-                {/* Token Configuration Section */}
                 <div className="border-b border-gray-200 pb-6">
                   <h4 className="text-lg font-semibold text-gray-700 mb-4">Token de Acceso de Instagram</h4>
                   
