@@ -27,13 +27,15 @@ serve(async (req) => {
 
     console.log('=== ACTUALIZANDO TOKEN DE INSTAGRAM ===')
     console.log('Nuevo token recibido:', access_token.substring(0, 20) + '...')
+    console.log('Token length:', access_token.length)
 
     // Validar el token con Facebook Graph API
+    console.log('🔍 Validando token con Facebook Graph API...')
     const validationResponse = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${access_token}`)
     
     if (!validationResponse.ok) {
       const errorData = await validationResponse.json()
-      console.error('Token inválido:', errorData)
+      console.error('❌ Token inválido:', errorData)
       
       return new Response(
         JSON.stringify({ 
@@ -49,10 +51,29 @@ serve(async (req) => {
     }
 
     const userData = await validationResponse.json()
-    console.log('Token válido para usuario:', userData.name || userData.id)
+    console.log('✅ Token válido para usuario:', userData.name || userData.id)
 
-    // Aquí actualizarías el token en tu base de datos o almacenamiento seguro
-    // Por ahora, simplemente confirmamos que el token es válido
+    // Validar permisos específicos
+    console.log('🔑 Verificando permisos...')
+    const permissionsResponse = await fetch(`https://graph.facebook.com/v19.0/me/permissions?access_token=${access_token}`)
+    const permissionsData = await permissionsResponse.json()
+    
+    console.log('Permisos encontrados:', permissionsData.data?.map(p => `${p.permission}:${p.status}`))
+
+    // Verificar cuentas de Instagram Business
+    console.log('📱 Verificando cuentas de Instagram Business...')
+    const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${access_token}`)
+    const accountsData = await accountsResponse.json()
+    
+    const hasInstagramBusiness = accountsData.data && accountsData.data.some(acc => acc.instagram_business_account)
+    console.log('Instagram Business conectado:', hasInstagramBusiness ? '✅' : '❌')
+
+    if (!hasInstagramBusiness) {
+      console.warn('⚠️ No se encontró cuenta de Instagram Business')
+    }
+
+    // TODO: Aquí deberías actualizar el token en Supabase Secrets
+    // Por ahora, confirmamos que el token es válido
     
     console.log('✅ Token actualizado exitosamente')
 
@@ -60,7 +81,13 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         message: 'Token actualizado correctamente',
-        user: userData
+        user: userData,
+        permissions: permissionsData.data || [],
+        hasInstagramBusiness: hasInstagramBusiness,
+        recommendations: hasInstagramBusiness ? [] : [
+          'Conecta una cuenta de Instagram Business para recibir mensajes',
+          'Ve a Business Manager → Configuración → Cuentas de Instagram'
+        ]
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -68,7 +95,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error actualizando token:', error)
+    console.error('💥 Error actualizando token:', error)
     return new Response(
       JSON.stringify({ 
         error: 'internal_server_error',
