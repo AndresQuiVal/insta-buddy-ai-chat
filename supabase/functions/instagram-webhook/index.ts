@@ -16,6 +16,7 @@ serve(async (req) => {
   try {
     console.log('=== INSTAGRAM WEBHOOK RECEIVED ===')
     console.log('Method:', req.method)
+    console.log('URL:', req.url)
 
     // Verificación del webhook (GET request de Facebook)
     if (req.method === 'GET') {
@@ -30,41 +31,16 @@ serve(async (req) => {
 
       if (mode === 'subscribe' && token === VERIFY_TOKEN) {
         console.log('✓ Webhook verified successfully')
-        return new Response(challenge, { 
-          status: 200,
-          headers: corsHeaders 
-        })
+        return new Response(challenge, { status: 200 })
       } else {
         console.log('✗ Webhook verification failed')
-        return new Response('Forbidden', { 
-          status: 403,
-          headers: corsHeaders 
-        })
+        return new Response('Forbidden', { status: 403 })
       }
     }
 
     // Procesar mensajes entrantes (POST request)
     if (req.method === 'POST') {
-      const contentType = req.headers.get('content-type') || ''
-      console.log('Content-Type:', contentType)
-      
-      let body: any
-      try {
-        if (contentType.includes('application/json')) {
-          body = await req.json()
-        } else {
-          const text = await req.text()
-          console.log('Raw body:', text)
-          body = JSON.parse(text)
-        }
-      } catch (parseError) {
-        console.error('Error parsing body:', parseError)
-        return new Response('Invalid JSON', { 
-          status: 400, 
-          headers: corsHeaders 
-        })
-      }
-
+      const body = await req.json()
       console.log('📨 Webhook payload recibido:', JSON.stringify(body, null, 2))
 
       // Verificar si el payload tiene la estructura esperada
@@ -127,10 +103,13 @@ serve(async (req) => {
   } catch (error) {
     console.error('💥 ERROR en webhook:', error)
     
-    return new Response('OK', { 
-      status: 200, 
-      headers: corsHeaders 
-    })
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
 })
 
@@ -175,9 +154,10 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
 
     console.log(`✅ Mensaje guardado exitosamente`)
 
-    // *** RESPUESTAS AUTOMÁTICAS DESACTIVADAS ***
-    // NO generar respuesta automática para evitar spam
-    console.log('⚠️ Respuestas automáticas DESACTIVADAS')
+    // Generar respuesta automática solo para mensajes reales (no de prueba)
+    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
+      await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
+    }
 
     return { success: true, id: data[0]?.id }
 
@@ -234,14 +214,52 @@ async function processChangeMessage(changeValue: any, pageId: string) {
 
     console.log(`✅ Mensaje de change guardado exitosamente`)
 
-    // *** RESPUESTAS AUTOMÁTICAS DESACTIVADAS ***
-    // NO generar respuesta automática para evitar spam
-    console.log('⚠️ Respuestas automáticas DESACTIVADAS')
+    // Generar respuesta automática solo para mensajes reales
+    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
+      await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
+    }
 
     return { success: true, id: data[0]?.id }
 
   } catch (error) {
     console.error(`💥 Error en processChangeMessage:`, error)
     return { success: false, error: error.message }
+  }
+}
+
+// Función para generar respuesta automática
+async function generateAutoResponse(messageText: string, senderId: string, originalMessageId: string) {
+  try {
+    console.log(`🤖 Generando respuesta automática para: "${messageText}"`)
+
+    const responseText = `¡Hola! Recibí tu mensaje: "${messageText}". Te responderemos pronto. 🚀`
+
+    const responseData = {
+      instagram_message_id: `response_${Date.now()}_${Math.random()}`,
+      sender_id: 'hower_bot',
+      recipient_id: senderId,
+      message_text: responseText,
+      timestamp: new Date().toISOString(),
+      message_type: 'sent',
+      raw_data: { 
+        original_message_id: originalMessageId,
+        auto_response: true,
+        generated_at: new Date().toISOString()
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('instagram_messages')
+      .insert(responseData)
+      .select()
+
+    if (error) {
+      console.error(`❌ Error guardando respuesta automática:`, error)
+    } else {
+      console.log(`✅ Respuesta automática guardada`)
+    }
+
+  } catch (error) {
+    console.error(`💥 Error en generateAutoResponse:`, error)
   }
 }

@@ -4,8 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InstagramDashboard from '@/components/InstagramDashboard';
 import InstagramMessages from '@/components/InstagramMessages';
 import InstagramDebug from '@/components/InstagramDebug';
+import InstagramDiagnostic from '@/components/InstagramDiagnostic';
 import TokenManager from '@/components/TokenManager';
-import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Bug, Key } from 'lucide-react';
+import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Bug, Key, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,8 +57,15 @@ const Index = () => {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
+        <Tabs defaultValue="diagnostic" className="w-full">
+          <TabsList className="grid w-full grid-cols-6 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
+            <TabsTrigger 
+              value="diagnostic" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-orange-500 data-[state=active]:text-white"
+            >
+              <Stethoscope className="w-4 h-4" />
+              Diagnóstico
+            </TabsTrigger>
             <TabsTrigger 
               value="dashboard" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
@@ -94,6 +102,10 @@ const Index = () => {
               Configuración
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="diagnostic" className="space-y-6">
+            <InstagramDiagnostic />
+          </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-6">
             <InstagramDashboard />

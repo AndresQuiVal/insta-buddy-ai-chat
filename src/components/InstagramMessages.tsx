@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import { MessageCircle, Send, User, Bot, RefreshCw } from 'lucide-react';
 
 interface InstagramMessage {
@@ -29,6 +30,27 @@ const InstagramMessages: React.FC = () => {
 
   useEffect(() => {
     loadInstagramMessages();
+    
+    // Suscribirse a nuevos mensajes en tiempo real
+    const subscription = supabase
+      .channel('instagram-messages-changes')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'instagram_messages'
+      }, (payload) => {
+        console.log('Nuevo mensaje recibido:', payload);
+        loadInstagramMessages();
+        toast({
+          title: "Nuevo mensaje",
+          description: "Se recibió un nuevo mensaje de Instagram",
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   const loadInstagramMessages = async () => {
@@ -43,11 +65,17 @@ const InstagramMessages: React.FC = () => {
 
       if (error) {
         console.error('Error loading Instagram messages:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los mensajes de Instagram",
+          variant: "destructive"
+        });
         return;
       }
 
-      // Filter out debug/webhook messages
+      // Filtrar mensajes de payload/debug que no son conversaciones reales
       const realMessages = data?.filter((message: any) => {
+        // Filtrar mensajes de debug, payload completo, errores, etc.
         return !message.sender_id.includes('webhook_') && 
                !message.sender_id.includes('debug') && 
                !message.sender_id.includes('error') &&
@@ -56,7 +84,7 @@ const InstagramMessages: React.FC = () => {
                message.sender_id !== 'diagnostic_user';
       }) || [];
 
-      // Group messages by conversation
+      // Agrupar mensajes por conversación
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
       
       realMessages.forEach((message: any) => {
@@ -67,17 +95,18 @@ const InstagramMessages: React.FC = () => {
         conversationGroups[conversationKey].push(message);
       });
 
-      // Convert to array and sort by last message
+      // Convertir a array y ordenar por último mensaje
       const conversationsArray = Object.entries(conversationGroups).map(([sender_id, messages]) => ({
         sender_id,
         messages: messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
-        last_message: messages[0]
+        last_message: messages[0] // El más reciente
       })).sort((a, b) => 
         new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
       );
 
       setConversations(conversationsArray);
       
+      // Seleccionar la primera conversación si no hay ninguna seleccionada
       if (!selectedConversation && conversationsArray.length > 0) {
         setSelectedConversation(conversationsArray[0].sender_id);
       }
@@ -89,6 +118,7 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
+  // Función para obtener nombre de usuario más legible
   const getUserDisplayName = (senderId: string) => {
     if (senderId === 'hower_bot') return 'Hower Assistant';
     if (senderId.length > 8) {
@@ -112,10 +142,15 @@ const InstagramMessages: React.FC = () => {
 
       if (error) {
         console.error('Error sending message:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo enviar el mensaje",
+          variant: "destructive"
+        });
         return;
       }
 
-      // Save sent message to database
+      // Guardar el mensaje enviado en la base de datos
       await supabase
         .from('instagram_messages')
         .insert({
@@ -131,8 +166,18 @@ const InstagramMessages: React.FC = () => {
       setNewMessage('');
       loadInstagramMessages();
 
+      toast({
+        title: "Mensaje enviado",
+        description: "Tu mensaje fue enviado exitosamente",
+      });
+
     } catch (error) {
       console.error('Error in sendMessage:', error);
+      toast({
+        title: "Error",
+        description: "Error enviando mensaje",
+        variant: "destructive"
+      });
     } finally {
       setSending(false);
     }
