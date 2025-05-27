@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 import { MessageCircle, Send, User, Bot, RefreshCw } from 'lucide-react';
 
 interface InstagramMessage {
@@ -30,23 +29,6 @@ const InstagramMessages: React.FC = () => {
 
   useEffect(() => {
     loadInstagramMessages();
-    
-    // Simple real-time subscription without complex logic
-    const subscription = supabase
-      .channel('instagram-messages-changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'instagram_messages'
-      }, () => {
-        // Just reload messages, no notifications for now
-        loadInstagramMessages();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
   }, []);
 
   const loadInstagramMessages = async () => {
