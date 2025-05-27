@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -70,19 +69,20 @@ const InstagramDiagnostic: React.FC = () => {
         };
       }
 
-      // 3. Verificar webhook usando múltiples métodos - MEJORADO
-      console.log('🔍 3. Probando webhook...');
+      // 3. Verificar webhook con autorización correcta
+      console.log('🔍 3. Probando webhook con autorización...');
       
-      // Método 1: Probar con GET simple usando fetch directo
+      // Método 1: Probar con GET usando headers de autorización correctos
       try {
-        console.log('3.1 Probando webhook con GET directo...');
-        const webhookUrl = `https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook`;
+        console.log('3.1 Probando webhook con GET autorizado...');
+        const webhookUrl = `https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook?hub.mode=subscribe&hub.verify_token=hower-instagram-webhook-token&hub.challenge=test123`;
         
         const directResponse = await fetch(webhookUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
           }
         });
         
@@ -91,7 +91,7 @@ const InstagramDiagnostic: React.FC = () => {
         results.webhook_direct = {
           status: directResponse.ok ? 'success' : 'error',
           message: directResponse.ok ? 
-            `Webhook accesible vía fetch directo (${directResponse.status})` : 
+            `Webhook accesible - Verificación exitosa (${directResponse.status})` : 
             `Error HTTP ${directResponse.status}: ${directResponse.statusText}`,
           url: webhookUrl,
           response_status: directResponse.status,
@@ -99,22 +99,26 @@ const InstagramDiagnostic: React.FC = () => {
           headers: Object.fromEntries(directResponse.headers.entries())
         };
       } catch (fetchError: any) {
-        const webhookUrl = `https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook`;
         results.webhook_direct = {
           status: 'error',
           message: `Error de red en fetch directo: ${fetchError.message}`,
-          url: webhookUrl,
+          url: `https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook`,
           error_type: 'network_error',
           error_details: fetchError.toString()
         };
       }
 
-      // Método 2: Usar Supabase Functions invoke - MEJORADO
+      // Método 2: Usar Supabase Functions invoke con verificación
       try {
         console.log('3.2 Probando con supabase.functions.invoke...');
         const invokeResult = await supabase.functions.invoke('instagram-webhook', {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: {
+            'hub.mode': 'subscribe',
+            'hub.verify_token': 'hower-instagram-webhook-token',
+            'hub.challenge': 'test123'
+          }
         });
         
         results.webhook_supabase = {
@@ -138,7 +142,7 @@ const InstagramDiagnostic: React.FC = () => {
         };
       }
 
-      // 4. Verificar token actual y conexión con Instagram (MEJORADO)
+      // 4. Verificar token actual y conexión con Instagram
       console.log('🔍 4. Verificando token actual y conexión Instagram...');
       const currentToken = localStorage.getItem('instagram_access_token') || localStorage.getItem('hower-instagram-token');
       
@@ -286,7 +290,7 @@ const InstagramDiagnostic: React.FC = () => {
         };
       }
 
-      // 6. Probar webhook con payload de Instagram simulado - SOLO SI EL WEBHOOK ESTÁ DISPONIBLE
+      // 6. Probar webhook con payload de Instagram simulado
       console.log('🔍 6. Enviando payload simulado al webhook...');
       if (results.webhook_supabase?.status === 'success' || results.webhook_direct?.status === 'success') {
         try {
@@ -357,7 +361,7 @@ const InstagramDiagnostic: React.FC = () => {
         };
       }
 
-      // 7. NUEVO: Verificar configuración de token en Supabase
+      // 7. Verificar configuración de token en servidor
       console.log('🔍 7. Verificando token en servidor...');
       try {
         const { data: tokenServerData, error: tokenServerError } = await supabase.functions.invoke('update-instagram-token', {
@@ -535,7 +539,7 @@ const InstagramDiagnostic: React.FC = () => {
               </div>
             )}
 
-            {/* Webhook directo - MEJORADO */}
+            {/* Webhook directo */}
             {diagnosticResults.webhook_direct && (
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <Webhook className="w-5 h-5 text-blue-500 mt-0.5" />
@@ -571,7 +575,7 @@ const InstagramDiagnostic: React.FC = () => {
               </div>
             )}
 
-            {/* Webhook via Supabase - MEJORADO */}
+            {/* Webhook via Supabase */}
             {diagnosticResults.webhook_supabase && (
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <Webhook className="w-5 h-5 text-orange-500 mt-0.5" />
@@ -689,6 +693,7 @@ const InstagramDiagnostic: React.FC = () => {
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <h4 className="font-medium text-yellow-800 mb-2">📋 Pasos para resolver problemas comunes:</h4>
           <ul className="text-sm text-yellow-700 space-y-1">
+            <li>• <strong>Si el webhook devuelve 403 Forbidden:</strong> Verifica que la función edge tenga los permisos correctos en Supabase y que esté correctamente desplegada</li>
             <li>• <strong>Si el token es válido pero Instagram no aparece:</strong> Verifica que tu cuenta de Instagram esté configurada como Business y vinculada a una Página de Facebook</li>
             <li>• <strong>Si Facebook reconoce el token pero Instagram no responde:</strong> Revisa los permisos de la app (instagram_basic, instagram_manage_messages)</li>
             <li>• <strong>Si el webhook no recibe mensajes:</strong> Verifica en Facebook Developer que esté configurado correctamente y suscrito a los eventos</li>
