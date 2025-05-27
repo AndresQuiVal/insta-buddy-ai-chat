@@ -27,20 +27,6 @@ const InstagramMessages: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  // Función para filtrar mensajes reales (no de debug/sistema)
-  const isRealUserMessage = (message: any) => {
-    return !message.sender_id.includes('webhook_') && 
-           !message.sender_id.includes('debug') && 
-           !message.sender_id.includes('error') &&
-           !message.message_text.includes('PAYLOAD COMPLETO') &&
-           !message.message_text.includes('ERROR:') &&
-           !message.message_text.includes('Mensaje de prueba desde el debugger') &&
-           message.sender_id !== 'diagnostic_user' &&
-           message.sender_id !== 'hower_bot' &&
-           message.sender_id !== 'test_sender_456';
-  };
 
   useEffect(() => {
     loadInstagramMessages();
@@ -53,26 +39,19 @@ const InstagramMessages: React.FC = () => {
         schema: 'public',
         table: 'instagram_messages'
       }, (payload) => {
-        console.log('Nuevo mensaje recibido en tiempo real:', payload);
-        const newMessage = payload.new as InstagramMessage;
-        
-        // Solo mostrar notificación si es un mensaje real de usuario y no es la carga inicial
-        if (!isInitialLoad && isRealUserMessage(newMessage) && newMessage.message_type === 'received') {
-          toast({
-            title: "Nuevo mensaje",
-            description: `Mensaje de ${getUserDisplayName(newMessage.sender_id)}`,
-          });
-        }
-        
-        // Recargar mensajes
+        console.log('Nuevo mensaje recibido:', payload);
         loadInstagramMessages();
+        toast({
+          title: "Nuevo mensaje",
+          description: "Se recibió un nuevo mensaje de Instagram",
+        });
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [isInitialLoad]);
+  }, []);
 
   const loadInstagramMessages = async () => {
     try {
@@ -86,18 +65,24 @@ const InstagramMessages: React.FC = () => {
 
       if (error) {
         console.error('Error loading Instagram messages:', error);
-        if (!isInitialLoad) {
-          toast({
-            title: "Error",
-            description: "No se pudieron cargar los mensajes de Instagram",
-            variant: "destructive"
-          });
-        }
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los mensajes de Instagram",
+          variant: "destructive"
+        });
         return;
       }
 
-      // Filtrar solo mensajes reales
-      const realMessages = data?.filter(isRealUserMessage) || [];
+      // Filtrar mensajes de payload/debug que no son conversaciones reales
+      const realMessages = data?.filter((message: any) => {
+        // Filtrar mensajes de debug, payload completo, errores, etc.
+        return !message.sender_id.includes('webhook_') && 
+               !message.sender_id.includes('debug') && 
+               !message.sender_id.includes('error') &&
+               !message.message_text.includes('PAYLOAD COMPLETO') &&
+               !message.message_text.includes('ERROR:') &&
+               message.sender_id !== 'diagnostic_user';
+      }) || [];
 
       // Agrupar mensajes por conversación
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
@@ -124,11 +109,6 @@ const InstagramMessages: React.FC = () => {
       // Seleccionar la primera conversación si no hay ninguna seleccionada
       if (!selectedConversation && conversationsArray.length > 0) {
         setSelectedConversation(conversationsArray[0].sender_id);
-      }
-
-      // Marcar que ya no es la carga inicial
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
       }
 
     } catch (error) {
