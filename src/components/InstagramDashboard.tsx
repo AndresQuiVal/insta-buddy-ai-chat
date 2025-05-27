@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -18,7 +19,12 @@ import {
   Award,
   Calendar,
   Zap,
-  Brain
+  Brain,
+  ChevronDown,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  Lightbulb
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -35,6 +41,15 @@ interface DashboardStats {
   lastMessageDate: string | null;
 }
 
+interface AIRecommendation {
+  type: 'success' | 'warning' | 'danger' | 'info';
+  title: string;
+  message: string;
+  action?: string;
+}
+
+type TimeFilter = 'today' | 'week' | 'month' | 'all';
+
 const InstagramDashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalMessages: 0,
@@ -49,8 +64,18 @@ const InstagramDashboard: React.FC = () => {
     responseRate: 0,
     lastMessageDate: null
   });
+  const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDebug, setShowDebug] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
+  const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+
+  const timeFilterOptions = [
+    { value: 'today', label: 'Hoy' },
+    { value: 'week', label: 'Esta Semana' },
+    { value: 'month', label: 'Este Mes' },
+    { value: 'all', label: 'Todo el Tiempo' }
+  ];
 
   useEffect(() => {
     loadDashboardStats();
@@ -70,55 +95,170 @@ const InstagramDashboard: React.FC = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [timeFilter]);
 
   const handleLogout = () => {
     disconnectInstagram();
     window.location.reload();
   };
 
+  const generateAIRecommendations = (stats: DashboardStats) => {
+    const recs: AIRecommendation[] = [];
+
+    // Análisis de tasa de respuesta
+    if (stats.responseRate < 10) {
+      recs.push({
+        type: 'danger',
+        title: 'Tasa de Respuesta Baja',
+        message: `Tu tasa de respuesta es del ${stats.responseRate.toFixed(1)}%, muy por debajo del 10% ideal. Esto indica que tus mensajes no están generando el interés esperado.`,
+        action: 'Revisa el contenido de tus mensajes y considera personalizar más tu enfoque.'
+      });
+    } else if (stats.responseRate >= 10 && stats.responseRate < 15) {
+      recs.push({
+        type: 'warning',
+        title: 'Tasa de Respuesta Aceptable',
+        message: `Tu tasa de respuesta es del ${stats.responseRate.toFixed(1)}%, está en el rango aceptable pero se puede mejorar.`,
+        action: 'Experimenta con diferentes horarios de envío y mensajes más atractivos.'
+      });
+    } else if (stats.responseRate >= 15) {
+      recs.push({
+        type: 'success',
+        title: '¡Excelente Tasa de Respuesta!',
+        message: `Tu tasa de respuesta es del ${stats.responseRate.toFixed(1)}%, ¡esto está por encima del promedio ideal!`,
+        action: 'Mantén esta estrategia y considera escalar tu volumen de mensajes.'
+      });
+    }
+
+    // Análisis de actividad diaria
+    if (stats.todayMessages === 0) {
+      recs.push({
+        type: 'warning',
+        title: 'Sin Actividad Hoy',
+        message: 'No has enviado mensajes hoy. La consistencia es clave para el éxito en prospección.',
+        action: 'Establece una meta diaria de al menos 10-20 mensajes para mantener el momentum.'
+      });
+    } else if (stats.todayMessages < 10) {
+      recs.push({
+        type: 'info',
+        title: 'Actividad Baja Hoy',
+        message: `Has enviado ${stats.todayMessages} mensajes hoy. Considera aumentar tu volumen diario.`,
+        action: 'Intenta enviar al menos 20 mensajes diarios para mejores resultados.'
+      });
+    } else if (stats.todayMessages >= 20) {
+      recs.push({
+        type: 'success',
+        title: '¡Gran Actividad Hoy!',
+        message: `Has enviado ${stats.todayMessages} mensajes hoy. ¡Excelente trabajo!`,
+        action: 'Mantén esta consistencia para maximizar tus resultados.'
+      });
+    }
+
+    // Análisis de conversión
+    if (stats.totalInvitations === 0 && stats.messagesSent > 0) {
+      recs.push({
+        type: 'warning',
+        title: 'Sin Invitaciones',
+        message: 'Has enviado mensajes pero no has logrado invitaciones.',
+        action: 'Enfócate en generar más interés antes de hacer la invitación formal.'
+      });
+    }
+
+    if (stats.totalInscriptions === 0 && stats.totalPresentations > 0) {
+      recs.push({
+        type: 'danger',
+        title: 'Sin Inscripciones',
+        message: 'Has hecho presentaciones pero no has logrado inscripciones.',
+        action: 'Revisa tu propuesta de valor y considera ajustar tu oferta o presentación.'
+      });
+    }
+
+    setRecommendations(recs);
+  };
+
+  const getDateFilter = () => {
+    const now = new Date();
+    switch (timeFilter) {
+      case 'today':
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return today.toISOString();
+      case 'week':
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return weekAgo.toISOString();
+      case 'month':
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        return monthAgo.toISOString();
+      default:
+        return null;
+    }
+  };
+
   const loadDashboardStats = async () => {
     try {
       setLoading(true);
+      const dateFilter = getDateFilter();
 
-      // Usar la función de métricas avanzadas
-      const { data: metrics, error: metricsError } = await supabase
-        .rpc('calculate_advanced_metrics');
+      // Construir query base
+      let messagesQuery = supabase.from('instagram_messages').select('*');
+      
+      if (dateFilter) {
+        messagesQuery = messagesQuery.gte('created_at', dateFilter);
+      }
 
-      if (metricsError) {
-        console.error('Error loading advanced metrics:', metricsError);
-        // Fallback a métricas básicas
-        await loadBasicStats();
+      const { data: messages, error } = await messagesQuery;
+
+      if (error) {
+        console.error('Error loading messages:', error);
         return;
       }
 
-      if (metrics && metrics.length > 0) {
-        const metric = metrics[0];
-        
-        // Unique conversations (unique sender_ids)
-        const { data: uniqueSenders } = await supabase
-          .from('instagram_messages')
-          .select('sender_id')
-          .not('sender_id', 'eq', 'me')
-          .not('sender_id', 'eq', 'hower_bot');
+      // Calcular estadísticas filtradas
+      const messagesSent = messages?.filter(m => m.message_type === 'sent').length || 0;
+      const messagesReceived = messages?.filter(m => m.message_type === 'received').length || 0;
+      const totalInvitations = messages?.filter(m => m.is_invitation).length || 0;
+      const totalPresentations = messages?.filter(m => m.is_presentation).length || 0;
+      const totalInscriptions = messages?.filter(m => m.is_inscription).length || 0;
 
-        const uniqueSendersSet = new Set(uniqueSenders?.map(m => m.sender_id) || []);
-        const totalConversations = uniqueSendersSet.size;
+      // Mensajes de hoy (siempre calculado para el día actual)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { data: todayData } = await supabase
+        .from('instagram_messages')
+        .select('*')
+        .eq('message_type', 'sent')
+        .gte('created_at', today.toISOString());
 
-        setStats({
-          totalMessages: metric.total_sent + metric.total_responses,
-          totalConversations,
-          messagesReceived: metric.total_responses,
-          messagesSent: metric.total_sent,
-          averageResponseTime: metric.avg_response_time_seconds,
-          todayMessages: metric.today_messages,
-          totalInvitations: metric.total_invitations,
-          totalPresentations: metric.total_presentations,
-          totalInscriptions: metric.total_inscriptions,
-          responseRate: metric.response_rate_percentage,
-          lastMessageDate: metric.last_message_date
-        });
-      }
+      const todayMessages = todayData?.length || 0;
+
+      // Calcular tiempo promedio de respuesta
+      const responseTimes = messages?.filter(m => m.response_time_seconds).map(m => m.response_time_seconds) || [];
+      const averageResponseTime = responseTimes.length > 0 
+        ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length 
+        : 0;
+
+      // Calcular tasa de respuesta
+      const responseRate = messagesSent > 0 ? (messagesReceived / messagesSent) * 100 : 0;
+
+      // Fecha del último mensaje
+      const lastMessage = messages?.filter(m => m.message_type === 'sent')
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+      const dashboardStats = {
+        totalMessages: messagesSent + messagesReceived,
+        totalConversations: 0, // No se muestra en el dashboard
+        messagesReceived,
+        messagesSent,
+        averageResponseTime,
+        todayMessages,
+        totalInvitations,
+        totalPresentations,
+        totalInscriptions,
+        responseRate,
+        lastMessageDate: lastMessage?.created_at || null
+      };
+
+      setStats(dashboardStats);
+      generateAIRecommendations(dashboardStats);
 
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
@@ -130,50 +270,6 @@ const InstagramDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadBasicStats = async () => {
-    // ... keep existing code (básico fallback)
-    const { count: totalMessages } = await supabase
-      .from('instagram_messages')
-      .select('*', { count: 'exact', head: true });
-
-    const { data: messagesByType } = await supabase
-      .from('instagram_messages')
-      .select('message_type');
-
-    const messagesReceived = messagesByType?.filter(m => m.message_type === 'received').length || 0;
-    const messagesSent = messagesByType?.filter(m => m.message_type === 'sent').length || 0;
-
-    const { data: uniqueSenders } = await supabase
-      .from('instagram_messages')
-      .select('sender_id')
-      .not('sender_id', 'eq', 'me');
-
-    const uniqueSendersSet = new Set(uniqueSenders?.map(m => m.sender_id) || []);
-    const totalConversations = uniqueSendersSet.size;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const { count: todayMessages } = await supabase
-      .from('instagram_messages')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', today.toISOString());
-
-    setStats({
-      totalMessages: totalMessages || 0,
-      totalConversations,
-      messagesReceived,
-      messagesSent,
-      averageResponseTime: 2.5,
-      todayMessages: todayMessages || 0,
-      totalInvitations: 0,
-      totalPresentations: 0,
-      totalInscriptions: 0,
-      responseRate: messagesSent > 0 ? (messagesReceived / messagesSent) * 100 : 0,
-      lastMessageDate: null
-    });
   };
 
   const StatCard: React.FC<{
@@ -207,7 +303,7 @@ const InstagramDashboard: React.FC = () => {
           <RefreshCw className="w-6 h-6 text-purple-400 animate-spin" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
+          {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 animate-pulse">
               <div className="h-20 bg-gray-200 rounded"></div>
             </div>
@@ -222,6 +318,36 @@ const InstagramDashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">Dashboard Instagram</h2>
         <div className="flex gap-2">
+          {/* Filtro de tiempo */}
+          <div className="relative">
+            <button
+              onClick={() => setShowTimeDropdown(!showTimeDropdown)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Calendar className="w-4 h-4" />
+              {timeFilterOptions.find(opt => opt.value === timeFilter)?.label}
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {showTimeDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                {timeFilterOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setTimeFilter(option.value as TimeFilter);
+                      setShowTimeDropdown(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 hover:bg-gray-50 ${
+                      timeFilter === option.value ? 'bg-purple-50 text-purple-600' : ''
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          
           <button
             onClick={() => setShowDebug(!showDebug)}
             className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
@@ -249,13 +375,13 @@ const InstagramDashboard: React.FC = () => {
       {showDebug && <InstagramDebug />}
 
       {/* Métricas Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
-          title="Mensajes Enviados"
-          value={stats.messagesSent}
-          icon={<Send className="w-6 h-6 text-white" />}
+          title="Mensajes Hoy"
+          value={stats.todayMessages}
+          icon={<Calendar className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-blue-500 to-purple-500"
-          subtitle="Total enviados"
+          subtitle="En las últimas 24h"
         />
 
         <StatCard
@@ -281,10 +407,7 @@ const InstagramDashboard: React.FC = () => {
           color="bg-gradient-to-r from-cyan-500 to-blue-500"
           subtitle="Realizadas"
         />
-      </div>
 
-      {/* Métricas Secundarias */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Inscripciones"
           value={stats.totalInscriptions}
@@ -294,60 +417,56 @@ const InstagramDashboard: React.FC = () => {
         />
 
         <StatCard
-          title="Mensajes Hoy"
-          value={stats.todayMessages}
-          icon={<Calendar className="w-6 h-6 text-white" />}
-          color="bg-gradient-to-r from-indigo-500 to-purple-500"
-          subtitle="En las últimas 24h"
-        />
-
-        <StatCard
           title="Tiempo de Respuesta"
           value={`${stats.averageResponseTime.toFixed(1)}s`}
           icon={<Clock className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-pink-500 to-rose-500"
           subtitle="Promedio"
         />
-
-        <StatCard
-          title="Conversaciones"
-          value={stats.totalConversations}
-          icon={<Users className="w-6 h-6 text-white" />}
-          color="bg-gradient-to-r from-emerald-500 to-green-500"
-          subtitle="Únicas"
-        />
       </div>
 
-      {/* Estado del sistema */}
-      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <BarChart3 className="w-6 h-6 text-purple-500" />
-          <h3 className="text-lg font-semibold text-gray-800">Estado del Sistema</h3>
+      {/* Recomendaciones de Hower Assistant */}
+      {recommendations.length > 0 && (
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <Brain className="w-6 h-6 text-purple-500" />
+            <h3 className="text-lg font-semibold text-gray-800">Recomendaciones de Hower Assistant</h3>
+          </div>
+          
+          <div className="space-y-4">
+            {recommendations.map((rec, index) => (
+              <div
+                key={index}
+                className={`p-6 rounded-xl border-l-4 ${
+                  rec.type === 'success' ? 'bg-green-50 border-green-500' :
+                  rec.type === 'warning' ? 'bg-yellow-50 border-yellow-500' :
+                  rec.type === 'danger' ? 'bg-red-50 border-red-500' :
+                  'bg-blue-50 border-blue-500'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    {rec.type === 'success' && <CheckCircle className="w-6 h-6 text-green-500" />}
+                    {rec.type === 'warning' && <AlertTriangle className="w-6 h-6 text-yellow-500" />}
+                    {rec.type === 'danger' && <AlertTriangle className="w-6 h-6 text-red-500" />}
+                    {rec.type === 'info' && <Info className="w-6 h-6 text-blue-500" />}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-800 mb-2">{rec.title}</h4>
+                    <p className="text-gray-600 mb-3">{rec.message}</p>
+                    {rec.action && (
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <Lightbulb className="w-4 h-4" />
+                        <span>{rec.action}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-600">Webhook Instagram activo</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-600">IA Hower Assistant conectada</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-600">Base de datos sincronizada</span>
-          </div>
-        </div>
-
-        {stats.lastMessageDate && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
-              Último mensaje enviado: {new Date(stats.lastMessageDate).toLocaleString()}
-            </p>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };
