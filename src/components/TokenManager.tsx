@@ -3,75 +3,77 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Key, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertCircle, Key, Clock } from 'lucide-react';
 
 const TokenManager: React.FC = () => {
-  const [token, setToken] = useState('EAAp0ic0E6bEBO2mZCzP4ddQsX5OeCx9gKdkO9gIPZBsZCCQlcYELpVzTAToBc3wog6CYL11AZB4BjHbpQvbE7S9G5r1QplWhLBqgRknuzvmpH34blv8l3GR7sMD1cwhx06mkAsxE4iDYJ4UZBSLf8y2qank7kJBGQlwgYZBxA0p3XwCi5Pw8lnuKp2Pz40oKBbZC8ymSPwiUxraoxk1tZB52ZBuZAY2DmyMalMgn16');
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [token, setToken] = useState('');
   const [isValidating, setIsValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [tokenStatus, setTokenStatus] = useState<'unknown' | 'valid' | 'invalid' | 'rate_limited'>('unknown');
+  const [lastValidation, setLastValidation] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  // Auto-validar el token al cargar el componente
   useEffect(() => {
-    if (token) {
-      validateTokenDetailed(token);
+    const savedToken = localStorage.getItem('instagram_access_token');
+    if (savedToken) {
+      setTokenStatus('unknown'); // Don't auto-validate to avoid rate limiting
     }
   }, []);
 
-  const validateTokenDetailed = async (tokenToTest: string) => {
-    setIsValidating(true);
+  const validateToken = async (tokenToValidate: string) => {
+    if (!tokenToValidate?.trim()) return false;
+
     try {
-      console.log('🔍 Validando nuevo token...');
-      console.log('Token length:', tokenToTest.length);
-      console.log('Token preview:', tokenToTest.substring(0, 20) + '...');
+      setIsValidating(true);
+      console.log('🔍 Validando token...');
+      console.log('Token length:', tokenToValidate.length);
+      console.log('Token preview:', tokenToValidate.substring(0, 20) + '...');
 
-      // Test 1: Verificar token básico
-      const basicResponse = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${tokenToTest}`);
-      const basicData = await basicResponse.json();
+      const response = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${tokenToValidate}`);
+      const data = await response.json();
       
-      console.log('📝 Respuesta básica:', basicData);
+      console.log('📝 Respuesta básica:', JSON.stringify(data, null, 2));
 
-      if (basicData.error) {
-        setValidationResult({
-          isValid: false,
-          error: basicData.error.message,
-          details: basicData
-        });
-        return false;
+      if (data.error) {
+        if (data.error.code === 4) {
+          setTokenStatus('rate_limited');
+          toast({
+            title: "Límite de API alcanzado",
+            description: "Demasiadas solicitudes. Espera unos minutos antes de validar de nuevo.",
+            variant: "destructive"
+          });
+          return false;
+        } else {
+          setTokenStatus('invalid');
+          toast({
+            title: "Token inválido",
+            description: data.error.message,
+            variant: "destructive"
+          });
+          return false;
+        }
       }
 
-      // Test 2: Verificar permisos
-      const permissionsResponse = await fetch(`https://graph.facebook.com/v19.0/me/permissions?access_token=${tokenToTest}`);
-      const permissionsData = await permissionsResponse.json();
-      
-      console.log('🔑 Permisos:', permissionsData);
+      if (data.id && data.name) {
+        setTokenStatus('valid');
+        setLastValidation(new Date());
+        toast({
+          title: "Token válido",
+          description: `Conectado como: ${data.name}`,
+        });
+        return true;
+      }
 
-      // Test 3: Verificar cuentas de Instagram Business
-      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${tokenToTest}`);
-      const accountsData = await accountsResponse.json();
-      
-      console.log('📱 Cuentas Instagram:', accountsData);
-
-      const hasInstagramBusiness = accountsData.data && accountsData.data.some(acc => acc.instagram_business_account);
-
-      setValidationResult({
-        isValid: true,
-        user: basicData,
-        permissions: permissionsData.data || [],
-        instagramAccounts: accountsData.data || [],
-        hasInstagramBusiness: hasInstagramBusiness
-      });
-
-      return true;
+      setTokenStatus('invalid');
+      return false;
     } catch (error) {
-      console.error('❌ Error validando token:', error);
-      setValidationResult({
-        isValid: false,
-        error: error.message,
-        details: { error: 'Network error' }
+      console.error('Error validando token:', error);
+      setTokenStatus('invalid');
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo validar el token",
+        variant: "destructive"
       });
       return false;
     } finally {
@@ -79,7 +81,7 @@ const TokenManager: React.FC = () => {
     }
   };
 
-  const updateToken = async () => {
+  const handleSaveToken = async () => {
     if (!token.trim()) {
       toast({
         title: "Error",
@@ -89,194 +91,159 @@ const TokenManager: React.FC = () => {
       return;
     }
 
-    setIsUpdating(true);
-
-    try {
-      console.log('🚀 Iniciando actualización de token...');
-      
-      // Primero validar el token si no lo hemos hecho
-      if (!validationResult || !validationResult.isValid) {
-        const isValid = await validateTokenDetailed(token);
-        
-        if (!isValid) {
-          toast({
-            title: "Token inválido",
-            description: validationResult?.error || "El token no es válido",
-            variant: "destructive"
-          });
-          return;
-        }
-      }
-
-      console.log('✅ Token validado, actualizando en servidor...');
-
-      // Actualizar en el servidor usando la edge function
-      const { data, error } = await supabase.functions.invoke('update-instagram-token', {
-        body: { access_token: token }
-      });
-
-      if (error) {
-        console.error('❌ Error del servidor:', error);
-        toast({
-          title: "Error del servidor",
-          description: error.message || "No se pudo actualizar el token",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('✅ Respuesta del servidor:', data);
-
-      // Guardar localmente también
+    const isValid = await validateToken(token);
+    
+    if (isValid) {
       localStorage.setItem('instagram_access_token', token);
-      localStorage.setItem('hower-instagram-token', token);
-
+      setToken('');
       toast({
-        title: "¡Token actualizado exitosamente!",
-        description: `Usuario: ${validationResult.user.name || validationResult.user.id}`,
-      });
-      
-    } catch (error) {
-      console.error('💥 Error actualizando token:', error);
-      toast({
-        title: "Error",
-        description: "Error inesperado actualizando el token",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const testCurrentToken = async () => {
-    const currentToken = localStorage.getItem('instagram_access_token') || localStorage.getItem('hower-instagram-token');
-    if (currentToken) {
-      console.log('🧪 Probando token actual...');
-      await validateTokenDetailed(currentToken);
-    } else {
-      toast({
-        title: "No hay token",
-        description: "No se encontró ningún token guardado",
-        variant: "destructive"
+        title: "¡Token guardado!",
+        description: "Tu token de Instagram se ha configurado correctamente",
       });
     }
   };
+
+  const handleValidateExisting = async () => {
+    const savedToken = localStorage.getItem('instagram_access_token');
+    if (savedToken) {
+      await validateToken(savedToken);
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (tokenStatus) {
+      case 'valid':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'invalid':
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
+      case 'rate_limited':
+        return <Clock className="w-5 h-5 text-yellow-500" />;
+      default:
+        return <Key className="w-5 h-5 text-gray-400" />;
+    }
+  };
+
+  const getStatusText = () => {
+    switch (tokenStatus) {
+      case 'valid':
+        return 'Token válido y funcionando';
+      case 'invalid':
+        return 'Token inválido o expirado';
+      case 'rate_limited':
+        return 'Límite de API alcanzado - espera unos minutos';
+      default:
+        return 'Estado del token desconocido';
+    }
+  };
+
+  const savedToken = localStorage.getItem('instagram_access_token');
 
   return (
-    <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <Key className="w-6 h-6 text-purple-500" />
-        <h3 className="text-lg font-semibold text-gray-800">Gestión de Token Instagram</h3>
-      </div>
-
-      <div className="space-y-4">
-        {/* Actualizar token */}
-        <div className="space-y-2">
-          <Label htmlFor="token" className="text-sm font-medium">
-            Nuevo Token de Acceso:
-          </Label>
-          <div className="relative">
-            <Input
-              id="token"
-              type="password"
-              placeholder="Token cargado automáticamente..."
-              value={token}
-              onChange={(e) => {
-                setToken(e.target.value);
-                setValidationResult(null);
-              }}
-              className="pr-10"
-            />
-            {validationResult && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                {validationResult.isValid ? (
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-red-500" />
-                )}
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Key className="w-5 h-5" />
+            Gestión de Token de Instagram
+          </CardTitle>
+          <CardDescription>
+            Configura y valida tu token de acceso de Instagram Graph API
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {savedToken ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  {getStatusIcon()}
+                  <div>
+                    <p className="font-medium">{getStatusText()}</p>
+                    {lastValidation && (
+                      <p className="text-sm text-gray-500">
+                        Última validación: {lastValidation.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  onClick={handleValidateExisting}
+                  disabled={isValidating || tokenStatus === 'rate_limited'}
+                  variant="outline"
+                  size="sm"
+                >
+                  {isValidating ? 'Validando...' : 'Validar'}
+                </Button>
               </div>
-            )}
-          </div>
-        </div>
 
-        <Button 
-          onClick={updateToken}
-          disabled={!token.trim() || isUpdating || isValidating}
-          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-        >
-          {isUpdating ? (
-            <>
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              Actualizando...
-            </>
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-800 mb-2">Token configurado</h4>
+                <p className="text-sm text-blue-700">
+                  Tienes un token guardado. Para cambiarlo, ingresa uno nuevo abajo.
+                </p>
+              </div>
+            </div>
           ) : (
-            'Actualizar Token'
+            <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-500" />
+                <span className="text-yellow-800 font-medium">No hay token configurado</span>
+              </div>
+            </div>
           )}
-        </Button>
 
-        {/* Validar token diferente */}
-        <div className="p-4 bg-blue-50 rounded-lg">
-          <h4 className="font-medium mb-2">🧪 Validar Token</h4>
-          <Button 
-            onClick={() => validateTokenDetailed(token)}
-            disabled={isValidating || !token}
-            variant="outline"
-            className="w-full"
-          >
-            {isValidating ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Validando...
-              </>
-            ) : (
-              'Validar Token Actual'
-            )}
-          </Button>
-        </div>
-
-        {/* Resultado de validación */}
-        {validationResult && (
-          <div className={`p-4 rounded-lg ${validationResult.isValid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-            <h4 className="font-medium mb-2">
-              {validationResult.isValid ? '✅ Token Válido' : '❌ Token Inválido'}
-            </h4>
-            
-            {validationResult.isValid ? (
-              <div className="space-y-2 text-sm">
-                <div><strong>Usuario:</strong> {validationResult.user.name} (ID: {validationResult.user.id})</div>
-                <div><strong>Permisos:</strong> {validationResult.permissions.length} encontrados</div>
-                <div><strong>Instagram Business:</strong> {validationResult.hasInstagramBusiness ? '✅ Conectado' : '❌ No conectado'}</div>
-                
-                {!validationResult.hasInstagramBusiness && (
-                  <div className="mt-2 p-2 bg-yellow-100 rounded text-yellow-800">
-                    ⚠️ No tienes una cuenta de Instagram Business conectada. Esto es necesario para recibir mensajes.
-                  </div>
-                )}
-
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-blue-600">Ver permisos detallados</summary>
-                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
-                    {validationResult.permissions.map((perm, idx) => (
-                      <div key={idx}>{perm.permission}: {perm.status}</div>
-                    ))}
-                  </div>
-                </details>
-              </div>
-            ) : (
-              <div className="text-sm text-red-700">
-                <div><strong>Error:</strong> {validationResult.error}</div>
-              </div>
-            )}
+          <div className="space-y-3">
+            <Label htmlFor="token">Token de Instagram Graph API</Label>
+            <div className="flex gap-3">
+              <Input
+                id="token"
+                type="password"
+                placeholder="EAA... (pega tu token aquí)"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSaveToken}
+                disabled={!token.trim() || isValidating}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                {isValidating ? 'Validando...' : 'Guardar Token'}
+              </Button>
+            </div>
+            <p className="text-sm text-gray-600">
+              Obtén tu token desde{' '}
+              <a 
+                href="https://developers.facebook.com/tools/explorer/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                Meta Graph API Explorer
+              </a>
+            </p>
           </div>
-        )}
 
-        <div className="text-sm text-gray-600 space-y-1">
-          <p>• Tu nuevo token está cargado automáticamente</p>
-          <p>• Haz clic en "Actualizar Token" para guardarlo</p>
-          <p>• Asegúrate de tener permisos: pages_messaging, instagram_basic</p>
-          <p>• Necesitas una cuenta de Instagram Business conectada</p>
-        </div>
-      </div>
+          {tokenStatus === 'rate_limited' && (
+            <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+              <h4 className="font-medium text-orange-800 mb-2">⚠️ Límite de API alcanzado</h4>
+              <p className="text-sm text-orange-700">
+                La aplicación ha hecho demasiadas solicitudes a la API de Facebook. 
+                Espera entre 5-10 minutos antes de validar el token nuevamente.
+              </p>
+            </div>
+          )}
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-medium text-gray-800 mb-2">💡 Consejos para evitar límites de API</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• No valides el token muy frecuentemente</li>
+              <li>• Usa tokens de larga duración cuando sea posible</li>
+              <li>• Evita refrescar la página repetidamente</li>
+              <li>• Los límites se reinician automáticamente después de unos minutos</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
