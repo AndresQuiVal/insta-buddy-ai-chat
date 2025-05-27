@@ -29,7 +29,7 @@ const InstagramDiagnostic: React.FC = () => {
           message: error ? `Error: ${error.message}` : `Conectado - ${count || 0} mensajes en total`,
           count: count || 0
         };
-      } catch (err) {
+      } catch (err: any) {
         results.database = {
           status: 'error',
           message: `Error de conexión: ${err.message}`,
@@ -58,7 +58,7 @@ const InstagramDiagnostic: React.FC = () => {
             type: msg.message_type
           })) || []
         };
-      } catch (err) {
+      } catch (err: any) {
         results.messages = {
           status: 'error',
           message: `Error obteniendo mensajes: ${err.message}`,
@@ -67,23 +67,27 @@ const InstagramDiagnostic: React.FC = () => {
         };
       }
 
-      // 3. Verificar webhook
-      console.log('🔍 3. Probando webhook...');
+      // 3. Verificar webhook usando Supabase Functions directamente
+      console.log('🔍 3. Probando webhook a través de Supabase...');
       try {
-        const webhookUrl = 'https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook';
-        const testResponse = await fetch(`${webhookUrl}?hub.mode=subscribe&hub.verify_token=hower-instagram-webhook-token&hub.challenge=test123`);
-        const challengeResponse = await testResponse.text();
+        const { data: webhookData, error: webhookError } = await supabase.functions.invoke('instagram-webhook', {
+          method: 'GET',
+          body: null,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
         
-        results.webhook = {
-          status: challengeResponse === 'test123' ? 'success' : 'error',
-          message: challengeResponse === 'test123' ? 'Webhook respondiendo correctamente' : `Respuesta inesperada: ${challengeResponse}`,
-          url: webhookUrl
+        results.webhook_supabase = {
+          status: webhookError ? 'error' : 'success',
+          message: webhookError ? `Error: ${webhookError.message}` : 'Webhook accesible vía Supabase Functions',
+          data: webhookData
         };
-      } catch (err) {
-        results.webhook = {
+      } catch (err: any) {
+        results.webhook_supabase = {
           status: 'error',
-          message: `Error probando webhook: ${err.message}`,
-          url: 'https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook'
+          message: `Error llamando webhook: ${err.message}`,
+          data: null
         };
       }
 
@@ -100,7 +104,7 @@ const InstagramDiagnostic: React.FC = () => {
             message: tokenData.error ? `Token error: ${tokenData.error.message}` : `Token válido - Usuario: ${tokenData.name}`,
             hasToken: true
           };
-        } catch (err) {
+        } catch (err: any) {
           results.token = {
             status: 'error',
             message: `Error verificando token: ${err.message}`,
@@ -115,8 +119,39 @@ const InstagramDiagnostic: React.FC = () => {
         };
       }
 
-      // 5. Simular envío de mensaje de prueba al webhook
-      console.log('🔍 5. Enviando mensaje de prueba al webhook...');
+      // 5. Enviar mensaje de prueba directamente a Supabase
+      console.log('🔍 5. Insertando mensaje de prueba directamente...');
+      try {
+        const testMessage = {
+          instagram_message_id: `diagnostic_test_${Date.now()}`,
+          sender_id: 'diagnostic_user',
+          recipient_id: 'me',
+          message_text: `🧪 MENSAJE DE PRUEBA DIAGNÓSTICO - ${new Date().toLocaleString()}`,
+          timestamp: new Date().toISOString(),
+          message_type: 'received',
+          raw_data: { test: true, source: 'diagnostic' }
+        };
+
+        const { data: insertData, error: insertError } = await supabase
+          .from('instagram_messages')
+          .insert(testMessage)
+          .select();
+
+        results.directInsert = {
+          status: insertError ? 'error' : 'success',
+          message: insertError ? `Error insertando: ${insertError.message}` : 'Mensaje de prueba insertado correctamente',
+          data: insertData
+        };
+      } catch (err: any) {
+        results.directInsert = {
+          status: 'error',
+          message: `Error en inserción directa: ${err.message}`,
+          data: null
+        };
+      }
+
+      // 6. Probar webhook con payload de Instagram simulado
+      console.log('🔍 6. Enviando payload simulado al webhook...');
       try {
         const testPayload = {
           object: 'instagram',
@@ -135,20 +170,14 @@ const InstagramDiagnostic: React.FC = () => {
           }]
         };
 
-        const webhookTestResponse = await fetch('https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(testPayload)
+        const { data: webhookResponse, error: webhookResponseError } = await supabase.functions.invoke('instagram-webhook', {
+          body: testPayload
         });
 
-        const webhookResult = await webhookTestResponse.text();
-        
         results.webhookTest = {
-          status: webhookTestResponse.ok ? 'success' : 'error',
-          message: webhookTestResponse.ok ? 'Mensaje de prueba enviado al webhook' : `Error enviando: ${webhookResult}`,
-          response: webhookResult
+          status: webhookResponseError ? 'error' : 'success',
+          message: webhookResponseError ? `Error: ${webhookResponseError.message}` : 'Mensaje enviado al webhook correctamente',
+          response: webhookResponse
         };
 
         // Esperar un momento y verificar si el mensaje llegó a la base de datos
@@ -176,7 +205,7 @@ const InstagramDiagnostic: React.FC = () => {
           }
         }, 3000);
 
-      } catch (err) {
+      } catch (err: any) {
         results.webhookTest = {
           status: 'error',
           message: `Error enviando mensaje de prueba: ${err.message}`,
@@ -187,7 +216,7 @@ const InstagramDiagnostic: React.FC = () => {
       setDiagnosticResults(results);
       console.log('🎯 Resultados completos del diagnóstico:', results);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 Error en diagnóstico:', error);
       toast({
         title: "Error en diagnóstico",
@@ -276,17 +305,16 @@ const InstagramDiagnostic: React.FC = () => {
               </div>
             )}
 
-            {/* Webhook */}
-            {diagnosticResults.webhook && (
+            {/* Webhook via Supabase */}
+            {diagnosticResults.webhook_supabase && (
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <Webhook className="w-5 h-5 text-orange-500 mt-0.5" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <StatusIcon status={diagnosticResults.webhook.status} />
-                    <span className="font-medium">Webhook</span>
+                    <StatusIcon status={diagnosticResults.webhook_supabase.status} />
+                    <span className="font-medium">Webhook (vía Supabase)</span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">{diagnosticResults.webhook.message}</p>
-                  <p className="text-xs text-gray-500 mt-1">URL: {diagnosticResults.webhook.url}</p>
+                  <p className="text-sm text-gray-600 mt-1">{diagnosticResults.webhook_supabase.message}</p>
                 </div>
               </div>
             )}
@@ -305,6 +333,20 @@ const InstagramDiagnostic: React.FC = () => {
               </div>
             )}
 
+            {/* Inserción directa */}
+            {diagnosticResults.directInsert && (
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <Database className="w-5 h-5 text-indigo-500 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <StatusIcon status={diagnosticResults.directInsert.status} />
+                    <span className="font-medium">Inserción Directa en DB</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{diagnosticResults.directInsert.message}</p>
+                </div>
+              </div>
+            )}
+
             {/* Test de webhook */}
             {diagnosticResults.webhookTest && (
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -316,7 +358,7 @@ const InstagramDiagnostic: React.FC = () => {
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{diagnosticResults.webhookTest.message}</p>
                   {diagnosticResults.webhookTest.response && (
-                    <p className="text-xs text-gray-500 mt-1">Respuesta: {diagnosticResults.webhookTest.response}</p>
+                    <p className="text-xs text-gray-500 mt-1">Respuesta: {JSON.stringify(diagnosticResults.webhookTest.response)}</p>
                   )}
                 </div>
               </div>
@@ -328,11 +370,12 @@ const InstagramDiagnostic: React.FC = () => {
           <h4 className="font-medium text-yellow-800 mb-2">📋 Qué hace este diagnóstico:</h4>
           <ul className="text-sm text-yellow-700 space-y-1">
             <li>• Verifica la conexión a la base de datos</li>
-            <li>• Cuenta los mensajes existentes</li>
-            <li>• Prueba si el webhook responde</li>
+            <li>• Cuenta los mensajes existentes en la DB</li>
+            <li>• Prueba el webhook vía Supabase Functions</li>
             <li>• Valida tu token de Instagram</li>
-            <li>• Envía un mensaje de prueba al sistema</li>
-            <li>• Verifica si los mensajes se guardan correctamente</li>
+            <li>• Inserta un mensaje de prueba directamente</li>
+            <li>• Envía un payload simulado al webhook</li>
+            <li>• Verifica que los mensajes se procesen correctamente</li>
           </ul>
         </div>
       </div>
