@@ -17,7 +17,6 @@ serve(async (req) => {
     console.log('=== INSTAGRAM WEBHOOK RECEIVED ===')
     console.log('Method:', req.method)
     console.log('URL:', req.url)
-    console.log('Headers:', Object.fromEntries(req.headers.entries()))
 
     // Verificación del webhook (GET request de Facebook)
     if (req.method === 'GET') {
@@ -28,35 +27,23 @@ serve(async (req) => {
 
       console.log('Webhook verification:', { mode, token, challenge })
 
-      // Token de verificación que debes configurar en Facebook App Dashboard
-      const VERIFY_TOKEN = Deno.env.get('INSTAGRAM_VERIFY_TOKEN') || 'hower-instagram-webhook-token'
+      const VERIFY_TOKEN = 'hower-instagram-webhook-token'
 
       if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-        console.log('✅ Webhook verified successfully')
+        console.log('✓ Webhook verified successfully')
         return new Response(challenge, { status: 200 })
       } else {
-        console.log('❌ Webhook verification failed')
-        console.log('Expected token:', VERIFY_TOKEN)
-        console.log('Received token:', token)
+        console.log('✗ Webhook verification failed')
         return new Response('Forbidden', { status: 403 })
       }
     }
 
     // Procesar mensajes entrantes (POST request)
     if (req.method === 'POST') {
-      // Validar la firma del webhook (recomendado por Facebook)
-      const signature = req.headers.get('X-Hub-Signature-256')
-      console.log('Webhook signature:', signature)
-
       const body = await req.json()
       console.log('📨 Webhook payload recibido:', JSON.stringify(body, null, 2))
 
-      // Verificar si el payload tiene la estructura esperada de Facebook
-      if (!body.object) {
-        console.log('⚠️ No se encontró campo "object" en el payload')
-        return new Response('OK', { status: 200, headers: corsHeaders })
-      }
-
+      // Verificar si el payload tiene la estructura esperada
       if (!body.entry || !Array.isArray(body.entry)) {
         console.log('⚠️ No se encontró array "entry" en el payload')
         return new Response('OK', { status: 200, headers: corsHeaders })
@@ -64,59 +51,37 @@ serve(async (req) => {
 
       let messagesProcessed = 0
 
-      // Procesar cada entrada del webhook según especificación de Facebook
+      // Procesar cada entrada del webhook
       for (const entry of body.entry) {
         console.log(`\n--- PROCESANDO ENTRY ---`)
         console.log(`Entry ID: ${entry.id}`)
-        console.log(`Entry Time: ${entry.time}`)
         
-        // Método 1: Procesar mensajes directos (messaging) - Instagram API con Instagram Login
+        // Método 1: Procesar mensajes directos (messaging)
         if (entry.messaging && Array.isArray(entry.messaging)) {
-          console.log(`📱 Encontrados ${entry.messaging.length} eventos de messaging`)
+          console.log(`📱 Encontrados ${entry.messaging.length} mensajes en messaging`)
           
           for (const messagingEvent of entry.messaging) {
-            console.log('Evento de messaging:', JSON.stringify(messagingEvent, null, 2))
-            
-            if (messagingEvent.message) {
-              console.log('💬 Procesando mensaje directo')
-              const result = await processInstagramMessage(messagingEvent, entry.id)
+            if (messagingEvent.message && messagingEvent.message.text) {
+              console.log('💬 Procesando mensaje de texto')
+              const result = await processTextMessage(messagingEvent, entry.id)
               if (result.success) messagesProcessed++
-            }
-            
-            // Procesar otros tipos de eventos
-            if (messagingEvent.postback) {
-              console.log('🔄 Procesando postback')
-              await processPostback(messagingEvent, entry.id)
-            }
-            
-            if (messagingEvent.reaction) {
-              console.log('❤️ Procesando reacción')
-              await processReaction(messagingEvent, entry.id)
             }
           }
         }
 
-        // Método 2: Procesar cambios (changes) - Instagram API con Facebook Login
+        // Método 2: Procesar cambios (changes)
         if (entry.changes && Array.isArray(entry.changes)) {
           console.log(`🔄 Encontrados ${entry.changes.length} cambios`)
           
           for (const change of entry.changes) {
-            console.log('Cambio detectado:', JSON.stringify(change, null, 2))
-            
             if (change.field === 'messages' && change.value) {
               console.log('📝 Procesando cambio de mensaje')
-              const result = await processMessageChange(change.value, entry.id)
-              if (result.success) messagesProcessed++
-            }
-            
-            if (change.field === 'comments' && change.value) {
-              console.log('💭 Procesando comentario')
-              await processComment(change.value, entry.id)
-            }
-            
-            if (change.field === 'mentions' && change.value) {
-              console.log('📢 Procesando mención')
-              await processMention(change.value, entry.id)
+              
+              // Si el change.value tiene estructura de mensaje directo
+              if (change.value.message && change.value.message.text) {
+                const result = await processChangeMessage(change.value, entry.id)
+                if (result.success) messagesProcessed++
+              }
             }
           }
         }
@@ -124,7 +89,6 @@ serve(async (req) => {
 
       console.log(`\n🎯 RESUMEN: ${messagesProcessed} mensajes procesados`)
 
-      // Facebook requiere respuesta 200 OK
       return new Response('OK', { 
         status: 200, 
         headers: corsHeaders 
@@ -139,50 +103,44 @@ serve(async (req) => {
   } catch (error) {
     console.error('💥 ERROR en webhook:', error)
     
-    // Facebook requiere respuesta 200 incluso en errores para evitar reenvíos
-    return new Response('OK', { 
-      status: 200, 
-      headers: corsHeaders 
-    })
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
 })
 
-// Función para procesar mensajes de Instagram (Instagram Login API)
-async function processInstagramMessage(messagingEvent: any, pageId: string) {
+// Función para procesar mensajes de la estructura messaging
+async function processTextMessage(messagingEvent: any, pageId: string) {
   try {
-    console.log(`🔄 Procesando mensaje de Instagram`)
+    console.log(`🔄 Procesando mensaje de texto`)
 
     const message = messagingEvent.message
     const senderId = messagingEvent.sender?.id || 'unknown_sender'
     const recipientId = messagingEvent.recipient?.id || pageId
-    const messageText = message?.text || message?.quick_reply?.payload || ''
+    const messageText = message.text || 'Mensaje sin texto'
     
-    // Manejar diferentes tipos de mensajes
-    let messageContent = messageText
-    let messageType = 'text'
-    
-    if (message?.attachments && message.attachments.length > 0) {
-      const attachment = message.attachments[0]
-      messageType = attachment.type || 'attachment'
-      messageContent = `[${messageType.toUpperCase()}] ${attachment.payload?.url || 'Archivo adjunto'}`
-    }
+    // Determinar el nombre del usuario más legible
+    const userName = `Usuario ${senderId.slice(-4)}`
 
     const messageData = {
-      instagram_message_id: message?.mid || `msg_${Date.now()}_${Math.random()}`,
+      instagram_message_id: message.mid || `msg_${Date.now()}_${Math.random()}`,
       sender_id: senderId,
       recipient_id: recipientId,
-      message_text: messageContent,
+      message_text: messageText,
       timestamp: new Date(messagingEvent.timestamp || Date.now()).toISOString(),
       message_type: 'received',
       raw_data: { 
         original_event: messagingEvent,
         processed_at: new Date().toISOString(),
-        source: 'instagram_messaging',
-        message_type: messageType
+        source: 'messaging'
       }
     }
 
-    console.log(`💾 Guardando mensaje: "${messageContent}" de usuario ${senderId.slice(-4)}`)
+    console.log(`💾 Guardando mensaje: "${messageText}" de ${userName}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -194,38 +152,42 @@ async function processInstagramMessage(messagingEvent: any, pageId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Mensaje de Instagram guardado exitosamente`)
+    console.log(`✅ Mensaje guardado exitosamente`)
 
-    // Generar respuesta automática solo para mensajes de texto reales
-    if (messageType === 'text' && messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
+    // Generar respuesta automática solo para mensajes reales (no de prueba)
+    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
       await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
     }
 
     return { success: true, id: data[0]?.id }
 
   } catch (error) {
-    console.error(`💥 Error en processInstagramMessage:`, error)
+    console.error(`💥 Error en processTextMessage:`, error)
     return { success: false, error: error.message }
   }
 }
 
-// Función para procesar cambios de mensajes (Facebook Login API)
-async function processMessageChange(changeValue: any, pageId: string) {
+// Función para procesar mensajes de changes
+async function processChangeMessage(changeValue: any, pageId: string) {
   try {
-    console.log(`🔄 Procesando cambio de mensaje`)
+    console.log(`🔄 Procesando mensaje de change`)
 
-    const senderId = changeValue.from?.id || 'unknown_sender'
-    const recipientId = pageId
-    const messageText = changeValue.message || changeValue.text || 'Mensaje sin texto'
+    const message = changeValue.message
+    const senderId = changeValue.sender?.id || 'unknown_sender'
+    const recipientId = changeValue.recipient?.id || pageId
+    const messageText = message?.text || 'Mensaje sin texto'
     
-    // Convertir timestamp si es necesario
-    let timestamp = changeValue.created_time || changeValue.timestamp
+    // Determinar el nombre del usuario más legible
+    const userName = `Usuario ${senderId.slice(-4)}`
+
+    // Convertir timestamp de segundos a millisegundos si es necesario
+    let timestamp = changeValue.timestamp
     if (timestamp && timestamp.toString().length === 10) {
       timestamp = parseInt(timestamp) * 1000
     }
 
     const messageData = {
-      instagram_message_id: changeValue.id || `change_${Date.now()}_${Math.random()}`,
+      instagram_message_id: message?.mid || `change_${Date.now()}_${Math.random()}`,
       sender_id: senderId,
       recipient_id: recipientId,
       message_text: messageText,
@@ -234,11 +196,11 @@ async function processMessageChange(changeValue: any, pageId: string) {
       raw_data: { 
         original_change: changeValue,
         processed_at: new Date().toISOString(),
-        source: 'facebook_changes'
+        source: 'changes'
       }
     }
 
-    console.log(`💾 Guardando cambio de mensaje: "${messageText}" de usuario ${senderId.slice(-4)}`)
+    console.log(`💾 Guardando mensaje de change: "${messageText}" de ${userName}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -246,13 +208,13 @@ async function processMessageChange(changeValue: any, pageId: string) {
       .select()
 
     if (error) {
-      console.error(`❌ Error guardando cambio de mensaje:`, error)
+      console.error(`❌ Error guardando mensaje de change:`, error)
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Cambio de mensaje guardado exitosamente`)
+    console.log(`✅ Mensaje de change guardado exitosamente`)
 
-    // Generar respuesta automática
+    // Generar respuesta automática solo para mensajes reales
     if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
       await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
     }
@@ -260,122 +222,8 @@ async function processMessageChange(changeValue: any, pageId: string) {
     return { success: true, id: data[0]?.id }
 
   } catch (error) {
-    console.error(`💥 Error en processMessageChange:`, error)
+    console.error(`💥 Error en processChangeMessage:`, error)
     return { success: false, error: error.message }
-  }
-}
-
-// Función para procesar postbacks
-async function processPostback(messagingEvent: any, pageId: string) {
-  try {
-    console.log(`🔄 Procesando postback`)
-    
-    const postback = messagingEvent.postback
-    const senderId = messagingEvent.sender?.id || 'unknown_sender'
-    
-    const messageData = {
-      instagram_message_id: `postback_${Date.now()}_${Math.random()}`,
-      sender_id: senderId,
-      recipient_id: pageId,
-      message_text: `[POSTBACK] ${postback?.title || postback?.payload || 'Postback recibido'}`,
-      timestamp: new Date(messagingEvent.timestamp || Date.now()).toISOString(),
-      message_type: 'received',
-      raw_data: { 
-        original_event: messagingEvent,
-        processed_at: new Date().toISOString(),
-        source: 'postback'
-      }
-    }
-
-    await supabase.from('instagram_messages').insert(messageData)
-    console.log(`✅ Postback guardado`)
-
-  } catch (error) {
-    console.error(`💥 Error en processPostback:`, error)
-  }
-}
-
-// Función para procesar reacciones
-async function processReaction(messagingEvent: any, pageId: string) {
-  try {
-    console.log(`🔄 Procesando reacción`)
-    
-    const reaction = messagingEvent.reaction
-    const senderId = messagingEvent.sender?.id || 'unknown_sender'
-    
-    const messageData = {
-      instagram_message_id: `reaction_${Date.now()}_${Math.random()}`,
-      sender_id: senderId,
-      recipient_id: pageId,
-      message_text: `[REACCIÓN] ${reaction?.action || 'react'}: ${reaction?.emoji || '❤️'}`,
-      timestamp: new Date(messagingEvent.timestamp || Date.now()).toISOString(),
-      message_type: 'received',
-      raw_data: { 
-        original_event: messagingEvent,
-        processed_at: new Date().toISOString(),
-        source: 'reaction'
-      }
-    }
-
-    await supabase.from('instagram_messages').insert(messageData)
-    console.log(`✅ Reacción guardada`)
-
-  } catch (error) {
-    console.error(`💥 Error en processReaction:`, error)
-  }
-}
-
-// Función para procesar comentarios
-async function processComment(changeValue: any, pageId: string) {
-  try {
-    console.log(`🔄 Procesando comentario`)
-    
-    const messageData = {
-      instagram_message_id: changeValue.id || `comment_${Date.now()}_${Math.random()}`,
-      sender_id: changeValue.from?.id || 'unknown_sender',
-      recipient_id: pageId,
-      message_text: `[COMENTARIO] ${changeValue.text || 'Comentario sin texto'}`,
-      timestamp: new Date(changeValue.created_time || Date.now()).toISOString(),
-      message_type: 'received',
-      raw_data: { 
-        original_change: changeValue,
-        processed_at: new Date().toISOString(),
-        source: 'comment'
-      }
-    }
-
-    await supabase.from('instagram_messages').insert(messageData)
-    console.log(`✅ Comentario guardado`)
-
-  } catch (error) {
-    console.error(`💥 Error en processComment:`, error)
-  }
-}
-
-// Función para procesar menciones
-async function processMention(changeValue: any, pageId: string) {
-  try {
-    console.log(`🔄 Procesando mención`)
-    
-    const messageData = {
-      instagram_message_id: changeValue.id || `mention_${Date.now()}_${Math.random()}`,
-      sender_id: changeValue.from?.id || 'unknown_sender',
-      recipient_id: pageId,
-      message_text: `[MENCIÓN] ${changeValue.text || 'Mención recibida'}`,
-      timestamp: new Date(changeValue.created_time || Date.now()).toISOString(),
-      message_type: 'received',
-      raw_data: { 
-        original_change: changeValue,
-        processed_at: new Date().toISOString(),
-        source: 'mention'
-      }
-    }
-
-    await supabase.from('instagram_messages').insert(messageData)
-    console.log(`✅ Mención guardada`)
-
-  } catch (error) {
-    console.error(`💥 Error en processMention:`, error)
   }
 }
 
