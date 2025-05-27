@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -53,10 +52,7 @@ const InstagramMessages: React.FC = () => {
         }
         
         loadConversations();
-        toast({
-          title: "Nuevo mensaje",
-          description: `Mensaje de ${getUserDisplayName(newMessage.sender_id)}`,
-        });
+        // Eliminar el toast de notificación ya que el usuario puede ver el mensaje directamente
       })
       .subscribe();
 
