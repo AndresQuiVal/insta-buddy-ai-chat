@@ -173,14 +173,13 @@ const AdvancedMetrics: React.FC = () => {
         </div>
       </div>
 
-      {/* Métricas de Conversión */}
+      {/* Métricas de Conversión Simplificadas */}
       <div>
         <h3 className="text-lg font-semibold text-gray-800 mb-4">🎯 Para Tener 1 Respuesta</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
             title="# de Mensajes para Tener 1 Respuesta"
             primary={metrics.messages_per_response}
-            secondary="Meta: menos de 6"
             icon={<MessageSquare className="w-5 h-5 text-white" />}
             color="bg-blue-500"
           />
@@ -193,7 +192,6 @@ const AdvancedMetrics: React.FC = () => {
           <MetricCard
             title="# de Mensajes para Lograr 1 Invitación"
             primary={metrics.messages_per_invitation}
-            secondary="Meta: menos de 8"
             icon={<MessageSquare className="w-5 h-5 text-white" />}
             color="bg-orange-500"
           />
@@ -202,7 +200,7 @@ const AdvancedMetrics: React.FC = () => {
 
       <div>
         <h3 className="text-lg font-semibold text-gray-800 mb-4">🎯 Para Tener 1 Presentación</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MetricCard
             title="# de Mensajes para Tener 1 Presentación"
             primary={metrics.messages_per_presentation}
@@ -212,7 +210,6 @@ const AdvancedMetrics: React.FC = () => {
           <MetricCard
             title="# de Invitaciones para Tener 1 Presentación"
             primary={metrics.invitations_per_presentation}
-            secondary="Meta: menos de 3"
             icon={<Target className="w-5 h-5 text-white" />}
             color="bg-purple-400"
           />
@@ -237,7 +234,6 @@ const AdvancedMetrics: React.FC = () => {
           <MetricCard
             title="# de Presentaciones para Lograr 1 Inscripción"
             primary={metrics.presentations_per_inscription}
-            secondary="Meta: menos de 2"
             icon={<Award className="w-5 h-5 text-white" />}
             color="bg-pink-600"
           />

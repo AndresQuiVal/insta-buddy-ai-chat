@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { disconnectInstagram } from '@/services/instagramService';
-import InstagramDebug from './InstagramDebug';
+import RecommendationsCarousel from './RecommendationsCarousel';
 import { 
   MessageCircle, 
   Users, 
@@ -372,8 +371,6 @@ const InstagramDashboard: React.FC = () => {
         </div>
       </div>
 
-      {showDebug && <InstagramDebug />}
-
       {/* Métricas Principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
@@ -425,48 +422,8 @@ const InstagramDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Recomendaciones de Hower Assistant */}
-      {recommendations.length > 0 && (
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <Brain className="w-6 h-6 text-purple-500" />
-            <h3 className="text-lg font-semibold text-gray-800">Recomendaciones de Hower Assistant</h3>
-          </div>
-          
-          <div className="space-y-4">
-            {recommendations.map((rec, index) => (
-              <div
-                key={index}
-                className={`p-6 rounded-xl border-l-4 ${
-                  rec.type === 'success' ? 'bg-green-50 border-green-500' :
-                  rec.type === 'warning' ? 'bg-yellow-50 border-yellow-500' :
-                  rec.type === 'danger' ? 'bg-red-50 border-red-500' :
-                  'bg-blue-50 border-blue-500'
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    {rec.type === 'success' && <CheckCircle className="w-6 h-6 text-green-500" />}
-                    {rec.type === 'warning' && <AlertTriangle className="w-6 h-6 text-yellow-500" />}
-                    {rec.type === 'danger' && <AlertTriangle className="w-6 h-6 text-red-500" />}
-                    {rec.type === 'info' && <Info className="w-6 h-6 text-blue-500" />}
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-800 mb-2">{rec.title}</h4>
-                    <p className="text-gray-600 mb-3">{rec.message}</p>
-                    {rec.action && (
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <Lightbulb className="w-4 h-4" />
-                        <span>{rec.action}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Recomendaciones de Hower Assistant en Carousel */}
+      <RecommendationsCarousel recommendations={recommendations} />
     </div>
   );
 };
