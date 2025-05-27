@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { supabase } from "../_shared/supabase.ts"
 
@@ -17,6 +16,7 @@ serve(async (req) => {
     console.log('=== INSTAGRAM WEBHOOK RECEIVED ===')
     console.log('Method:', req.method)
     console.log('URL:', req.url)
+    console.log('Headers:', Object.fromEntries(req.headers.entries()))
 
     // Verificación del webhook (GET request de Facebook)
     if (req.method === 'GET') {
@@ -31,16 +31,41 @@ serve(async (req) => {
 
       if (mode === 'subscribe' && token === VERIFY_TOKEN) {
         console.log('✓ Webhook verified successfully')
-        return new Response(challenge, { status: 200 })
+        return new Response(challenge, { 
+          status: 200,
+          headers: corsHeaders 
+        })
       } else {
         console.log('✗ Webhook verification failed')
-        return new Response('Forbidden', { status: 403 })
+        return new Response('Forbidden', { 
+          status: 403,
+          headers: corsHeaders 
+        })
       }
     }
 
     // Procesar mensajes entrantes (POST request)
     if (req.method === 'POST') {
-      const body = await req.json()
+      const contentType = req.headers.get('content-type') || ''
+      console.log('Content-Type:', contentType)
+      
+      let body: any
+      try {
+        if (contentType.includes('application/json')) {
+          body = await req.json()
+        } else {
+          const text = await req.text()
+          console.log('Raw body:', text)
+          body = JSON.parse(text)
+        }
+      } catch (parseError) {
+        console.error('Error parsing body:', parseError)
+        return new Response('Invalid JSON', { 
+          status: 400, 
+          headers: corsHeaders 
+        })
+      }
+
       console.log('📨 Webhook payload recibido:', JSON.stringify(body, null, 2))
 
       // Verificar si el payload tiene la estructura esperada
@@ -103,13 +128,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('💥 ERROR en webhook:', error)
     
-    return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    )
+    return new Response('OK', { 
+      status: 200, 
+      headers: corsHeaders 
+    })
   }
 })
 
