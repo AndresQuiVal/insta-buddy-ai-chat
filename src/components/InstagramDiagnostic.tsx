@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -98,6 +99,7 @@ const InstagramDiagnostic: React.FC = () => {
           headers: Object.fromEntries(directResponse.headers.entries())
         };
       } catch (fetchError: any) {
+        const webhookUrl = `https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook`;
         results.webhook_direct = {
           status: 'error',
           message: `Error de red en fetch directo: ${fetchError.message}`,
