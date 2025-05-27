@@ -24,62 +24,45 @@ const TokenManager: React.FC = () => {
   const validateTokenDetailed = async (tokenToTest: string) => {
     setIsValidating(true);
     try {
-      console.log('🔍 Validando Page Access Token...');
+      console.log('🔍 Validando nuevo token...');
       console.log('Token length:', tokenToTest.length);
       console.log('Token preview:', tokenToTest.substring(0, 20) + '...');
 
-      // Test 1: Verificar información de la página (no user info)
-      const pageResponse = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${tokenToTest}`);
-      const pageData = await pageResponse.json();
+      // Test 1: Verificar token básico
+      const basicResponse = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${tokenToTest}`);
+      const basicData = await basicResponse.json();
       
-      console.log('📝 Respuesta de página:', pageData);
+      console.log('📝 Respuesta básica:', basicData);
 
-      if (pageData.error) {
+      if (basicData.error) {
         setValidationResult({
           isValid: false,
-          error: pageData.error.message,
-          details: pageData
+          error: basicData.error.message,
+          details: basicData
         });
         return false;
       }
 
-      // Test 2: Verificar si la página tiene Instagram Business Account conectado
-      let instagramBusinessInfo = null;
-      try {
-        const igResponse = await fetch(`https://graph.facebook.com/v19.0/${pageData.id}?fields=instagram_business_account&access_token=${tokenToTest}`);
-        const igData = await igResponse.json();
-        
-        console.log('📱 Instagram Business info:', igData);
-        
-        if (igData.instagram_business_account) {
-          // Obtener detalles de la cuenta de Instagram
-          const igAccountResponse = await fetch(`https://graph.facebook.com/v19.0/${igData.instagram_business_account.id}?fields=id,username,account_type,media_count&access_token=${tokenToTest}`);
-          const igAccountData = await igAccountResponse.json();
-          
-          console.log('📊 Detalles de Instagram Business:', igAccountData);
-          instagramBusinessInfo = igAccountData;
-        }
-      } catch (igErr) {
-        console.warn('⚠️ Error obteniendo info de Instagram:', igErr);
-      }
+      // Test 2: Verificar permisos
+      const permissionsResponse = await fetch(`https://graph.facebook.com/v19.0/me/permissions?access_token=${tokenToTest}`);
+      const permissionsData = await permissionsResponse.json();
+      
+      console.log('🔑 Permisos:', permissionsData);
 
-      // Test 3: Verificar permisos específicos del token (usando endpoint correcto para Page Token)
-      let tokenInfo = null;
-      try {
-        const tokenInfoResponse = await fetch(`https://graph.facebook.com/v19.0/me?fields=access_token&access_token=${tokenToTest}`);
-        const tokenInfoData = await tokenInfoResponse.json();
-        console.log('🔑 Info del token:', tokenInfoData);
-        tokenInfo = tokenInfoData;
-      } catch (tokenErr) {
-        console.warn('⚠️ Error obteniendo info del token:', tokenErr);
-      }
+      // Test 3: Verificar cuentas de Instagram Business
+      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${tokenToTest}`);
+      const accountsData = await accountsResponse.json();
+      
+      console.log('📱 Cuentas Instagram:', accountsData);
+
+      const hasInstagramBusiness = accountsData.data && accountsData.data.some(acc => acc.instagram_business_account);
 
       setValidationResult({
         isValid: true,
-        page: pageData,
-        instagramBusiness: instagramBusinessInfo,
-        hasInstagramBusiness: !!instagramBusinessInfo,
-        tokenInfo: tokenInfo
+        user: basicData,
+        permissions: permissionsData.data || [],
+        instagramAccounts: accountsData.data || [],
+        hasInstagramBusiness: hasInstagramBusiness
       });
 
       return true;
@@ -150,7 +133,7 @@ const TokenManager: React.FC = () => {
 
       toast({
         title: "¡Token actualizado exitosamente!",
-        description: `Página: ${validationResult.page.name || validationResult.page.id}`,
+        description: `Usuario: ${validationResult.user.name || validationResult.user.id}`,
       });
       
     } catch (error) {
@@ -165,6 +148,20 @@ const TokenManager: React.FC = () => {
     }
   };
 
+  const testCurrentToken = async () => {
+    const currentToken = localStorage.getItem('instagram_access_token') || localStorage.getItem('hower-instagram-token');
+    if (currentToken) {
+      console.log('🧪 Probando token actual...');
+      await validateTokenDetailed(currentToken);
+    } else {
+      toast({
+        title: "No hay token",
+        description: "No se encontró ningún token guardado",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6">
       <div className="flex items-center gap-3 mb-4">
@@ -176,13 +173,13 @@ const TokenManager: React.FC = () => {
         {/* Actualizar token */}
         <div className="space-y-2">
           <Label htmlFor="token" className="text-sm font-medium">
-            Page Access Token:
+            Nuevo Token de Acceso:
           </Label>
           <div className="relative">
             <Input
               id="token"
               type="password"
-              placeholder="Pega tu Page Access Token aquí..."
+              placeholder="Token cargado automáticamente..."
               value={token}
               onChange={(e) => {
                 setToken(e.target.value);
@@ -217,7 +214,7 @@ const TokenManager: React.FC = () => {
           )}
         </Button>
 
-        {/* Validar token */}
+        {/* Validar token diferente */}
         <div className="p-4 bg-blue-50 rounded-lg">
           <h4 className="font-medium mb-2">🧪 Validar Token</h4>
           <Button 
@@ -241,27 +238,29 @@ const TokenManager: React.FC = () => {
         {validationResult && (
           <div className={`p-4 rounded-lg ${validationResult.isValid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
             <h4 className="font-medium mb-2">
-              {validationResult.isValid ? '✅ Page Access Token Válido' : '❌ Token Inválido'}
+              {validationResult.isValid ? '✅ Token Válido' : '❌ Token Inválido'}
             </h4>
             
             {validationResult.isValid ? (
               <div className="space-y-2 text-sm">
-                <div><strong>Página:</strong> {validationResult.page.name} (ID: {validationResult.page.id})</div>
+                <div><strong>Usuario:</strong> {validationResult.user.name} (ID: {validationResult.user.id})</div>
+                <div><strong>Permisos:</strong> {validationResult.permissions.length} encontrados</div>
                 <div><strong>Instagram Business:</strong> {validationResult.hasInstagramBusiness ? '✅ Conectado' : '❌ No conectado'}</div>
                 
-                {validationResult.instagramBusiness && (
-                  <div className="p-2 bg-green-100 rounded text-green-800">
-                    <div><strong>@{validationResult.instagramBusiness.username}</strong></div>
-                    <div>Tipo: {validationResult.instagramBusiness.account_type}</div>
-                    <div>Posts: {validationResult.instagramBusiness.media_count || 0}</div>
+                {!validationResult.hasInstagramBusiness && (
+                  <div className="mt-2 p-2 bg-yellow-100 rounded text-yellow-800">
+                    ⚠️ No tienes una cuenta de Instagram Business conectada. Esto es necesario para recibir mensajes.
                   </div>
                 )}
 
-                {!validationResult.hasInstagramBusiness && (
-                  <div className="mt-2 p-2 bg-yellow-100 rounded text-yellow-800">
-                    ⚠️ Esta página no tiene una cuenta de Instagram Business conectada. Conéctala para recibir mensajes.
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-blue-600">Ver permisos detallados</summary>
+                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                    {validationResult.permissions.map((perm, idx) => (
+                      <div key={idx}>{perm.permission}: {perm.status}</div>
+                    ))}
                   </div>
-                )}
+                </details>
               </div>
             ) : (
               <div className="text-sm text-red-700">
@@ -272,10 +271,10 @@ const TokenManager: React.FC = () => {
         )}
 
         <div className="text-sm text-gray-600 space-y-1">
-          <p>• Usa el <strong>Page Access Token</strong> de tu página de Facebook</p>
-          <p>• Debe tener permisos: pages_messaging, instagram_basic, instagram_manage_messages</p>
-          <p>• La página debe tener Instagram Business conectado</p>
-          <p>• Una vez actualizado, envía un DM a tu Instagram para probar</p>
+          <p>• Tu nuevo token está cargado automáticamente</p>
+          <p>• Haz clic en "Actualizar Token" para guardarlo</p>
+          <p>• Asegúrate de tener permisos: pages_messaging, instagram_basic</p>
+          <p>• Necesitas una cuenta de Instagram Business conectada</p>
         </div>
       </div>
     </div>
