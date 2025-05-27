@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageCircle, Users, TrendingUp, Clock, Database, AlertCircle } from 'lucide-react';
+import { MessageCircle, Users, TrendingUp, Clock, Database, AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const InstagramDashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -12,10 +13,6 @@ const InstagramDashboard: React.FC = () => {
     isLoading: true,
     error: null as string | null
   });
-
-  useEffect(() => {
-    loadDashboardStats();
-  }, []);
 
   const loadDashboardStats = async () => {
     try {
@@ -82,6 +79,11 @@ const InstagramDashboard: React.FC = () => {
     }
   };
 
+  // Cargar estadísticas solo una vez al montar el componente
+  useEffect(() => {
+    loadDashboardStats();
+  }, []);
+
   if (stats.error) {
     return (
       <div className="space-y-6">
@@ -92,6 +94,15 @@ const InstagramDashboard: React.FC = () => {
               <div>
                 <h3 className="font-medium">Error en el Dashboard</h3>
                 <p className="text-sm text-gray-600">{stats.error}</p>
+                <Button 
+                  onClick={loadDashboardStats}
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Reintentar
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -102,6 +113,19 @@ const InstagramDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header con botón de refresh manual */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Dashboard Instagram</h2>
+        <Button 
+          onClick={loadDashboardStats}
+          variant="outline"
+          disabled={stats.isLoading}
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${stats.isLoading ? 'animate-spin' : ''}`} />
+          Actualizar
+        </Button>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -182,8 +206,8 @@ const InstagramDashboard: React.FC = () => {
               <span className="text-sm text-green-600">● Activo</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Token Instagram</span>
-              <span className="text-sm text-yellow-600">⚠ Verificar en sección Token</span>
+              <span className="text-sm font-medium">Respuestas Automáticas</span>
+              <span className="text-sm text-red-600">● DESACTIVADAS</span>
             </div>
           </CardContent>
         </Card>
@@ -205,6 +229,11 @@ const InstagramDashboard: React.FC = () => {
               <strong>Última actualización:</strong>
               <br />
               {new Date().toLocaleString()}
+            </div>
+            <div className="text-sm">
+              <strong>Estado:</strong>
+              <br />
+              <span className="text-green-600">Respuestas automáticas desactivadas para evitar spam</span>
             </div>
           </CardContent>
         </Card>
