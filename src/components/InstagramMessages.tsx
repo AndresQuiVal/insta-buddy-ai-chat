@@ -26,58 +26,71 @@ const InstagramMessages: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
-  const lastProcessedMessageId = useRef<string | null>(null);
-  const isInitialLoad = useRef(true);
+  const hasLoadedInitially = useRef(false);
 
   useEffect(() => {
     loadInstagramMessages();
     
-    // Suscribirse a nuevos mensajes en tiempo real
-    const subscription = supabase
-      .channel('instagram-messages-changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'instagram_messages'
-      }, (payload) => {
-        console.log('Nuevo mensaje recibido:', payload);
-        
-        // Solo mostrar toast si no es la carga inicial y el mensaje es diferente al último procesado
-        if (!isInitialLoad.current && 
-            payload.new?.id !== lastProcessedMessageId.current &&
-            isRealUserMessage(payload.new)) {
+    // Solo suscribirse a real-time después de la carga inicial
+    const setupRealtime = () => {
+      const subscription = supabase
+        .channel('instagram-messages-changes')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'instagram_messages'
+        }, (payload) => {
+          console.log('Nuevo mensaje recibido:', payload);
           
-          lastProcessedMessageId.current = payload.new.id;
-          toast({
-            title: "Nuevo mensaje",
-            description: "Se recibió un nuevo mensaje de Instagram",
-          });
-        }
-        
-        loadInstagramMessages();
-      })
-      .subscribe();
+          // Solo procesar si ya se cargó inicialmente y es un mensaje real de usuario
+          if (hasLoadedInitially.current && isValidUserMessage(payload.new)) {
+            toast({
+              title: "Nuevo mensaje",
+              description: "Se recibió un nuevo mensaje de Instagram",
+            });
+          }
+          
+          // Recargar mensajes sin mostrar toast adicional
+          loadInstagramMessages();
+        })
+        .subscribe();
 
+      return () => {
+        supabase.removeChannel(subscription);
+      };
+    };
+
+    // Configurar real-time después de un pequeño delay para asegurar carga inicial
+    const timeout = setTimeout(setupRealtime, 2000);
+    
     return () => {
-      supabase.removeChannel(subscription);
+      clearTimeout(timeout);
     };
   }, []);
 
-  const isRealUserMessage = (message: any) => {
-    if (!message) return false;
+  const isValidUserMessage = (message: any) => {
+    if (!message || message.message_type !== 'received') return false;
     
-    // Filtrar mensajes de debug, webhooks y diagnósticos
-    const debugKeywords = [
-      'webhook_', 'debug', 'error', 'PAYLOAD COMPLETO', 'ERROR:', 
-      'diagnostic_user', 'hower_bot', 'test_sender', 'PRUEBA', 'test',
-      'Mensaje de prueba', 'debugger'
+    // Filtros más estrictos para mensajes de prueba/debug
+    const invalidPatterns = [
+      'test_sender',
+      'test_recipient', 
+      'debugger',
+      'PRUEBA',
+      'Mensaje de prueba',
+      'webhook_',
+      'debug',
+      'diagnostic_user',
+      'hower_bot'
     ];
     
-    return !debugKeywords.some(keyword => 
-      message.sender_id?.includes(keyword) || 
-      message.message_text?.includes(keyword) ||
-      message.recipient_id?.includes(keyword)
-    ) && message.message_type === 'received';
+    const messageText = message.message_text?.toLowerCase() || '';
+    const senderId = message.sender_id?.toLowerCase() || '';
+    
+    return !invalidPatterns.some(pattern => 
+      messageText.includes(pattern.toLowerCase()) || 
+      senderId.includes(pattern.toLowerCase())
+    );
   };
 
   const loadInstagramMessages = async () => {
@@ -102,7 +115,6 @@ const InstagramMessages: React.FC = () => {
 
       // Filtrar mensajes de payload/debug que no son conversaciones reales
       const realMessages = data?.filter((message: any) => {
-        // Filtrar mensajes de debug, payload completo, errores, etc.
         return !message.sender_id.includes('webhook_') && 
                !message.sender_id.includes('debug') && 
                !message.sender_id.includes('error') &&
@@ -138,9 +150,9 @@ const InstagramMessages: React.FC = () => {
         setSelectedConversation(conversationsArray[0].sender_id);
       }
 
-      // Marcar que ya no es la carga inicial después del primer load
-      if (isInitialLoad.current) {
-        isInitialLoad.current = false;
+      // Marcar que la carga inicial ha terminado
+      if (!hasLoadedInitially.current) {
+        hasLoadedInitially.current = true;
       }
 
     } catch (error) {
