@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -26,10 +27,23 @@ const InstagramMessages: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
-  const [lastMessageCount, setLastMessageCount] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Función para filtrar mensajes reales (no de debug/sistema)
+  const isRealUserMessage = (message: any) => {
+    return !message.sender_id.includes('webhook_') && 
+           !message.sender_id.includes('debug') && 
+           !message.sender_id.includes('error') &&
+           !message.message_text.includes('PAYLOAD COMPLETO') &&
+           !message.message_text.includes('ERROR:') &&
+           !message.message_text.includes('Mensaje de prueba desde el debugger') &&
+           message.sender_id !== 'diagnostic_user' &&
+           message.sender_id !== 'hower_bot' &&
+           message.sender_id !== 'test_sender_456';
+  };
 
   useEffect(() => {
-    loadInstagramMessages(false); // No mostrar toast en la carga inicial
+    loadInstagramMessages();
     
     // Suscribirse a nuevos mensajes en tiempo real
     const subscription = supabase
@@ -40,35 +54,27 @@ const InstagramMessages: React.FC = () => {
         table: 'instagram_messages'
       }, (payload) => {
         console.log('Nuevo mensaje recibido en tiempo real:', payload);
-        // Solo recargar mensajes y mostrar toast si es un mensaje real, no de debug
         const newMessage = payload.new as InstagramMessage;
         
-        // Filtrar mensajes de debug/webhook
-        if (!newMessage.sender_id.includes('webhook_') && 
-            !newMessage.sender_id.includes('debug') && 
-            !newMessage.sender_id.includes('error') &&
-            !newMessage.message_text.includes('PAYLOAD COMPLETO') &&
-            !newMessage.message_text.includes('ERROR:') &&
-            newMessage.sender_id !== 'diagnostic_user' &&
-            newMessage.sender_id !== 'hower_bot') {
-          
+        // Solo mostrar notificación si es un mensaje real de usuario y no es la carga inicial
+        if (!isInitialLoad && isRealUserMessage(newMessage) && newMessage.message_type === 'received') {
           toast({
             title: "Nuevo mensaje",
             description: `Mensaje de ${getUserDisplayName(newMessage.sender_id)}`,
           });
         }
         
-        // Recargar mensajes sin mostrar toast adicional
-        loadInstagramMessages(false);
+        // Recargar mensajes
+        loadInstagramMessages();
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [isInitialLoad]);
 
-  const loadInstagramMessages = async (showToast = true) => {
+  const loadInstagramMessages = async () => {
     try {
       setLoading(true);
       
@@ -80,7 +86,7 @@ const InstagramMessages: React.FC = () => {
 
       if (error) {
         console.error('Error loading Instagram messages:', error);
-        if (showToast) {
+        if (!isInitialLoad) {
           toast({
             title: "Error",
             description: "No se pudieron cargar los mensajes de Instagram",
@@ -90,27 +96,8 @@ const InstagramMessages: React.FC = () => {
         return;
       }
 
-      // Filtrar mensajes de payload/debug que no son conversaciones reales
-      const realMessages = data?.filter((message: any) => {
-        // Filtrar mensajes de debug, payload completo, errores, etc.
-        return !message.sender_id.includes('webhook_') && 
-               !message.sender_id.includes('debug') && 
-               !message.sender_id.includes('error') &&
-               !message.message_text.includes('PAYLOAD COMPLETO') &&
-               !message.message_text.includes('ERROR:') &&
-               message.sender_id !== 'diagnostic_user';
-      }) || [];
-
-      // Verificar si hay nuevos mensajes reales para mostrar toast solo cuando sea necesario
-      if (showToast && realMessages.length > lastMessageCount && lastMessageCount > 0) {
-        const newMessagesCount = realMessages.length - lastMessageCount;
-        toast({
-          title: "Mensajes actualizados",
-          description: `Se encontraron ${newMessagesCount} mensajes nuevos`,
-        });
-      }
-      
-      setLastMessageCount(realMessages.length);
+      // Filtrar solo mensajes reales
+      const realMessages = data?.filter(isRealUserMessage) || [];
 
       // Agrupar mensajes por conversación
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
@@ -137,6 +124,11 @@ const InstagramMessages: React.FC = () => {
       // Seleccionar la primera conversación si no hay ninguna seleccionada
       if (!selectedConversation && conversationsArray.length > 0) {
         setSelectedConversation(conversationsArray[0].sender_id);
+      }
+
+      // Marcar que ya no es la carga inicial
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
       }
 
     } catch (error) {
@@ -192,7 +184,7 @@ const InstagramMessages: React.FC = () => {
         });
 
       setNewMessage('');
-      loadInstagramMessages(false); // No mostrar toast al enviar mensaje
+      loadInstagramMessages();
 
       toast({
         title: "Mensaje enviado",
@@ -232,7 +224,7 @@ const InstagramMessages: React.FC = () => {
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-800">Conversaciones Instagram</h3>
             <button
-              onClick={() => loadInstagramMessages(true)}
+              onClick={loadInstagramMessages}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <RefreshCw className="w-4 h-4 text-gray-600" />
