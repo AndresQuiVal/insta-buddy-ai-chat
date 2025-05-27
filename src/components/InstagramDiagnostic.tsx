@@ -16,6 +16,7 @@ const InstagramDiagnostic: React.FC = () => {
     setTokenDebugInfo(null);
     
     const results: any = {};
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwb2drYnFjdXFyaWh5bmJwbnNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyMDczNzAsImV4cCI6MjA2Mzc4MzM3MH0.9x4X9Dqc_eIkgaG4LAecrG9PIGXZEEqxYIMbLBtXjNQ";
 
     try {
       // 1. Verificar conexión a base de datos
@@ -68,66 +69,70 @@ const InstagramDiagnostic: React.FC = () => {
         };
       }
 
-      // 3. Verificar webhook usando múltiples métodos
+      // 3. Verificar webhook usando múltiples métodos - MEJORADO
       console.log('🔍 3. Probando webhook...');
       
-      // Método 1: Probar con GET simple
+      // Método 1: Probar con GET simple usando fetch directo
       try {
-        console.log('3.1 Probando webhook con GET...');
+        console.log('3.1 Probando webhook con GET directo...');
         const webhookUrl = `https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook`;
         
-        // Primero intentar con fetch directo
-        try {
-          const directResponse = await fetch(webhookUrl, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabase.supabaseKey}`,
-            }
-          });
-          
-          results.webhook_direct = {
-            status: directResponse.ok ? 'success' : 'error',
-            message: directResponse.ok ? `Webhook accesible vía fetch directo (${directResponse.status})` : `Error HTTP ${directResponse.status}: ${directResponse.statusText}`,
-            url: webhookUrl,
-            response_status: directResponse.status
-          };
-        } catch (fetchError: any) {
-          results.webhook_direct = {
-            status: 'error',
-            message: `Error de red: ${fetchError.message}`,
-            url: webhookUrl,
-            error_type: 'network_error'
-          };
-        }
-
-        // Método 2: Usar Supabase Functions invoke
-        try {
-          console.log('3.2 Probando con supabase.functions.invoke...');
-          const { data: webhookData, error: webhookError } = await supabase.functions.invoke('instagram-webhook', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-          });
-          
-          results.webhook_supabase = {
-            status: webhookError ? 'error' : 'success',
-            message: webhookError ? `Error Supabase: ${webhookError.message}` : 'Webhook accesible vía Supabase Functions',
-            data: webhookData,
-            error_details: webhookError
-          };
-        } catch (supabaseError: any) {
-          results.webhook_supabase = {
-            status: 'error',
-            message: `Error Supabase invoke: ${supabaseError.message}`,
-            error_type: 'supabase_invoke_error'
-          };
-        }
-
-      } catch (err: any) {
-        results.webhook_test = {
+        const directResponse = await fetch(webhookUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          }
+        });
+        
+        const responseText = await directResponse.text();
+        
+        results.webhook_direct = {
+          status: directResponse.ok ? 'success' : 'error',
+          message: directResponse.ok ? 
+            `Webhook accesible vía fetch directo (${directResponse.status})` : 
+            `Error HTTP ${directResponse.status}: ${directResponse.statusText}`,
+          url: webhookUrl,
+          response_status: directResponse.status,
+          response_body: responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''),
+          headers: Object.fromEntries(directResponse.headers.entries())
+        };
+      } catch (fetchError: any) {
+        results.webhook_direct = {
           status: 'error',
-          message: `Error general webhook: ${err.message}`,
-          data: null
+          message: `Error de red en fetch directo: ${fetchError.message}`,
+          url: webhookUrl,
+          error_type: 'network_error',
+          error_details: fetchError.toString()
+        };
+      }
+
+      // Método 2: Usar Supabase Functions invoke - MEJORADO
+      try {
+        console.log('3.2 Probando con supabase.functions.invoke...');
+        const invokeResult = await supabase.functions.invoke('instagram-webhook', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        results.webhook_supabase = {
+          status: invokeResult.error ? 'error' : 'success',
+          message: invokeResult.error ? 
+            `Error Supabase invoke: ${invokeResult.error.message}` : 
+            'Webhook accesible vía Supabase Functions',
+          data: invokeResult.data,
+          error_details: invokeResult.error ? {
+            message: invokeResult.error.message,
+            details: invokeResult.error
+          } : null,
+          response_status: invokeResult.error ? 'error' : 'success'
+        };
+      } catch (supabaseError: any) {
+        results.webhook_supabase = {
+          status: 'error',
+          message: `Error en supabase.functions.invoke: ${supabaseError.message}`,
+          error_type: 'supabase_invoke_error',
+          error_details: supabaseError.toString()
         };
       }
 
@@ -528,7 +533,7 @@ const InstagramDiagnostic: React.FC = () => {
               </div>
             )}
 
-            {/* Webhook directo */}
+            {/* Webhook directo - MEJORADO */}
             {diagnosticResults.webhook_direct && (
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <Webhook className="w-5 h-5 text-blue-500 mt-0.5" />
@@ -541,14 +546,30 @@ const InstagramDiagnostic: React.FC = () => {
                   {diagnosticResults.webhook_direct.url && (
                     <p className="text-xs text-gray-500 mt-1">URL: {diagnosticResults.webhook_direct.url}</p>
                   )}
-                  {diagnosticResults.webhook_direct.error_type && (
-                    <p className="text-xs text-red-600 mt-1">Tipo: {diagnosticResults.webhook_direct.error_type}</p>
+                  {diagnosticResults.webhook_direct.response_status && (
+                    <p className="text-xs text-gray-500 mt-1">Status: {diagnosticResults.webhook_direct.response_status}</p>
+                  )}
+                  {diagnosticResults.webhook_direct.response_body && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs text-blue-600">Ver respuesta del servidor</summary>
+                      <pre className="text-xs bg-white p-2 rounded mt-1 overflow-auto">
+                        {diagnosticResults.webhook_direct.response_body}
+                      </pre>
+                    </details>
+                  )}
+                  {diagnosticResults.webhook_direct.error_details && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs text-red-600">Ver detalles del error</summary>
+                      <pre className="text-xs bg-red-50 p-2 rounded mt-1 overflow-auto">
+                        {diagnosticResults.webhook_direct.error_details}
+                      </pre>
+                    </details>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Webhook via Supabase */}
+            {/* Webhook via Supabase - MEJORADO */}
             {diagnosticResults.webhook_supabase && (
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <Webhook className="w-5 h-5 text-orange-500 mt-0.5" />
@@ -558,6 +579,14 @@ const InstagramDiagnostic: React.FC = () => {
                     <span className="font-medium">Webhook (vía Supabase)</span>
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{diagnosticResults.webhook_supabase.message}</p>
+                  {diagnosticResults.webhook_supabase.data && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs text-blue-600">Ver respuesta de Supabase</summary>
+                      <pre className="text-xs bg-white p-2 rounded mt-1 overflow-auto">
+                        {JSON.stringify(diagnosticResults.webhook_supabase.data, null, 2)}
+                      </pre>
+                    </details>
+                  )}
                   {diagnosticResults.webhook_supabase.error_details && (
                     <details className="mt-2">
                       <summary className="cursor-pointer text-xs text-red-600">Ver detalles del error</summary>
