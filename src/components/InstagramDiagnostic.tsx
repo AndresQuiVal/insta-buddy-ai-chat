@@ -121,7 +121,16 @@ const InstagramDiagnostic: React.FC = () => {
             const pagesWithInstagram = accountsData.data?.filter(page => page.instagram_business_account) || [];
             
             // Información detallada para diagnóstico
-            const debugInfo = {
+            const debugInfo: {
+              facebook_id: any;
+              facebook_name: any;
+              token_length: number;
+              total_pages: any;
+              pages_with_instagram: any;
+              pages_details: any;
+              instagram_error?: any;
+              instagram_data?: any;
+            } = {
               facebook_id: tokenData.id,
               facebook_name: tokenData.name,
               token_length: currentToken.length,
