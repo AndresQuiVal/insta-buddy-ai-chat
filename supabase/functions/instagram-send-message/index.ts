@@ -30,7 +30,7 @@ serve(async (req) => {
     console.log('Message:', message_text)
     console.log('Reply to:', reply_to_message_id)
 
-    // Obtener el token de acceso desde las variables de entorno
+    // Obtener el token de acceso guardado (necesitarás implementar esto)
     const ACCESS_TOKEN = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
     
     if (!ACCESS_TOKEN) {
@@ -46,9 +46,6 @@ serve(async (req) => {
         }
       )
     }
-
-    console.log('Token length:', ACCESS_TOKEN.length)
-    console.log('Token preview:', ACCESS_TOKEN.substring(0, 20) + '...')
 
     // Construir el payload del mensaje
     const messagePayload: any = {
@@ -94,28 +91,16 @@ serve(async (req) => {
       console.error('Error enviando mensaje a Instagram:', responseData)
       
       let errorDescription = responseData.error?.message || 'Error enviando mensaje'
-      let errorCode = responseData.error?.code || 'unknown_error'
       
-      // Mejorar los mensajes de error para hacerlos más útiles
       if (responseData.error?.code === 190) {
         errorDescription = 'Token de acceso inválido o expirado. Reconecta tu cuenta de Instagram.'
-        errorCode = 'invalid_token'
       } else if (responseData.error?.code === 200) {
         errorDescription = 'Permisos insuficientes. Verifica la configuración de la app en Facebook Developers.'
-        errorCode = 'permission_error'
-      } else if (responseData.error?.code === 100 && responseData.error?.message?.includes('invalid parameter')) {
-        // Error común cuando el ID de Instagram no es válido
-        errorDescription = 'ID de receptor inválido. Verifica que estás enviando un PSID válido o que la cuenta de Instagram está correctamente conectada.'
-        errorCode = 'invalid_recipient'
-      } else if (responseData.error?.code === 10) {
-        // Error común: API Rate limit
-        errorDescription = 'Límite de API alcanzado. Espera un momento y vuelve a intentarlo.'
-        errorCode = 'rate_limit'
       }
       
       return new Response(
         JSON.stringify({ 
-          error: errorCode,
+          error: responseData.error?.type || 'send_message_failed',
           error_description: errorDescription,
           debug_info: {
             response_status: response.status,

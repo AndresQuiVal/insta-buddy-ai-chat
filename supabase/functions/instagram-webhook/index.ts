@@ -1,103 +1,68 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const supabase = createClient(supabaseUrl, supabaseKey)
+import { supabase } from "../_shared/supabase.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
-// Set para trackear mensajes ya procesados (evitar duplicados)
-const processedMessages = new Set<string>()
-
 serve(async (req) => {
-  console.log('=== INSTAGRAM WEBHOOK REQUEST ===')
-  console.log('Method:', req.method)
-  console.log('URL:', req.url)
-
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight request')
-    return new Response('ok', { 
-      status: 200,
-      headers: corsHeaders 
-    })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    console.log('=== INSTAGRAM WEBHOOK RECEIVED ===')
+    console.log('Method:', req.method)
+    console.log('URL:', req.url)
+
     // Verificación del webhook (GET request de Facebook)
     if (req.method === 'GET') {
-      console.log('Handling GET request for webhook verification')
       const url = new URL(req.url)
       const mode = url.searchParams.get('hub.mode')
       const token = url.searchParams.get('hub.verify_token')
       const challenge = url.searchParams.get('hub.challenge')
 
-      console.log('Webhook verification params:', { mode, token, challenge })
+      console.log('Webhook verification:', { mode, token, challenge })
 
-      const VERIFY_TOKEN = Deno.env.get('INSTAGRAM_VERIFY_TOKEN') || 'hower-instagram-webhook-token'
+      const VERIFY_TOKEN = 'hower-instagram-webhook-token'
 
       if (mode === 'subscribe' && token === VERIFY_TOKEN) {
         console.log('✓ Webhook verified successfully')
-        return new Response(challenge, { 
-          status: 200,
-          headers: corsHeaders 
-        })
+        return new Response(challenge, { status: 200 })
       } else {
-        console.log('✗ Webhook verification failed - invalid token or mode')
-        return new Response('Forbidden', { 
-          status: 403,
-          headers: corsHeaders 
-        })
+        console.log('✗ Webhook verification failed')
+        return new Response('Forbidden', { status: 403 })
       }
     }
 
     // Procesar mensajes entrantes (POST request)
     if (req.method === 'POST') {
-      console.log('Handling POST request for incoming messages')
       const body = await req.json()
-      console.log('📨 Webhook payload:', JSON.stringify(body, null, 2))
+      console.log('📨 Webhook payload recibido:', JSON.stringify(body, null, 2))
 
       // Verificar si el payload tiene la estructura esperada
       if (!body.entry || !Array.isArray(body.entry)) {
-        console.log('⚠️ No "entry" array found in payload')
-        return new Response('OK', { 
-          status: 200, 
-          headers: corsHeaders 
-        })
+        console.log('⚠️ No se encontró array "entry" en el payload')
+        return new Response('OK', { status: 200, headers: corsHeaders })
       }
 
       let messagesProcessed = 0
 
       // Procesar cada entrada del webhook
       for (const entry of body.entry) {
-        console.log(`\n--- PROCESSING ENTRY ---`)
+        console.log(`\n--- PROCESANDO ENTRY ---`)
         console.log(`Entry ID: ${entry.id}`)
         
         // Método 1: Procesar mensajes directos (messaging)
         if (entry.messaging && Array.isArray(entry.messaging)) {
-          console.log(`📱 Found ${entry.messaging.length} messages in messaging array`)
+          console.log(`📱 Encontrados ${entry.messaging.length} mensajes en messaging`)
           
           for (const messagingEvent of entry.messaging) {
             if (messagingEvent.message && messagingEvent.message.text) {
-              console.log('💬 Processing text message')
-              
-              // Crear ID único para evitar duplicados
-              const messageId = messagingEvent.message.mid || `${messagingEvent.sender.id}_${messagingEvent.timestamp}`
-              
-              if (processedMessages.has(messageId)) {
-                console.log(`⚠️ Message ${messageId} already processed, skipping`)
-                continue
-              }
-              
-              processedMessages.add(messageId)
-              
+              console.log('💬 Procesando mensaje de texto')
               const result = await processTextMessage(messagingEvent, entry.id)
               if (result.success) messagesProcessed++
             }
@@ -106,24 +71,14 @@ serve(async (req) => {
 
         // Método 2: Procesar cambios (changes)
         if (entry.changes && Array.isArray(entry.changes)) {
-          console.log(`🔄 Found ${entry.changes.length} changes`)
+          console.log(`🔄 Encontrados ${entry.changes.length} cambios`)
           
           for (const change of entry.changes) {
             if (change.field === 'messages' && change.value) {
-              console.log('📝 Processing message change')
+              console.log('📝 Procesando cambio de mensaje')
               
               // Si el change.value tiene estructura de mensaje directo
               if (change.value.message && change.value.message.text) {
-                // Crear ID único para evitar duplicados
-                const messageId = change.value.message.mid || `${change.value.sender?.id}_${change.value.timestamp}`
-                
-                if (processedMessages.has(messageId)) {
-                  console.log(`⚠️ Message ${messageId} already processed, skipping`)
-                  continue
-                }
-                
-                processedMessages.add(messageId)
-                
                 const result = await processChangeMessage(change.value, entry.id)
                 if (result.success) messagesProcessed++
               }
@@ -132,7 +87,7 @@ serve(async (req) => {
         }
       }
 
-      console.log(`\n🎯 SUMMARY: ${messagesProcessed} messages processed`)
+      console.log(`\n🎯 RESUMEN: ${messagesProcessed} mensajes procesados`)
 
       return new Response('OK', { 
         status: 200, 
@@ -140,28 +95,19 @@ serve(async (req) => {
       })
     }
 
-    // Handle any other methods
-    console.log('Method not allowed:', req.method)
     return new Response('Method not allowed', { 
       status: 405, 
       headers: corsHeaders 
     })
 
   } catch (error) {
-    console.error('💥 ERROR in webhook:', error)
+    console.error('💥 ERROR en webhook:', error)
     
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error', 
-        details: error.message,
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
         status: 500, 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }
@@ -170,28 +116,18 @@ serve(async (req) => {
 // Función para procesar mensajes de la estructura messaging
 async function processTextMessage(messagingEvent: any, pageId: string) {
   try {
-    console.log(`🔄 Processing text message`)
+    console.log(`🔄 Procesando mensaje de texto`)
 
     const message = messagingEvent.message
     const senderId = messagingEvent.sender?.id || 'unknown_sender'
     const recipientId = messagingEvent.recipient?.id || pageId
     const messageText = message.text || 'Mensaje sin texto'
-    const messageId = message.mid || `msg_${Date.now()}_${Math.random()}`
     
-    // Verificar si el mensaje ya existe en la base de datos
-    const { data: existingMessage } = await supabase
-      .from('instagram_messages')
-      .select('id')
-      .eq('instagram_message_id', messageId)
-      .single()
+    // Determinar el nombre del usuario más legible
+    const userName = `Usuario ${senderId.slice(-4)}`
 
-    if (existingMessage) {
-      console.log(`⚠️ Message ${messageId} already exists in database, skipping`)
-      return { success: false, error: 'Message already exists' }
-    }
-    
     const messageData = {
-      instagram_message_id: messageId,
+      instagram_message_id: message.mid || `msg_${Date.now()}_${Math.random()}`,
       sender_id: senderId,
       recipient_id: recipientId,
       message_text: messageText,
@@ -204,7 +140,7 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
       }
     }
 
-    console.log(`💾 Saving message: "${messageText}" from user ${senderId.slice(-4)}`)
+    console.log(`💾 Guardando mensaje: "${messageText}" de ${userName}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -212,25 +148,21 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
       .select()
 
     if (error) {
-      console.error(`❌ Error saving message:`, error)
+      console.error(`❌ Error guardando mensaje:`, error)
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Message saved successfully`)
+    console.log(`✅ Mensaje guardado exitosamente`)
 
-    // Generar respuesta automática solo para mensajes reales (no de prueba) y que no sean de nuestro bot
-    if (messageText && 
-        !messageText.includes('PRUEBA') && 
-        !messageText.includes('test') && 
-        !messageText.includes('¡Hola! Recibí tu mensaje') &&
-        senderId !== 'hower_bot') {
+    // Generar respuesta automática solo para mensajes reales (no de prueba)
+    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
       await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
     }
 
     return { success: true, id: data[0]?.id }
 
   } catch (error) {
-    console.error(`💥 Error in processTextMessage:`, error)
+    console.error(`💥 Error en processTextMessage:`, error)
     return { success: false, error: error.message }
   }
 }
@@ -238,26 +170,16 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
 // Función para procesar mensajes de changes
 async function processChangeMessage(changeValue: any, pageId: string) {
   try {
-    console.log(`🔄 Processing change message`)
+    console.log(`🔄 Procesando mensaje de change`)
 
     const message = changeValue.message
     const senderId = changeValue.sender?.id || 'unknown_sender'
     const recipientId = changeValue.recipient?.id || pageId
     const messageText = message?.text || 'Mensaje sin texto'
-    const messageId = message?.mid || `change_${Date.now()}_${Math.random()}`
     
-    // Verificar si el mensaje ya existe en la base de datos
-    const { data: existingMessage } = await supabase
-      .from('instagram_messages')
-      .select('id')
-      .eq('instagram_message_id', messageId)
-      .single()
+    // Determinar el nombre del usuario más legible
+    const userName = `Usuario ${senderId.slice(-4)}`
 
-    if (existingMessage) {
-      console.log(`⚠️ Message ${messageId} already exists in database, skipping`)
-      return { success: false, error: 'Message already exists' }
-    }
-    
     // Convertir timestamp de segundos a millisegundos si es necesario
     let timestamp = changeValue.timestamp
     if (timestamp && timestamp.toString().length === 10) {
@@ -265,7 +187,7 @@ async function processChangeMessage(changeValue: any, pageId: string) {
     }
 
     const messageData = {
-      instagram_message_id: messageId,
+      instagram_message_id: message?.mid || `change_${Date.now()}_${Math.random()}`,
       sender_id: senderId,
       recipient_id: recipientId,
       message_text: messageText,
@@ -278,7 +200,7 @@ async function processChangeMessage(changeValue: any, pageId: string) {
       }
     }
 
-    console.log(`💾 Saving change message: "${messageText}" from user ${senderId.slice(-4)}`)
+    console.log(`💾 Guardando mensaje de change: "${messageText}" de ${userName}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -286,25 +208,21 @@ async function processChangeMessage(changeValue: any, pageId: string) {
       .select()
 
     if (error) {
-      console.error(`❌ Error saving change message:`, error)
+      console.error(`❌ Error guardando mensaje de change:`, error)
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Change message saved successfully`)
+    console.log(`✅ Mensaje de change guardado exitosamente`)
 
-    // Generar respuesta automática solo para mensajes reales y que no sean de nuestro bot
-    if (messageText && 
-        !messageText.includes('PRUEBA') && 
-        !messageText.includes('test') && 
-        !messageText.includes('¡Hola! Recibí tu mensaje') &&
-        senderId !== 'hower_bot') {
+    // Generar respuesta automática solo para mensajes reales
+    if (messageText && !messageText.includes('PRUEBA') && !messageText.includes('test')) {
       await generateAutoResponse(messageText, senderId, messageData.instagram_message_id)
     }
 
     return { success: true, id: data[0]?.id }
 
   } catch (error) {
-    console.error(`💥 Error in processChangeMessage:`, error)
+    console.error(`💥 Error en processChangeMessage:`, error)
     return { success: false, error: error.message }
   }
 }
@@ -312,22 +230,7 @@ async function processChangeMessage(changeValue: any, pageId: string) {
 // Función para generar respuesta automática
 async function generateAutoResponse(messageText: string, senderId: string, originalMessageId: string) {
   try {
-    console.log(`🤖 Generating auto response for: "${messageText}"`)
-
-    // Verificar si ya enviamos una respuesta a este usuario recientemente (últimos 30 segundos)
-    const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString()
-    
-    const { data: recentResponses } = await supabase
-      .from('instagram_messages')
-      .select('id')
-      .eq('sender_id', 'hower_bot')
-      .eq('recipient_id', senderId)
-      .gte('timestamp', thirtySecondsAgo)
-
-    if (recentResponses && recentResponses.length > 0) {
-      console.log(`⚠️ Recent response already sent to user ${senderId}, skipping auto response`)
-      return
-    }
+    console.log(`🤖 Generando respuesta automática para: "${messageText}"`)
 
     const responseText = `¡Hola! Recibí tu mensaje: "${messageText}". Te responderemos pronto. 🚀`
 
@@ -351,12 +254,12 @@ async function generateAutoResponse(messageText: string, senderId: string, origi
       .select()
 
     if (error) {
-      console.error(`❌ Error saving auto response:`, error)
+      console.error(`❌ Error guardando respuesta automática:`, error)
     } else {
-      console.log(`✅ Auto response saved`)
+      console.log(`✅ Respuesta automática guardada`)
     }
 
   } catch (error) {
-    console.error(`💥 Error in generateAutoResponse:`, error)
+    console.error(`💥 Error en generateAutoResponse:`, error)
   }
 }

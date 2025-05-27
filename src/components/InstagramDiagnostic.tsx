@@ -1,22 +1,20 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, CheckCircle, AlertCircle, Database, Webhook, MessageCircle, Instagram, Info } from 'lucide-react';
+import { RefreshCw, CheckCircle, AlertCircle, Database, Webhook, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const InstagramDiagnostic: React.FC = () => {
   const [diagnosticResults, setDiagnosticResults] = useState<any>({});
   const [isRunning, setIsRunning] = useState(false);
-  const [tokenDebugInfo, setTokenDebugInfo] = useState<any>(null);
   const { toast } = useToast();
 
   const runFullDiagnostic = async () => {
     setIsRunning(true);
     setDiagnosticResults({});
-    setTokenDebugInfo(null);
     
     const results: any = {};
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwb2drYnFjdXFyaWh5bmJwbnNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyMDczNzAsImV4cCI6MjA2Mzc4MzM3MH0.9x4X9Dqc_eIkgaG4LAecrG9PIGXZEEqxYIMbLBtXjNQ";
 
     try {
       // 1. Verificar conexión a base de datos
@@ -69,186 +67,48 @@ const InstagramDiagnostic: React.FC = () => {
         };
       }
 
-      // 3. Verificar webhook con autorización correcta
-      console.log('🔍 3. Probando webhook con autorización...');
-      
-      // Método 1: Probar con GET usando headers de autorización correctos
+      // 3. Verificar webhook usando Supabase Functions directamente
+      console.log('🔍 3. Probando webhook a través de Supabase...');
       try {
-        console.log('3.1 Probando webhook con GET autorizado...');
-        const webhookUrl = `https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook?hub.mode=subscribe&hub.verify_token=hower-instagram-webhook-token&hub.challenge=test123`;
-        
-        const directResponse = await fetch(webhookUrl, {
+        const { data: webhookData, error: webhookError } = await supabase.functions.invoke('instagram-webhook', {
           method: 'GET',
+          body: null,
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'apikey': SUPABASE_ANON_KEY,
-          }
-        });
-        
-        const responseText = await directResponse.text();
-        
-        results.webhook_direct = {
-          status: directResponse.ok ? 'success' : 'error',
-          message: directResponse.ok ? 
-            `Webhook accesible - Verificación exitosa (${directResponse.status})` : 
-            `Error HTTP ${directResponse.status}: ${directResponse.statusText}`,
-          url: webhookUrl,
-          response_status: directResponse.status,
-          response_body: responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''),
-          headers: Object.fromEntries(directResponse.headers.entries())
-        };
-      } catch (fetchError: any) {
-        results.webhook_direct = {
-          status: 'error',
-          message: `Error de red en fetch directo: ${fetchError.message}`,
-          url: `https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook`,
-          error_type: 'network_error',
-          error_details: fetchError.toString()
-        };
-      }
-
-      // Método 2: Usar Supabase Functions invoke con verificación
-      try {
-        console.log('3.2 Probando con supabase.functions.invoke...');
-        const invokeResult = await supabase.functions.invoke('instagram-webhook', {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          body: {
-            'hub.mode': 'subscribe',
-            'hub.verify_token': 'hower-instagram-webhook-token',
-            'hub.challenge': 'test123'
           }
         });
         
         results.webhook_supabase = {
-          status: invokeResult.error ? 'error' : 'success',
-          message: invokeResult.error ? 
-            `Error Supabase invoke: ${invokeResult.error.message}` : 
-            'Webhook accesible vía Supabase Functions',
-          data: invokeResult.data,
-          error_details: invokeResult.error ? {
-            message: invokeResult.error.message,
-            details: invokeResult.error
-          } : null,
-          response_status: invokeResult.error ? 'error' : 'success'
+          status: webhookError ? 'error' : 'success',
+          message: webhookError ? `Error: ${webhookError.message}` : 'Webhook accesible vía Supabase Functions',
+          data: webhookData
         };
-      } catch (supabaseError: any) {
+      } catch (err: any) {
         results.webhook_supabase = {
           status: 'error',
-          message: `Error en supabase.functions.invoke: ${supabaseError.message}`,
-          error_type: 'supabase_invoke_error',
-          error_details: supabaseError.toString()
+          message: `Error llamando webhook: ${err.message}`,
+          data: null
         };
       }
 
-      // 4. Verificar token actual y conexión con Instagram
-      console.log('🔍 4. Verificando token actual y conexión Instagram...');
+      // 4. Verificar token actual
+      console.log('🔍 4. Verificando token actual...');
       const currentToken = localStorage.getItem('instagram_access_token') || localStorage.getItem('hower-instagram-token');
-      
       if (currentToken) {
         try {
-          // Primer paso: Verificar validez básica del token con Facebook
-          console.log('4.1 Verificando token con Facebook Graph API...');
           const tokenResponse = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${currentToken}`);
           const tokenData = await tokenResponse.json();
           
-          if (tokenData.error) {
-            results.token = {
-              status: 'error',
-              message: `Token inválido: ${tokenData.error.message}`,
-              hasToken: true
-            };
-          } else {
-            // Token básico válido, ahora verificar cuentas Instagram
-            console.log('4.2 Buscando cuentas de Instagram asociadas...');
-            
-            // Obtener cuentas/páginas a las que tiene acceso
-            const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/${tokenData.id}/accounts?fields=id,name,instagram_business_account&access_token=${currentToken}`);
-            const accountsData = await accountsResponse.json();
-            
-            const pagesWithInstagram = accountsData.data?.filter(page => page.instagram_business_account) || [];
-            
-            // Información detallada para diagnóstico
-            const debugInfo: {
-              facebook_id: any;
-              facebook_name: any;
-              token_length: number;
-              total_pages: any;
-              pages_with_instagram: any;
-              pages_details: any;
-              instagram_error?: any;
-              instagram_data?: any;
-            } = {
-              facebook_id: tokenData.id,
-              facebook_name: tokenData.name,
-              token_length: currentToken.length,
-              total_pages: accountsData.data?.length || 0,
-              pages_with_instagram: pagesWithInstagram.length,
-              pages_details: accountsData.data?.map(page => ({
-                id: page.id,
-                name: page.name,
-                has_instagram: !!page.instagram_business_account,
-                instagram_id: page.instagram_business_account?.id || null
-              })) || []
-            };
-            
-            // Guardar detalles para diagnóstico avanzado
-            setTokenDebugInfo(debugInfo);
-            
-            if (pagesWithInstagram.length === 0) {
-              results.token = {
-                status: 'warning',
-                message: `Token válido pero Instagram no encontrado: La cuenta de Instagram Business no está correctamente vinculada`,
-                hasToken: true,
-                userData: tokenData
-              };
-            } else {
-              // Verificar información de Instagram
-              try {
-                const instagramId = pagesWithInstagram[0].instagram_business_account.id;
-                const instaResponse = await fetch(`https://graph.facebook.com/v19.0/${instagramId}?fields=id,username,profile_picture_url&access_token=${currentToken}`);
-                const instaData = await instaResponse.json();
-                
-                if (instaData.error) {
-                  results.token = {
-                    status: 'warning',
-                    message: `Token válido pero error Instagram: ${instaData.error.message}`,
-                    hasToken: true,
-                    userData: tokenData
-                  };
-                  debugInfo.instagram_error = instaData.error;
-                } else {
-                  results.token = {
-                    status: 'success',
-                    message: `Token válido - Usuario: ${tokenData.name} / Instagram: @${instaData.username || instagramId}`,
-                    hasToken: true,
-                    userData: tokenData,
-                    instagram: instaData
-                  };
-                  debugInfo.instagram_data = instaData;
-                }
-                
-                // Actualizar la información de debug
-                setTokenDebugInfo(debugInfo);
-              } catch (err: any) {
-                results.token = {
-                  status: 'warning',
-                  message: `Token válido pero error obteniendo datos Instagram: ${err.message}`,
-                  hasToken: true,
-                  userData: tokenData
-                };
-                debugInfo.instagram_error = err.message;
-                setTokenDebugInfo(debugInfo);
-              }
-            }
-          }
+          results.token = {
+            status: tokenData.error ? 'error' : 'success',
+            message: tokenData.error ? `Token error: ${tokenData.error.message}` : `Token válido - Usuario: ${tokenData.name}`,
+            hasToken: true
+          };
         } catch (err: any) {
           results.token = {
             status: 'error',
             message: `Error verificando token: ${err.message}`,
-            hasToken: true,
-            error: err.message
+            hasToken: true
           };
         }
       } else {
@@ -292,93 +152,64 @@ const InstagramDiagnostic: React.FC = () => {
 
       // 6. Probar webhook con payload de Instagram simulado
       console.log('🔍 6. Enviando payload simulado al webhook...');
-      if (results.webhook_supabase?.status === 'success' || results.webhook_direct?.status === 'success') {
-        try {
-          const testPayload = {
-            object: 'instagram',
-            entry: [{
-              id: 'test_page_id',
-              time: Date.now(),
-              messaging: [{
-                sender: { id: 'test_user_diagnostic' },
-                recipient: { id: 'test_page_id' },
-                timestamp: Date.now(),
-                message: {
-                  mid: `test_diagnostic_${Date.now()}`,
-                  text: '🧪 MENSAJE DE PRUEBA DESDE DIAGNÓSTICO'
-                }
-              }]
-            }]
-          };
-
-          const { data: webhookResponse, error: webhookResponseError } = await supabase.functions.invoke('instagram-webhook', {
-            body: testPayload
-          });
-
-          results.webhookTest = {
-            status: webhookResponseError ? 'error' : 'success',
-            message: webhookResponseError ? `Error: ${webhookResponseError.message}` : 'Mensaje enviado al webhook correctamente',
-            response: webhookResponse
-          };
-
-          // Esperar un momento y verificar si el mensaje llegó a la base de datos
-          setTimeout(async () => {
-            const { data: testMessages } = await supabase
-              .from('instagram_messages')
-              .select('*')
-              .ilike('message_text', '%MENSAJE DE PRUEBA DESDE DIAGNÓSTICO%')
-              .order('created_at', { ascending: false })
-              .limit(1);
-
-            if (testMessages && testMessages.length > 0) {
-              console.log('✅ Mensaje de prueba encontrado en la base de datos!');
-              toast({
-                title: "¡Diagnóstico exitoso!",
-                description: "El mensaje de prueba llegó correctamente a la base de datos",
-              });
-            } else {
-              console.log('❌ Mensaje de prueba NO encontrado en la base de datos');
-              toast({
-                title: "Problema detectado",
-                description: "El webhook no está guardando mensajes en la base de datos",
-                variant: "destructive"
-              });
-            }
-          }, 3000);
-
-        } catch (err: any) {
-          results.webhookTest = {
-            status: 'error',
-            message: `Error enviando mensaje de prueba: ${err.message}`,
-            response: null
-          };
-        }
-      } else {
-        results.webhookTest = {
-          status: 'warning',
-          message: 'No se puede probar el webhook porque no está disponible',
-          response: null
-        };
-      }
-
-      // 7. Verificar configuración de token en servidor
-      console.log('🔍 7. Verificando token en servidor...');
       try {
-        const { data: tokenServerData, error: tokenServerError } = await supabase.functions.invoke('update-instagram-token', {
-          body: { access_token: currentToken }
+        const testPayload = {
+          object: 'instagram',
+          entry: [{
+            id: 'test_page_id',
+            time: Date.now(),
+            messaging: [{
+              sender: { id: 'test_user_diagnostic' },
+              recipient: { id: 'test_page_id' },
+              timestamp: Date.now(),
+              message: {
+                mid: `test_diagnostic_${Date.now()}`,
+                text: '🧪 MENSAJE DE PRUEBA DESDE DIAGNÓSTICO'
+              }
+            }]
+          }]
+        };
+
+        const { data: webhookResponse, error: webhookResponseError } = await supabase.functions.invoke('instagram-webhook', {
+          body: testPayload
         });
 
-        results.serverToken = {
-          status: tokenServerError ? 'error' : 'success',
-          message: tokenServerError ? `Error: ${tokenServerError.message}` : 'Verificación de token en servidor exitosa',
-          data: tokenServerData,
-          hasInstagramBusiness: tokenServerData?.hasInstagramBusiness
+        results.webhookTest = {
+          status: webhookResponseError ? 'error' : 'success',
+          message: webhookResponseError ? `Error: ${webhookResponseError.message}` : 'Mensaje enviado al webhook correctamente',
+          response: webhookResponse
         };
+
+        // Esperar un momento y verificar si el mensaje llegó a la base de datos
+        setTimeout(async () => {
+          const { data: testMessages } = await supabase
+            .from('instagram_messages')
+            .select('*')
+            .ilike('message_text', '%MENSAJE DE PRUEBA DESDE DIAGNÓSTICO%')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (testMessages && testMessages.length > 0) {
+            console.log('✅ Mensaje de prueba encontrado en la base de datos!');
+            toast({
+              title: "¡Diagnóstico exitoso!",
+              description: "El mensaje de prueba llegó correctamente a la base de datos",
+            });
+          } else {
+            console.log('❌ Mensaje de prueba NO encontrado en la base de datos');
+            toast({
+              title: "Problema detectado",
+              description: "El webhook no está guardando mensajes en la base de datos",
+              variant: "destructive"
+            });
+          }
+        }, 3000);
+
       } catch (err: any) {
-        results.serverToken = {
+        results.webhookTest = {
           status: 'error',
-          message: `Error verificando token en servidor: ${err.message}`,
-          data: null
+          message: `Error enviando mensaje de prueba: ${err.message}`,
+          response: null
         };
       }
 
@@ -399,52 +230,15 @@ const InstagramDiagnostic: React.FC = () => {
 
   const StatusIcon = ({ status }: { status: string }) => {
     if (status === 'success') return <CheckCircle className="w-5 h-5 text-green-500" />;
-    if (status === 'warning') return <AlertCircle className="w-5 h-5 text-yellow-500" />;
     if (status === 'error') return <AlertCircle className="w-5 h-5 text-red-500" />;
     return <RefreshCw className="w-5 h-5 text-yellow-500 animate-spin" />;
   };
 
-  // Utilidad para comprobar la salud general del sistema
-  const getSystemHealth = () => {
-    if (!diagnosticResults || Object.keys(diagnosticResults).length === 0) return null;
-    
-    // Verificar componentes críticos
-    const databaseOk = diagnosticResults.database?.status === 'success';
-    const webhookOk = diagnosticResults.webhook_supabase?.status === 'success';
-    const hasValidToken = diagnosticResults.token?.status === 'success';
-    const hasInstagram = diagnosticResults.token?.instagram || 
-                         diagnosticResults.serverToken?.hasInstagramBusiness;
-    
-    if (!databaseOk) return { status: 'error', message: 'Error de conexión a la base de datos' };
-    if (!webhookOk) return { status: 'error', message: 'El webhook no está accesible' };
-    if (!diagnosticResults.token?.hasToken) return { status: 'error', message: 'No hay token de Instagram configurado' };
-    if (!hasValidToken) return { status: 'error', message: 'El token de Instagram no es válido' };
-    if (!hasInstagram) return { status: 'warning', message: 'No se encontró cuenta de Instagram Business conectada' };
-    
-    // Si todos los componentes críticos están bien
-    return { status: 'success', message: 'Todos los sistemas operativos' };
-  };
-
-  const systemHealth = getSystemHealth();
-
   return (
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <MessageCircle className="w-6 h-6 text-purple-500" />
-          <h3 className="text-lg font-semibold text-gray-800">Diagnóstico de Instagram</h3>
-        </div>
-        
-        {systemHealth && (
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-            systemHealth.status === 'success' ? 'bg-green-100 text-green-700' :
-            systemHealth.status === 'warning' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-red-100 text-red-700'
-          }`}>
-            <StatusIcon status={systemHealth.status} />
-            <span>{systemHealth.message}</span>
-          </div>
-        )}
+      <div className="flex items-center gap-3 mb-4">
+        <MessageCircle className="w-6 h-6 text-purple-500" />
+        <h3 className="text-lg font-semibold text-gray-800">Diagnóstico Completo del Sistema</h3>
       </div>
 
       <div className="space-y-4">
@@ -481,152 +275,6 @@ const InstagramDiagnostic: React.FC = () => {
               </div>
             )}
 
-            {/* Token e Instagram */}
-            {diagnosticResults.token && (
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <Instagram className="w-5 h-5 text-pink-500 mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <StatusIcon status={diagnosticResults.token.status} />
-                    <span className="font-medium">Cuenta de Instagram</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">{diagnosticResults.token.message}</p>
-                  
-                  {tokenDebugInfo && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-blue-600">
-                        Ver detalles de conexión Instagram
-                      </summary>
-                      <div className="mt-2 text-xs bg-white p-2 rounded border">
-                        <div className="space-y-1">
-                          <div><strong>Usuario Facebook:</strong> {tokenDebugInfo.facebook_name} (ID: {tokenDebugInfo.facebook_id})</div>
-                          <div><strong>Longitud del token:</strong> {tokenDebugInfo.token_length} caracteres</div>
-                          <div><strong>Páginas totales:</strong> {tokenDebugInfo.total_pages}</div>
-                          <div><strong>Páginas con Instagram:</strong> {tokenDebugInfo.pages_with_instagram}</div>
-                          
-                          {tokenDebugInfo.pages_details?.length > 0 && (
-                            <div className="mt-2">
-                              <strong>Detalles de páginas:</strong>
-                              <ul className="list-disc pl-4 mt-1">
-                                {tokenDebugInfo.pages_details.map((page: any, idx: number) => (
-                                  <li key={idx}>
-                                    {page.name} - 
-                                    {page.has_instagram 
-                                      ? <span className="text-green-600">Instagram conectado (ID: {page.instagram_id})</span>
-                                      : <span className="text-red-600">Sin Instagram</span>}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          
-                          {tokenDebugInfo.instagram_data && (
-                            <div className="mt-2 p-1 bg-green-50 rounded">
-                              <strong>Instagram conectado:</strong> @{tokenDebugInfo.instagram_data.username || 'Sin username'} (ID: {tokenDebugInfo.instagram_data.id})
-                            </div>
-                          )}
-                          
-                          {tokenDebugInfo.instagram_error && (
-                            <div className="mt-2 p-1 bg-red-50 rounded">
-                              <strong>Error Instagram:</strong> {JSON.stringify(tokenDebugInfo.instagram_error)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </details>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Webhook directo */}
-            {diagnosticResults.webhook_direct && (
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <Webhook className="w-5 h-5 text-blue-500 mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <StatusIcon status={diagnosticResults.webhook_direct.status} />
-                    <span className="font-medium">Webhook (Directo)</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">{diagnosticResults.webhook_direct.message}</p>
-                  {diagnosticResults.webhook_direct.url && (
-                    <p className="text-xs text-gray-500 mt-1">URL: {diagnosticResults.webhook_direct.url}</p>
-                  )}
-                  {diagnosticResults.webhook_direct.response_status && (
-                    <p className="text-xs text-gray-500 mt-1">Status: {diagnosticResults.webhook_direct.response_status}</p>
-                  )}
-                  {diagnosticResults.webhook_direct.response_body && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-blue-600">Ver respuesta del servidor</summary>
-                      <pre className="text-xs bg-white p-2 rounded mt-1 overflow-auto">
-                        {diagnosticResults.webhook_direct.response_body}
-                      </pre>
-                    </details>
-                  )}
-                  {diagnosticResults.webhook_direct.error_details && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-red-600">Ver detalles del error</summary>
-                      <pre className="text-xs bg-red-50 p-2 rounded mt-1 overflow-auto">
-                        {diagnosticResults.webhook_direct.error_details}
-                      </pre>
-                    </details>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Webhook via Supabase */}
-            {diagnosticResults.webhook_supabase && (
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <Webhook className="w-5 h-5 text-orange-500 mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <StatusIcon status={diagnosticResults.webhook_supabase.status} />
-                    <span className="font-medium">Webhook (vía Supabase)</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">{diagnosticResults.webhook_supabase.message}</p>
-                  {diagnosticResults.webhook_supabase.data && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-blue-600">Ver respuesta de Supabase</summary>
-                      <pre className="text-xs bg-white p-2 rounded mt-1 overflow-auto">
-                        {JSON.stringify(diagnosticResults.webhook_supabase.data, null, 2)}
-                      </pre>
-                    </details>
-                  )}
-                  {diagnosticResults.webhook_supabase.error_details && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-red-600">Ver detalles del error</summary>
-                      <pre className="text-xs bg-red-50 p-2 rounded mt-1 overflow-auto">
-                        {JSON.stringify(diagnosticResults.webhook_supabase.error_details, null, 2)}
-                      </pre>
-                    </details>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Verificación servidor */}
-            {diagnosticResults.serverToken && (
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <Info className="w-5 h-5 text-purple-500 mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <StatusIcon status={diagnosticResults.serverToken.status} />
-                    <span className="font-medium">Verificación en Servidor</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">{diagnosticResults.serverToken.message}</p>
-                  {diagnosticResults.serverToken.hasInstagramBusiness !== undefined && (
-                    <p className="text-xs mt-1">
-                      Instagram Business: 
-                      {diagnosticResults.serverToken.hasInstagramBusiness ? 
-                        <span className="text-green-600 font-medium"> Conectado ✓</span> : 
-                        <span className="text-red-600 font-medium"> No conectado ✗</span>}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Mensajes */}
             {diagnosticResults.messages && (
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -653,6 +301,34 @@ const InstagramDiagnostic: React.FC = () => {
                       </div>
                     </details>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Webhook via Supabase */}
+            {diagnosticResults.webhook_supabase && (
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <Webhook className="w-5 h-5 text-orange-500 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <StatusIcon status={diagnosticResults.webhook_supabase.status} />
+                    <span className="font-medium">Webhook (vía Supabase)</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{diagnosticResults.webhook_supabase.message}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Token */}
+            {diagnosticResults.token && (
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-purple-500 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <StatusIcon status={diagnosticResults.token.status} />
+                    <span className="font-medium">Token de Instagram</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{diagnosticResults.token.message}</p>
                 </div>
               </div>
             )}
@@ -691,13 +367,15 @@ const InstagramDiagnostic: React.FC = () => {
         )}
 
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h4 className="font-medium text-yellow-800 mb-2">📋 Pasos para resolver problemas comunes:</h4>
+          <h4 className="font-medium text-yellow-800 mb-2">📋 Qué hace este diagnóstico:</h4>
           <ul className="text-sm text-yellow-700 space-y-1">
-            <li>• <strong>Si el webhook devuelve 403 Forbidden:</strong> Verifica que la función edge tenga los permisos correctos en Supabase y que esté correctamente desplegada</li>
-            <li>• <strong>Si el token es válido pero Instagram no aparece:</strong> Verifica que tu cuenta de Instagram esté configurada como Business y vinculada a una Página de Facebook</li>
-            <li>• <strong>Si Facebook reconoce el token pero Instagram no responde:</strong> Revisa los permisos de la app (instagram_basic, instagram_manage_messages)</li>
-            <li>• <strong>Si el webhook no recibe mensajes:</strong> Verifica en Facebook Developer que esté configurado correctamente y suscrito a los eventos</li>
-            <li>• <strong>Si todo parece bien pero no funcionan los mensajes:</strong> Regenera un nuevo token con todos los permisos</li>
+            <li>• Verifica la conexión a la base de datos</li>
+            <li>• Cuenta los mensajes existentes en la DB</li>
+            <li>• Prueba el webhook vía Supabase Functions</li>
+            <li>• Valida tu token de Instagram</li>
+            <li>• Inserta un mensaje de prueba directamente</li>
+            <li>• Envía un payload simulado al webhook</li>
+            <li>• Verifica que los mensajes se procesen correctamente</li>
           </ul>
         </div>
       </div>
