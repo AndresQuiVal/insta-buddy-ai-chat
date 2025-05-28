@@ -37,8 +37,29 @@ const InstagramMessages: React.FC = () => {
   const [iaPersona, setIaPersona] = useState<string>('');
   const [showPersona, setShowPersona] = useState<boolean>(false);
   const aiEnabledRef = useRef(aiEnabled);
+  const [isTabLeader, setIsTabLeader] = useState(false);
+  const TAB_KEY = 'hower-active-tab';
+  const myTabId = React.useRef(`${Date.now()}-${Math.random()}`);
 
   useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
+
+  useEffect(() => {
+    // Intentar ser el líder al montar
+    localStorage.setItem(TAB_KEY, myTabId.current);
+    setIsTabLeader(true);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === TAB_KEY && e.newValue !== myTabId.current) {
+        setIsTabLeader(false);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      if (localStorage.getItem(TAB_KEY) === myTabId.current) {
+        localStorage.removeItem(TAB_KEY);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Obtener PAGE-ID automáticamente al montar
@@ -67,8 +88,8 @@ const InstagramMessages: React.FC = () => {
       }, (payload) => {
         console.log('Nuevo mensaje recibido:', payload);
         const newMessage = payload.new as InstagramMessage;
-        // Solo generar respuesta automática para mensajes recibidos (no enviados)
-        if (newMessage.message_type === 'received' && aiEnabledRef.current) {
+        // Solo generar respuesta automática si esta pestaña es líder
+        if (newMessage.message_type === 'received' && aiEnabledRef.current && isTabLeader) {
           handleNewIncomingMessage(newMessage);
         }
         loadConversations();
@@ -77,7 +98,7 @@ const InstagramMessages: React.FC = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [isTabLeader]);
 
   const loadConversations = async () => {
     try {

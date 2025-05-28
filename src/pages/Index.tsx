@@ -51,9 +51,11 @@ const Index = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center">
-              <Instagram className="w-6 h-6 text-white" />
-            </div>
+            <img
+              src="https://i.ibb.co/QF8zCPqs/Requerimientos-para-el-Puesto-de-Customer-Success-en-Hower-1-Experiencia-y-Conocimientos-Experiencia.png"
+              alt="Logo Hower"
+              className="w-12 h-12 rounded-2xl object-cover"
+            />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Hower Assistant
             </h1>
