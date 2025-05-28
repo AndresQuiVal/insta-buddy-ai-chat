@@ -35,7 +35,6 @@ const InstagramMessages: React.FC = () => {
   const [aiEnabled, setAiEnabled] = useState(true);
   const [pageId, setPageId] = useState<string | null>(null);
   const [iaPersona, setIaPersona] = useState<string>('');
-  const [showPersona, setShowPersona] = useState<boolean>(false);
 
   useEffect(() => {
     // Obtener PAGE-ID automáticamente al montar
@@ -323,35 +322,26 @@ const InstagramMessages: React.FC = () => {
 
   return (
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex flex-col">
+      {/* Sección de personalidad IA */}
+      <div className="p-4 border-b border-purple-100 bg-purple-50/50">
+        <h3 className="text-sm font-semibold text-purple-700 mb-1 flex items-center gap-2">
+          <Brain className="w-4 h-4" /> Personalidad actual de la IA
+        </h3>
+        <div className="text-xs text-gray-700 whitespace-pre-line bg-white/70 rounded p-2 border border-purple-100">
+          {iaPersona ? iaPersona : 'Aún no has alimentado la IA con tus mensajes.'}
+        </div>
+      </div>
       <div className="flex items-center justify-between p-4 border-b border-purple-100">
         <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
           <MessageCircle className="w-6 h-6" /> Mensajes
         </h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowPersona((v) => !v)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors"
-          >
-            <Brain className="w-5 h-5" /> Ver personalidad
-          </button>
-          <button
-            onClick={handleFeedAI}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
-          >
-            <Brain className="w-5 h-5" /> Alimentar IA
-          </button>
-        </div>
+        <button
+          onClick={handleFeedAI}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
+        >
+          <Brain className="w-5 h-5" /> Alimentar IA
+        </button>
       </div>
-      {showPersona && (
-        <div className="p-4 border-b border-purple-100 bg-purple-50/50">
-          <h3 className="text-sm font-semibold text-purple-700 mb-1 flex items-center gap-2">
-            <Brain className="w-4 h-4" /> Personalidad actual de la IA
-          </h3>
-          <div className="text-xs text-gray-700 whitespace-pre-line bg-white/70 rounded p-2 border border-purple-100">
-            {iaPersona ? iaPersona : 'Aún no has alimentado la IA con tus mensajes.'}
-          </div>
-        </div>
-      )}
       {/* Panel de configuración */}
       {showSettings && (
         <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
@@ -404,185 +394,183 @@ const InstagramMessages: React.FC = () => {
         </div>
       )}
 
-      {/* Layout principal: bandejas y chat uno al lado del otro */}
-      <div className="flex flex-1 h-0 min-h-0">
-        {/* Panel de bandejas */}
-        <div className="w-1/3 min-w-[260px] max-w-[400px] border-r border-purple-100 flex-shrink-0 flex flex-col">
-          <div className="p-4 border-b border-purple-100">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-800">Bandejas</h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Configuración de IA"
-                >
-                  <Settings className="w-4 h-4 text-gray-600" />
-                </button>
-                <button
-                  onClick={loadConversations}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
+      {/* Lista de conversaciones (bandejas) */}
+      <div className="w-1/3 border-r border-purple-100">
+        <div className="p-4 border-b border-purple-100">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-800">Bandejas</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                title="Configuración de IA"
+              >
+                <Settings className="w-4 h-4 text-gray-600" />
+              </button>
+              <button
+                onClick={loadConversations}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4 text-gray-600" />
+              </button>
             </div>
+          </div>
 
-            {/* Botón de sincronización histórica */}
-            <div className="mb-3">
-              <HistoricalSyncButton />
-            </div>
-            
-            {/* Indicador de estado de IA */}
-            <div className="flex items-center gap-2 text-sm">
-              <div className={`w-2 h-2 rounded-full ${aiEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-gray-600">
-                IA {aiEnabled ? 'Activa' : 'Inactiva'} • {aiDelay}s delay
-              </span>
-            </div>
+          {/* Botón de sincronización histórica */}
+          <div className="mb-3">
+            <HistoricalSyncButton />
           </div>
           
-          <div className="overflow-y-auto h-[calc(100%-140px)]">
-            {conversations.length === 0 ? (
-              <div className="p-4 text-center">
-                <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm">No hay conversaciones aún</p>
-              </div>
-            ) : (
-              conversations.map((conversation) => (
-                <div
-                  key={conversation.sender_id}
-                  onClick={() => setSelectedConversation(conversation.sender_id)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedConversation === conversation.sender_id ? 'bg-purple-50 border-purple-200' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-800 truncate">
-                          {getUserDisplayName(conversation.sender_id)}
-                        </h4>
-                        {conversation.unread_count > 0 && (
-                          <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
-                            {conversation.unread_count}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 truncate">
-                        {conversation.last_message.message_text}
-                      </p>
-                      <p className="text-xs text-gray-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+          {/* Indicador de estado de IA */}
+          <div className="flex items-center gap-2 text-sm">
+            <div className={`w-2 h-2 rounded-full ${aiEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className="text-gray-600">
+              IA {aiEnabled ? 'Activa' : 'Inactiva'} • {aiDelay}s delay
+            </span>
           </div>
         </div>
-        {/* Panel de chat */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {selectedConversation ? (
-            <>
-              {/* Header del chat */}
-              <div className="p-4 border-b border-purple-100">
+        
+        <div className="overflow-y-auto h-[calc(100%-140px)]">
+          {conversations.length === 0 ? (
+            <div className="p-4 text-center">
+              <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500 text-sm">No hay conversaciones aún</p>
+            </div>
+          ) : (
+            conversations.map((conversation) => (
+              <div
+                key={conversation.sender_id}
+                onClick={() => setSelectedConversation(conversation.sender_id)}
+                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                  selectedConversation === conversation.sender_id ? 'bg-purple-50 border-purple-200' : ''
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
                     <User className="w-6 h-6 text-white" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      {getUserDisplayName(selectedConversation)}
-                    </h3>
-                    <p className="text-sm text-green-600">● En línea</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-gray-800 truncate">
+                        {getUserDisplayName(conversation.sender_id)}
+                      </h4>
+                      {conversation.unread_count > 0 && (
+                        <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
+                          {conversation.unread_count}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 truncate">
+                      {conversation.last_message.message_text}
+                    </p>
+                    <p className="text-xs text-gray-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
+                    </p>
                   </div>
                 </div>
               </div>
+            ))
+          )}
+        </div>
+      </div>
 
-              {/* Mensajes */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {selectedMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.message_type === 'sent' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`flex gap-3 max-w-[80%] ${message.message_type === 'sent' ? 'flex-row-reverse' : ''}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        message.message_type === 'sent' 
-                          ? 'bg-gradient-to-r from-green-400 to-blue-500' 
-                          : 'bg-gradient-to-r from-purple-500 to-pink-500'
+      {/* Chat de la conversación seleccionada */}
+      <div className="flex-1 flex flex-col">
+        {selectedConversation ? (
+          <>
+            {/* Header del chat */}
+            <div className="p-4 border-b border-purple-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800">
+                    {getUserDisplayName(selectedConversation)}
+                  </h3>
+                  <p className="text-sm text-green-600">● En línea</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Mensajes */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {selectedMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.message_type === 'sent' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`flex gap-3 max-w-[80%] ${message.message_type === 'sent' ? 'flex-row-reverse' : ''}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      message.message_type === 'sent' 
+                        ? 'bg-gradient-to-r from-green-400 to-blue-500' 
+                        : 'bg-gradient-to-r from-purple-500 to-pink-500'
+                    }`}>
+                      {message.message_type === 'sent' ? (
+                        <Bot className="w-5 h-5 text-white" />
+                      ) : (
+                        <User className="w-5 h-5 text-white" />
+                      )}
+                    </div>
+                    <div className={`rounded-2xl px-4 py-3 ${
+                      message.message_type === 'sent'
+                        ? 'bg-gradient-to-r from-green-400 to-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      <p className="text-sm">{message.message_text}</p>
+                      <div className={`text-xs mt-1 flex items-center gap-1 ${
+                        message.message_type === 'sent' ? 'text-green-100' : 'text-gray-500'
                       }`}>
-                        {message.message_type === 'sent' ? (
-                          <Bot className="w-5 h-5 text-white" />
-                        ) : (
-                          <User className="w-5 h-5 text-white" />
+                        {message.raw_data?.auto_response && (
+                          <Bot className="w-3 h-3" />
                         )}
-                      </div>
-                      <div className={`rounded-2xl px-4 py-3 ${
-                        message.message_type === 'sent'
-                          ? 'bg-gradient-to-r from-green-400 to-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        <p className="text-sm">{message.message_text}</p>
-                        <div className={`text-xs mt-1 flex items-center gap-1 ${
-                          message.message_type === 'sent' ? 'text-green-100' : 'text-gray-500'
-                        }`}>
-                          {message.raw_data?.auto_response && (
-                            <Bot className="w-3 h-3" />
-                          )}
-                          {message.raw_data?.historical_sync && (
-                            <Clock className="w-3 h-3" />
-                          )}
-                          <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
-                        </div>
+                        {message.raw_data?.historical_sync && (
+                          <Clock className="w-3 h-3" />
+                        )}
+                        <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Input de mensaje */}
-              <div className="p-4 border-t border-purple-100">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Escribe tu respuesta..."
-                    className="flex-1 px-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-                    disabled={sending}
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim() || sending}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {sending ? (
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Send className="w-5 h-5" />
-                    )}
-                  </button>
                 </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <MessageCircle className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Selecciona una bandeja</h3>
-                <p className="text-gray-500">Elige una conversación para ver los mensajes</p>
+              ))}
+            </div>
+
+            {/* Input de mensaje */}
+            <div className="p-4 border-t border-purple-100">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  placeholder="Escribe tu respuesta..."
+                  className="flex-1 px-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                  disabled={sending}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!newMessage.trim() || sending}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sending ? (
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">Selecciona una bandeja</h3>
+              <p className="text-gray-500">Elige una conversación para ver los mensajes</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
