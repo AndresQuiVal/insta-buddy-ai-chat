@@ -34,7 +34,6 @@ const InstagramMessages: React.FC = () => {
   const [aiDelay, setAiDelay] = useState(3); // Delay en segundos
   const [aiEnabled, setAiEnabled] = useState(true);
   const [pageId, setPageId] = useState<string | null>(null);
-  const [iaPersona, setIaPersona] = useState<string>('');
 
   useEffect(() => {
     // Obtener PAGE-ID automáticamente al montar
@@ -51,8 +50,6 @@ const InstagramMessages: React.FC = () => {
     };
     fetchPageId();
     loadConversations();
-    // Cargar el prompt/persona actual
-    setIaPersona(localStorage.getItem('hower-system-prompt') || '');
     
     // Suscribirse a nuevos mensajes en tiempo real
     const subscription = supabase
@@ -295,7 +292,6 @@ const InstagramMessages: React.FC = () => {
       if (!personality) throw new Error('No se pudo generar la personalidad.');
       // 4. Guardar el resultado como prompt personalizado
       localStorage.setItem('hower-system-prompt', personality);
-      setIaPersona(personality); // Actualiza la vista
       toast({
         title: '¡IA alimentada!',
         description: 'La personalidad de la IA se ha actualizado con base en tus mensajes.',
@@ -322,15 +318,6 @@ const InstagramMessages: React.FC = () => {
 
   return (
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex flex-col">
-      {/* Sección de personalidad IA */}
-      <div className="p-4 border-b border-purple-100 bg-purple-50/50">
-        <h3 className="text-sm font-semibold text-purple-700 mb-1 flex items-center gap-2">
-          <Brain className="w-4 h-4" /> Personalidad actual de la IA
-        </h3>
-        <div className="text-xs text-gray-700 whitespace-pre-line bg-white/70 rounded p-2 border border-purple-100">
-          {iaPersona ? iaPersona : 'Aún no has alimentado la IA con tus mensajes.'}
-        </div>
-      </div>
       <div className="flex items-center justify-between p-4 border-b border-purple-100">
         <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
           <MessageCircle className="w-6 h-6" /> Mensajes
