@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock } from 'lucide-react';
+import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain } from 'lucide-react';
 import { handleAutomaticResponse } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
@@ -220,6 +220,78 @@ const InstagramMessages: React.FC = () => {
 
   const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages || [];
 
+  // Botón Alimentar IA
+  const handleFeedAI = async () => {
+    try {
+      const pageAccessToken = localStorage.getItem('hower-instagram-token');
+      const pageId = prompt('Ingresa el PAGE-ID de tu página de Facebook vinculada a Instagram:');
+      if (!pageAccessToken || !pageId) {
+        toast({
+          title: 'Error',
+          description: 'Falta el PAGE-ACCESS-TOKEN o el PAGE-ID.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      // 1. Obtener conversaciones
+      const convRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}/conversations?platform=instagram&access_token=${pageAccessToken}`);
+      const convData = await convRes.json();
+      if (!convRes.ok || !convData.data) throw new Error(convData.error?.message || 'No se pudieron obtener conversaciones');
+      // 2. Obtener mensajes de las primeras 3 conversaciones
+      const allMessages: string[] = [];
+      for (const conv of convData.data.slice(0, 3)) {
+        const msgRes = await fetch(`https://graph.facebook.com/v19.0/${conv.id}?fields=messages&access_token=${pageAccessToken}`);
+        const msgData = await msgRes.json();
+        if (msgData.messages?.data) {
+          for (const m of msgData.messages.data) {
+            // Obtener detalles del mensaje
+            const detRes = await fetch(`https://graph.facebook.com/v19.0/${m.id}?fields=from,message&access_token=${pageAccessToken}`);
+            const detData = await detRes.json();
+            if (detData.message && detData.from?.id === pageId) {
+              allMessages.push(detData.message);
+            }
+          }
+        }
+      }
+      if (allMessages.length === 0) throw new Error('No se encontraron mensajes enviados por la cuenta.');
+      // 3. Pedir a OpenAI que resuma el estilo/persona
+      const openaiKey = localStorage.getItem('hower-openai-key-demo');
+      if (!openaiKey) throw new Error('No hay API key de OpenAI configurada.');
+      const aiPrompt = `Analiza los siguientes mensajes y describe el estilo, tono y personalidad de quien los escribió, en español, en 3 frases.\n\nMensajes:\n${allMessages.slice(0, 20).join('\n')}`;
+      const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: 'Eres un analista de personalidad.' },
+            { role: 'user', content: aiPrompt },
+          ],
+          max_tokens: 200,
+          temperature: 0.7,
+        }),
+      });
+      const aiData = await aiRes.json();
+      const personality = aiData.choices?.[0]?.message?.content || '';
+      if (!personality) throw new Error('No se pudo generar la personalidad.');
+      // 4. Guardar el resultado como prompt personalizado
+      localStorage.setItem('hower-system-prompt', personality);
+      toast({
+        title: '¡IA alimentada!',
+        description: 'La personalidad de la IA se ha actualizado con base en tus mensajes.',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Error alimentando IA',
+        description: err.message || 'Ocurrió un error inesperado.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex items-center justify-center">
@@ -232,7 +304,18 @@ const InstagramMessages: React.FC = () => {
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex">
+    <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex flex-col">
+      <div className="flex items-center justify-between p-4 border-b border-purple-100">
+        <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
+          <MessageCircle className="w-6 h-6" /> Mensajes
+        </h2>
+        <button
+          onClick={handleFeedAI}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
+        >
+          <Brain className="w-5 h-5" /> Alimentar IA
+        </button>
+      </div>
       {/* Panel de configuración */}
       {showSettings && (
         <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
