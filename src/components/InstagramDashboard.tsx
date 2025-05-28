@@ -347,14 +347,6 @@ const InstagramDashboard: React.FC = () => {
               </div>
             )}
           </div>
-          
-          <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-          >
-            <Bug className="w-4 h-4" />
-            {showDebug ? 'Ocultar' : 'Debug'}
-          </button>
           <button
             onClick={loadDashboardStats}
             className="p-2 bg-transparent hover:bg-purple-100 rounded-full text-purple-500 border border-transparent hover:border-purple-200 transition-colors"
@@ -430,6 +422,28 @@ const InstagramDashboard: React.FC = () => {
             <RecommendationsCarousel recommendations={recommendations} />
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+export const DashboardDebugPanel: React.FC<{ show: boolean; onClose: () => void }> = ({ show, onClose }) => {
+  if (!show) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl p-8 shadow-2xl max-w-lg w-full relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100"
+        >
+          <Bug className="w-5 h-5 text-orange-500" />
+        </button>
+        <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-orange-600">
+          <Bug className="w-5 h-5" /> Debug
+        </h3>
+        <div className="text-sm text-gray-700">
+          <p>Panel de diagnóstico y depuración del sistema.</p>
+        </div>
       </div>
     </div>
   );

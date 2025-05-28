@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import InstagramDashboard from '@/components/InstagramDashboard';
+import InstagramDashboard, { DashboardDebugPanel } from '@/components/InstagramDashboard';
 import InstagramMessages from '@/components/InstagramMessages';
 import InstagramDiagnostic from '@/components/InstagramDiagnostic';
 import AdvancedMetrics from '@/components/AdvancedMetrics';
@@ -15,6 +15,7 @@ const Index = () => {
   const [accessToken, setAccessToken] = useState('');
   const [isTokenSaved, setIsTokenSaved] = useState(false);
   const { toast } = useToast();
+  const [showDebug, setShowDebug] = useState(false);
 
   const handleSaveToken = () => {
     if (!accessToken.trim()) {
@@ -125,7 +126,15 @@ const Index = () => {
             {/* Diagnóstico ahora está en Configuración */}
             <div className="space-y-8">
               <InstagramDiagnostic />
-              
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => setShowDebug(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a2 2 0 012 2v2H7V5a2 2 0 012-2z" /></svg>
+                  Debug
+                </button>
+              </div>
               <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl p-8">
                 <h3 className="text-2xl font-bold text-gray-800 mb-6">Configuración del Sistema</h3>
                 
@@ -246,6 +255,7 @@ const Index = () => {
                 </div>
               </div>
             </div>
+            <DashboardDebugPanel show={showDebug} onClose={() => setShowDebug(false)} />
           </TabsContent>
         </Tabs>
       </div>
