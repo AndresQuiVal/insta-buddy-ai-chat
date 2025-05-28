@@ -35,6 +35,7 @@ const InstagramMessages: React.FC = () => {
   const [aiEnabled, setAiEnabled] = useState(true);
   const [pageId, setPageId] = useState<string | null>(null);
   const [iaPersona, setIaPersona] = useState<string>('');
+  const [showPersona, setShowPersona] = useState<boolean>(false);
 
   useEffect(() => {
     // Obtener PAGE-ID automáticamente al montar
@@ -322,26 +323,35 @@ const InstagramMessages: React.FC = () => {
 
   return (
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex flex-col">
-      {/* Sección de personalidad IA */}
-      <div className="p-4 border-b border-purple-100 bg-purple-50/50">
-        <h3 className="text-sm font-semibold text-purple-700 mb-1 flex items-center gap-2">
-          <Brain className="w-4 h-4" /> Personalidad actual de la IA
-        </h3>
-        <div className="text-xs text-gray-700 whitespace-pre-line bg-white/70 rounded p-2 border border-purple-100">
-          {iaPersona ? iaPersona : 'Aún no has alimentado la IA con tus mensajes.'}
-        </div>
-      </div>
       <div className="flex items-center justify-between p-4 border-b border-purple-100">
         <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
           <MessageCircle className="w-6 h-6" /> Mensajes
         </h2>
-        <button
-          onClick={handleFeedAI}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
-        >
-          <Brain className="w-5 h-5" /> Alimentar IA
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowPersona((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors"
+          >
+            <Brain className="w-5 h-5" /> Ver personalidad
+          </button>
+          <button
+            onClick={handleFeedAI}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
+          >
+            <Brain className="w-5 h-5" /> Alimentar IA
+          </button>
+        </div>
       </div>
+      {showPersona && (
+        <div className="p-4 border-b border-purple-100 bg-purple-50/50">
+          <h3 className="text-sm font-semibold text-purple-700 mb-1 flex items-center gap-2">
+            <Brain className="w-4 h-4" /> Personalidad actual de la IA
+          </h3>
+          <div className="text-xs text-gray-700 whitespace-pre-line bg-white/70 rounded p-2 border border-purple-100">
+            {iaPersona ? iaPersona : 'Aún no has alimentado la IA con tus mensajes.'}
+          </div>
+        </div>
+      )}
       {/* Panel de configuración */}
       {showSettings && (
         <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
