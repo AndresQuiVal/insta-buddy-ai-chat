@@ -68,6 +68,7 @@ const InstagramDashboard: React.FC = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   const timeFilterOptions = [
     { value: 'today', label: 'Hoy' },
@@ -356,17 +357,10 @@ const InstagramDashboard: React.FC = () => {
           </button>
           <button
             onClick={loadDashboardStats}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+            className="p-2 bg-transparent hover:bg-purple-100 rounded-full text-purple-500 border border-transparent hover:border-purple-200 transition-colors"
+            title="Actualizar"
           >
-            <RefreshCw className="w-4 h-4" />
-            Actualizar
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Cerrar Sesión
+            <RefreshCw className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -423,7 +417,20 @@ const InstagramDashboard: React.FC = () => {
       </div>
 
       {/* Recomendaciones de Hower Assistant en Carousel */}
-      <RecommendationsCarousel recommendations={recommendations} />
+      <div className="mt-8">
+        <button
+          className="flex items-center gap-2 text-purple-600 font-semibold focus:outline-none hover:underline"
+          onClick={() => setShowRecommendations(!showRecommendations)}
+        >
+          <Lightbulb className="w-5 h-5" />
+          {showRecommendations ? 'Ocultar Recomendaciones' : 'Ver Recomendaciones de Hower Assistant'}
+        </button>
+        {showRecommendations && (
+          <div className="mt-4">
+            <RecommendationsCarousel recommendations={recommendations} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

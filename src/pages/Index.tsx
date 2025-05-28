@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InstagramDashboard from '@/components/InstagramDashboard';
@@ -6,7 +5,7 @@ import InstagramMessages from '@/components/InstagramMessages';
 import InstagramDiagnostic from '@/components/InstagramDiagnostic';
 import AdvancedMetrics from '@/components/AdvancedMetrics';
 import TokenManager from '@/components/TokenManager';
-import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Key, Brain } from 'lucide-react';
+import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Key, Brain, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +33,15 @@ const Index = () => {
     toast({
       title: "¡Token guardado!",
       description: "Tu token de Instagram se ha configurado correctamente",
+    });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('instagram_access_token');
+    setIsTokenSaved(false);
+    toast({
+      title: "¡Sesión cerrada!",
+      description: "Tu sesión se ha cerrado correctamente",
     });
   };
 
@@ -224,6 +232,15 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+                <div className="flex justify-end mt-8">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Cerrar Sesión
+                  </button>
                 </div>
               </div>
             </div>
