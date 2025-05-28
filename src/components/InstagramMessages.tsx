@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock } from 'lucide-react';
 import { handleAutomaticResponse } from '@/services/openaiService';
+import HistoricalSyncButton from './HistoricalSyncButton';
 
 interface InstagramMessage {
   id: string;
@@ -298,7 +299,7 @@ const InstagramMessages: React.FC = () => {
       {/* Lista de conversaciones (bandejas) */}
       <div className="w-1/3 border-r border-purple-100">
         <div className="p-4 border-b border-purple-100">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-800">Bandejas</h3>
             <div className="flex gap-2">
               <button
@@ -316,9 +317,14 @@ const InstagramMessages: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Botón de sincronización histórica */}
+          <div className="mb-3">
+            <HistoricalSyncButton />
+          </div>
           
           {/* Indicador de estado de IA */}
-          <div className="flex items-center gap-2 mt-2 text-sm">
+          <div className="flex items-center gap-2 text-sm">
             <div className={`w-2 h-2 rounded-full ${aiEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
             <span className="text-gray-600">
               IA {aiEnabled ? 'Activa' : 'Inactiva'} • {aiDelay}s delay
@@ -326,7 +332,7 @@ const InstagramMessages: React.FC = () => {
           </div>
         </div>
         
-        <div className="overflow-y-auto h-[calc(100%-100px)]">
+        <div className="overflow-y-auto h-[calc(100%-140px)]">
           {conversations.length === 0 ? (
             <div className="p-4 text-center">
               <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
@@ -420,6 +426,9 @@ const InstagramMessages: React.FC = () => {
                       }`}>
                         {message.raw_data?.auto_response && (
                           <Bot className="w-3 h-3" />
+                        )}
+                        {message.raw_data?.historical_sync && (
+                          <Clock className="w-3 h-3" title="Mensaje histórico" />
                         )}
                         <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
                       </div>
