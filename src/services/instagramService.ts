@@ -430,7 +430,7 @@ export const sendInstagramMessage = async (recipientId: string, messageText: str
  */
 async function getConnectedPageInfo(accessToken: string) {
   try {
-    // Obtener usuario de Facebook
+    // Obtener usuario autenticado (opcional, solo para debug)
     const userResponse = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${accessToken}`);
     const userData = await userResponse.json();
 
@@ -438,8 +438,10 @@ async function getConnectedPageInfo(accessToken: string) {
       throw new Error(`Error obteniendo usuario: ${userData.error?.message}`);
     }
 
-    // Obtener páginas con cuentas de Instagram
-    const pagesResponse = await fetch(`https://graph.facebook.com/v19.0/${userData.id}/accounts?fields=id,name,instagram_business_account,access_token&access_token=${accessToken}`);
+    // Obtener las páginas que administra el usuario
+    const pagesResponse = await fetch(
+      `https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account,access_token&access_token=${accessToken}`
+    );
     const pagesData = await pagesResponse.json();
 
     if (!pagesResponse.ok) {
@@ -448,7 +450,7 @@ async function getConnectedPageInfo(accessToken: string) {
 
     // Buscar página con Instagram Business
     const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account);
-    
+
     if (!pageWithInstagram) {
       throw new Error('No se encontró página con cuenta de Instagram Business conectada');
     }
