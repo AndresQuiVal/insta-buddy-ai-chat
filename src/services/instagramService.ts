@@ -307,23 +307,14 @@ export const sendInstagramMessage = async (recipientId: string, messageText: str
     console.log('Recipient ID:', recipientId);
     console.log('Message:', messageText);
 
-    // Obtener el token de acceso guardado
-    const accessToken = localStorage.getItem('hower-instagram-token');
-    
-    if (!accessToken) {
-      throw new Error('No hay token de acceso de Instagram configurado');
+    // Obtener el PAGE-ACCESS-TOKEN guardado
+    const pageAccessToken = localStorage.getItem('hower-instagram-token');
+    if (!pageAccessToken) {
+      throw new Error('No hay token de acceso de página configurado');
     }
 
-    // Obtener información de la página conectada
-    const pageInfo = await getConnectedPageInfo(accessToken);
-    if (!pageInfo.pageId) {
-      throw new Error('No se encontró página de Facebook conectada');
-    }
-
-    console.log(`📱 Enviando desde página: ${pageInfo.pageId}`);
-
-    // Construir el payload del mensaje según la documentación oficial
-    const messagePayload = {
+    // Construir el payload del mensaje
+    const messagePayload: any = {
       recipient: {
         id: recipientId
       },
@@ -332,24 +323,17 @@ export const sendInstagramMessage = async (recipientId: string, messageText: str
       }
     };
 
-    console.log('📋 Payload del mensaje:', JSON.stringify(messagePayload, null, 2));
-
     // Enviar mensaje usando Instagram Graph API (endpoint oficial)
-    const apiUrl = `https://graph.facebook.com/v19.0/${pageInfo.pageId}/messages`;
-    
+    const apiUrl = `https://graph.facebook.com/v19.0/me/messages?access_token=${pageAccessToken}`;
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        ...messagePayload,
-        access_token: accessToken
-      })
+      body: JSON.stringify(messagePayload)
     });
 
     const responseData = await response.json();
-    
     console.log('📨 Respuesta de Instagram API:', {
       status: response.status,
       ok: response.ok,
@@ -358,9 +342,7 @@ export const sendInstagramMessage = async (recipientId: string, messageText: str
 
     if (!response.ok) {
       console.error('❌ Error enviando mensaje a Instagram:', responseData);
-      
       let errorDescription = responseData.error?.message || 'Error enviando mensaje';
-      
       if (responseData.error?.code === 190) {
         errorDescription = 'Token de acceso inválido o expirado. Reconecta tu cuenta de Instagram.';
       } else if (responseData.error?.code === 200) {
@@ -368,56 +350,32 @@ export const sendInstagramMessage = async (recipientId: string, messageText: str
       } else if (responseData.error?.code === 100) {
         errorDescription = 'Parámetros incorrectos en la solicitud.';
       }
-      
       toast({
         title: "Error enviando mensaje",
         description: errorDescription,
         variant: "destructive"
       });
-      
       throw new Error(errorDescription);
     }
 
     console.log('✅ Mensaje enviado exitosamente a Instagram');
-    
-    // Guardar el mensaje enviado en la base de datos
-    await saveMessageToDatabase({
-      instagram_message_id: responseData.message_id,
-      sender_id: pageInfo.instagramAccountId || pageInfo.pageId,
-      recipient_id: recipientId,
-      message_text: messageText,
-      message_type: 'sent',
-      timestamp: new Date().toISOString(),
-      raw_data: {
-        sent_via_api: true,
-        response_data: responseData,
-        original_reply_to: replyToMessageId,
-        api_version: 'v19.0'
-      }
-    });
-
     toast({
       title: "¡Mensaje enviado!",
       description: "Tu mensaje fue enviado exitosamente a Instagram",
     });
-
     return {
       success: true,
       message_id: responseData.message_id,
       recipient_id: responseData.recipient_id
     };
-
   } catch (error) {
     console.error('💥 Error en sendInstagramMessage:', error);
-    
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    
     toast({
       title: "Error de envío",
       description: errorMessage,
       variant: "destructive"
     });
-
     return {
       success: false,
       error: errorMessage
