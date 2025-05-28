@@ -131,15 +131,20 @@ const InstagramMessages: React.FC = () => {
                message.sender_id !== 'diagnostic_user';
       }) || [];
 
-      // Agrupar mensajes por conversación
+      // Agrupar mensajes por conversación (por el otro participante)
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
-      
       realMessages.forEach((message: any) => {
-        const conversationKey = message.message_type === 'sent' ? message.recipient_id : message.sender_id;
-        if (!conversationGroups[conversationKey]) {
-          conversationGroups[conversationKey] = [];
+        // El otro participante es el que NO es el pageId (usuario actual)
+        // Si el sender_id es igual al pageId, el otro es recipient_id, y viceversa
+        let otherId = message.sender_id;
+        const myPageId = pageId || localStorage.getItem('hower-page-id');
+        if (myPageId && message.sender_id === myPageId) {
+          otherId = message.recipient_id;
         }
-        conversationGroups[conversationKey].push(message);
+        if (!conversationGroups[otherId]) {
+          conversationGroups[otherId] = [];
+        }
+        conversationGroups[otherId].push(message);
       });
 
       // Cargar matches de localStorage
@@ -147,6 +152,7 @@ const InstagramMessages: React.FC = () => {
 
       // Convertir a array de conversaciones y fusionar matches
       const conversationsArray = Object.entries(conversationGroups).map(([sender_id, messages]) => {
+        // Ordenar mensajes por timestamp ascendente
         const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         const unreadCount = messages.filter(msg => msg.message_type === 'received').length;
         // Buscar matchPoints/metTraits en localStorage
@@ -154,7 +160,7 @@ const InstagramMessages: React.FC = () => {
         return {
           sender_id,
           messages: sortedMessages,
-          last_message: messages[0], // El más reciente
+          last_message: sortedMessages[sortedMessages.length - 1], // El más reciente
           unread_count: unreadCount,
           matchPoints: localMatch.matchPoints || 0,
           metTraits: localMatch.metTraits || []
@@ -300,7 +306,11 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
-  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages || [];
+  const myPageId = pageId || localStorage.getItem('hower-page-id');
+  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages.map(msg => ({
+    ...msg,
+    message_type: msg.sender_id === myPageId ? 'sent' : 'received'
+  })) || [];
 
   // Botón Alimentar IA
   const handleFeedAI = async () => {
