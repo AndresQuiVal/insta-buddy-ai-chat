@@ -53,7 +53,7 @@ const Index = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <img
-              src="https://i.ibb.co/QF8zCPqs/Requerimientos-para-el-Puesto-de-Customer-Success-en-Hower-1-Experiencia-y-Conocimientos-Experiencia.png"
+              src="https://i.ibb.co/bMLhkc7G/Hower-logo.png"
               alt="Logo Hower"
               className="w-12 h-12 rounded-2xl object-cover"
             />
