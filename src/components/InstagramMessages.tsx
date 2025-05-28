@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain } from 'lucide-react';
@@ -36,6 +36,9 @@ const InstagramMessages: React.FC = () => {
   const [pageId, setPageId] = useState<string | null>(null);
   const [iaPersona, setIaPersona] = useState<string>('');
   const [showPersona, setShowPersona] = useState<boolean>(false);
+  const aiEnabledRef = useRef(aiEnabled);
+
+  useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
 
   useEffect(() => {
     // Obtener PAGE-ID automáticamente al montar
@@ -65,7 +68,7 @@ const InstagramMessages: React.FC = () => {
         console.log('Nuevo mensaje recibido:', payload);
         const newMessage = payload.new as InstagramMessage;
         // Solo generar respuesta automática para mensajes recibidos (no enviados)
-        if (newMessage.message_type === 'received' && aiEnabled) {
+        if (newMessage.message_type === 'received' && aiEnabledRef.current) {
           handleNewIncomingMessage(newMessage);
         }
         loadConversations();
@@ -74,7 +77,7 @@ const InstagramMessages: React.FC = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [aiEnabled]);
+  }, []);
 
   const loadConversations = async () => {
     try {
