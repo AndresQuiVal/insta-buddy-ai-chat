@@ -22,6 +22,8 @@ interface Conversation {
   messages: InstagramMessage[];
   last_message: InstagramMessage;
   unread_count: number;
+  matchPoints?: number;
+  metTraits?: string[];
 }
 
 const InstagramMessages: React.FC = () => {
@@ -155,7 +157,11 @@ const InstagramMessages: React.FC = () => {
         new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
       );
 
-      setConversations(conversationsArray);
+      // Después de setConversations(conversationsArray);
+      // Ordenar por matchPoints si existen
+      setConversations((prev) => {
+        return [...prev].sort((a, b) => (b.matchPoints || 0) - (a.matchPoints || 0));
+      });
       
       // Seleccionar la primera conversación si no hay ninguna seleccionada
       if (!selectedConversation && conversationsArray.length > 0) {
@@ -169,12 +175,30 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
+  // Utilidad para extraer matchPoints y características de la respuesta de la IA
+  function extractMatchFromAIResponse(aiResponse, idealTraits) {
+    let matchPoints = 0;
+    let metTraits = [];
+    // Buscar la nota interna
+    const matchRegex = /([0-4])\s*\/\s*4|Prospecto ideal \(4\/4\)/i;
+    const found = aiResponse.match(matchRegex);
+    if (found) {
+      matchPoints = found[1] ? parseInt(found[1], 10) : 4;
+    }
+    // Opcional: buscar nombres de características cumplidas (si la IA los lista)
+    // Aquí podrías mejorar la extracción si la IA los enumera
+    // Por ahora, solo usamos el número
+    if (matchPoints && idealTraits) {
+      metTraits = idealTraits.slice(0, matchPoints);
+    }
+    return { matchPoints, metTraits };
+  }
+
   const handleNewIncomingMessage = async (message: InstagramMessage) => {
     if (!aiEnabled) return;
 
     console.log(`Generando respuesta automática en ${aiDelay} segundos...`);
     
-    // Delay antes de responder
     setTimeout(async () => {
       try {
         // Configuración básica del negocio
@@ -196,6 +220,24 @@ const InstagramMessages: React.FC = () => {
           businessConfig
         );
 
+        // EXTRAER MATCHPOINTS Y GUARDAR EN LA CONVERSACIÓN
+        const idealTraits = businessConfig.idealClientTraits;
+        const { matchPoints, metTraits } = extractMatchFromAIResponse(aiResponse, idealTraits);
+        // Actualizar la conversación en localStorage
+        const savedConvs = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
+        const idx = savedConvs.findIndex((c) => c.sender_id === message.sender_id);
+        if (idx !== -1) {
+          savedConvs[idx].matchPoints = matchPoints;
+          savedConvs[idx].metTraits = metTraits;
+        } else {
+          savedConvs.push({
+            sender_id: message.sender_id,
+            matchPoints,
+            metTraits,
+            messages: [message],
+          });
+        }
+        localStorage.setItem('hower-conversations', JSON.stringify(savedConvs));
         // Enviar la respuesta automática usando la API real de Instagram
         const sendResult = await sendInstagramMessage(
           message.sender_id,
