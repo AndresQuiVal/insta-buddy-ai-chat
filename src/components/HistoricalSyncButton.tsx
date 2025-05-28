@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, Download, CheckCircle, Clock } from 'lucide-react';
+import { AlertCircle, Download, CheckCircle, Clock, Instagram, Wifi } from 'lucide-react';
 import { syncHistoricalConversations, checkSyncPermissions } from '@/services/instagramMessagingSync';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -17,6 +17,7 @@ const HistoricalSyncButton: React.FC = () => {
 
   const handleCheckPermissions = async () => {
     setIsChecking(true);
+    setPermissionStatus(null);
     
     const accessToken = localStorage.getItem('hower-instagram-token');
     if (!accessToken) {
@@ -28,7 +29,9 @@ const HistoricalSyncButton: React.FC = () => {
       return;
     }
 
+    console.log('Verificando permisos con token...');
     const result = await checkSyncPermissions(accessToken);
+    console.log('Resultado de verificación:', result);
     setPermissionStatus(result);
     setIsChecking(false);
   };
@@ -61,13 +64,21 @@ const HistoricalSyncButton: React.FC = () => {
     setSyncProgress(0);
   };
 
+  const handleOpenDialog = () => {
+    setIsOpen(true);
+    // Verificar permisos automáticamente al abrir
+    setTimeout(() => {
+      handleCheckPermissions();
+    }, 500);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
           size="sm"
-          onClick={handleCheckPermissions}
+          onClick={handleOpenDialog}
           className="flex items-center gap-2"
         >
           <Download className="w-4 h-4" />
@@ -87,42 +98,77 @@ const HistoricalSyncButton: React.FC = () => {
           {/* Estado de verificación de permisos */}
           {isChecking && (
             <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-              <Clock className="w-5 h-5 text-blue-500 animate-spin" />
-              <span className="text-blue-700">Verificando permisos...</span>
+              <Wifi className="w-5 h-5 text-blue-500 animate-pulse" />
+              <span className="text-blue-700">Verificando conexión y permisos...</span>
             </div>
           )}
 
           {/* Resultados de permisos */}
           {permissionStatus && !isChecking && (
             <div className="space-y-3">
-              {permissionStatus.hasAllPermissions ? (
+              {permissionStatus.error ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Error de conexión:</strong><br />
+                    {permissionStatus.error}
+                    <br /><br />
+                    <em>Soluciones posibles:</em>
+                    <ul className="mt-2 ml-4 text-sm">
+                      <li>• Reconecta tu cuenta de Instagram</li>
+                      <li>• Verifica que tengas una cuenta Business</li>
+                      <li>• Asegúrate de tener conexión a internet</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              ) : permissionStatus.hasAllPermissions ? (
                 <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertDescription>
-                    ✅ Todos los permisos necesarios están disponibles.
-                    Puedes proceder con la sincronización.
+                    ✅ Conexión verificada correctamente.
+                    <br />
+                    📱 Instagram Business: {permissionStatus.hasInstagramBusiness ? 'Conectado' : 'No encontrado'}
+                    <br />
+                    🔑 Permisos: {permissionStatus.permissions?.length || 0} activos
                   </AlertDescription>
                 </Alert>
               ) : (
                 <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
+                  <Instagram className="h-4 w-4" />
                   <AlertDescription>
-                    {permissionStatus.error || 
-                     `❌ Faltan permisos: ${permissionStatus.missingPermissions?.join(', ')}`}
+                    <strong>Configuración incompleta:</strong><br />
+                    {!permissionStatus.hasInstagramBusiness && '• No hay cuenta de Instagram Business conectada'}
+                    {permissionStatus.missingPermissions?.length > 0 && (
+                      <>
+                        <br />• Faltan permisos: {permissionStatus.missingPermissions.join(', ')}
+                      </>
+                    )}
+                    <br /><br />
+                    <em>Para solucionarlo:</em>
+                    <ul className="mt-2 ml-4 text-sm">
+                      <li>• Ve a Facebook Business Manager</li>
+                      <li>• Conecta una cuenta de Instagram Business</li>
+                      <li>• Otorga permisos de mensajería</li>
+                    </ul>
                   </AlertDescription>
                 </Alert>
               )}
 
               {permissionStatus.hasAllPermissions && !isSyncing && !syncResult && (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-600">
-                    Esta función importará:
-                  </p>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                    <li>• Conversaciones de los últimos 90 días</li>
-                    <li>• Mensajes donde tu cuenta participó</li>
-                    <li>• Datos organizados por cliente</li>
-                  </ul>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="text-sm text-green-800 font-medium mb-2">
+                      ✅ Listo para sincronizar
+                    </p>
+                    <p className="text-sm text-green-700">
+                      Esta función importará:
+                    </p>
+                    <ul className="text-sm text-green-700 space-y-1 ml-4 mt-1">
+                      <li>• Conversaciones recientes disponibles</li>
+                      <li>• Mensajes donde tu cuenta participó</li>
+                      <li>• Datos organizados por cliente</li>
+                    </ul>
+                  </div>
                   
                   <Button 
                     onClick={handleStartSync}
@@ -132,6 +178,16 @@ const HistoricalSyncButton: React.FC = () => {
                     Iniciar Sincronización
                   </Button>
                 </div>
+              )}
+
+              {!permissionStatus.hasAllPermissions && !permissionStatus.error && (
+                <Button 
+                  onClick={handleCheckPermissions}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Verificar Nuevamente
+                </Button>
               )}
             </div>
           )}

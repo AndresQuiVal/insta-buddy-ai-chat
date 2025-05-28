@@ -230,29 +230,75 @@ async function saveHistoricalMessage(message: InstagramMessage, instagramAccount
  */
 export const checkSyncPermissions = async (accessToken: string) => {
   try {
-    const permissionsResponse = await fetch(`https://graph.facebook.com/v19.0/me/permissions?access_token=${accessToken}`);
-    const permissionsData = await permissionsResponse.json();
+    console.log('🔍 Verificando permisos del token...');
+    
+    // Verificar si el token es válido primero
+    const userResponse = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${accessToken}`);
+    const userData = await userResponse.json();
 
-    if (!permissionsResponse.ok) {
-      throw new Error('Error verificando permisos');
+    if (!userResponse.ok) {
+      console.error('Token inválido:', userData);
+      return {
+        hasAllPermissions: false,
+        permissions: [],
+        missingPermissions: [],
+        requiredPermissions: [],
+        error: userData.error?.message || 'Token de acceso inválido o expirado'
+      };
     }
 
-    const permissions = permissionsData.data?.map((p: any) => p.permission) || [];
+    console.log('✅ Token válido para usuario:', userData.name || userData.id);
+
+    // Verificar permisos específicos
+    const permissionsResponse = await fetch(`https://graph.facebook.com/v19.0/me/permissions?access_token=${accessToken}`);
     
+    if (!permissionsResponse.ok) {
+      const permissionsError = await permissionsResponse.json();
+      console.error('Error obteniendo permisos:', permissionsError);
+      return {
+        hasAllPermissions: false,
+        permissions: [],
+        missingPermissions: [],
+        requiredPermissions: [],
+        error: permissionsError.error?.message || 'Error verificando permisos'
+      };
+    }
+
+    const permissionsData = await permissionsResponse.json();
+    const grantedPermissions = permissionsData.data?.filter((p: any) => p.status === 'granted').map((p: any) => p.permission) || [];
+    
+    console.log('Permisos concedidos:', grantedPermissions);
+
+    // Verificar cuenta de Instagram Business
+    let hasInstagramBusiness = false;
+    try {
+      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${accessToken}`);
+      if (accountsResponse.ok) {
+        const accountsData = await accountsResponse.json();
+        hasInstagramBusiness = accountsData.data && accountsData.data.some((acc: any) => acc.instagram_business_account);
+      }
+    } catch (error) {
+      console.warn('No se pudo verificar cuentas de Instagram:', error);
+    }
+
     const requiredPermissions = [
       'pages_messaging',
-      'instagram_basic',
-      'instagram_manage_messages',
       'pages_show_list'
     ];
 
-    const missingPermissions = requiredPermissions.filter(perm => !permissions.includes(perm));
+    const missingPermissions = requiredPermissions.filter(perm => !grantedPermissions.includes(perm));
+    const hasAllPermissions = missingPermissions.length === 0 && hasInstagramBusiness;
 
     return {
-      hasAllPermissions: missingPermissions.length === 0,
-      permissions,
+      hasAllPermissions,
+      permissions: grantedPermissions,
       missingPermissions,
-      requiredPermissions
+      requiredPermissions,
+      hasInstagramBusiness,
+      recommendations: !hasInstagramBusiness ? [
+        'Conecta una cuenta de Instagram Business',
+        'Asegúrate de tener permisos de pages_messaging'
+      ] : []
     };
 
   } catch (error) {
@@ -262,7 +308,7 @@ export const checkSyncPermissions = async (accessToken: string) => {
       permissions: [],
       missingPermissions: [],
       requiredPermissions: [],
-      error: error instanceof Error ? error.message : 'Error desconocido'
+      error: error instanceof Error ? error.message : 'Error de conexión'
     };
   }
 };
