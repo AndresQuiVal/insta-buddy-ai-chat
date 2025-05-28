@@ -224,7 +224,7 @@ export const getInstagramUserInfo = async () => {
     // Intentamos obtener cuentas de Instagram
     let instagramData = null;
     try {
-      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/${userData.id}/accounts?fields=instagram_business_account&access_token=${token}`);
+      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${token}`);
       
       if (accountsResponse.ok) {
         const accountsData = await accountsResponse.json();
