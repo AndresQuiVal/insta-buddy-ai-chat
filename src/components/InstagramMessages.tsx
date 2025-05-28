@@ -290,6 +290,15 @@ const InstagramMessages: React.FC = () => {
           }
         }
       }
+      // Mostrar mensajes en consola y toast
+      console.log('Mensajes previos usados para alimentar IA:', allMessages);
+      if (allMessages.length > 0) {
+        toast({
+          title: 'Mensajes previos extraídos',
+          description: allMessages.slice(0, 5).map((msg, i) => `${i + 1}. ${msg}`).join('\n'),
+          duration: 8000,
+        });
+      }
       if (allMessages.length === 0) throw new Error('No se encontraron mensajes enviados por la cuenta.');
       // 3. Pedir a OpenAI que resuma el estilo/persona
       const openaiKey = localStorage.getItem('hower-openai-key-demo');
