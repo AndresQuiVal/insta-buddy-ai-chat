@@ -52,10 +52,9 @@ const InstagramMessages: React.FC = () => {
     };
     fetchPageId();
     loadConversations();
-    // Cargar el prompt/persona actual
     setIaPersona(localStorage.getItem('hower-system-prompt') || '');
-    
     // Suscribirse a nuevos mensajes en tiempo real
+    console.log('Suscripción a supabase creada');
     const subscription = supabase
       .channel('instagram-messages-changes')
       .on('postgres_changes', {
@@ -65,20 +64,17 @@ const InstagramMessages: React.FC = () => {
       }, (payload) => {
         console.log('Nuevo mensaje recibido:', payload);
         const newMessage = payload.new as InstagramMessage;
-        
         // Solo generar respuesta automática para mensajes recibidos (no enviados)
         if (newMessage.message_type === 'received' && aiEnabled) {
           handleNewIncomingMessage(newMessage);
         }
-        
         loadConversations();
       })
       .subscribe();
-
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [aiEnabled, aiDelay]);
+  }, [aiEnabled]);
 
   const loadConversations = async () => {
     try {
