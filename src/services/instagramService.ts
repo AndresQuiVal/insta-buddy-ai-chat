@@ -307,31 +307,49 @@ export const sendInstagramMessage = async (recipientId: string, messageText: str
     console.log('Recipient ID:', recipientId);
     console.log('Message:', messageText);
 
-    // Usar función serverless de Supabase
-    const supabaseFunctionUrl = 'https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-send-message';
-    const response = await fetch(supabaseFunctionUrl, {
+    // Obtener el PAGE-ACCESS-TOKEN guardado
+    const pageAccessToken = localStorage.getItem('hower-instagram-token');
+    if (!pageAccessToken) {
+      throw new Error('No hay token de acceso de página configurado');
+    }
+
+    // Construir el payload del mensaje
+    const messagePayload: any = {
+      recipient: {
+        id: recipientId
+      },
+      message: {
+        text: messageText
+      }
+    };
+
+    // Enviar mensaje usando Instagram Graph API (endpoint oficial)
+    const apiUrl = `https://graph.facebook.com/v19.0/me/messages?access_token=${pageAccessToken}`;
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwb2drYnFjdXFyaWh5bmJwbnNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MjQ5NzAsImV4cCI6MjA1NTUwMDk3MH0.7QZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQ'
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        recipient_id: recipientId,
-        message_text: messageText,
-        reply_to_message_id: replyToMessageId
-      })
+      body: JSON.stringify(messagePayload)
     });
 
     const responseData = await response.json();
-    console.log('📨 Respuesta de Supabase Function:', {
+    console.log('📨 Respuesta de Instagram API:', {
       status: response.status,
       ok: response.ok,
       data: responseData
     });
 
-    if (!response.ok || !responseData.success) {
+    if (!response.ok) {
       console.error('❌ Error enviando mensaje a Instagram:', responseData);
-      let errorDescription = responseData.error_description || responseData.error || 'Error enviando mensaje';
+      let errorDescription = responseData.error?.message || 'Error enviando mensaje';
+      if (responseData.error?.code === 190) {
+        errorDescription = 'Token de acceso inválido o expirado. Reconecta tu cuenta de Instagram.';
+      } else if (responseData.error?.code === 200) {
+        errorDescription = 'Permisos insuficientes. Verifica la configuración de la app en Facebook Developers.';
+      } else if (responseData.error?.code === 100) {
+        errorDescription = 'Parámetros incorrectos en la solicitud.';
+      }
       toast({
         title: "Error enviando mensaje",
         description: errorDescription,

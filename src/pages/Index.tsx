@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InstagramDashboard, { DashboardDebugPanel } from '@/components/InstagramDashboard';
 import InstagramMessages from '@/components/InstagramMessages';
@@ -20,26 +20,6 @@ const Index = () => {
   const [openaiKey, setOpenaiKey] = useState('');
   const [instagramToken, setInstagramToken] = useState('');
   const [pageId, setPageId] = useState('');
-  const [idealCustomer, setIdealCustomer] = useState({
-    trait1: '',
-    trait2: '',
-    trait3: '',
-    trait4: ''
-  });
-
-  // Cargar características al montar
-  useEffect(() => {
-    const saved = localStorage.getItem('hower-ideal-customer');
-    if (saved) {
-      setIdealCustomer(JSON.parse(saved));
-    }
-  }, []);
-
-  const handleIdealCustomerChange = (field: string, value: string) => {
-    const updated = { ...idealCustomer, [field]: value };
-    setIdealCustomer(updated);
-    localStorage.setItem('hower-ideal-customer', JSON.stringify(updated));
-  };
 
   const handleSaveToken = () => {
     if (!accessToken.trim()) {
@@ -123,7 +103,8 @@ const Index = () => {
 
   function buildHowerPrompt() {
     const personalidad = localStorage.getItem('hower-system-prompt') || 'Amigable, cercano y empático...';
-    const traits = [idealCustomer.trait1, idealCustomer.trait2, idealCustomer.trait3, idealCustomer.trait4].filter(Boolean);
+    const ideal = JSON.parse(localStorage.getItem('hower-ideal-customer') || '{}');
+    const traits = [ideal.trait1, ideal.trait2, ideal.trait3, ideal.trait4].filter(Boolean);
 
     return `
 Actúa como un asistente conversacional humano que se comunica a través de mensajes directos en Instagram. Tu objetivo es filtrar prospectos para mi negocio, conversando de manera genuina, cálida y natural, y recolectando información relevante para identificar si cumplen con las características de mi cliente ideal.
@@ -139,9 +120,9 @@ ${traits.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 - Haz preguntas abiertas y escucha activamente.
 - Sin que el prospecto lo note, intenta descubrir si cumple con cada una de las características clave.
 - Si logras identificar que cumple con una característica, anótalo internamente (no lo digas al usuario).
-- Al final de la conversación, indica internamente (no al usuario) cuántas características cumple el prospecto, por ejemplo: "Características cumplidas: 3/4".
-- Si cumple con las 4 características, indícalo internamente: "✅ Prospecto ideal (4/4)".
-- Si no cumple con alguna, indícalo internamente: "Características cumplidas: X/4".
+- Al final de la conversación, indica internamente (no al usuario) cuántas características cumple el prospecto, por ejemplo: “Características cumplidas: 3/4”.
+- Si cumple con las 4 características, indícalo internamente: “✅ Prospecto ideal (4/4)”.
+- Si no cumple con alguna, indícalo internamente: “Características cumplidas: X/4”.
 - Nunca reveles que estás evaluando características ni que eres un filtro.
 
 Responde siempre con el tono y estilo de la personalidad indicada arriba.
@@ -309,29 +290,6 @@ Responde siempre con el tono y estilo de la personalidad indicada arriba.
 
               {/* Editor de Personalidad */}
               <PersonalityEditor />
-
-              {/* Características del Cliente Ideal */}
-              <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-yellow-200 shadow-xl p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Brain className="w-6 h-6 text-yellow-500" />
-                  <h3 className="text-lg font-bold text-yellow-800">Características del Cliente Ideal</h3>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-sm text-yellow-700 mb-2">La IA usará estos criterios para clasificar prospectos automáticamente:</p>
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="flex items-center gap-2">
-                      <label className="w-36 text-sm text-gray-700">Característica {i}:</label>
-                      <input
-                        type="text"
-                        value={idealCustomer[`trait${i}`]}
-                        onChange={e => handleIdealCustomerChange(`trait${i}`, e.target.value)}
-                        placeholder={`Ej: Característica ${i}`}
-                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
             <DashboardDebugPanel show={showDebug} onClose={() => setShowDebug(false)} />
           </TabsContent>
