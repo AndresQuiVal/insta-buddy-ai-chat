@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain } from 'lucide-react';
+import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain, Star } from 'lucide-react';
 import { handleAutomaticResponse } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
@@ -142,26 +142,28 @@ const InstagramMessages: React.FC = () => {
         conversationGroups[conversationKey].push(message);
       });
 
-      // Convertir a array de conversaciones
+      // Cargar matches de localStorage
+      const localMatches = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
+
+      // Convertir a array de conversaciones y fusionar matches
       const conversationsArray = Object.entries(conversationGroups).map(([sender_id, messages]) => {
         const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         const unreadCount = messages.filter(msg => msg.message_type === 'received').length;
-        
+        // Buscar matchPoints/metTraits en localStorage
+        const localMatch = localMatches.find((c: any) => c.sender_id === sender_id) || {};
         return {
           sender_id,
           messages: sortedMessages,
           last_message: messages[0], // El más reciente
-          unread_count: unreadCount
+          unread_count: unreadCount,
+          matchPoints: localMatch.matchPoints || 0,
+          metTraits: localMatch.metTraits || []
         };
-      }).sort((a, b) => 
-        new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
-      );
-
-      // Después de setConversations(conversationsArray);
-      // Ordenar por matchPoints si existen
-      setConversations((prev) => {
-        return [...prev].sort((a, b) => (b.matchPoints || 0) - (a.matchPoints || 0));
       });
+
+      // Ordenar por matchPoints
+      conversationsArray.sort((a, b) => (b.matchPoints || 0) - (a.matchPoints || 0));
+      setConversations(conversationsArray);
       
       // Seleccionar la primera conversación si no hay ninguna seleccionada
       if (!selectedConversation && conversationsArray.length > 0) {
@@ -534,8 +536,17 @@ const InstagramMessages: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-800 truncate">
+                        <h4 className="font-medium text-gray-800 truncate flex items-center gap-2">
                           {getUserDisplayName(conversation.sender_id)}
+                          {/* Estrellas de compatibilidad */}
+                          <span className="flex items-center ml-2">
+                            {[...Array(4)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${i < (conversation.matchPoints || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                              />
+                            ))}
+                          </span>
                         </h4>
                         {conversation.unread_count > 0 && (
                           <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
@@ -546,6 +557,16 @@ const InstagramMessages: React.FC = () => {
                       <p className="text-sm text-gray-500 truncate">
                         {conversation.last_message.message_text}
                       </p>
+                      {/* Criterios cumplidos */}
+                      {conversation.metTraits && conversation.metTraits.length > 0 && (
+                        <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
+                          {conversation.metTraits.map((trait, idx) => (
+                            <span key={idx} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
+                              {trait}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <p className="text-xs text-gray-400 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
