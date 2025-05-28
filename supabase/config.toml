@@ -1,3 +1,4 @@
+
 # The name of your organization or company
 project_id = "rpogkbqcuqrihynbpnsi"
 
@@ -64,7 +65,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.instagram-send-message]
-verify_jwt = false
+verify_jwt = true
 
 [functions.chatgpt-response]
 verify_jwt = true
