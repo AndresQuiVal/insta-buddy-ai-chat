@@ -123,7 +123,7 @@ const Index = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
+          <TabsList className="grid w-full grid-cols-4 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
             <TabsTrigger 
               value="dashboard" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
@@ -144,13 +144,6 @@ const Index = () => {
             >
               <MessageCircle className="w-4 h-4" />
               Mensajes
-            </TabsTrigger>
-            <TabsTrigger 
-              value="token" 
-              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
-            >
-              <Key className="w-4 h-4" />
-              Token
             </TabsTrigger>
             <TabsTrigger 
               value="settings" 
@@ -180,6 +173,7 @@ const Index = () => {
           <TabsContent value="settings" className="space-y-6">
             {/* Configuración */}
             <div className="space-y-6">
+              <TokenManager />
               <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Settings className="w-6 h-6 text-purple-600" />
