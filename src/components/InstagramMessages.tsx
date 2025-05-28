@@ -5,6 +5,7 @@ import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain, Star
 import { handleAutomaticResponse } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
+import { useToast } from '@/hooks/use-toast';
 
 interface InstagramMessage {
   id: string;
@@ -42,6 +43,7 @@ const InstagramMessages: React.FC = () => {
   const [isTabLeader, setIsTabLeader] = useState(false);
   const TAB_KEY = 'hower-active-tab';
   const myTabId = React.useRef(`${Date.now()}-${Math.random()}`);
+  const { toast } = useToast();
 
   useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
 
@@ -393,6 +395,48 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
+  // Re-analizar prospectos con los rasgos actuales
+  const handleReanalyzeProspects = async () => {
+    try {
+      const ideal = JSON.parse(localStorage.getItem('hower-ideal-customer') || '{}');
+      const traits = [ideal.trait1, ideal.trait2, ideal.trait3, ideal.trait4].filter(Boolean);
+      if (traits.length === 0) {
+        toast({ title: 'Error', description: 'Debes definir al menos una característica en Configuración.', variant: 'destructive' });
+        return;
+      }
+      // Cargar todas las conversaciones actuales
+      const allConvs = [...conversations];
+      let updated = 0;
+      for (const conv of allConvs) {
+        // Concatenar todos los mensajes del prospecto
+        const allText = conv.messages.map(m => m.message_text).join(' ').toLowerCase();
+        let metTraits: string[] = [];
+        traits.forEach(trait => {
+          // Palabras clave simples (puedes mejorar esto)
+          const keywords = trait.split(' ').filter(w => w.length > 3);
+          const match = keywords.some(kw => allText.includes(kw.toLowerCase()));
+          if (match) metTraits.push(trait);
+        });
+        const matchPoints = metTraits.length;
+        // Actualizar en localStorage
+        const localMatches = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
+        const idx = localMatches.findIndex((c: any) => c.sender_id === conv.sender_id);
+        if (idx !== -1) {
+          localMatches[idx].matchPoints = matchPoints;
+          localMatches[idx].metTraits = metTraits;
+        } else {
+          localMatches.push({ sender_id: conv.sender_id, matchPoints, metTraits, messages: conv.messages });
+        }
+        localStorage.setItem('hower-conversations', JSON.stringify(localMatches));
+        updated++;
+      }
+      toast({ title: '¡Listo!', description: `Se re-analizaron ${updated} prospectos con los rasgos actuales.` });
+      loadConversations();
+    } catch (e) {
+      toast({ title: 'Error', description: 'No se pudo re-analizar.', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex items-center justify-center">
@@ -526,6 +570,15 @@ const InstagramMessages: React.FC = () => {
           </div>
           
           <div className="overflow-y-auto h-[calc(100%-140px)]">
+            <div className="flex justify-end p-2">
+              <button
+                onClick={handleReanalyzeProspects}
+                className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-lg border border-yellow-300 text-xs hover:bg-yellow-200 transition-colors"
+                title="Re-analizar prospectos con los rasgos actuales"
+              >
+                Re-analizar prospectos
+              </button>
+            </div>
             {conversations.length === 0 ? (
               <div className="p-4 text-center">
                 <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
