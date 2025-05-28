@@ -224,9 +224,17 @@ const InstagramMessages: React.FC = () => {
           ]
         };
 
+        // Obtener historial de mensajes recientes de la conversación
+        const myPageId = pageId || localStorage.getItem('hower-page-id');
+        const conv = conversations.find(c => c.sender_id === message.sender_id);
+        const history = conv ? conv.messages.slice(-10).map(msg => ({
+          role: msg.sender_id === myPageId ? ('assistant' as 'assistant') : ('user' as 'user'),
+          content: msg.message_text
+        })) : [];
+
         const aiResponse = await handleAutomaticResponse(
           message.message_text,
-          [], // Historial vacío por ahora
+          history,
           businessConfig
         );
 
