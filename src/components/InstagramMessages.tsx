@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock } from 'lucide-react';
 import { handleAutomaticResponse } from '@/services/openaiService';
+import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
 
 interface InstagramMessage {
@@ -54,7 +54,6 @@ const InstagramMessages: React.FC = () => {
         }
         
         loadConversations();
-        // Eliminar el toast de notificación ya que el usuario puede ver el mensaje directamente
       })
       .subscribe();
 
@@ -140,7 +139,7 @@ const InstagramMessages: React.FC = () => {
     // Delay antes de responder
     setTimeout(async () => {
       try {
-        // Configuración básica del negocio (esto se puede hacer configurable después)
+        // Configuración básica del negocio
         const businessConfig = {
           businessName: "Hower Assistant",
           businessDescription: "Asistente inteligente para Instagram",
@@ -159,24 +158,19 @@ const InstagramMessages: React.FC = () => {
           businessConfig
         );
 
-        // Guardar la respuesta automática
-        await supabase
-          .from('instagram_messages')
-          .insert({
-            instagram_message_id: `ai_response_${Date.now()}`,
-            sender_id: 'hower_bot',
-            recipient_id: message.sender_id,
-            message_text: aiResponse,
-            message_type: 'sent',
-            timestamp: new Date().toISOString(),
-            raw_data: { 
-              auto_response: true,
-              original_message_id: message.instagram_message_id,
-              delay_used: aiDelay
-            }
-          });
+        // Enviar la respuesta automática usando la API real de Instagram
+        const sendResult = await sendInstagramMessage(
+          message.sender_id,
+          aiResponse,
+          message.instagram_message_id
+        );
 
-        console.log('Respuesta automática enviada:', aiResponse);
+        if (sendResult.success) {
+          console.log('✅ Respuesta automática enviada via Instagram API');
+        } else {
+          console.error('❌ Error enviando respuesta automática:', sendResult.error);
+        }
+
       } catch (error) {
         console.error('Error generando respuesta automática:', error);
       }
@@ -197,32 +191,26 @@ const InstagramMessages: React.FC = () => {
     try {
       setSending(true);
 
-      // Guardar el mensaje enviado manualmente
-      await supabase
-        .from('instagram_messages')
-        .insert({
-          instagram_message_id: `manual_${Date.now()}`,
-          sender_id: 'hower_bot',
-          recipient_id: selectedConversation,
-          message_text: newMessage.trim(),
-          message_type: 'sent',
-          timestamp: new Date().toISOString(),
-          raw_data: { manual_response: true }
+      // Enviar mensaje usando la API real de Instagram
+      const sendResult = await sendInstagramMessage(selectedConversation, newMessage.trim());
+
+      if (sendResult.success) {
+        setNewMessage('');
+        loadConversations();
+
+        toast({
+          title: "Mensaje enviado",
+          description: "Tu mensaje fue enviado exitosamente a Instagram",
         });
-
-      setNewMessage('');
-      loadConversations();
-
-      toast({
-        title: "Mensaje enviado",
-        description: "Tu mensaje fue enviado exitosamente",
-      });
+      } else {
+        throw new Error(sendResult.error || 'Error enviando mensaje');
+      }
 
     } catch (error) {
       console.error('Error in sendMessage:', error);
       toast({
         title: "Error",
-        description: "Error enviando mensaje",
+        description: error instanceof Error ? error.message : "Error enviando mensaje",
         variant: "destructive"
       });
     } finally {

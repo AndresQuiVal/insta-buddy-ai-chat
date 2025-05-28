@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -298,3 +297,192 @@ export const getInstagramPosts = async () => {
     return [];
   }
 };
+
+/**
+ * Envía un mensaje de texto a través de Instagram usando la API oficial
+ */
+export const sendInstagramMessage = async (recipientId: string, messageText: string, replyToMessageId?: string) => {
+  try {
+    console.log('📤 Enviando mensaje de Instagram...');
+    console.log('Recipient ID:', recipientId);
+    console.log('Message:', messageText);
+
+    // Obtener el token de acceso guardado
+    const accessToken = localStorage.getItem('hower-instagram-token');
+    
+    if (!accessToken) {
+      throw new Error('No hay token de acceso de Instagram configurado');
+    }
+
+    // Obtener información de la página conectada
+    const pageInfo = await getConnectedPageInfo(accessToken);
+    if (!pageInfo.pageId) {
+      throw new Error('No se encontró página de Facebook conectada');
+    }
+
+    console.log(`📱 Enviando desde página: ${pageInfo.pageId}`);
+
+    // Construir el payload del mensaje según la documentación oficial
+    const messagePayload = {
+      recipient: {
+        id: recipientId
+      },
+      message: {
+        text: messageText
+      }
+    };
+
+    console.log('📋 Payload del mensaje:', JSON.stringify(messagePayload, null, 2));
+
+    // Enviar mensaje usando Instagram Graph API (endpoint oficial)
+    const apiUrl = `https://graph.facebook.com/v19.0/${pageInfo.pageId}/messages`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...messagePayload,
+        access_token: accessToken
+      })
+    });
+
+    const responseData = await response.json();
+    
+    console.log('📨 Respuesta de Instagram API:', {
+      status: response.status,
+      ok: response.ok,
+      data: responseData
+    });
+
+    if (!response.ok) {
+      console.error('❌ Error enviando mensaje a Instagram:', responseData);
+      
+      let errorDescription = responseData.error?.message || 'Error enviando mensaje';
+      
+      if (responseData.error?.code === 190) {
+        errorDescription = 'Token de acceso inválido o expirado. Reconecta tu cuenta de Instagram.';
+      } else if (responseData.error?.code === 200) {
+        errorDescription = 'Permisos insuficientes. Verifica la configuración de la app en Facebook Developers.';
+      } else if (responseData.error?.code === 100) {
+        errorDescription = 'Parámetros incorrectos en la solicitud.';
+      }
+      
+      toast({
+        title: "Error enviando mensaje",
+        description: errorDescription,
+        variant: "destructive"
+      });
+      
+      throw new Error(errorDescription);
+    }
+
+    console.log('✅ Mensaje enviado exitosamente a Instagram');
+    
+    // Guardar el mensaje enviado en la base de datos
+    await saveMessageToDatabase({
+      instagram_message_id: responseData.message_id,
+      sender_id: pageInfo.instagramAccountId || pageInfo.pageId,
+      recipient_id: recipientId,
+      message_text: messageText,
+      message_type: 'sent',
+      timestamp: new Date().toISOString(),
+      raw_data: {
+        sent_via_api: true,
+        response_data: responseData,
+        original_reply_to: replyToMessageId,
+        api_version: 'v19.0'
+      }
+    });
+
+    toast({
+      title: "¡Mensaje enviado!",
+      description: "Tu mensaje fue enviado exitosamente a Instagram",
+    });
+
+    return {
+      success: true,
+      message_id: responseData.message_id,
+      recipient_id: responseData.recipient_id
+    };
+
+  } catch (error) {
+    console.error('💥 Error en sendInstagramMessage:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    
+    toast({
+      title: "Error de envío",
+      description: errorMessage,
+      variant: "destructive"
+    });
+
+    return {
+      success: false,
+      error: errorMessage
+    };
+  }
+};
+
+/**
+ * Obtiene información de la página conectada para envío de mensajes
+ */
+async function getConnectedPageInfo(accessToken: string) {
+  try {
+    // Obtener usuario de Facebook
+    const userResponse = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${accessToken}`);
+    const userData = await userResponse.json();
+
+    if (!userResponse.ok) {
+      throw new Error(`Error obteniendo usuario: ${userData.error?.message}`);
+    }
+
+    // Obtener páginas con cuentas de Instagram
+    const pagesResponse = await fetch(`https://graph.facebook.com/v19.0/${userData.id}/accounts?fields=id,name,instagram_business_account,access_token&access_token=${accessToken}`);
+    const pagesData = await pagesResponse.json();
+
+    if (!pagesResponse.ok) {
+      throw new Error(`Error obteniendo páginas: ${pagesData.error?.message}`);
+    }
+
+    // Buscar página con Instagram Business
+    const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account);
+    
+    if (!pageWithInstagram) {
+      throw new Error('No se encontró página con cuenta de Instagram Business conectada');
+    }
+
+    return {
+      userId: userData.id,
+      pageId: pageWithInstagram.id,
+      pageName: pageWithInstagram.name,
+      instagramAccountId: pageWithInstagram.instagram_business_account?.id,
+      pageAccessToken: pageWithInstagram.access_token || accessToken
+    };
+  } catch (error) {
+    console.error('Error obteniendo información de página:', error);
+    throw error;
+  }
+}
+
+/**
+ * Guarda un mensaje en la base de datos
+ */
+async function saveMessageToDatabase(messageData: any) {
+  try {
+    const { error } = await supabase
+      .from('instagram_messages')
+      .insert(messageData);
+
+    if (error) {
+      console.error('Error guardando mensaje en BD:', error);
+      throw error;
+    }
+
+    console.log('💾 Mensaje guardado en base de datos');
+  } catch (error) {
+    console.error('Error en saveMessageToDatabase:', error);
+    // No lanzar error aquí para no bloquear el envío
+  }
+}
