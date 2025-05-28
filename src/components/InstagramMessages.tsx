@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -428,7 +429,7 @@ const InstagramMessages: React.FC = () => {
                           <Bot className="w-3 h-3" />
                         )}
                         {message.raw_data?.historical_sync && (
-                          <Clock className="w-3 h-3" title="Mensaje histórico" />
+                          <Clock className="w-3 h-3" />
                         )}
                         <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
                       </div>

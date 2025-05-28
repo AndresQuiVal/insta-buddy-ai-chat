@@ -201,7 +201,14 @@ async function saveHistoricalMessage(message: InstagramMessage, instagramAccount
     raw_data: {
       historical_sync: true,
       sync_date: new Date().toISOString(),
-      original_message: message,
+      original_message: {
+        id: message.id,
+        created_time: message.created_time,
+        from: message.from,
+        to: message.to,
+        message: message.message,
+        attachments: message.attachments
+      },
       source: 'instagram_messaging_api'
     }
   };
