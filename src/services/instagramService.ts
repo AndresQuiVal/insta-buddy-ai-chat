@@ -312,7 +312,8 @@ export const sendInstagramMessage = async (recipientId: string, messageText: str
     const response = await fetch(supabaseFunctionUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwb2drYnFjdXFyaWh5bmJwbnNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MjQ5NzAsImV4cCI6MjA1NTUwMDk3MH0.7QZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQZQ'
       },
       body: JSON.stringify({
         recipient_id: recipientId,
