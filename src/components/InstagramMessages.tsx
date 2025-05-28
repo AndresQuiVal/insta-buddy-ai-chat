@@ -33,8 +33,22 @@ const InstagramMessages: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [aiDelay, setAiDelay] = useState(3); // Delay en segundos
   const [aiEnabled, setAiEnabled] = useState(true);
+  const [pageId, setPageId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Obtener PAGE-ID automáticamente al montar
+    const fetchPageId = async () => {
+      const pageAccessToken = localStorage.getItem('hower-instagram-token');
+      if (!pageAccessToken) return;
+      try {
+        const res = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${pageAccessToken}`);
+        const data = await res.json();
+        if (data.id) setPageId(data.id);
+      } catch (e) {
+        console.error('No se pudo obtener el PAGE-ID automáticamente', e);
+      }
+    };
+    fetchPageId();
     loadConversations();
     
     // Suscribirse a nuevos mensajes en tiempo real
@@ -224,7 +238,6 @@ const InstagramMessages: React.FC = () => {
   const handleFeedAI = async () => {
     try {
       const pageAccessToken = localStorage.getItem('hower-instagram-token');
-      const pageId = prompt('Ingresa el PAGE-ID de tu página de Facebook vinculada a Instagram:');
       if (!pageAccessToken || !pageId) {
         toast({
           title: 'Error',
