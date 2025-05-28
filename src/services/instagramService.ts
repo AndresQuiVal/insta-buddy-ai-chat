@@ -307,49 +307,30 @@ export const sendInstagramMessage = async (recipientId: string, messageText: str
     console.log('Recipient ID:', recipientId);
     console.log('Message:', messageText);
 
-    // Obtener el PAGE-ACCESS-TOKEN guardado
-    const pageAccessToken = localStorage.getItem('hower-instagram-token');
-    if (!pageAccessToken) {
-      throw new Error('No hay token de acceso de página configurado');
-    }
-
-    // Construir el payload del mensaje
-    const messagePayload: any = {
-      recipient: {
-        id: recipientId
-      },
-      message: {
-        text: messageText
-      }
-    };
-
-    // Enviar mensaje usando Instagram Graph API (endpoint oficial)
-    const apiUrl = `https://graph.facebook.com/v19.0/me/messages?access_token=${pageAccessToken}`;
-    const response = await fetch(apiUrl, {
+    // Usar función serverless de Supabase
+    const supabaseFunctionUrl = 'https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-send-message';
+    const response = await fetch(supabaseFunctionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(messagePayload)
+      body: JSON.stringify({
+        recipient_id: recipientId,
+        message_text: messageText,
+        reply_to_message_id: replyToMessageId
+      })
     });
 
     const responseData = await response.json();
-    console.log('📨 Respuesta de Instagram API:', {
+    console.log('📨 Respuesta de Supabase Function:', {
       status: response.status,
       ok: response.ok,
       data: responseData
     });
 
-    if (!response.ok) {
+    if (!response.ok || !responseData.success) {
       console.error('❌ Error enviando mensaje a Instagram:', responseData);
-      let errorDescription = responseData.error?.message || 'Error enviando mensaje';
-      if (responseData.error?.code === 190) {
-        errorDescription = 'Token de acceso inválido o expirado. Reconecta tu cuenta de Instagram.';
-      } else if (responseData.error?.code === 200) {
-        errorDescription = 'Permisos insuficientes. Verifica la configuración de la app en Facebook Developers.';
-      } else if (responseData.error?.code === 100) {
-        errorDescription = 'Parámetros incorrectos en la solicitud.';
-      }
+      let errorDescription = responseData.error_description || responseData.error || 'Error enviando mensaje';
       toast({
         title: "Error enviando mensaje",
         description: errorDescription,
