@@ -36,7 +36,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useRouter } from 'next/router';
 
 interface DashboardStats {
   totalMessages: number;
@@ -66,7 +65,6 @@ interface InstagramDashboardProps {
 }
 
 const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis }) => {
-  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     totalMessages: 0,
     totalConversations: 0,
