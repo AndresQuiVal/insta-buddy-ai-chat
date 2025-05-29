@@ -6,7 +6,7 @@ import AdvancedMetrics from '@/components/AdvancedMetrics';
 import TokenManager from '@/components/TokenManager';
 import InstagramProspect from '@/components/InstagramProspect';
 import HamburgerMenu from '@/components/HamburgerMenu';
-import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Key, Brain, LogOut, Bug, Users } from 'lucide-react';
+import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Key, Brain, LogOut, Bug, Users, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,11 +134,30 @@ Responde siempre con el tono y estilo de la personalidad indicada arriba.
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <InstagramDashboard />;
+        return <InstagramDashboard onShowAnalysis={() => setActiveTab('analysis')} />;
       case 'messages':
         return <InstagramMessages />;
       case 'prospect':
         return <InstagramProspect />;
+      case 'analysis':
+        return (
+          <div className="container mx-auto px-4 py-8">
+            <div className="mb-8">
+              <Button
+                onClick={() => setActiveTab('dashboard')}
+                className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
+                variant="ghost"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Volver al Dashboard
+              </Button>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">Análisis Detallado</h1>
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <AdvancedMetrics />
+            </div>
+          </div>
+        );
       case 'settings':
         return (
           <div className="space-y-6">
@@ -234,7 +253,7 @@ Responde siempre con el tono y estilo de la personalidad indicada arriba.
           </div>
         );
       default:
-        return <InstagramDashboard />;
+        return <InstagramDashboard onShowAnalysis={() => setActiveTab('analysis')} />;
     }
   };
 
