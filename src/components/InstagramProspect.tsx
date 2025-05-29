@@ -3,7 +3,9 @@ import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Instagram } from 'lucide-react';
+import { Instagram, UserPlus } from 'lucide-react';
+
+const BASE_URL = 'https://www.howersoftware.io';
 
 const InstagramProspect = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -30,7 +32,7 @@ const InstagramProspect = () => {
         isComment: 'false'
       };
 
-      const response = await fetch('https://www.howersoftware.io/clients/welcome-success/', {
+      const response = await fetch(`${BASE_URL}/clients/welcome-success/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -39,7 +41,7 @@ const InstagramProspect = () => {
       });
 
       if (response.ok) {
-        window.location.href = '/clients/dashboard?isnew=true';
+        window.location.href = `${BASE_URL}/clients/dashboard?isnew=true`;
       } else {
         toast({
           title: "Error",
@@ -53,6 +55,24 @@ const InstagramProspect = () => {
         description: "Ocurrió un error en la red.",
         variant: "destructive"
       });
+    }
+  };
+
+  const insertNameToken = () => {
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const token = '[NOMBRE]';
+      
+      // Insertar el token con estilos
+      const newText = text.substring(0, start) + token + text.substring(end);
+      setMessage(newText);
+      
+      // Enfocar el textarea y posicionar el cursor después del token
+      textarea.focus();
+      textarea.setSelectionRange(start + token.length, start + token.length);
     }
   };
 
@@ -84,7 +104,7 @@ const InstagramProspect = () => {
               <div className="flex justify-center gap-4">
                 <Button
                   variant="outline"
-                  onClick={() => window.location.href = '/clients/onb/'}
+                  onClick={() => window.location.href = `${BASE_URL}/clients/onb/`}
                 >
                   Hacerlo más tarde
                 </Button>
@@ -117,18 +137,9 @@ const InstagramProspect = () => {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => {
-                    const textarea = document.querySelector('textarea');
-                    if (textarea) {
-                      const start = textarea.selectionStart;
-                      const end = textarea.selectionEnd;
-                      const text = textarea.value;
-                      textarea.value = text.substring(0, start) + '[NOMBRE]' + text.substring(end);
-                      textarea.focus();
-                    }
-                  }}
+                  onClick={insertNameToken}
                 >
-                  <Instagram className="w-4 h-4 mr-2" />
+                  <UserPlus className="w-4 h-4 mr-2" />
                   Introducir nombre
                 </Button>
                 <small className="text-gray-500 block text-center">
