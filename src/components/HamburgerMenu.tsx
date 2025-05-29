@@ -18,7 +18,7 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ activeTab, onTabChange })
   ];
 
   return (
-    <div className="relative">
+    <div className="relative z-50">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 rounded-lg hover:bg-purple-100 transition-colors"
@@ -28,7 +28,7 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ activeTab, onTabChange })
 
       <div
         className={cn(
-          "absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-purple-100 transition-all duration-200",
+          "absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-purple-100 transition-all duration-200",
           isOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"
         )}
       >

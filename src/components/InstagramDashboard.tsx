@@ -435,71 +435,24 @@ const InstagramDashboard: React.FC = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-6 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800">Dashboard</h3>
-          </div>
-          <p className="text-gray-600 mb-4">
-            Vista general de tu actividad en Instagram
-          </p>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-              >
-                <Brain className="w-4 h-4 mr-2" />
-                Análisis detallado
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Análisis detallado</DialogTitle>
-              </DialogHeader>
-              <AdvancedMetrics />
-            </DialogContent>
-          </Dialog>
-        </Card>
-
-        <Card className="p-6 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <MessageCircle className="w-6 h-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800">Mensajes</h3>
-          </div>
-          <p className="text-gray-600">
-            Gestiona tus conversaciones y respuestas automáticas
-          </p>
-        </Card>
-
-        <Card className="p-6 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Users className="w-6 h-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800">Prospecta</h3>
-          </div>
-          <p className="text-gray-600">
-            Encuentra y conecta con nuevos clientes potenciales
-          </p>
-        </Card>
-
-        <Card className="p-6 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Brain className="w-6 h-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800">IA</h3>
-          </div>
-          <p className="text-gray-600">
-            Personaliza la personalidad de tu asistente virtual
-          </p>
-        </Card>
+      {/* Botón de Análisis Detallado */}
+      <div className="mt-8">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button 
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+            >
+              <Brain className="w-4 h-4 mr-2" />
+              Análisis detallado
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Análisis detallado</DialogTitle>
+            </DialogHeader>
+            <AdvancedMetrics />
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
