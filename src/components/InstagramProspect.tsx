@@ -101,13 +101,7 @@ const InstagramProspect = () => {
                   className="pl-8"
                 />
               </div>
-              <div className="flex justify-center gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.href = `${BASE_URL}/clients/onb/`}
-                >
-                  Hacerlo más tarde
-                </Button>
+              <div className="flex justify-center">
                 <Button
                   onClick={() => {
                     if (!instagramAccount) {
