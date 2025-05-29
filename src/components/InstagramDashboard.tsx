@@ -450,19 +450,19 @@ const InstagramDashboard: React.FC = () => {
 
       {/* Modal de Análisis Detallado */}
       {showMetrics && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Análisis Detallado</h2>
-              <Button
-                onClick={() => setShowMetrics(false)}
-                variant="ghost"
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver al Dashboard
-              </Button>
-            </div>
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-8">
+            <Button
+              onClick={() => setShowMetrics(false)}
+              className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
+              variant="ghost"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Volver al Dashboard
+            </Button>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Análisis Detallado</h1>
+          <div className="bg-white rounded-xl shadow-lg p-6">
             <AdvancedMetrics />
           </div>
         </div>
