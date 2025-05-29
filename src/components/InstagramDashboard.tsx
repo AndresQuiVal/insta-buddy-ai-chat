@@ -293,16 +293,12 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     value: string | number;
     icon: React.ReactNode;
     color: string;
-    subtitle?: string;
-  }> = ({ title, value, icon, color, subtitle }) => (
+  }> = ({ title, value, icon, color }) => (
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 hover:shadow-xl transition-all duration-200">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
-          {subtitle && (
-            <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
-          )}
         </div>
         <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center`}>
           {icon}
@@ -379,7 +375,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={stats.todayMessages}
           icon={<Calendar className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-blue-500 to-purple-500"
-          subtitle="En las últimas 24h"
         />
 
         <StatCard
@@ -387,7 +382,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={stats.messagesReceived}
           icon={<Inbox className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-green-500 to-teal-500"
-          subtitle={`${stats.responseRate.toFixed(1)}% tasa de respuesta`}
         />
 
         <StatCard
@@ -395,7 +389,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={stats.totalInvitations}
           icon={<Target className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-orange-500 to-red-500"
-          subtitle="Enviadas"
         />
 
         <StatCard
@@ -403,7 +396,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={stats.totalPresentations}
           icon={<Award className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-cyan-500 to-blue-500"
-          subtitle="Realizadas"
         />
 
         <StatCard
@@ -411,7 +403,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={stats.totalInscriptions}
           icon={<Zap className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-purple-500 to-pink-500"
-          subtitle="Logradas"
         />
 
         <StatCard
@@ -419,7 +410,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={`${stats.averageResponseTime.toFixed(1)}s`}
           icon={<Clock className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-pink-500 to-rose-500"
-          subtitle="Promedio"
         />
       </div>
 

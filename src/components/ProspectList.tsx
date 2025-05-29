@@ -14,7 +14,6 @@ type ProspectState =
 interface Prospect {
   username: string;
   state: ProspectState;
-  lastMessage?: string;
 }
 
 const stateConfig = {
@@ -51,36 +50,12 @@ const ProspectList = () => {
 
   // This would be replaced with actual data from your backend
   const prospects: Prospect[] = [
-    { 
-      username: '@user1', 
-      state: 'first_message_sent',
-      lastMessage: "Hola, me interesa tu producto..."
-    },
-    { 
-      username: '@user2', 
-      state: 'reactivation_sent',
-      lastMessage: "¿Podrías darme más información?"
-    },
-    { 
-      username: '@user3', 
-      state: 'no_response',
-      lastMessage: "Gracias por la información"
-    },
-    { 
-      username: '@user4', 
-      state: 'invited',
-      lastMessage: "Me gustaría agendar una llamada"
-    },
-    { 
-      username: '@user5', 
-      state: 'presented',
-      lastMessage: "¿Cuál es el siguiente paso?"
-    },
-    { 
-      username: '@user6', 
-      state: 'closed',
-      lastMessage: "No me interesa por ahora"
-    },
+    { username: '@user1', state: 'first_message_sent' },
+    { username: '@user2', state: 'reactivation_sent' },
+    { username: '@user3', state: 'no_response' },
+    { username: '@user4', state: 'invited' },
+    { username: '@user5', state: 'presented' },
+    { username: '@user6', state: 'closed' },
   ];
 
   const getAISuggestion = async (username: string) => {
@@ -102,50 +77,45 @@ const ProspectList = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Mis Prospectos</h2>
-        <div className="space-y-4">
+    <div className="space-y-4 px-2 sm:px-0">
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Mis Prospectos</h2>
+        <div className="space-y-3">
           {prospects.map((prospect, index) => (
             <div 
               key={index} 
-              className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+              className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors"
             >
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium text-gray-900">{prospect.username}</span>
-                    <Badge className={stateConfig[prospect.state].color}>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="space-y-2 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <span className="font-medium text-gray-900 text-sm sm:text-base">{prospect.username}</span>
+                    <Badge className={`${stateConfig[prospect.state].color} text-xs sm:text-sm whitespace-nowrap`}>
                       {stateConfig[prospect.state].label}
                     </Badge>
                   </div>
-                  {prospect.lastMessage && (
-                    <p className="text-sm text-gray-600 italic">
-                      "{prospect.lastMessage}"
-                    </p>
-                  )}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-2"
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto"
                   onClick={() => getAISuggestion(prospect.username)}
                 >
                   <Sparkles className="w-4 h-4" />
-                  Sugerencia
+                  <span className="text-xs sm:text-sm">Sugerencia</span>
                 </Button>
               </div>
               
               {selectedProspect === prospect.username && (
-                <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-100">
+                <div className="mt-3 p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-100">
                   <div className="flex items-start gap-3">
-                    <MessageSquare className="w-5 h-5 text-purple-600 mt-1" />
+                    <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mt-1" />
                     <div>
-                      <h4 className="font-medium text-purple-900 mb-1">Sugerencia de IA</h4>
+                      <h4 className="font-medium text-purple-900 text-sm sm:text-base mb-1">Sugerencia de IA</h4>
                       {isLoading ? (
-                        <p className="text-sm text-purple-600">Analizando conversación...</p>
+                        <p className="text-xs sm:text-sm text-purple-600">Analizando conversación...</p>
                       ) : (
-                        <p className="text-sm text-purple-700">{suggestion}</p>
+                        <p className="text-xs sm:text-sm text-purple-700">{suggestion}</p>
                       )}
                     </div>
                   </div>
