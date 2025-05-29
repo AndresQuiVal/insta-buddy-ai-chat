@@ -326,8 +326,7 @@ const InstagramDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">Dashboard Instagram</h2>
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           {/* Filtro de tiempo */}
           <div className="relative">
@@ -437,22 +436,13 @@ const InstagramDashboard: React.FC = () => {
 
       {/* Botón de Análisis Detallado */}
       <div className="mt-8">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button 
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-            >
-              <Brain className="w-4 h-4 mr-2" />
-              Análisis detallado
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Análisis detallado</DialogTitle>
-            </DialogHeader>
-            <AdvancedMetrics />
-          </DialogContent>
-        </Dialog>
+        <Button 
+          onClick={() => window.location.href = '/analysis'}
+          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+        >
+          <Brain className="w-4 h-4 mr-2" />
+          Análisis detallado
+        </Button>
       </div>
     </div>
   );
