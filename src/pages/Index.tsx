@@ -5,7 +5,8 @@ import InstagramMessages from '@/components/InstagramMessages';
 import InstagramDiagnostic from '@/components/InstagramDiagnostic';
 import AdvancedMetrics from '@/components/AdvancedMetrics';
 import TokenManager from '@/components/TokenManager';
-import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Key, Brain, LogOut, Bug } from 'lucide-react';
+import InstagramProspect from '@/components/InstagramProspect';
+import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Key, Brain, LogOut, Bug, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -120,9 +121,9 @@ ${traits.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 - Haz preguntas abiertas y escucha activamente.
 - Sin que el prospecto lo note, intenta descubrir si cumple con cada una de las características clave.
 - Si logras identificar que cumple con una característica, anótalo internamente (no lo digas al usuario).
-- Al final de la conversación, indica internamente (no al usuario) cuántas características cumple el prospecto, por ejemplo: “Características cumplidas: 3/4”.
-- Si cumple con las 4 características, indícalo internamente: “✅ Prospecto ideal (4/4)”.
-- Si no cumple con alguna, indícalo internamente: “Características cumplidas: X/4”.
+- Al final de la conversación, indica internamente (no al usuario) cuántas características cumple el prospecto, por ejemplo: "Características cumplidas: 3/4".
+- Si cumple con las 4 características, indícalo internamente: "✅ Prospecto ideal (4/4)".
+- Si no cumple con alguna, indícalo internamente: "Características cumplidas: X/4".
 - Nunca reveles que estás evaluando características ni que eres un filtro.
 
 Responde siempre con el tono y estilo de la personalidad indicada arriba.
@@ -151,7 +152,7 @@ Responde siempre con el tono y estilo de la personalidad indicada arriba.
 
         {/* Main Content */}
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
+          <TabsList className="grid w-full grid-cols-5 mb-8 bg-white/90 backdrop-blur-lg border border-purple-100 shadow-lg">
             <TabsTrigger 
               value="dashboard" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
@@ -174,6 +175,13 @@ Responde siempre con el tono y estilo de la personalidad indicada arriba.
               Mensajes
             </TabsTrigger>
             <TabsTrigger 
+              value="prospect" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
+            >
+              <Users className="w-4 h-4" />
+              Prospecta
+            </TabsTrigger>
+            <TabsTrigger 
               value="settings" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white"
             >
@@ -192,6 +200,10 @@ Responde siempre con el tono y estilo de la personalidad indicada arriba.
 
           <TabsContent value="messages" className="h-[600px]">
             <InstagramMessages />
+          </TabsContent>
+
+          <TabsContent value="prospect" className="space-y-6">
+            <InstagramProspect />
           </TabsContent>
 
           <TabsContent value="token" className="space-y-6">
