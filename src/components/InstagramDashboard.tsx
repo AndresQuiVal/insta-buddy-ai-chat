@@ -23,7 +23,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Info,
-  Lightbulb
+  Lightbulb,
+  ArrowLeft
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -439,13 +440,33 @@ const InstagramDashboard: React.FC = () => {
       {/* Botón de Análisis Detallado */}
       <div className="mt-8">
         <Button 
-          onClick={() => router.push('/analysis')}
+          onClick={() => setShowMetrics(true)}
           className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
         >
           <Brain className="w-4 h-4 mr-2" />
           Análisis detallado
         </Button>
       </div>
+
+      {/* Modal de Análisis Detallado */}
+      {showMetrics && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Análisis Detallado</h2>
+              <Button
+                onClick={() => setShowMetrics(false)}
+                variant="ghost"
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver al Dashboard
+              </Button>
+            </div>
+            <AdvancedMetrics />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
