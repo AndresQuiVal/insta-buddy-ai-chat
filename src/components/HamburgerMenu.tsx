@@ -12,7 +12,7 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ activeTab, onTabChange })
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'messages', label: 'Mensajes', icon: MessageCircle },
+    { id: 'my_prospects', label: 'Mis Prospectos', icon: Users },
     { id: 'prospect', label: 'Prospecta', icon: Users },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import PersonalityEditor from '@/components/PersonalityEditor';
+import MyProspects from '@/components/MyProspects';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -135,6 +136,8 @@ Responde siempre con el tono y estilo de la personalidad indicada arriba.
     switch (activeTab) {
       case 'dashboard':
         return <InstagramDashboard onShowAnalysis={() => setActiveTab('analysis')} />;
+      case 'my_prospects':
+        return <MyProspects />;
       case 'messages':
         return <InstagramMessages />;
       case 'prospect':
