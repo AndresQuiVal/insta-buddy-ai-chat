@@ -35,6 +35,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useRouter } from 'next/router';
 
 interface DashboardStats {
   totalMessages: number;
@@ -60,6 +61,7 @@ interface AIRecommendation {
 type TimeFilter = 'today' | 'week' | 'month' | 'all';
 
 const InstagramDashboard: React.FC = () => {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     totalMessages: 0,
     totalConversations: 0,
@@ -437,7 +439,7 @@ const InstagramDashboard: React.FC = () => {
       {/* Botón de Análisis Detallado */}
       <div className="mt-8">
         <Button 
-          onClick={() => window.location.href = '/analysis'}
+          onClick={() => router.push('/analysis')}
           className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
         >
           <Brain className="w-4 h-4 mr-2" />
