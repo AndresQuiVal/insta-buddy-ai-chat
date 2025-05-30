@@ -363,6 +363,9 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
+  // Obtener mensajes de la conversación seleccionada
+  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages || [];
+
   // Botón Alimentar IA
   const handleFeedAI = async () => {
     try {
