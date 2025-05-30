@@ -33,7 +33,7 @@ const InstagramMessages: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [aiDelay, setAiDelay] = useState(3); // Delay en segundos
+  const [aiDelay, setAiDelay] = useState(3);
   const [aiEnabled, setAiEnabled] = useState(true);
   const [pageId, setPageId] = useState<string | null>(null);
   const [iaPersona, setIaPersona] = useState<string>('');
@@ -79,6 +79,7 @@ const InstagramMessages: React.FC = () => {
     fetchPageId();
     loadConversations();
     setIaPersona(localStorage.getItem('hower-system-prompt') || '');
+    
     // Suscribirse a nuevos mensajes en tiempo real
     console.log('Suscripción a supabase creada');
     const subscription = supabase
@@ -90,7 +91,6 @@ const InstagramMessages: React.FC = () => {
       }, (payload) => {
         console.log('Nuevo mensaje recibido:', payload);
         const newMessage = payload.new as InstagramMessage;
-        // Solo generar respuesta automática si esta pestaña es líder
         if (newMessage.message_type === 'received' && aiEnabledRef.current && isTabLeader) {
           handleNewIncomingMessage(newMessage);
         }
@@ -131,16 +131,21 @@ const InstagramMessages: React.FC = () => {
                message.sender_id !== 'diagnostic_user';
       }) || [];
 
+      // Obtener mi page ID para identificar qué mensajes son míos
+      const myPageId = pageId || localStorage.getItem('hower-page-id');
+      console.log('Mi Page ID:', myPageId);
+
       // Agrupar mensajes por conversación (por el otro participante)
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
       realMessages.forEach((message: any) => {
-        // El otro participante es el que NO es el pageId (usuario actual)
-        // Si el sender_id es igual al pageId, el otro es recipient_id, y viceversa
+        // Determinar quién es el "otro" en la conversación
         let otherId = message.sender_id;
-        const myPageId = pageId || localStorage.getItem('hower-page-id');
         if (myPageId && message.sender_id === myPageId) {
           otherId = message.recipient_id;
+        } else if (myPageId && message.recipient_id === myPageId) {
+          otherId = message.sender_id;
         }
+        
         if (!conversationGroups[otherId]) {
           conversationGroups[otherId] = [];
         }
@@ -152,11 +157,16 @@ const InstagramMessages: React.FC = () => {
 
       // Convertir a array de conversaciones y fusionar matches
       const conversationsArray = Object.entries(conversationGroups).map(([sender_id, messages]) => {
-        // Ordenar mensajes por timestamp ascendente
+        // Ordenar mensajes por timestamp ascendente para mostrar cronológicamente
         const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        const unreadCount = messages.filter(msg => msg.message_type === 'received').length;
+        const unreadCount = messages.filter(msg => {
+          // Un mensaje está sin leer si lo recibimos (no lo enviamos nosotros)
+          return myPageId && msg.sender_id !== myPageId;
+        }).length;
+        
         // Buscar matchPoints/metTraits en localStorage
         const localMatch = localMatches.find((c: any) => c.sender_id === sender_id) || {};
+        
         return {
           sender_id,
           messages: sortedMessages,
@@ -167,8 +177,18 @@ const InstagramMessages: React.FC = () => {
         };
       });
 
-      // Ordenar por matchPoints
-      conversationsArray.sort((a, b) => (b.matchPoints || 0) - (a.matchPoints || 0));
+      // Ordenar conversaciones por:
+      // 1. Número de estrellas (matchPoints) - más estrellas primero
+      // 2. Tiempo del último mensaje - más reciente primero
+      conversationsArray.sort((a, b) => {
+        // Primero por matchPoints (descendente)
+        if ((b.matchPoints || 0) !== (a.matchPoints || 0)) {
+          return (b.matchPoints || 0) - (a.matchPoints || 0);
+        }
+        // Si tienen las mismas estrellas, ordenar por último mensaje (más reciente primero)
+        return new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime();
+      });
+
       setConversations(conversationsArray);
       
       // Seleccionar la primera conversación si no hay ninguna seleccionada
@@ -194,8 +214,6 @@ const InstagramMessages: React.FC = () => {
       matchPoints = found[1] ? parseInt(found[1], 10) : 4;
     }
     // Opcional: buscar nombres de características cumplidas (si la IA los lista)
-    // Aquí podrías mejorar la extracción si la IA los enumera
-    // Por ahora, solo usamos el número
     if (matchPoints && idealTraits) {
       metTraits = idealTraits.slice(0, matchPoints);
     }
@@ -246,6 +264,7 @@ const InstagramMessages: React.FC = () => {
           });
         }
         localStorage.setItem('hower-conversations', JSON.stringify(savedConvs));
+        
         // Enviar la respuesta automática usando la API real de Instagram
         const sendResult = await sendInstagramMessage(
           message.sender_id,
@@ -306,11 +325,34 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
+  // Función para extraer matchPoints de la respuesta de IA
+  function extractMatchFromAIResponse(aiResponse, idealTraits) {
+    let matchPoints = 0;
+    let metTraits = [];
+    // Buscar la nota interna
+    const matchRegex = /([0-4])\s*\/\s*4|Prospecto ideal \(4\/4\)/i;
+    const found = aiResponse.match(matchRegex);
+    if (found) {
+      matchPoints = found[1] ? parseInt(found[1], 10) : 4;
+    }
+    // Opcional: buscar nombres de características cumplidas (si la IA los lista)
+    if (matchPoints && idealTraits) {
+      metTraits = idealTraits.slice(0, matchPoints);
+    }
+    return { matchPoints, metTraits };
+  }
+
+  // Determinar el tipo correcto de mensaje basado en mi page ID
   const myPageId = pageId || localStorage.getItem('hower-page-id');
-  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages.map(msg => ({
-    ...msg,
-    message_type: msg.sender_id === myPageId ? 'sent' : 'received'
-  })) || [];
+  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages.map(msg => {
+    // Si el sender_id del mensaje es mi page ID, entonces YO envié el mensaje
+    // Si no, entonces el prospecto me envió el mensaje
+    const isMyMessage = myPageId && msg.sender_id === myPageId;
+    return {
+      ...msg,
+      message_type: isMyMessage ? 'sent' : 'received'
+    };
+  }) || [];
 
   // Botón Alimentar IA
   const handleFeedAI = async () => {
