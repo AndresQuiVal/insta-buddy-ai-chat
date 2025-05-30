@@ -37,6 +37,19 @@ const Beta: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
+      {/* Wistia Scripts */}
+      <script src="https://fast.wistia.com/player.js" async></script>
+      <script src="https://fast.wistia.com/embed/6ux3509b4n.js" async type="module"></script>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          wistia-player[media-id='6ux3509b4n']:not(:defined) { 
+            background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/6ux3509b4n/swatch'); 
+            display: block; 
+            filter: blur(5px); 
+          }
+        `
+      }} />
+
       {/* Header */}
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
@@ -55,19 +68,6 @@ const Beta: React.FC = () => {
           {/* Video Section */}
           <div className="order-2 lg:order-1">
             <div className="relative">
-              {/* Scripts de Wistia */}
-              <script src="https://fast.wistia.com/player.js" async></script>
-              <script src="https://fast.wistia.com/embed/6ux3509b4n.js" async type="module"></script>
-              <style dangerouslySetInnerHTML={{
-                __html: `
-                  wistia-player[media-id='6ux3509b4n']:not(:defined) { 
-                    background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/6ux3509b4n/swatch'); 
-                    display: block; 
-                    filter: blur(5px); 
-                  }
-                `
-              }} />
-              
               <div className="rounded-2xl overflow-hidden shadow-2xl">
                 <wistia-player 
                   media-id="6ux3509b4n" 
@@ -77,7 +77,7 @@ const Beta: React.FC = () => {
                     maxWidth: '500px',
                     height: 'auto'
                   }}
-                ></wistia-player>
+                />
               </div>
             </div>
           </div>
