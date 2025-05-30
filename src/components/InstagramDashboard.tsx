@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -24,7 +25,8 @@ import {
   CheckCircle,
   Info,
   Lightbulb,
-  ArrowLeft
+  ArrowLeft,
+  UserPlus
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,8 +47,6 @@ interface DashboardStats {
   averageResponseTime: number;
   todayMessages: number;
   totalInvitations: number;
-  totalPresentations: number;
-  totalInscriptions: number;
   responseRate: number;
   lastMessageDate: string | null;
 }
@@ -73,8 +73,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     averageResponseTime: 0,
     todayMessages: 0,
     totalInvitations: 0,
-    totalPresentations: 0,
-    totalInscriptions: 0,
     responseRate: 0,
     lastMessageDate: null
   });
@@ -150,21 +148,21 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
       recs.push({
         type: 'warning',
         title: 'Sin Actividad Hoy',
-        message: 'No has enviado mensajes hoy. La consistencia es clave para el éxito en prospección.',
-        action: 'Establece una meta diaria de al menos 10-20 mensajes para mantener el momentum.'
+        message: 'No has contactado nuevos prospectos hoy. La consistencia es clave para el éxito en prospección.',
+        action: 'Establece una meta diaria de al menos 10-20 nuevos prospectos para mantener el momentum.'
       });
     } else if (stats.todayMessages < 10) {
       recs.push({
         type: 'info',
         title: 'Actividad Baja Hoy',
-        message: `Has enviado ${stats.todayMessages} mensajes hoy. Considera aumentar tu volumen diario.`,
-        action: 'Intenta enviar al menos 20 mensajes diarios para mejores resultados.'
+        message: `Has contactado ${stats.todayMessages} nuevos prospectos hoy. Considera aumentar tu volumen diario.`,
+        action: 'Intenta contactar al menos 20 nuevos prospectos diarios para mejores resultados.'
       });
     } else if (stats.todayMessages >= 20) {
       recs.push({
         type: 'success',
         title: '¡Gran Actividad Hoy!',
-        message: `Has enviado ${stats.todayMessages} mensajes hoy. ¡Excelente trabajo!`,
+        message: `Has contactado ${stats.todayMessages} nuevos prospectos hoy. ¡Excelente trabajo!`,
         action: 'Mantén esta consistencia para maximizar tus resultados.'
       });
     }
@@ -176,15 +174,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
         title: 'Sin Invitaciones',
         message: 'Has enviado mensajes pero no has logrado invitaciones.',
         action: 'Enfócate en generar más interés antes de hacer la invitación formal.'
-      });
-    }
-
-    if (stats.totalInscriptions === 0 && stats.totalPresentations > 0) {
-      recs.push({
-        type: 'danger',
-        title: 'Sin Inscripciones',
-        message: 'Has hecho presentaciones pero no has logrado inscripciones.',
-        action: 'Revisa tu propuesta de valor y considera ajustar tu oferta o presentación.'
       });
     }
 
@@ -232,8 +221,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
       const messagesSent = messages?.filter(m => m.message_type === 'sent').length || 0;
       const messagesReceived = messages?.filter(m => m.message_type === 'received').length || 0;
       const totalInvitations = messages?.filter(m => m.is_invitation).length || 0;
-      const totalPresentations = messages?.filter(m => m.is_presentation).length || 0;
-      const totalInscriptions = messages?.filter(m => m.is_inscription).length || 0;
 
       // Mensajes de hoy (siempre calculado para el día actual)
       const today = new Date();
@@ -267,8 +254,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
         averageResponseTime,
         todayMessages,
         totalInvitations,
-        totalPresentations,
-        totalInscriptions,
         responseRate,
         lastMessageDate: lastMessage?.created_at || null
       };
@@ -315,7 +300,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           <RefreshCw className="w-6 h-6 text-purple-400 animate-spin" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <div key={i} className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 animate-pulse">
               <div className="h-20 bg-gray-200 rounded"></div>
             </div>
@@ -369,11 +354,11 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
       </div>
 
       {/* Métricas Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Mensajes Hoy"
+          title="Nuevos prospectos contactados"
           value={stats.todayMessages}
-          icon={<Calendar className="w-6 h-6 text-white" />}
+          icon={<UserPlus className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-blue-500 to-purple-500"
         />
 
@@ -389,20 +374,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={stats.totalInvitations}
           icon={<Target className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-orange-500 to-red-500"
-        />
-
-        <StatCard
-          title="Presentaciones"
-          value={stats.totalPresentations}
-          icon={<Award className="w-6 h-6 text-white" />}
-          color="bg-gradient-to-r from-cyan-500 to-blue-500"
-        />
-
-        <StatCard
-          title="Inscripciones"
-          value={stats.totalInscriptions}
-          icon={<Zap className="w-6 h-6 text-white" />}
-          color="bg-gradient-to-r from-purple-500 to-pink-500"
         />
 
         <StatCard
