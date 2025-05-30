@@ -211,7 +211,7 @@ const InstagramMessages: React.FC = () => {
           sender_id: prospectId,
           messages: sortedMessages,
           last_message: sortedMessages[sortedMessages.length - 1],
-          unread_count: unreadCount,
+          unread_count: 0, // Quitar conteo de no leídos
           matchPoints: localMatch.matchPoints || 0,
           metTraits: localMatch.metTraits || []
         };
@@ -537,11 +537,6 @@ const InstagramMessages: React.FC = () => {
                             ))}
                           </span>
                         </h4>
-                        {conversation.unread_count > 0 && (
-                          <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
-                            {conversation.unread_count}
-                          </span>
-                        )}
                       </div>
                       <p className="text-sm text-gray-500 truncate">
                         {conversation.last_message.message_text}
