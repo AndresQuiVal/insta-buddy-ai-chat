@@ -54,7 +54,7 @@ serve(async (req) => {
     console.log('✅ OpenAI API Key configurada, generando respuesta...');
     console.log('Mensaje a analizar (primeros 200 chars):', message.substring(0, 200));
 
-    // Llamar a OpenAI API con prompt ultra conciso
+    // Llamar a OpenAI API con estructura específica
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -66,14 +66,14 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Eres un experto en ventas. Dame UNA sugerencia súper corta (máximo 1 oración) del siguiente mensaje que debo enviar o acción que debo tomar. Sin explicaciones adicionales.'
+            content: 'Eres un experto en ventas. Responde con esta estructura EXACTA:\n\n**Contexto:** [Descripción breve de la situación en 1-2 oraciones]\n**Sugerencia:** [Mensaje específico que debe enviar o acción que debe tomar]\n\nSé directo, conciso y práctico.'
           },
           {
             role: 'user',
             content: message
           }
         ],
-        max_tokens: 50, // Muy reducido para respuestas ultra cortas
+        max_tokens: 120, // Ajustado para permitir la estructura pero mantener concisión
         temperature: 0.7
       }),
     });
