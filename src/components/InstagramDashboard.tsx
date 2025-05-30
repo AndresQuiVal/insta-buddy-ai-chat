@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { disconnectInstagram } from '@/services/instagramService';
 import RecommendationsCarousel from './RecommendationsCarousel';
+import MetricTooltip from './MetricTooltip';
 import { 
   MessageCircle, 
   Users, 
@@ -278,19 +278,40 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     value: string | number;
     icon: React.ReactNode;
     color: string;
-  }> = ({ title, value, icon, color }) => (
-    <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 hover:shadow-xl transition-all duration-200">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
-        </div>
-        <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center`}>
-          {icon}
+    tooltip?: {
+      title: string;
+      description: string;
+      examples?: string[];
+    };
+  }> = ({ title, value, icon, color, tooltip }) => {
+    const cardContent = (
+      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 hover:shadow-xl transition-all duration-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+          </div>
+          <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center`}>
+            {icon}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+
+    if (tooltip) {
+      return (
+        <MetricTooltip
+          title={tooltip.title}
+          description={tooltip.description}
+          examples={tooltip.examples}
+        >
+          {cardContent}
+        </MetricTooltip>
+      );
+    }
+
+    return cardContent;
+  };
 
   if (loading) {
     return (
@@ -360,6 +381,15 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={stats.todayMessages}
           icon={<UserPlus className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-blue-500 to-purple-500"
+          tooltip={{
+            title: "Nuevos prospectos contactados hoy",
+            description: "Número de personas nuevas a las que has enviado un primer mensaje hoy. Esta métrica te ayuda a medir tu actividad diaria de prospección.",
+            examples: [
+              "Enviaste mensaje a @usuario1, @usuario2, @usuario3 = 3",
+              "Solo cuenta el primer contacto con cada persona",
+              "Se reinicia cada día a las 00:00"
+            ]
+          }}
         />
 
         <StatCard
@@ -367,6 +397,15 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={stats.messagesReceived}
           icon={<Inbox className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-green-500 to-teal-500"
+          tooltip={{
+            title: "Respuestas recibidas únicas",
+            description: "Número de prospectos que han respondido a tus mensajes. Solo cuenta la primera respuesta de cada persona o respuestas después de 5+ horas de silencio.",
+            examples: [
+              "Prospecto responde por primera vez = +1",
+              "Prospecto responde después de 5+ horas = +1", 
+              "Respuestas inmediatas en conversación = no cuenta"
+            ]
+          }}
         />
 
         <StatCard
@@ -374,6 +413,15 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={stats.totalInvitations}
           icon={<Target className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-orange-500 to-red-500"
+          tooltip={{
+            title: "Enlaces de reunión enviados",
+            description: "Número de veces que has enviado enlaces de Zoom, Google Meet u otras plataformas de videollamada a tus prospectos.",
+            examples: [
+              "Links de Zoom: zoom.us/j/123456",
+              "Links de Google Meet: meet.google.com/abc-def",
+              "Links de Teams, Skype, etc."
+            ]
+          }}
         />
 
         <StatCard
@@ -381,6 +429,15 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           value={`${stats.averageResponseTime.toFixed(1)}s`}
           icon={<Clock className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-pink-500 to-rose-500"
+          tooltip={{
+            title: "Tiempo promedio de respuesta",
+            description: "Tiempo promedio que tardan tus prospectos en responderte desde que envías un mensaje. Un tiempo menor indica mayor interés.",
+            examples: [
+              "Menos de 1 hora = muy interesado",
+              "1-24 horas = interés moderado",
+              "Más de 24 horas = interés bajo"
+            ]
+          }}
         />
       </div>
 
