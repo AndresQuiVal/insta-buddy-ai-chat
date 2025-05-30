@@ -18,7 +18,7 @@ export const useProspects = () => {
   const determineProspectState = (messages: any[]): 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up' => {
     if (messages.length === 0) return 'first_message_sent';
 
-    // Ordenar mensajes por timestamp
+    // Ordenar mensajes por timestamp para este prospecto específico
     const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     const lastMessage = sortedMessages[sortedMessages.length - 1];
 
@@ -54,14 +54,9 @@ export const useProspects = () => {
       const receivedMessages = messages.filter(msg => msg.message_type === 'received');
       
       if (receivedMessages.length > 0) {
-        // Ya había conversación previa
-        if (hoursSinceLastSent > 24) {
-          console.log(`✅ Estado: REACTIVATION_SENT (${hoursSinceLastSent.toFixed(1)}h sin respuesta, había conversación)`);
-          return 'reactivation_sent';
-        } else {
-          console.log(`✅ Estado: FOLLOW_UP (mensaje reciente con conversación previa: ${hoursSinceLastSent.toFixed(1)}h)`);
-          return 'follow_up';
-        }
+        // Ya había conversación previa - siempre debe estar en "follow_up" (En seguimiento)
+        console.log(`✅ Estado: FOLLOW_UP (había conversación previa, ${receivedMessages.length} respuestas del prospecto)`);
+        return 'follow_up';
       } else {
         // No había conversación previa (el usuario nunca ha respondido)
         if (hoursSinceLastSent > 24) {
@@ -189,6 +184,8 @@ export const useProspects = () => {
             new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
           );
           const lastMessage = sortedMessages[0];
+          
+          // Determinar estado basado SOLO en los mensajes de ESTE prospecto
           const state = determineProspectState(senderMessages);
           const username = await extractUsernameFromMessage(senderMessages, senderId);
 
