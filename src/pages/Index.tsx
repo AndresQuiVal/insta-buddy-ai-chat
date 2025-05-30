@@ -309,8 +309,8 @@ Responde siempre con el tono y estilo de la personalidad indicada arriba.
               alt="Logo Hower"
               className="w-12 h-12 rounded-2xl object-cover"
             />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Hower Assistant
+            <h1 className="text-4xl font-light bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Hower <span className="font-bold">Assistant</span>
             </h1>
           </div>
           <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
