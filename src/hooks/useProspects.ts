@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -6,7 +5,7 @@ export interface Prospect {
   id: string;
   senderId: string;
   username: string;
-  state: 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up';
+  state: 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up';
   lastMessageTime: string;
   lastMessageType: 'sent' | 'received';
   conversationMessages: any[];
@@ -28,12 +27,12 @@ export const useProspects = () => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const determineProspectState = (messages: InstagramMessage[], senderId: string): 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up' => {
+  const determineProspectState = (messages: InstagramMessage[], senderId: string): 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up' => {
     console.log(`🔍 [${senderId.slice(-8)}] Determinando estado con ${messages.length} mensajes`);
     
     if (messages.length === 0) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: FIRST_MESSAGE_SENT (sin mensajes)`);
-      return 'first_message_sent';
+      console.log(`✅ [${senderId.slice(-8)}] Estado: NO_RESPONSE (sin mensajes)`);
+      return 'no_response';
     }
 
     // CRÍTICO: Validar que TODOS los mensajes pertenecen al mismo sender_id
@@ -92,14 +91,14 @@ export const useProspects = () => {
           console.log(`✅ [${senderId.slice(-8)}] Estado: NO_RESPONSE (${hoursSinceLastSent.toFixed(1)}h sin respuesta, primera vez)`);
           return 'no_response';
         } else {
-          console.log(`✅ [${senderId.slice(-8)}] Estado: FIRST_MESSAGE_SENT (mensaje reciente, primera vez: ${hoursSinceLastSent.toFixed(1)}h)`);
-          return 'first_message_sent';
+          console.log(`✅ [${senderId.slice(-8)}] Estado: FOLLOW_UP (mensaje reciente, considerado seguimiento: ${hoursSinceLastSent.toFixed(1)}h)`);
+          return 'follow_up';
         }
       }
     }
 
-    console.log(`✅ [${senderId.slice(-8)}] Estado: FIRST_MESSAGE_SENT (fallback)`);
-    return 'first_message_sent';
+    console.log(`✅ [${senderId.slice(-8)}] Estado: NO_RESPONSE (fallback)`);
+    return 'no_response';
   };
 
   const fetchInstagramUsername = async (senderId: string): Promise<string> => {

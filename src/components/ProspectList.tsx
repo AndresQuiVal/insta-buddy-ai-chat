@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,6 @@ import { useProspects } from '@/hooks/useProspects';
 import { supabase } from '@/integrations/supabase/client';
 
 const stateConfig = {
-  first_message_sent: {
-    label: 'Primer mensaje enviado',
-    color: 'bg-blue-100 text-blue-700'
-  },
   follow_up: {
     label: 'En seguimiento',
     color: 'bg-orange-100 text-orange-700'
