@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Sparkles, Loader2 } from 'lucide-react';
+import { MessageSquare, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { useProspects } from '@/hooks/useProspects';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,11 +36,16 @@ const ProspectList = () => {
     setSelectedProspect(prospect.id);
     
     try {
-      // Llamar a la función de Supabase para obtener sugerencia de IA
+      // Preparar historial de conversación en formato legible
       const conversationHistory = prospect.conversationMessages
         .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-        .map((msg: any) => `${msg.message_type === 'sent' ? 'Yo' : prospect.username}: ${msg.message_text}`)
+        .map((msg: any) => {
+          const sender = msg.message_type === 'sent' ? 'Yo' : prospect.username;
+          return `${sender}: ${msg.message_text}`;
+        })
         .join('\n');
+
+      console.log('Enviando conversación para análisis:', conversationHistory);
 
       const { data, error } = await supabase.functions.invoke('chatgpt-response', {
         body: {
@@ -58,13 +63,15 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
 
       if (error) {
         console.error('Error getting AI suggestion:', error);
-        setSuggestion('No se pudo obtener una sugerencia en este momento. Intenta nuevamente.');
+        setSuggestion('Error al conectar con el servicio de IA. Verifica que la API key de OpenAI esté configurada en la configuración de Supabase.');
+      } else if (data?.response) {
+        setSuggestion(data.response);
       } else {
-        setSuggestion(data.response || 'No se pudo generar una sugerencia.');
+        setSuggestion('No se pudo generar una sugerencia. Intenta nuevamente.');
       }
     } catch (error) {
       console.error('Error:', error);
-      setSuggestion('Error al obtener sugerencia de IA.');
+      setSuggestion('Error de conexión. Verifica que la función de IA esté configurada correctamente.');
     } finally {
       setIsLoadingSuggestion(false);
     }
@@ -104,7 +111,7 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="space-y-2 flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                      <span className="font-medium text-gray-900 text-sm sm:text-base">@{prospect.username}</span>
+                      <span className="font-medium text-gray-900 text-sm sm:text-base">{prospect.username}</span>
                       <Badge className={`${stateConfig[prospect.state].color} text-xs sm:text-sm whitespace-nowrap`}>
                         {stateConfig[prospect.state].label}
                       </Badge>
@@ -116,7 +123,10 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                         year: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
-                      })}
+                      })} • {prospect.lastMessageType === 'sent' ? 'Enviado por ti' : 'Recibido'}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {prospect.conversationMessages.length} mensaje(s) en total
                     </div>
                   </div>
                   <Button
@@ -131,20 +141,28 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                     ) : (
                       <Sparkles className="w-4 h-4" />
                     )}
-                    <span className="text-xs sm:text-sm">Sugerencia</span>
+                    <span className="text-xs sm:text-sm">Sugerencia IA</span>
                   </Button>
                 </div>
                 
                 {selectedProspect === prospect.id && (
                   <div className="mt-3 p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-100">
                     <div className="flex items-start gap-3">
-                      <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mt-1" />
+                      {suggestion?.includes('Error') || suggestion?.includes('Verifica') ? (
+                        <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-1" />
+                      ) : (
+                        <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mt-1" />
+                      )}
                       <div>
-                        <h4 className="font-medium text-purple-900 text-sm sm:text-base mb-1">Sugerencia de IA</h4>
+                        <h4 className="font-medium text-purple-900 text-sm sm:text-base mb-1">
+                          {suggestion?.includes('Error') ? 'Error de Configuración' : 'Sugerencia de IA'}
+                        </h4>
                         {isLoadingSuggestion ? (
                           <p className="text-xs sm:text-sm text-purple-600">Analizando conversación...</p>
                         ) : (
-                          <p className="text-xs sm:text-sm text-purple-700">{suggestion}</p>
+                          <p className={`text-xs sm:text-sm ${suggestion?.includes('Error') ? 'text-red-700' : 'text-purple-700'}`}>
+                            {suggestion}
+                          </p>
                         )}
                       </div>
                     </div>

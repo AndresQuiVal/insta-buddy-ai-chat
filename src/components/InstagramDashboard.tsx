@@ -240,6 +240,56 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     return uniqueResponses;
   };
 
+  // Función para calcular tiempo promedio de respuesta real
+  const calculateAverageResponseTime = (messages: any[]) => {
+    const responseTimes: number[] = [];
+    
+    // Agrupar mensajes por sender_id (prospecto)
+    const messagesByProspect = messages.reduce((acc, message) => {
+      if (!acc[message.sender_id]) {
+        acc[message.sender_id] = [];
+      }
+      acc[message.sender_id].push(message);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    // Para cada prospecto, calcular tiempos de respuesta
+    Object.values(messagesByProspect).forEach((prospectMessages: any[]) => {
+      const sortedMessages = prospectMessages.sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      for (let i = 1; i < sortedMessages.length; i++) {
+        const currentMsg = sortedMessages[i];
+        const previousMsg = sortedMessages[i - 1];
+
+        // Si el mensaje actual es una respuesta (received) y el anterior fue enviado (sent)
+        if (currentMsg.message_type === 'received' && previousMsg.message_type === 'sent') {
+          const responseTime = new Date(currentMsg.timestamp).getTime() - new Date(previousMsg.timestamp).getTime();
+          const responseTimeInSeconds = responseTime / 1000;
+          responseTimes.push(responseTimeInSeconds);
+        }
+      }
+    });
+
+    return responseTimes.length > 0 
+      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length 
+      : 0;
+  };
+
+  // Función para formatear tiempo de respuesta
+  const formatResponseTime = (seconds: number): string => {
+    if (seconds < 60) {
+      return `${Math.round(seconds)}s`;
+    } else if (seconds < 3600) {
+      return `${Math.round(seconds / 60)}m`;
+    } else if (seconds < 86400) {
+      return `${Math.round(seconds / 3600)}h`;
+    } else {
+      return `${Math.round(seconds / 86400)}d`;
+    }
+  };
+
   const loadDashboardStats = async () => {
     try {
       setLoading(true);
@@ -275,11 +325,8 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
 
       const todayMessages = todayData?.length || 0;
 
-      // Calcular tiempo promedio de respuesta
-      const responseTimes = messages?.filter(m => m.response_time_seconds).map(m => m.response_time_seconds) || [];
-      const averageResponseTime = responseTimes.length > 0 
-        ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length 
-        : 0;
+      // Calcular tiempo promedio de respuesta real
+      const averageResponseTime = calculateAverageResponseTime(messages || []);
 
       // Calcular tasa de respuesta
       const responseRate = messagesSent > 0 ? (messagesReceived / messagesSent) * 100 : 0;
@@ -468,7 +515,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
 
         <StatCard
           title="Tiempo de Respuesta"
-          value={`${stats.averageResponseTime.toFixed(1)}s`}
+          value={formatResponseTime(stats.averageResponseTime)}
           icon={<Clock className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-pink-500 to-rose-500"
           tooltip={{
