@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { supabase } from "../_shared/supabase.ts"
 
@@ -47,6 +48,47 @@ function detectInvitationLinks(messageText: string): boolean {
   ];
 
   return invitationPatterns.some(pattern => pattern.test(messageText));
+}
+
+// Función para verificar si una respuesta es única
+async function isUniqueResponse(senderId: string, timestamp: string): Promise<boolean> {
+  try {
+    // Obtener todos los mensajes recibidos de este prospecto, ordenados por timestamp
+    const { data: existingMessages, error } = await supabase
+      .from('instagram_messages')
+      .select('timestamp')
+      .eq('sender_id', senderId)
+      .eq('message_type', 'received')
+      .order('timestamp', { ascending: true });
+
+    if (error) {
+      console.error('Error checking unique response:', error);
+      return true; // En caso de error, asumimos que es única
+    }
+
+    // Si no hay mensajes previos, es la primera respuesta (única)
+    if (!existingMessages || existingMessages.length === 0) {
+      console.log(`✅ Primera respuesta del prospecto ${senderId} - ÚNICA`);
+      return true;
+    }
+
+    // Verificar si hay un gap de 5+ horas desde el último mensaje
+    const messageTime = new Date(timestamp).getTime();
+    const lastMessageTime = new Date(existingMessages[existingMessages.length - 1].timestamp).getTime();
+    const hoursDiff = (messageTime - lastMessageTime) / (1000 * 60 * 60);
+
+    if (hoursDiff >= 5) {
+      console.log(`✅ Respuesta después de ${hoursDiff.toFixed(1)} horas de silencio - ÚNICA`);
+      return true;
+    }
+
+    console.log(`❌ Respuesta después de solo ${hoursDiff.toFixed(1)} horas - NO ÚNICA`);
+    return false;
+
+  } catch (error) {
+    console.error('Error in isUniqueResponse:', error);
+    return true; // En caso de error, asumimos que es única
+  }
 }
 
 serve(async (req) => {
@@ -164,10 +206,15 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
     const senderId = messagingEvent.sender?.id || 'unknown_sender'
     const recipientId = messagingEvent.recipient?.id || pageId
     const messageText = message.text || 'Mensaje sin texto'
+    const timestamp = new Date(messagingEvent.timestamp || Date.now()).toISOString()
     
     // Detectar si el mensaje contiene enlaces de invitación
     const isInvitation = detectInvitationLinks(messageText)
     console.log(`🔍 Detección de invitación: ${isInvitation ? 'SÍ' : 'NO'} para mensaje: "${messageText}"`)
+    
+    // Verificar si es una respuesta única
+    const isUnique = await isUniqueResponse(senderId, timestamp)
+    console.log(`🔍 Respuesta única: ${isUnique ? 'SÍ' : 'NO'}`)
     
     // Determinar el nombre del usuario más legible
     const userName = `Usuario ${senderId.slice(-4)}`
@@ -177,18 +224,19 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
       sender_id: senderId,
       recipient_id: recipientId,
       message_text: messageText,
-      timestamp: new Date(messagingEvent.timestamp || Date.now()).toISOString(),
+      timestamp: timestamp,
       message_type: 'received',
       is_invitation: isInvitation,
       raw_data: { 
         original_event: messagingEvent,
         processed_at: new Date().toISOString(),
         source: 'messaging',
-        invitation_detected: isInvitation
+        invitation_detected: isInvitation,
+        is_unique_response: isUnique
       }
     }
 
-    console.log(`💾 Guardando mensaje: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''}`)
+    console.log(`💾 Guardando mensaje: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''} ${isUnique ? '(RESPUESTA ÚNICA)' : '(RESPUESTA NO ÚNICA)'}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -200,7 +248,7 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Mensaje guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''}`)
+    console.log(`✅ Mensaje guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''} ${isUnique ? '(respuesta única)' : '(respuesta no única)'}`)
 
     // Ya no generamos respuesta automática aquí - se maneja desde el frontend
     console.log(`📱 Mensaje procesado, respuesta automática se manejará desde el frontend`)
@@ -223,36 +271,42 @@ async function processChangeMessage(changeValue: any, pageId: string) {
     const recipientId = changeValue.recipient?.id || pageId
     const messageText = message?.text || 'Mensaje sin texto'
     
-    // Detectar si el mensaje contiene enlaces de invitación
-    const isInvitation = detectInvitationLinks(messageText)
-    console.log(`🔍 Detección de invitación: ${isInvitation ? 'SÍ' : 'NO'} para mensaje: "${messageText}"`)
-    
-    // Determinar el nombre del usuario más legible
-    const userName = `Usuario ${senderId.slice(-4)}`
-
     // Convertir timestamp de segundos a millisegundos si es necesario
     let timestamp = changeValue.timestamp
     if (timestamp && timestamp.toString().length === 10) {
       timestamp = parseInt(timestamp) * 1000
     }
+    const timestampISO = new Date(timestamp || Date.now()).toISOString()
+    
+    // Detectar si el mensaje contiene enlaces de invitación
+    const isInvitation = detectInvitationLinks(messageText)
+    console.log(`🔍 Detección de invitación: ${isInvitation ? 'SÍ' : 'NO'} para mensaje: "${messageText}"`)
+    
+    // Verificar si es una respuesta única
+    const isUnique = await isUniqueResponse(senderId, timestampISO)
+    console.log(`🔍 Respuesta única: ${isUnique ? 'SÍ' : 'NO'}`)
+    
+    // Determinar el nombre del usuario más legible
+    const userName = `Usuario ${senderId.slice(-4)}`
 
     const messageData = {
       instagram_message_id: message?.mid || `change_${Date.now()}_${Math.random()}`,
       sender_id: senderId,
       recipient_id: recipientId,
       message_text: messageText,
-      timestamp: new Date(timestamp || Date.now()).toISOString(),
+      timestamp: timestampISO,
       message_type: 'received',
       is_invitation: isInvitation,
       raw_data: { 
         original_change: changeValue,
         processed_at: new Date().toISOString(),
         source: 'changes',
-        invitation_detected: isInvitation
+        invitation_detected: isInvitation,
+        is_unique_response: isUnique
       }
     }
 
-    console.log(`💾 Guardando mensaje de change: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''}`)
+    console.log(`💾 Guardando mensaje de change: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''} ${isUnique ? '(RESPUESTA ÚNICA)' : '(RESPUESTA NO ÚNICA)'}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -264,7 +318,7 @@ async function processChangeMessage(changeValue: any, pageId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Mensaje de change guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''}`)
+    console.log(`✅ Mensaje de change guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''} ${isUnique ? '(respuesta única)' : '(respuesta no única)'}`)
 
     // Ya no generamos respuesta automática aquí - se maneja desde el frontend
     console.log(`📱 Mensaje procesado, respuesta automática se manejará desde el frontend`)
@@ -276,3 +330,4 @@ async function processChangeMessage(changeValue: any, pageId: string) {
     return { success: false, error: error.message }
   }
 }
+

@@ -198,6 +198,48 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     }
   };
 
+  // Función para calcular respuestas únicas
+  const calculateUniqueResponses = (messages: any[]) => {
+    // Agrupar mensajes por sender_id (prospecto)
+    const messagesByProspect = messages.reduce((acc, message) => {
+      if (message.message_type === 'received') {
+        if (!acc[message.sender_id]) {
+          acc[message.sender_id] = [];
+        }
+        acc[message.sender_id].push(message);
+      }
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    let uniqueResponses = 0;
+
+    // Para cada prospecto, contar respuestas únicas
+    Object.values(messagesByProspect).forEach((prospectMessages: any[]) => {
+      // Ordenar mensajes por timestamp
+      const sortedMessages = prospectMessages.sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      // La primera respuesta siempre cuenta
+      if (sortedMessages.length > 0) {
+        uniqueResponses++;
+      }
+
+      // Verificar gaps de 5+ horas entre respuestas
+      for (let i = 1; i < sortedMessages.length; i++) {
+        const currentTime = new Date(sortedMessages[i].timestamp).getTime();
+        const previousTime = new Date(sortedMessages[i - 1].timestamp).getTime();
+        const timeDiff = (currentTime - previousTime) / (1000 * 60 * 60); // diferencia en horas
+
+        if (timeDiff >= 5) {
+          uniqueResponses++;
+        }
+      }
+    });
+
+    return uniqueResponses;
+  };
+
   const loadDashboardStats = async () => {
     try {
       setLoading(true);
@@ -219,7 +261,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
 
       // Calcular estadísticas filtradas
       const messagesSent = messages?.filter(m => m.message_type === 'sent').length || 0;
-      const messagesReceived = messages?.filter(m => m.message_type === 'received').length || 0;
+      const messagesReceived = calculateUniqueResponses(messages || []);
       const totalInvitations = messages?.filter(m => m.is_invitation).length || 0;
 
       // Mensajes de hoy (siempre calculado para el día actual)
