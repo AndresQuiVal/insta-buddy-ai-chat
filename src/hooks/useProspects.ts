@@ -6,7 +6,7 @@ export interface Prospect {
   id: string;
   senderId: string;
   username: string;
-  state: 'primer_mensaje_enviado' | 'seguimiento' | 'sin_contestar' | 'invitado';
+  state: 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited';
   lastMessageTime: string;
   lastMessageType: 'sent' | 'received';
   conversationMessages: any[];
@@ -16,8 +16,8 @@ export const useProspects = () => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const determineProspectState = (messages: any[]): 'primer_mensaje_enviado' | 'seguimiento' | 'sin_contestar' | 'invitado' => {
-    if (messages.length === 0) return 'primer_mensaje_enviado';
+  const determineProspectState = (messages: any[]): 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited' => {
+    if (messages.length === 0) return 'first_message_sent';
 
     // Ordenar mensajes por timestamp
     const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -26,12 +26,12 @@ export const useProspects = () => {
     // Verificar si hay invitaciones enviadas
     const hasInvitation = messages.some(msg => msg.is_invitation === true && msg.message_type === 'sent');
     if (hasInvitation) {
-      return 'invitado';
+      return 'invited';
     }
 
     // Si el último mensaje lo recibí (el prospecto me escribió) = necesita respuesta
     if (lastMessage.message_type === 'received') {
-      return 'sin_contestar';
+      return 'no_response';
     }
 
     // Si el último mensaje lo envié yo
@@ -45,16 +45,16 @@ export const useProspects = () => {
         // Verificar si ya había una conversación previa (si el prospecto había respondido antes)
         const receivedMessages = messages.filter(msg => msg.message_type === 'received');
         if (receivedMessages.length > 0) {
-          return 'seguimiento';
+          return 'reactivation_sent';
         } else {
-          return 'sin_contestar';
+          return 'no_response';
         }
       } else {
-        return 'primer_mensaje_enviado';
+        return 'first_message_sent';
       }
     }
 
-    return 'primer_mensaje_enviado';
+    return 'first_message_sent';
   };
 
   const extractUsernameFromMessage = (messages: any[]): string => {
@@ -63,29 +63,30 @@ export const useProspects = () => {
       if (message.raw_data) {
         // Intentar extraer username de diferentes lugares en raw_data
         if (message.raw_data.entry?.[0]?.messaging?.[0]?.sender?.id) {
+          const senderId = message.raw_data.entry[0].messaging[0].sender.id;
           // Si hay información del usuario en los datos
           if (message.raw_data.user?.username) {
-            return `@${message.raw_data.user.username}`;
+            return message.raw_data.user.username;
           }
           // Si hay información en el perfil
           if (message.raw_data.profile?.username) {
-            return `@${message.raw_data.profile.username}`;
+            return message.raw_data.profile.username;
           }
         }
         
         // Intentar otros campos comunes donde puede estar el username
         if (message.raw_data.username) {
-          return `@${message.raw_data.username}`;
+          return message.raw_data.username;
         }
         if (message.raw_data.from?.username) {
-          return `@${message.raw_data.from.username}`;
+          return message.raw_data.from.username;
         }
       }
     }
     
     // Si no se encuentra username en raw_data, usar el sender_id como fallback
     const senderId = messages[0]?.sender_id;
-    return senderId ? `Usuario ${senderId.slice(-4)}` : 'Usuario desconocido';
+    return senderId ? `@${senderId.slice(-8)}` : 'Usuario desconocido';
   };
 
   const fetchProspects = async () => {
