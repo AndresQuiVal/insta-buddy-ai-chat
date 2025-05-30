@@ -12,11 +12,23 @@ export interface Prospect {
   conversationMessages: any[];
 }
 
+interface InstagramMessage {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  message_type: 'sent' | 'received';
+  message_text: string;
+  timestamp: string;
+  is_invitation?: boolean;
+  raw_data?: any;
+  [key: string]: any;
+}
+
 export const useProspects = () => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const determineProspectState = (messages: any[], senderId: string): 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up' => {
+  const determineProspectState = (messages: InstagramMessage[], senderId: string): 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up' => {
     console.log(`🔍 [${senderId.slice(-8)}] Determinando estado con ${messages.length} mensajes`);
     
     if (messages.length === 0) {
@@ -125,7 +137,7 @@ export const useProspects = () => {
     return `@user_${senderId.slice(-8)}`;
   };
 
-  const extractUsernameFromMessage = async (messages: any[], senderId: string): Promise<string> => {
+  const extractUsernameFromMessage = async (messages: InstagramMessage[], senderId: string): Promise<string> => {
     // Primero intentar obtener el username real de Instagram
     const realUsername = await fetchInstagramUsername(senderId);
     if (realUsername && !realUsername.includes('user_')) {
@@ -165,7 +177,7 @@ export const useProspects = () => {
     return realUsername;
   };
 
-  const createProspectFromMessages = async (senderId: string, senderMessages: any[]): Promise<Prospect> => {
+  const createProspectFromMessages = async (senderId: string, senderMessages: InstagramMessage[]): Promise<Prospect> => {
     console.log(`👤 [${senderId.slice(-8)}] Procesando prospecto con ${senderMessages.length} mensajes`);
     
     // VALIDACIÓN CRÍTICA: Asegurar que TODOS los mensajes pertenecen a este sender
@@ -177,7 +189,7 @@ export const useProspects = () => {
       console.error(`❌ [${senderId.slice(-8)}] FILTRO DE SEGURIDAD: ${senderMessages.length - messagesForThisSender.length} mensajes eliminados por no pertenecer a este prospecto`);
     }
 
-    const sortedMessages = messagesForThisSender.sort((a: any, b: any) => 
+    const sortedMessages = messagesForThisSender.sort((a: InstagramMessage, b: InstagramMessage) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
     const lastMessage = sortedMessages[0];
@@ -186,8 +198,8 @@ export const useProspects = () => {
     const state = determineProspectState(messagesForThisSender, senderId);
     const username = await extractUsernameFromMessage(messagesForThisSender, senderId);
 
-    const receivedCount = messagesForThisSender.filter((msg: any) => msg.message_type === 'received').length;
-    const sentCount = messagesForThisSender.filter((msg: any) => msg.message_type === 'sent').length;
+    const receivedCount = messagesForThisSender.filter((msg: InstagramMessage) => msg.message_type === 'received').length;
+    const sentCount = messagesForThisSender.filter((msg: InstagramMessage) => msg.message_type === 'sent').length;
 
     console.log(`👤 [${senderId.slice(-8)}] Prospecto ${username}:`, {
       totalMessages: messagesForThisSender.length,
@@ -228,7 +240,7 @@ export const useProspects = () => {
       console.log(`📊 Total mensajes obtenidos: ${messages?.length || 0}`);
 
       // Agrupar mensajes por sender_id con validación estricta
-      const messagesBySender = messages?.reduce((acc: any, message) => {
+      const messagesBySender = messages?.reduce((acc: Record<string, InstagramMessage[]>, message: InstagramMessage) => {
         // Determinar el sender_id real (puede ser sender o recipient)
         const actualSenderId = message.message_type === 'sent' ? message.recipient_id : message.sender_id;
         
@@ -242,8 +254,8 @@ export const useProspects = () => {
       console.log(`👥 Prospectos únicos encontrados: ${Object.keys(messagesBySender).length}`);
 
       // Validar que no haya contaminación cruzada
-      Object.entries(messagesBySender).forEach(([senderId, senderMessages]: [string, any]) => {
-        const foreignMessages = senderMessages.filter((msg: any) => 
+      Object.entries(messagesBySender).forEach(([senderId, senderMessages]: [string, InstagramMessage[]]) => {
+        const foreignMessages = senderMessages.filter((msg: InstagramMessage) => 
           msg.sender_id !== senderId && msg.recipient_id !== senderId
         );
         if (foreignMessages.length > 0) {
@@ -253,7 +265,7 @@ export const useProspects = () => {
 
       // Crear prospectos a partir de los mensajes agrupados
       const prospectsData: Prospect[] = await Promise.all(
-        Object.entries(messagesBySender).map(async ([senderId, senderMessages]: [string, any]) => {
+        Object.entries(messagesBySender).map(async ([senderId, senderMessages]: [string, InstagramMessage[]]) => {
           return await createProspectFromMessages(senderId, senderMessages);
         })
       );
@@ -269,7 +281,7 @@ export const useProspects = () => {
       const stateStats = prospectsData.reduce((acc, p) => {
         acc[p.state] = (acc[p.state] || 0) + 1;
         return acc;
-      }, {} as any);
+      }, {} as Record<string, number>);
       
       console.log('📊 Estados finales:', stateStats);
       
@@ -308,7 +320,7 @@ export const useProspects = () => {
         return;
       }
 
-      const updatedProspect = await createProspectFromMessages(senderId, messages);
+      const updatedProspect = await createProspectFromMessages(senderId, messages as InstagramMessage[]);
       
       setProspects(prev => {
         const otherProspects = prev.filter(p => p.senderId !== senderId);
@@ -343,10 +355,11 @@ export const useProspects = () => {
           
           // Identificar qué prospecto cambió
           const changedMessage = payload.new || payload.old;
-          if (changedMessage) {
-            const affectedSenderId = changedMessage.message_type === 'sent' 
-              ? changedMessage.recipient_id 
-              : changedMessage.sender_id;
+          if (changedMessage && typeof changedMessage === 'object') {
+            const message = changedMessage as InstagramMessage;
+            const affectedSenderId = message.message_type === 'sent' 
+              ? message.recipient_id 
+              : message.sender_id;
             
             console.log(`🎯 Actualizando solo prospecto afectado: ${affectedSenderId?.slice(-8)}`);
             
