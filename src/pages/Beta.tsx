@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, Users, Zap, Brain, BarChart3, MessageSquare } from 'lucide-react';
+import { CheckCircle, Calendar, Users, Smartphone, Brain, Filter, BarChart3 } from 'lucide-react';
 
 const Beta: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +12,38 @@ const Beta: React.FC = () => {
     email: '',
     business: ''
   });
+
+  useEffect(() => {
+    // Cargar scripts de Wistia dinámicamente
+    const script1 = document.createElement('script');
+    script1.src = 'https://fast.wistia.com/player.js';
+    script1.async = true;
+    document.head.appendChild(script1);
+
+    const script2 = document.createElement('script');
+    script2.src = 'https://fast.wistia.com/embed/6ux3509b4n.js';
+    script2.type = 'module';
+    script2.async = true;
+    document.head.appendChild(script2);
+
+    // Agregar estilos de Wistia
+    const style = document.createElement('style');
+    style.textContent = `
+      wistia-player[media-id='6ux3509b4n']:not(:defined) { 
+        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/6ux3509b4n/swatch'); 
+        display: block; 
+        filter: blur(5px); 
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      // Cleanup si es necesario
+      document.head.removeChild(script1);
+      document.head.removeChild(script2);
+      document.head.removeChild(style);
+    };
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -37,19 +69,6 @@ const Beta: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-      {/* Wistia Scripts */}
-      <script src="https://fast.wistia.com/player.js" async></script>
-      <script src="https://fast.wistia.com/embed/6ux3509b4n.js" async type="module"></script>
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          wistia-player[media-id='6ux3509b4n']:not(:defined) { 
-            background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/6ux3509b4n/swatch'); 
-            display: block; 
-            filter: blur(5px); 
-          }
-        `
-      }} />
-
       {/* Header */}
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
@@ -68,7 +87,7 @@ const Beta: React.FC = () => {
           {/* Video Section */}
           <div className="order-2 lg:order-1">
             <div className="relative">
-              <div className="rounded-2xl overflow-hidden shadow-2xl">
+              <div className="rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
                 <wistia-player 
                   media-id="6ux3509b4n" 
                   aspect="0.5388888888888889" 
@@ -85,11 +104,15 @@ const Beta: React.FC = () => {
           {/* Content Section */}
           <div className="order-1 lg:order-2 space-y-8">
             <div className="space-y-4">
-              <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent leading-tight">
-                Únete a la Beta de Hower Assistant
+              <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
+                Únete a la Beta de{' '}
+                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-800 bg-clip-text text-transparent">
+                  Hower Assistant
+                </span>
               </h1>
               <p className="text-xl text-gray-600 leading-relaxed">
-                El primer asistente de IA que automatiza completamente tu gestión de prospectos en Instagram, filtrando automáticamente los leads más valiosos.
+                4 procesos inteligentes filtrados con IA avanzada. 
+                <span className="font-semibold text-purple-700"> La Inteligencia Artificial será tu mejor aliado.</span>
               </p>
               
               <div className="flex flex-wrap gap-3">
@@ -104,34 +127,46 @@ const Beta: React.FC = () => {
               </div>
             </div>
 
-            {/* Beneficios */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-purple-600" />
+            {/* 4 Beneficios Principales */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Smartphone className="w-5 h-5 text-purple-600" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">Automatización 24/7</span>
+                <div>
+                  <span className="text-sm font-semibold text-gray-800">Prospección en tu celular</span>
+                  <p className="text-xs text-gray-600">Automatización móvil 24/7</p>
+                </div>
               </div>
               
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-                  <Brain className="w-4 h-4 text-pink-600" />
+              <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
+                <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-pink-600" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">Filtrado con IA</span>
+                <div>
+                  <span className="text-sm font-semibold text-gray-800">Seguimientos con IA</span>
+                  <p className="text-xs text-gray-600">Sugerencias inteligentes</p>
+                </div>
               </div>
               
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <MessageSquare className="w-4 h-4 text-purple-600" />
+              <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Filter className="w-5 h-5 text-purple-600" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">Respuestas inteligentes</span>
+                <div>
+                  <span className="text-sm font-semibold text-gray-800">Filtrado con IA</span>
+                  <p className="text-xs text-gray-600">Prospectos de calidad</p>
+                </div>
               </div>
               
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-                  <BarChart3 className="w-4 h-4 text-pink-600" />
+              <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
+                <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-pink-600" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">Métricas avanzadas</span>
+                <div>
+                  <span className="text-sm font-semibold text-gray-800">Métricas y sugerencias IA</span>
+                  <p className="text-xs text-gray-600">Análisis automático</p>
+                </div>
               </div>
             </div>
           </div>
@@ -144,7 +179,7 @@ const Beta: React.FC = () => {
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-gray-800">Asegura tu acceso a la Beta</h2>
-              <p className="text-gray-600">Solo $1 USD para reservar tu lugar en la beta exclusiva</p>
+              <p className="text-gray-600">Únete por solo $1 USD y sé parte de la revolución</p>
             </div>
 
             <div className="space-y-4">
@@ -198,7 +233,7 @@ const Beta: React.FC = () => {
 
             <div className="text-center">
               <p className="text-sm text-gray-500">
-                Al registrarte, recibirás acceso prioritario y actualizaciones sobre el lanzamiento
+                Al hacer clic serás redirigido a Stripe para completar el pago
               </p>
             </div>
           </div>
@@ -214,9 +249,8 @@ const Beta: React.FC = () => {
             <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
               <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Qué incluye la beta?</h3>
               <p className="text-gray-600">
-                Acceso completo a Hower Assistant durante la fase beta, incluyendo automatización de respuestas, 
-                filtrado inteligente de prospectos, y métricas avanzadas. Además, recibirás soporte prioritario 
-                y podrás influir en el desarrollo del producto.
+                Acceso completo a los 4 procesos inteligentes de Hower Assistant: prospección móvil, 
+                seguimientos con IA, filtrado inteligente y métricas automáticas con sugerencias.
               </p>
             </Card>
 
@@ -232,7 +266,7 @@ const Beta: React.FC = () => {
               <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Por qué $1 USD?</h3>
               <p className="text-gray-600">
                 El pago simbólico de $1 nos ayuda a confirmar tu interés real en participar en la beta 
-                y nos permite enviarte actualizaciones importantes sin restricciones de spam.
+                y garantiza que recibirás todas las actualizaciones importantes.
               </p>
             </Card>
 
@@ -250,7 +284,7 @@ const Beta: React.FC = () => {
       {/* Footer */}
       <div className="container mx-auto px-4 py-8 text-center border-t border-gray-200">
         <p className="text-gray-500">
-          © 2024 Hower Assistant. Automatización inteligente para tu Instagram.
+          © 2024 Hower Assistant. La IA será tu mejor aliado en Instagram.
         </p>
       </div>
     </div>
