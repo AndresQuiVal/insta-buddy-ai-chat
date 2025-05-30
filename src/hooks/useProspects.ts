@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -35,18 +36,17 @@ export const useProspects = () => {
       return 'no_response';
     }
 
-    // CRÍTICO: Validar que TODOS los mensajes pertenecen al mismo sender_id
-    const invalidMessages = messages.filter(msg => msg.sender_id !== senderId && msg.recipient_id !== senderId);
-    if (invalidMessages.length > 0) {
-      console.error(`❌ [${senderId.slice(-8)}] MENSAJES CONTAMINADOS! ${invalidMessages.length} mensajes no pertenecen a este prospecto:`, invalidMessages.map(m => m.sender_id));
-    }
-
     // Filtrar y validar mensajes solo de este prospecto
     const validMessages = messages.filter(msg => msg.sender_id === senderId || msg.recipient_id === senderId);
     console.log(`📊 [${senderId.slice(-8)}] Mensajes válidos: ${validMessages.length}/${messages.length}`);
 
     // Ordenar mensajes por timestamp para este prospecto específico
     const sortedMessages = validMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    
+    if (sortedMessages.length === 0) {
+      return 'no_response';
+    }
+    
     const lastMessage = sortedMessages[sortedMessages.length - 1];
 
     console.log(`🔍 [${senderId.slice(-8)}] Último mensaje:`, {
@@ -209,6 +209,11 @@ export const useProspects = () => {
     const sortedMessages = messagesForThisSender.sort((a: InstagramMessage, b: InstagramMessage) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
+    
+    if (sortedMessages.length === 0) {
+      throw new Error(`No hay mensajes válidos para el prospecto ${senderId}`);
+    }
+    
     const lastMessage = sortedMessages[0];
     
     // Determinar estado basado SOLO en los mensajes de ESTE prospecto
@@ -256,8 +261,14 @@ export const useProspects = () => {
 
       console.log(`📊 Total mensajes obtenidos: ${messages?.length || 0}`);
 
+      if (!messages || messages.length === 0) {
+        console.log('ℹ️ No hay mensajes en la base de datos');
+        setProspects([]);
+        return;
+      }
+
       // Agrupar mensajes por sender_id con validación estricta
-      const messagesBySender = messages?.reduce((acc: Record<string, InstagramMessage[]>, message: any) => {
+      const messagesBySender = messages.reduce((acc: Record<string, InstagramMessage[]>, message: any) => {
         // Cast the database message to our InstagramMessage interface
         const instagramMessage: InstagramMessage = {
           ...message,
@@ -272,26 +283,21 @@ export const useProspects = () => {
         }
         acc[actualSenderId].push(instagramMessage);
         return acc;
-      }, {}) || {};
+      }, {});
 
       console.log(`👥 Prospectos únicos encontrados: ${Object.keys(messagesBySender).length}`);
 
-      // Validar que no haya contaminación cruzada
-      Object.entries(messagesBySender).forEach(([senderId, senderMessages]: [string, InstagramMessage[]]) => {
-        const foreignMessages = senderMessages.filter((msg: InstagramMessage) => 
-          msg.sender_id !== senderId && msg.recipient_id !== senderId
-        );
-        if (foreignMessages.length > 0) {
-          console.error(`❌ CONTAMINACIÓN detectada en ${senderId}: ${foreignMessages.length} mensajes extraños`);
-        }
-      });
-
       // Crear prospectos a partir de los mensajes agrupados
-      const prospectsData: Prospect[] = await Promise.all(
-        Object.entries(messagesBySender).map(async ([senderId, senderMessages]: [string, InstagramMessage[]]) => {
-          return await createProspectFromMessages(senderId, senderMessages);
-        })
-      );
+      const prospectsData: Prospect[] = [];
+      
+      for (const [senderId, senderMessages] of Object.entries(messagesBySender)) {
+        try {
+          const prospect = await createProspectFromMessages(senderId, senderMessages);
+          prospectsData.push(prospect);
+        } catch (error) {
+          console.error(`❌ Error creando prospecto para ${senderId}:`, error);
+        }
+      }
 
       // Ordenar por tiempo del último mensaje (más reciente primero)
       prospectsData.sort((a, b) => 
@@ -307,11 +313,6 @@ export const useProspects = () => {
       }, {} as Record<string, number>);
       
       console.log('📊 Estados finales:', stateStats);
-      
-      // Log específico de prospectos en seguimiento
-      const followUpProspects = prospectsData.filter(p => p.state === 'follow_up');
-      console.log(`🎯 Prospectos en SEGUIMIENTO: ${followUpProspects.length}`, 
-        followUpProspects.map(p => `${p.username} (${p.senderId.slice(-8)})`));
 
       setProspects(prospectsData);
     } catch (error) {
@@ -321,57 +322,14 @@ export const useProspects = () => {
     }
   };
 
-  const updateSingleProspect = async (senderId: string) => {
-    try {
-      console.log(`🔄 Actualizando prospecto individual: ${senderId.slice(-8)}`);
-      
-      // Obtener solo los mensajes de este prospecto específico
-      const { data: messages, error } = await supabase
-        .from('instagram_messages')
-        .select('*')
-        .or(`sender_id.eq.${senderId},recipient_id.eq.${senderId}`)
-        .order('timestamp', { ascending: true });
-
-      if (error) {
-        console.error(`❌ Error fetching messages for ${senderId}:`, error);
-        return;
-      }
-
-      if (!messages || messages.length === 0) {
-        console.log(`ℹ️ No hay mensajes para ${senderId}, removiendo prospecto`);
-        setProspects(prev => prev.filter(p => p.senderId !== senderId));
-        return;
-      }
-
-      // Cast the database messages to our InstagramMessage interface
-      const instagramMessages: InstagramMessage[] = messages.map(message => ({
-        ...message,
-        message_type: message.message_type as 'sent' | 'received'
-      }));
-
-      const updatedProspect = await createProspectFromMessages(senderId, instagramMessages);
-      
-      setProspects(prev => {
-        const otherProspects = prev.filter(p => p.senderId !== senderId);
-        const newList = [updatedProspect, ...otherProspects].sort((a, b) => 
-          new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
-        );
-        
-        console.log(`✅ Prospecto ${senderId.slice(-8)} actualizado, nuevo estado: ${updatedProspect.state}`);
-        return newList;
-      });
-    } catch (error) {
-      console.error(`💥 Error updating prospect ${senderId}:`, error);
-    }
-  };
-
   useEffect(() => {
+    // Cargar prospectos inicial
     fetchProspects();
 
-    // Suscribirse a cambios en tiempo real con actualización optimizada
-    console.log('🔄 Configurando suscripción en tiempo real optimizada...');
+    // Suscribirse a cambios en tiempo real
+    console.log('🔄 Configurando suscripción en tiempo real...');
     const channel = supabase
-      .channel('prospect-changes')
+      .channel('prospect-updates')
       .on(
         'postgres_changes',
         {
@@ -380,30 +338,18 @@ export const useProspects = () => {
           table: 'instagram_messages'
         },
         (payload) => {
-          console.log('📨 Mensaje actualizado en tiempo real:', payload);
+          console.log('📨 Cambio detectado en instagram_messages:', payload);
           
-          // Identificar qué prospecto cambió
-          const changedMessage = payload.new || payload.old;
-          if (changedMessage && typeof changedMessage === 'object') {
-            const message = changedMessage as any;
-            const messageType = message.message_type as 'sent' | 'received';
-            const affectedSenderId = messageType === 'sent' 
-              ? message.recipient_id 
-              : message.sender_id;
-            
-            console.log(`🎯 Actualizando solo prospecto afectado: ${affectedSenderId?.slice(-8)}`);
-            
-            // Actualizar solo el prospecto específico que cambió
-            if (affectedSenderId) {
-              updateSingleProspect(affectedSenderId);
-            } else {
-              console.log('🔄 No se pudo identificar prospecto afectado, recargando todo');
-              fetchProspects();
-            }
-          }
+          // Recargar todos los prospectos cuando hay cambios
+          setTimeout(() => {
+            console.log('🔄 Recargando prospectos después del cambio...');
+            fetchProspects();
+          }, 1000); // Delay de 1 segundo para asegurar que la base de datos esté actualizada
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Estado de suscripción en tiempo real:', status);
+      });
 
     return () => {
       console.log('🔌 Desconectando suscripción en tiempo real');
