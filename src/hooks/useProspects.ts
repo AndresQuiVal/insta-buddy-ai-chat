@@ -101,6 +101,44 @@ export const useProspects = () => {
     return 'no_response';
   };
 
+  const extractUsernameFromRawData = (messages: InstagramMessage[]): string | null => {
+    console.log(`🔍 Buscando username en raw_data de ${messages.length} mensajes...`);
+    
+    for (const message of messages) {
+      if (message.raw_data) {
+        console.log(`📝 Analizando raw_data:`, message.raw_data);
+        
+        // Buscar username en diferentes ubicaciones del raw_data
+        const locations = [
+          message.raw_data.username,
+          message.raw_data.user?.username,
+          message.raw_data.profile?.username,
+          message.raw_data.from?.username,
+          message.raw_data.sender?.username,
+          message.raw_data.original_event?.sender?.username,
+          message.raw_data.original_change?.sender?.username,
+          message.raw_data.original_event?.from?.username,
+          message.raw_data.original_change?.from?.username,
+          // Buscar en estructuras más profundas
+          message.raw_data.messaging?.[0]?.sender?.username,
+          message.raw_data.messaging?.[0]?.from?.username,
+          message.raw_data.entry?.[0]?.messaging?.[0]?.sender?.username,
+          message.raw_data.entry?.[0]?.messaging?.[0]?.from?.username
+        ];
+        
+        for (const username of locations) {
+          if (username && typeof username === 'string' && username.trim()) {
+            console.log(`✅ Username encontrado en raw_data: ${username}`);
+            return username.replace('@', ''); // Limpiar @ si viene incluido
+          }
+        }
+      }
+    }
+    
+    console.log(`❌ No se encontró username en raw_data`);
+    return null;
+  };
+
   const fetchInstagramUsername = async (senderId: string): Promise<string> => {
     try {
       console.log(`🔍 Obteniendo username real para sender_id: ${senderId}`);
@@ -110,7 +148,7 @@ export const useProspects = () => {
       
       if (!instagramToken) {
         console.log('❌ No hay token de Instagram disponible');
-        return `@user_${senderId.slice(-8)}`;
+        return `user_${senderId.slice(-8)}`;
       }
 
       // Llamar a la API de Instagram para obtener información del usuario
@@ -123,7 +161,7 @@ export const useProspects = () => {
         console.log(`✅ Username obtenido de Instagram:`, userData);
         
         if (userData.username) {
-          return `@${userData.username}`;
+          return userData.username;
         }
       } else {
         console.log(`❌ Error al obtener username de Instagram:`, response.status);
@@ -133,46 +171,26 @@ export const useProspects = () => {
     }
 
     // Fallback: usar el sender_id acortado
-    return `@user_${senderId.slice(-8)}`;
+    return `user_${senderId.slice(-8)}`;
   };
 
   const extractUsernameFromMessage = async (messages: InstagramMessage[], senderId: string): Promise<string> => {
-    // Primero intentar obtener el username real de Instagram
+    // PRIORIDAD 1: Intentar extraer del raw_data del webhook
+    const usernameFromRawData = extractUsernameFromRawData(messages);
+    if (usernameFromRawData) {
+      console.log(`✅ Username extraído del webhook: ${usernameFromRawData}`);
+      return usernameFromRawData;
+    }
+
+    // PRIORIDAD 2: Intentar obtener el username real de Instagram API
     const realUsername = await fetchInstagramUsername(senderId);
     if (realUsername && !realUsername.includes('user_')) {
+      console.log(`✅ Username obtenido de Instagram API: ${realUsername}`);
       return realUsername;
     }
 
-    // Intentar obtener el username del raw_data como fallback
-    for (const message of messages) {
-      if (message.raw_data) {
-        // Buscar username en diferentes ubicaciones del raw_data
-        if (message.raw_data.username) {
-          return `@${message.raw_data.username}`;
-        }
-        if (message.raw_data.user?.username) {
-          return `@${message.raw_data.user.username}`;
-        }
-        if (message.raw_data.profile?.username) {
-          return `@${message.raw_data.profile.username}`;
-        }
-        if (message.raw_data.from?.username) {
-          return `@${message.raw_data.from.username}`;
-        }
-        if (message.raw_data.sender?.username) {
-          return `@${message.raw_data.sender.username}`;
-        }
-        // Buscar en el webhook data original
-        if (message.raw_data.original_event?.sender?.username) {
-          return `@${message.raw_data.original_event.sender.username}`;
-        }
-        if (message.raw_data.original_change?.sender?.username) {
-          return `@${message.raw_data.original_change.sender.username}`;
-        }
-      }
-    }
-    
-    // Si no se encuentra username, usar el que ya obtuvimos del API o el fallback
+    // FALLBACK: Usar el sender_id acortado
+    console.log(`⚠️ Usando fallback para sender_id: ${senderId}`);
     return realUsername;
   };
 

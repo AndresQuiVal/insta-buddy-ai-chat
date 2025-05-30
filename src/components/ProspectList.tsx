@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { MessageSquare, Sparkles, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import { useProspects } from '@/hooks/useProspects';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,6 +29,19 @@ const ProspectList = () => {
   const { prospects, loading } = useProspects();
   const [suggestions, setSuggestions] = useState<Record<string, string>>({});
   const [loadingProspects, setLoadingProspects] = useState<Set<string>>(new Set());
+
+  const getInstagramProfileUrl = (username: string): string => {
+    // Limpiar username y construir URL
+    const cleanUsername = username.replace('@', '').replace('user_', '');
+    
+    // Si es un username válido (no es nuestro fallback), crear enlace
+    if (!cleanUsername.match(/^\d{8}$/)) {
+      return `https://instagram.com/${cleanUsername}`;
+    }
+    
+    // Si es nuestro fallback (8 dígitos), no crear enlace
+    return '';
+  };
 
   const getAISuggestion = async (prospect: any) => {
     console.log('🤖 Iniciando sugerencia de IA para prospecto:', prospect.username);
@@ -151,73 +164,97 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
           </div>
         ) : (
           <div className="space-y-3">
-            {prospects.map((prospect) => (
-              <div 
-                key={prospect.id} 
-                className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                      <span className="font-medium text-gray-900 text-sm sm:text-base">{prospect.username}</span>
-                      <Badge className={`${stateConfig[prospect.state].color} text-xs sm:text-sm whitespace-nowrap`}>
-                        {stateConfig[prospect.state].label}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      Último mensaje: {new Date(prospect.lastMessageTime).toLocaleString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })} • {prospect.lastMessageType === 'sent' ? 'Enviado por ti' : 'Recibido'}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {prospect.conversationMessages.length} mensaje(s) en total • {prospect.conversationMessages.filter(msg => msg.message_type === 'received').length} respuesta(s) del prospecto
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center justify-center gap-2 w-full sm:w-auto"
-                    onClick={() => getAISuggestion(prospect)}
-                    disabled={loadingProspects.has(prospect.id)}
-                  >
-                    {loadingProspects.has(prospect.id) ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4" />
-                    )}
-                    <span className="text-xs sm:text-sm">Sugerencia IA</span>
-                  </Button>
-                </div>
-                
-                {suggestions[prospect.id] && (
-                  <div className="mt-3 p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-100">
-                    <div className="flex items-start gap-3">
-                      {suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? (
-                        <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-1" />
-                      ) : (
-                        <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mt-1" />
-                      )}
-                      <div>
-                        <h4 className="font-medium text-purple-900 text-sm sm:text-base mb-1">
-                          {suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? 'Error de Configuración' : 'Sugerencia de IA'}
-                        </h4>
-                        {loadingProspects.has(prospect.id) ? (
-                          <p className="text-xs sm:text-sm text-purple-600">Analizando conversación...</p>
-                        ) : (
-                          <p className={`text-xs sm:text-sm ${suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? 'text-red-700' : 'text-purple-700'}`}>
-                            {suggestions[prospect.id]}
-                          </p>
-                        )}
+            {prospects.map((prospect) => {
+              const profileUrl = getInstagramProfileUrl(prospect.username);
+              const isValidUsername = !prospect.username.match(/^user_\d{8}$/);
+              
+              return (
+                <div 
+                  key={prospect.id} 
+                  className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <div className="flex items-center gap-2">
+                          {isValidUsername && profileUrl ? (
+                            <a 
+                              href={profileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-medium text-purple-600 hover:text-purple-700 text-sm sm:text-base flex items-center gap-1 hover:underline"
+                            >
+                              @{prospect.username}
+                              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </a>
+                          ) : (
+                            <span className="font-medium text-gray-500 text-sm sm:text-base">
+                              @{prospect.username} 
+                              {!isValidUsername && (
+                                <span className="text-xs text-gray-400 ml-1">(username no disponible)</span>
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        <Badge className={`${stateConfig[prospect.state].color} text-xs sm:text-sm whitespace-nowrap`}>
+                          {stateConfig[prospect.state].label}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Último mensaje: {new Date(prospect.lastMessageTime).toLocaleString('es-ES', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })} • {prospect.lastMessageType === 'sent' ? 'Enviado por ti' : 'Recibido'}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {prospect.conversationMessages.length} mensaje(s) en total • {prospect.conversationMessages.filter(msg => msg.message_type === 'received').length} respuesta(s) del prospecto
                       </div>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center justify-center gap-2 w-full sm:w-auto"
+                      onClick={() => getAISuggestion(prospect)}
+                      disabled={loadingProspects.has(prospect.id)}
+                    >
+                      {loadingProspects.has(prospect.id) ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      <span className="text-xs sm:text-sm">Sugerencia IA</span>
+                    </Button>
                   </div>
-                )}
-              </div>
-            ))}
+                  
+                  {suggestions[prospect.id] && (
+                    <div className="mt-3 p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-100">
+                      <div className="flex items-start gap-3">
+                        {suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? (
+                          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-1" />
+                        ) : (
+                          <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mt-1" />
+                        )}
+                        <div>
+                          <h4 className="font-medium text-purple-900 text-sm sm:text-base mb-1">
+                            {suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? 'Error de Configuración' : 'Sugerencia de IA'}
+                          </h4>
+                          {loadingProspects.has(prospect.id) ? (
+                            <p className="text-xs sm:text-sm text-purple-600">Analizando conversación...</p>
+                          ) : (
+                            <p className={`text-xs sm:text-sm ${suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? 'text-red-700' : 'text-purple-700'}`}>
+                              {suggestions[prospect.id]}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
