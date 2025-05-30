@@ -14,34 +14,26 @@ const Beta: React.FC = () => {
   });
 
   useEffect(() => {
-    // Cargar scripts de Wistia dinámicamente
-    const script1 = document.createElement('script');
-    script1.src = 'https://fast.wistia.com/player.js';
-    script1.async = true;
-    document.head.appendChild(script1);
+    // Script principal de Wistia
+    const wistiaScript = document.createElement('script');
+    wistiaScript.src = 'https://fast.wistia.com/embed/medias/6ux3509b4n.jsonp';
+    wistiaScript.async = true;
+    document.head.appendChild(wistiaScript);
 
-    const script2 = document.createElement('script');
-    script2.src = 'https://fast.wistia.com/embed/6ux3509b4n.js';
-    script2.type = 'module';
-    script2.async = true;
-    document.head.appendChild(script2);
-
-    // Agregar estilos de Wistia
-    const style = document.createElement('style');
-    style.textContent = `
-      wistia-player[media-id='6ux3509b4n']:not(:defined) { 
-        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/6ux3509b4n/swatch'); 
-        display: block; 
-        filter: blur(5px); 
-      }
-    `;
-    document.head.appendChild(style);
+    // Script del player
+    const playerScript = document.createElement('script');
+    playerScript.src = 'https://fast.wistia.com/assets/external/E-v1.js';
+    playerScript.async = true;
+    document.head.appendChild(playerScript);
 
     return () => {
-      // Cleanup si es necesario
-      document.head.removeChild(script1);
-      document.head.removeChild(script2);
-      document.head.removeChild(style);
+      // Cleanup
+      if (document.head.contains(wistiaScript)) {
+        document.head.removeChild(wistiaScript);
+      }
+      if (document.head.contains(playerScript)) {
+        document.head.removeChild(playerScript);
+      }
     };
   }, []);
 
@@ -88,15 +80,41 @@ const Beta: React.FC = () => {
           <div className="order-2 lg:order-1">
             <div className="relative">
               <div className="rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
-                <wistia-player 
-                  media-id="6ux3509b4n" 
-                  aspect="0.5388888888888889" 
-                  style={{
-                    width: '100%',
-                    maxWidth: '500px',
-                    height: 'auto'
-                  }}
-                />
+                <div 
+                  className="wistia_responsive_padding" 
+                  style={{ padding: '53.89% 0 0 0', position: 'relative' }}
+                >
+                  <div 
+                    className="wistia_responsive_wrapper" 
+                    style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}
+                  >
+                    <div 
+                      className="wistia_embed wistia_async_6ux3509b4n videoFoam=true" 
+                      style={{ height: '100%', position: 'relative', width: '100%' }}
+                    >
+                      <div 
+                        className="wistia_swatch" 
+                        style={{
+                          height: '100%',
+                          left: 0,
+                          opacity: 0,
+                          overflow: 'hidden',
+                          position: 'absolute',
+                          top: 0,
+                          transition: 'opacity 200ms',
+                          width: '100%'
+                        }}
+                      >
+                        <img 
+                          src="https://fast.wistia.com/embed/medias/6ux3509b4n/swatch" 
+                          style={{ filter: 'blur(5px)', height: '100%', objectFit: 'contain', width: '100%' }} 
+                          alt=""
+                          aria-hidden="true"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -144,8 +162,8 @@ const Beta: React.FC = () => {
                   <Brain className="w-5 h-5 text-pink-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Seguimientos con IA</span>
-                  <p className="text-xs text-gray-600">Sugerencias inteligentes</p>
+                  <span className="text-sm font-semibold text-gray-800">Sugerencias de seguimientos con IA</span>
+                  <p className="text-xs text-gray-600">Recomendaciones inteligentes</p>
                 </div>
               </div>
               
@@ -154,8 +172,8 @@ const Beta: React.FC = () => {
                   <Filter className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Filtrado con IA</span>
-                  <p className="text-xs text-gray-600">Prospectos de calidad</p>
+                  <span className="text-sm font-semibold text-gray-800">Filtrar procesos con IA</span>
+                  <p className="text-xs text-gray-600">Calificación automática</p>
                 </div>
               </div>
               
@@ -164,8 +182,8 @@ const Beta: React.FC = () => {
                   <BarChart3 className="w-5 h-5 text-pink-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Métricas y sugerencias IA</span>
-                  <p className="text-xs text-gray-600">Análisis automático</p>
+                  <span className="text-sm font-semibold text-gray-800">Métricas automáticas y sugerencias con IA</span>
+                  <p className="text-xs text-gray-600">Análisis predictivo</p>
                 </div>
               </div>
             </div>
@@ -179,7 +197,7 @@ const Beta: React.FC = () => {
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-gray-800">Asegura tu acceso a la Beta</h2>
-              <p className="text-gray-600">Únete por solo $1 USD y sé parte de la revolución</p>
+              <p className="text-gray-600">Únete por solo $1 USD</p>
             </div>
 
             <div className="space-y-4">
@@ -250,7 +268,7 @@ const Beta: React.FC = () => {
               <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Qué incluye la beta?</h3>
               <p className="text-gray-600">
                 Acceso completo a los 4 procesos inteligentes de Hower Assistant: prospección móvil, 
-                seguimientos con IA, filtrado inteligente y métricas automáticas con sugerencias.
+                sugerencias de seguimientos con IA, filtrado de procesos y métricas automáticas con sugerencias.
               </p>
             </Card>
 
