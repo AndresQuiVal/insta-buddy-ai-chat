@@ -240,14 +240,20 @@ export const useProspects = () => {
       console.log(`📊 Total mensajes obtenidos: ${messages?.length || 0}`);
 
       // Agrupar mensajes por sender_id con validación estricta
-      const messagesBySender = messages?.reduce((acc: Record<string, InstagramMessage[]>, message: InstagramMessage) => {
+      const messagesBySender = messages?.reduce((acc: Record<string, InstagramMessage[]>, message: any) => {
+        // Cast the database message to our InstagramMessage interface
+        const instagramMessage: InstagramMessage = {
+          ...message,
+          message_type: message.message_type as 'sent' | 'received'
+        };
+        
         // Determinar el sender_id real (puede ser sender o recipient)
-        const actualSenderId = message.message_type === 'sent' ? message.recipient_id : message.sender_id;
+        const actualSenderId = instagramMessage.message_type === 'sent' ? instagramMessage.recipient_id : instagramMessage.sender_id;
         
         if (!acc[actualSenderId]) {
           acc[actualSenderId] = [];
         }
-        acc[actualSenderId].push(message);
+        acc[actualSenderId].push(instagramMessage);
         return acc;
       }, {}) || {};
 
@@ -320,7 +326,13 @@ export const useProspects = () => {
         return;
       }
 
-      const updatedProspect = await createProspectFromMessages(senderId, messages as InstagramMessage[]);
+      // Cast the database messages to our InstagramMessage interface
+      const instagramMessages: InstagramMessage[] = messages.map(message => ({
+        ...message,
+        message_type: message.message_type as 'sent' | 'received'
+      }));
+
+      const updatedProspect = await createProspectFromMessages(senderId, instagramMessages);
       
       setProspects(prev => {
         const otherProspects = prev.filter(p => p.senderId !== senderId);
@@ -356,8 +368,9 @@ export const useProspects = () => {
           // Identificar qué prospecto cambió
           const changedMessage = payload.new || payload.old;
           if (changedMessage && typeof changedMessage === 'object') {
-            const message = changedMessage as InstagramMessage;
-            const affectedSenderId = message.message_type === 'sent' 
+            const message = changedMessage as any;
+            const messageType = message.message_type as 'sent' | 'received';
+            const affectedSenderId = messageType === 'sent' 
               ? message.recipient_id 
               : message.sender_id;
             
