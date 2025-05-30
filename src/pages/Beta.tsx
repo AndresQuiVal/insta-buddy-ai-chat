@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -163,7 +164,7 @@ const Beta: React.FC = () => {
                   <Filter className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Filtrar procesos con IA</span>
+                  <span className="text-sm font-semibold text-gray-800">Filtrar prospectos con IA</span>
                   <p className="text-xs text-gray-600">Calificación automática</p>
                 </div>
               </div>
@@ -173,7 +174,7 @@ const Beta: React.FC = () => {
                   <BarChart3 className="w-5 h-5 text-pink-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Métricas automáticas y sugerencias con IA</span>
+                  <span className="text-sm font-semibold text-gray-800">Métricas automáticas</span>
                   <p className="text-xs text-gray-600">Análisis predictivo</p>
                 </div>
               </div>
