@@ -14,29 +14,45 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== GENERANDO RESPUESTA CON CHATGPT ===');
+    console.log('=== INICIANDO ANÁLISIS CON IA ===');
     
-    const { message, systemPrompt } = await req.json();
-    console.log('Message:', message);
-    console.log('System prompt:', systemPrompt);
+    const requestBody = await req.json();
+    console.log('Payload recibido:', JSON.stringify(requestBody, null, 2));
+    
+    const { message, systemPrompt } = requestBody;
+    
+    if (!message) {
+      console.error('❌ No se proporcionó mensaje');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing message',
+          response: 'Error: No se proporcionó un mensaje para analizar.'
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     
     if (!openaiApiKey) {
-      console.error('OPENAI_API_KEY no está configurado');
+      console.error('❌ OPENAI_API_KEY no está configurado');
       return new Response(
         JSON.stringify({ 
           error: 'API key not configured',
           response: 'Error: La API key de OpenAI no está configurada. Ve a la configuración del proyecto para añadirla.'
         }),
         { 
-          status: 500, 
+          status: 200, // Cambio a 200 para evitar error en frontend
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    console.log('OpenAI API Key está configurada, generando respuesta...');
+    console.log('✅ OpenAI API Key configurada, generando respuesta...');
+    console.log('Mensaje a analizar (primeros 200 chars):', message.substring(0, 200));
 
     // Llamar a OpenAI API
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -62,9 +78,11 @@ serve(async (req) => {
       }),
     });
 
+    console.log('OpenAI Response Status:', openaiResponse.status);
+
     if (!openaiResponse.ok) {
       const errorData = await openaiResponse.json();
-      console.error('Error de OpenAI API:', errorData);
+      console.error('❌ Error de OpenAI API:', errorData);
       
       let errorMessage = 'Error generando respuesta con IA';
       if (errorData.error?.code === 'invalid_api_key') {
@@ -81,24 +99,26 @@ serve(async (req) => {
           response: `Error: ${errorMessage}`
         }),
         { 
-          status: openaiResponse.status, 
+          status: 200, // Cambio a 200 para evitar error en frontend
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
     const responseData = await openaiResponse.json();
+    console.log('OpenAI Response Data:', responseData);
+    
     const generatedResponse = responseData.choices?.[0]?.message?.content;
 
     if (!generatedResponse) {
-      console.error('No se pudo generar respuesta de OpenAI');
+      console.error('❌ No se pudo generar respuesta de OpenAI');
       return new Response(
         JSON.stringify({ 
           error: 'No response generated',
           response: 'Error: No se pudo generar una respuesta. Intenta nuevamente.'
         }),
         { 
-          status: 500, 
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
@@ -125,7 +145,7 @@ serve(async (req) => {
         response: `Error interno: ${error.message}. Verifica que la API key de OpenAI esté configurada correctamente.`
       }),
       { 
-        status: 500, 
+        status: 200, // Cambio a 200 para evitar error en frontend
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );

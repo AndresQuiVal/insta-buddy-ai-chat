@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -78,8 +77,49 @@ export const useProspects = () => {
     return 'first_message_sent';
   };
 
-  const extractUsernameFromMessage = (messages: any[]): string => {
-    // Intentar obtener el username real del raw_data
+  const fetchInstagramUsername = async (senderId: string): Promise<string> => {
+    try {
+      console.log(`🔍 Obteniendo username real para sender_id: ${senderId}`);
+      
+      // Intentar obtener el token de Instagram desde localStorage
+      const instagramToken = localStorage.getItem('hower-instagram-token');
+      
+      if (!instagramToken) {
+        console.log('❌ No hay token de Instagram disponible');
+        return `@user_${senderId.slice(-8)}`;
+      }
+
+      // Llamar a la API de Instagram para obtener información del usuario
+      const response = await fetch(
+        `https://graph.instagram.com/${senderId}?fields=username,name&access_token=${instagramToken}`
+      );
+
+      if (response.ok) {
+        const userData = await response.json();
+        console.log(`✅ Username obtenido de Instagram:`, userData);
+        
+        if (userData.username) {
+          return `@${userData.username}`;
+        }
+      } else {
+        console.log(`❌ Error al obtener username de Instagram:`, response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching Instagram username:', error);
+    }
+
+    // Fallback: usar el sender_id acortado
+    return `@user_${senderId.slice(-8)}`;
+  };
+
+  const extractUsernameFromMessage = async (messages: any[], senderId: string): Promise<string> => {
+    // Primero intentar obtener el username real de Instagram
+    const realUsername = await fetchInstagramUsername(senderId);
+    if (realUsername && !realUsername.includes('user_')) {
+      return realUsername;
+    }
+
+    // Intentar obtener el username del raw_data como fallback
     for (const message of messages) {
       if (message.raw_data) {
         // Buscar username en diferentes ubicaciones del raw_data
@@ -108,15 +148,8 @@ export const useProspects = () => {
       }
     }
     
-    // Si no se encuentra username en raw_data, usar el sender_id como fallback
-    const senderId = messages[0]?.sender_id;
-    if (senderId) {
-      // Crear un username más legible basado en el sender_id
-      const shortId = senderId.slice(-8);
-      return `@user_${shortId}`;
-    }
-    
-    return 'Usuario desconocido';
+    // Si no se encuentra username, usar el que ya obtuvimos del API o el fallback
+    return realUsername;
   };
 
   const fetchProspects = async () => {
@@ -150,32 +183,34 @@ export const useProspects = () => {
       console.log(`👥 Prospectos únicos encontrados: ${Object.keys(messagesBySender).length}`);
 
       // Crear prospectos a partir de los mensajes agrupados
-      const prospectsData: Prospect[] = Object.entries(messagesBySender).map(([senderId, senderMessages]: [string, any]) => {
-        const sortedMessages = senderMessages.sort((a: any, b: any) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
-        const lastMessage = sortedMessages[0];
-        const state = determineProspectState(senderMessages);
-        const username = extractUsernameFromMessage(senderMessages);
+      const prospectsData: Prospect[] = await Promise.all(
+        Object.entries(messagesBySender).map(async ([senderId, senderMessages]: [string, any]) => {
+          const sortedMessages = senderMessages.sort((a: any, b: any) => 
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+          const lastMessage = sortedMessages[0];
+          const state = determineProspectState(senderMessages);
+          const username = await extractUsernameFromMessage(senderMessages, senderId);
 
-        console.log(`👤 Prospecto ${username} (${senderId}):`, {
-          totalMessages: senderMessages.length,
-          lastMessageType: lastMessage.message_type,
-          state: state,
-          lastMessageTime: lastMessage.timestamp,
-          hasReceivedMessages: senderMessages.filter((msg: any) => msg.message_type === 'received').length
-        });
+          console.log(`👤 Prospecto ${username} (${senderId}):`, {
+            totalMessages: senderMessages.length,
+            lastMessageType: lastMessage.message_type,
+            state: state,
+            lastMessageTime: lastMessage.timestamp,
+            hasReceivedMessages: senderMessages.filter((msg: any) => msg.message_type === 'received').length
+          });
 
-        return {
-          id: senderId,
-          senderId,
-          username,
-          state,
-          lastMessageTime: lastMessage.timestamp,
-          lastMessageType: lastMessage.message_type,
-          conversationMessages: senderMessages
-        };
-      });
+          return {
+            id: senderId,
+            senderId,
+            username,
+            state,
+            lastMessageTime: lastMessage.timestamp,
+            lastMessageType: lastMessage.message_type,
+            conversationMessages: senderMessages
+          };
+        })
+      );
 
       // Ordenar por tiempo del último mensaje (más reciente primero)
       prospectsData.sort((a, b) => 
