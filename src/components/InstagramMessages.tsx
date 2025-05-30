@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -204,9 +205,9 @@ const InstagramMessages: React.FC = () => {
   };
 
   // Utilidad para extraer matchPoints y características de la respuesta de la IA
-  function extractMatchFromAIResponse(aiResponse, idealTraits) {
+  const extractMatchFromAIResponse = (aiResponse: string, idealTraits: string[]) => {
     let matchPoints = 0;
-    let metTraits = [];
+    let metTraits: string[] = [];
     // Buscar la nota interna
     const matchRegex = /([0-4])\s*\/\s*4|Prospecto ideal \(4\/4\)/i;
     const found = aiResponse.match(matchRegex);
@@ -218,7 +219,7 @@ const InstagramMessages: React.FC = () => {
       metTraits = idealTraits.slice(0, matchPoints);
     }
     return { matchPoints, metTraits };
-  }
+  };
 
   const handleNewIncomingMessage = async (message: InstagramMessage) => {
     if (!aiEnabled) return;
@@ -251,7 +252,7 @@ const InstagramMessages: React.FC = () => {
         const { matchPoints, metTraits } = extractMatchFromAIResponse(aiResponse, idealTraits);
         // Actualizar la conversación en localStorage
         const savedConvs = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
-        const idx = savedConvs.findIndex((c) => c.sender_id === message.sender_id);
+        const idx = savedConvs.findIndex((c: any) => c.sender_id === message.sender_id);
         if (idx !== -1) {
           savedConvs[idx].matchPoints = matchPoints;
           savedConvs[idx].metTraits = metTraits;
@@ -324,23 +325,6 @@ const InstagramMessages: React.FC = () => {
       setSending(false);
     }
   };
-
-  // Función para extraer matchPoints de la respuesta de IA
-  function extractMatchFromAIResponse(aiResponse, idealTraits) {
-    let matchPoints = 0;
-    let metTraits = [];
-    // Buscar la nota interna
-    const matchRegex = /([0-4])\s*\/\s*4|Prospecto ideal \(4\/4\)/i;
-    const found = aiResponse.match(matchRegex);
-    if (found) {
-      matchPoints = found[1] ? parseInt(found[1], 10) : 4;
-    }
-    // Opcional: buscar nombres de características cumplidas (si la IA los lista)
-    if (matchPoints && idealTraits) {
-      metTraits = idealTraits.slice(0, matchPoints);
-    }
-    return { matchPoints, metTraits };
-  }
 
   // Determinar el tipo correcto de mensaje basado en mi page ID
   const myPageId = pageId || localStorage.getItem('hower-page-id');
