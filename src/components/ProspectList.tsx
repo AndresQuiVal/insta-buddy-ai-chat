@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -190,9 +189,6 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                           ) : (
                             <span className="font-medium text-gray-500 text-sm sm:text-base">
                               @{prospect.username} 
-                              {!isValidUsername && (
-                                <span className="text-xs text-gray-400 ml-1">(username no disponible)</span>
-                              )}
                             </span>
                           )}
                         </div>

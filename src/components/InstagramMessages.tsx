@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain, Star } from 'lucide-react';
+import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain, Star, ArrowLeft } from 'lucide-react';
 import { handleAutomaticResponse } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface InstagramMessage {
   id: string;
@@ -42,6 +43,7 @@ const InstagramMessages: React.FC = () => {
   const [isTabLeader, setIsTabLeader] = useState(false);
   const TAB_KEY = 'hower-active-tab';
   const myTabId = React.useRef(`${Date.now()}-${Math.random()}`);
+  const isMobile = useIsMobile();
 
   useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
 
@@ -468,8 +470,8 @@ const InstagramMessages: React.FC = () => {
 
       {/* Layout principal: bandejas y chat */}
       <div className="flex flex-1 h-0 min-h-0">
-        {/* Panel de conversaciones individuales */}
-        <div className="w-1/3 min-w-[260px] max-w-[400px] border-r border-purple-100 flex-shrink-0 flex flex-col">
+        {/* Panel de conversaciones individuales - En móvil se oculta cuando hay conversación seleccionada */}
+        <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} ${isMobile ? 'w-full' : 'w-1/3 min-w-[260px] max-w-[400px]'} border-r border-purple-100 flex-shrink-0 flex-col`}>
           <div className="p-4 border-b border-purple-100">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-800">Conversaciones</h3>
@@ -563,14 +565,23 @@ const InstagramMessages: React.FC = () => {
           </div>
         </div>
 
-        {/* Panel de chat */}
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* Panel de chat - En móvil ocupa toda la pantalla cuando hay conversación seleccionada */}
+        <div className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} ${isMobile ? 'w-full' : 'flex-1'} flex-col min-w-0`}>
           {selectedConversation ? (
             <>
               {/* Header del chat */}
               <div className="p-4 border-b border-purple-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    {/* Botón de volver en móvil */}
+                    {isMobile && (
+                      <button
+                        onClick={() => setSelectedConversation(null)}
+                        className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <ArrowLeft className="w-5 h-5 text-gray-600" />
+                      </button>
+                    )}
                     <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
                       <User className="w-6 h-6 text-white" />
                     </div>
@@ -584,15 +595,15 @@ const InstagramMessages: React.FC = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowPersona((v) => !v)}
-                      className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors"
+                      className={`flex items-center gap-2 px-3 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors ${isMobile ? 'text-xs' : ''}`}
                     >
-                      <Brain className="w-5 h-5" /> Ver personalidad
+                      <Brain className="w-4 h-4" /> {!isMobile && 'Ver personalidad'}
                     </button>
                     <button
                       onClick={handleFeedAI}
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
+                      className={`flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors ${isMobile ? 'text-xs' : ''}`}
                     >
-                      <Brain className="w-5 h-5" /> Alimentar IA
+                      <Brain className="w-4 h-4" /> {!isMobile && 'Alimentar IA'}
                     </button>
                   </div>
                 </div>
@@ -620,7 +631,7 @@ const InstagramMessages: React.FC = () => {
                       key={message.id}
                       className={`flex ${isSentByMe ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`flex gap-3 max-w-[80%] ${isSentByMe ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex gap-3 max-w-[80%] ${isMobile ? 'max-w-[90%]' : ''} ${isSentByMe ? 'flex-row-reverse' : ''}`}>
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                           isSentByMe 
                             ? 'bg-gradient-to-r from-green-400 to-blue-500' 
