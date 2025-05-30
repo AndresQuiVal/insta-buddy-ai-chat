@@ -7,19 +7,19 @@ import { useProspects } from '@/hooks/useProspects';
 import { supabase } from '@/integrations/supabase/client';
 
 const stateConfig = {
-  first_message_sent: {
+  primer_mensaje_enviado: {
     label: 'Primer mensaje enviado',
     color: 'bg-blue-100 text-blue-700'
   },
-  reactivation_sent: {
-    label: 'Mensaje reactivación enviado',
+  seguimiento: {
+    label: 'Seguimiento',
     color: 'bg-yellow-100 text-yellow-700'
   },
-  no_response: {
+  sin_contestar: {
     label: 'Sin contestar',
     color: 'bg-red-100 text-red-700'
   },
-  invited: {
+  invitado: {
     label: 'Invitado',
     color: 'bg-green-100 text-green-700'
   }
@@ -63,7 +63,7 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
 
       if (error) {
         console.error('Error getting AI suggestion:', error);
-        setSuggestion('Error al conectar con el servicio de IA. Verifica que la API key de OpenAI esté configurada en la configuración de Supabase.');
+        setSuggestion('Error al conectar con el servicio de IA. Verifica que la API key de OpenAI esté configurada correctamente.');
       } else if (data?.response) {
         setSuggestion(data.response);
       } else {
