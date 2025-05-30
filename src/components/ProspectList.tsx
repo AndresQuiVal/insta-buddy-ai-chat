@@ -200,18 +200,6 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                           {stateConfig[prospect.state].label}
                         </Badge>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        Último mensaje: {new Date(prospect.lastMessageTime).toLocaleString('es-ES', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })} • {prospect.lastMessageType === 'sent' ? 'Enviado por ti' : 'Recibido'}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {prospect.conversationMessages.length} mensaje(s) en total • {prospect.conversationMessages.filter(msg => msg.message_type === 'received').length} respuesta(s) del prospecto
-                      </div>
                     </div>
                     <Button
                       variant="outline"

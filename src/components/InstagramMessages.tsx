@@ -364,7 +364,7 @@ const InstagramMessages: React.FC = () => {
   };
 
   // Obtener mensajes de la conversación seleccionada
-  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages || [];
+  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages.slice(-20) || [];
 
   // Botón Alimentar IA
   const handleFeedAI = async () => {
@@ -616,44 +616,49 @@ const InstagramMessages: React.FC = () => {
 
               {/* Mensajes */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {selectedMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.message_type === 'sent' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`flex gap-3 max-w-[80%] ${message.message_type === 'sent' ? 'flex-row-reverse' : ''}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        message.message_type === 'sent' 
-                          ? 'bg-gradient-to-r from-green-400 to-blue-500' 
-                          : 'bg-gradient-to-r from-purple-500 to-pink-500'
-                      }`}>
-                        {message.message_type === 'sent' ? (
-                          <Bot className="w-5 h-5 text-white" />
-                        ) : (
-                          <User className="w-5 h-5 text-white" />
-                        )}
-                      </div>
-                      <div className={`rounded-2xl px-4 py-3 ${
-                        message.message_type === 'sent'
-                          ? 'bg-gradient-to-r from-green-400 to-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        <p className="text-sm">{message.message_text}</p>
-                        <div className={`text-xs mt-1 flex items-center gap-1 ${
-                          message.message_type === 'sent' ? 'text-green-100' : 'text-gray-500'
+                {selectedMessages.map((message) => {
+                  // Determinar si el mensaje es enviado por mí
+                  const isSentByMe = message.message_type === 'sent' || message.sender_id === pageId;
+                  
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${isSentByMe ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`flex gap-3 max-w-[80%] ${isSentByMe ? 'flex-row-reverse' : ''}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          isSentByMe 
+                            ? 'bg-gradient-to-r from-green-400 to-blue-500' 
+                            : 'bg-gradient-to-r from-purple-500 to-pink-500'
                         }`}>
-                          {message.raw_data?.auto_response && (
-                            <Bot className="w-3 h-3" />
+                          {isSentByMe ? (
+                            <Bot className="w-5 h-5 text-white" />
+                          ) : (
+                            <User className="w-5 h-5 text-white" />
                           )}
-                          {message.raw_data?.historical_sync && (
-                            <Clock className="w-3 h-3" />
-                          )}
-                          <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                        <div className={`rounded-2xl px-4 py-3 ${
+                          isSentByMe
+                            ? 'bg-gradient-to-r from-green-400 to-blue-500 text-white'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          <p className="text-sm">{message.message_text}</p>
+                          <div className={`text-xs mt-1 flex items-center gap-1 ${
+                            isSentByMe ? 'text-green-100' : 'text-gray-500'
+                          }`}>
+                            {message.raw_data?.auto_response && (
+                              <Bot className="w-3 h-3" />
+                            )}
+                            {message.raw_data?.historical_sync && (
+                              <Clock className="w-3 h-3" />
+                            )}
+                            <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Input de mensaje */}
@@ -668,17 +673,6 @@ const InstagramMessages: React.FC = () => {
                     className="flex-1 px-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                     disabled={sending}
                   />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim() || sending}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {sending ? (
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Send className="w-5 h-5" />
-                    )}
-                  </button>
                 </div>
               </div>
             </>
