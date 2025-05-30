@@ -1,5 +1,4 @@
 
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { supabase } from "../_shared/supabase.ts"
 
@@ -91,6 +90,34 @@ async function isUniqueResponse(senderId: string, timestamp: string): Promise<bo
   }
 }
 
+// Función para obtener el username real del prospecto
+async function fetchInstagramUsername(senderId: string): Promise<string> {
+  try {
+    const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
+    if (!accessToken) {
+      console.warn('No hay access token disponible para obtener username')
+      return `@${senderId.slice(-8)}`
+    }
+
+    console.log(`🔍 Intentando obtener username real para sender_id: ${senderId}`)
+    
+    // Intentar obtener información del usuario usando la API de Instagram
+    const userInfoResponse = await fetch(`https://graph.facebook.com/v19.0/${senderId}?fields=username,name&access_token=${accessToken}`)
+    
+    if (userInfoResponse.ok) {
+      const userInfo = await userInfoResponse.json()
+      console.log(`✅ Username obtenido: ${userInfo.username || userInfo.name}`)
+      return userInfo.username ? `@${userInfo.username}` : (userInfo.name || `@${senderId.slice(-8)}`)
+    } else {
+      console.warn(`❌ No se pudo obtener username para ${senderId}:`, await userInfoResponse.text())
+      return `@${senderId.slice(-8)}`
+    }
+  } catch (error) {
+    console.error('Error obteniendo username:', error)
+    return `@${senderId.slice(-8)}`
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -127,6 +154,10 @@ serve(async (req) => {
       const body = await req.json()
       console.log('📨 Webhook payload recibido:', JSON.stringify(body, null, 2))
 
+      // Obtener PAGE_ID de los secretos para determinar mensajes enviados vs recibidos
+      const PAGE_ID = Deno.env.get('PAGE_ID')
+      console.log('🔑 PAGE_ID obtenido:', PAGE_ID || 'NO CONFIGURADO')
+
       // Verificar si el payload tiene la estructura esperada
       if (!body.entry || !Array.isArray(body.entry)) {
         console.log('⚠️ No se encontró array "entry" en el payload')
@@ -147,7 +178,7 @@ serve(async (req) => {
           for (const messagingEvent of entry.messaging) {
             if (messagingEvent.message && messagingEvent.message.text) {
               console.log('💬 Procesando mensaje de texto')
-              const result = await processTextMessage(messagingEvent, entry.id)
+              const result = await processTextMessage(messagingEvent, entry.id, PAGE_ID)
               if (result.success) messagesProcessed++
             }
           }
@@ -163,7 +194,7 @@ serve(async (req) => {
               
               // Si el change.value tiene estructura de mensaje directo
               if (change.value.message && change.value.message.text) {
-                const result = await processChangeMessage(change.value, entry.id)
+                const result = await processChangeMessage(change.value, entry.id, PAGE_ID)
                 if (result.success) messagesProcessed++
               }
             }
@@ -198,7 +229,7 @@ serve(async (req) => {
 })
 
 // Función para procesar mensajes de la estructura messaging
-async function processTextMessage(messagingEvent: any, pageId: string) {
+async function processTextMessage(messagingEvent: any, pageId: string, MY_PAGE_ID: string) {
   try {
     console.log(`🔄 Procesando mensaje de texto`)
 
@@ -208,16 +239,44 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
     const messageText = message.text || 'Mensaje sin texto'
     const timestamp = new Date(messagingEvent.timestamp || Date.now()).toISOString()
     
+    // NUEVA LÓGICA: Determinar si es mensaje enviado o recibido usando PAGE_ID
+    let messageType = 'received' // Por defecto asumir que es recibido
+    
+    if (MY_PAGE_ID) {
+      if (senderId === MY_PAGE_ID) {
+        messageType = 'sent'
+        console.log(`📤 Mensaje ENVIADO por nosotros (sender_id: ${senderId} === PAGE_ID: ${MY_PAGE_ID})`)
+      } else {
+        messageType = 'received'
+        console.log(`📥 Mensaje RECIBIDO de prospecto (sender_id: ${senderId} !== PAGE_ID: ${MY_PAGE_ID})`)
+      }
+    } else {
+      console.warn('⚠️ PAGE_ID no configurado, usando lógica por defecto')
+      // Lógica de fallback basada en el campo is_echo si está disponible
+      if (message.is_echo === true) {
+        messageType = 'sent'
+        console.log(`📤 Mensaje ENVIADO (detectado por is_echo)`)
+      } else {
+        messageType = 'received'
+        console.log(`📥 Mensaje RECIBIDO (no hay is_echo)`)
+      }
+    }
+    
     // Detectar si el mensaje contiene enlaces de invitación
     const isInvitation = detectInvitationLinks(messageText)
     console.log(`🔍 Detección de invitación: ${isInvitation ? 'SÍ' : 'NO'} para mensaje: "${messageText}"`)
     
-    // Verificar si es una respuesta única
-    const isUnique = await isUniqueResponse(senderId, timestamp)
-    console.log(`🔍 Respuesta única: ${isUnique ? 'SÍ' : 'NO'}`)
+    // Verificar si es una respuesta única (solo para mensajes recibidos)
+    const isUnique = messageType === 'received' ? await isUniqueResponse(senderId, timestamp) : false
+    if (messageType === 'received') {
+      console.log(`🔍 Respuesta única: ${isUnique ? 'SÍ' : 'NO'}`)
+    }
     
-    // Determinar el nombre del usuario más legible
-    const userName = `Usuario ${senderId.slice(-4)}`
+    // Obtener username real para prospectos (mensajes recibidos)
+    let userName = `Usuario ${senderId.slice(-4)}`
+    if (messageType === 'received') {
+      userName = await fetchInstagramUsername(senderId)
+    }
 
     const messageData = {
       instagram_message_id: message.mid || `msg_${Date.now()}_${Math.random()}`,
@@ -225,18 +284,22 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
       recipient_id: recipientId,
       message_text: messageText,
       timestamp: timestamp,
-      message_type: 'received',
+      message_type: messageType,
       is_invitation: isInvitation,
       raw_data: { 
         original_event: messagingEvent,
         processed_at: new Date().toISOString(),
         source: 'messaging',
         invitation_detected: isInvitation,
-        is_unique_response: isUnique
+        is_unique_response: isUnique,
+        page_id_used: MY_PAGE_ID,
+        detection_logic: MY_PAGE_ID ? 'page_id_comparison' : 'is_echo_fallback'
       }
     }
 
-    console.log(`💾 Guardando mensaje: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''} ${isUnique ? '(RESPUESTA ÚNICA)' : '(RESPUESTA NO ÚNICA)'}`)
+    const messageTypeText = messageType === 'sent' ? 'ENVIADO' : 'RECIBIDO'
+    const uniqueText = isUnique ? '(RESPUESTA ÚNICA)' : (messageType === 'received' ? '(RESPUESTA NO ÚNICA)' : '')
+    console.log(`💾 Guardando mensaje ${messageTypeText}: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''} ${uniqueText}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -248,12 +311,9 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Mensaje guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''} ${isUnique ? '(respuesta única)' : '(respuesta no única)'}`)
+    console.log(`✅ Mensaje guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''} ${uniqueText}`)
 
-    // Ya no generamos respuesta automática aquí - se maneja desde el frontend
-    console.log(`📱 Mensaje procesado, respuesta automática se manejará desde el frontend`)
-
-    return { success: true, id: data[0]?.id }
+    return { success: true, id: data[0]?.id, messageType, isUnique }
 
   } catch (error) {
     console.error(`💥 Error en processTextMessage:`, error)
@@ -262,7 +322,7 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
 }
 
 // Función para procesar mensajes de changes
-async function processChangeMessage(changeValue: any, pageId: string) {
+async function processChangeMessage(changeValue: any, pageId: string, MY_PAGE_ID: string) {
   try {
     console.log(`🔄 Procesando mensaje de change`)
 
@@ -278,16 +338,37 @@ async function processChangeMessage(changeValue: any, pageId: string) {
     }
     const timestampISO = new Date(timestamp || Date.now()).toISOString()
     
+    // NUEVA LÓGICA: Determinar si es mensaje enviado o recibido usando PAGE_ID
+    let messageType = 'received' // Por defecto asumir que es recibido
+    
+    if (MY_PAGE_ID) {
+      if (senderId === MY_PAGE_ID) {
+        messageType = 'sent'
+        console.log(`📤 Mensaje ENVIADO por nosotros (sender_id: ${senderId} === PAGE_ID: ${MY_PAGE_ID})`)
+      } else {
+        messageType = 'received'
+        console.log(`📥 Mensaje RECIBIDO de prospecto (sender_id: ${senderId} !== PAGE_ID: ${MY_PAGE_ID})`)
+      }
+    } else {
+      console.warn('⚠️ PAGE_ID no configurado, usando lógica por defecto (asumiendo recibido)')
+      messageType = 'received'
+    }
+    
     // Detectar si el mensaje contiene enlaces de invitación
     const isInvitation = detectInvitationLinks(messageText)
     console.log(`🔍 Detección de invitación: ${isInvitation ? 'SÍ' : 'NO'} para mensaje: "${messageText}"`)
     
-    // Verificar si es una respuesta única
-    const isUnique = await isUniqueResponse(senderId, timestampISO)
-    console.log(`🔍 Respuesta única: ${isUnique ? 'SÍ' : 'NO'}`)
+    // Verificar si es una respuesta única (solo para mensajes recibidos)
+    const isUnique = messageType === 'received' ? await isUniqueResponse(senderId, timestampISO) : false
+    if (messageType === 'received') {
+      console.log(`🔍 Respuesta única: ${isUnique ? 'SÍ' : 'NO'}`)
+    }
     
-    // Determinar el nombre del usuario más legible
-    const userName = `Usuario ${senderId.slice(-4)}`
+    // Obtener username real para prospectos (mensajes recibidos)
+    let userName = `Usuario ${senderId.slice(-4)}`
+    if (messageType === 'received') {
+      userName = await fetchInstagramUsername(senderId)
+    }
 
     const messageData = {
       instagram_message_id: message?.mid || `change_${Date.now()}_${Math.random()}`,
@@ -295,18 +376,22 @@ async function processChangeMessage(changeValue: any, pageId: string) {
       recipient_id: recipientId,
       message_text: messageText,
       timestamp: timestampISO,
-      message_type: 'received',
+      message_type: messageType,
       is_invitation: isInvitation,
       raw_data: { 
         original_change: changeValue,
         processed_at: new Date().toISOString(),
         source: 'changes',
         invitation_detected: isInvitation,
-        is_unique_response: isUnique
+        is_unique_response: isUnique,
+        page_id_used: MY_PAGE_ID,
+        detection_logic: MY_PAGE_ID ? 'page_id_comparison' : 'default_received'
       }
     }
 
-    console.log(`💾 Guardando mensaje de change: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''} ${isUnique ? '(RESPUESTA ÚNICA)' : '(RESPUESTA NO ÚNICA)'}`)
+    const messageTypeText = messageType === 'sent' ? 'ENVIADO' : 'RECIBIDO'
+    const uniqueText = isUnique ? '(RESPUESTA ÚNICA)' : (messageType === 'received' ? '(RESPUESTA NO ÚNICA)' : '')
+    console.log(`💾 Guardando mensaje de change ${messageTypeText}: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''} ${uniqueText}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -318,16 +403,12 @@ async function processChangeMessage(changeValue: any, pageId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Mensaje de change guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''} ${isUnique ? '(respuesta única)' : '(respuesta no única)'}`)
+    console.log(`✅ Mensaje de change guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''} ${uniqueText}`)
 
-    // Ya no generamos respuesta automática aquí - se maneja desde el frontend
-    console.log(`📱 Mensaje procesado, respuesta automática se manejará desde el frontend`)
-
-    return { success: true, id: data[0]?.id }
+    return { success: true, id: data[0]?.id, messageType, isUnique }
 
   } catch (error) {
     console.error(`💥 Error en processChangeMessage:`, error)
     return { success: false, error: error.message }
   }
 }
-

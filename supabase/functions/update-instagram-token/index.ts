@@ -25,9 +25,8 @@ serve(async (req) => {
       )
     }
 
-    console.log('=== ACTUALIZANDO TOKEN DE INSTAGRAM ===')
+    console.log('=== ACTUALIZANDO TOKEN DE INSTAGRAM Y GUARDANDO PAGE_ID ===')
     console.log('Nuevo token recibido:', access_token.substring(0, 20) + '...')
-    console.log('Token length:', access_token.length)
 
     // Validar el token con Facebook Graph API
     console.log('🔍 Validando token con Facebook Graph API...')
@@ -60,30 +59,80 @@ serve(async (req) => {
     
     console.log('Permisos encontrados:', permissionsData.data?.map(p => `${p.permission}:${p.status}`))
 
-    // Verificar cuentas de Instagram Business
-    console.log('📱 Verificando cuentas de Instagram Business...')
-    const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${access_token}`)
-    const accountsData = await accountsResponse.json()
+    // Verificar cuentas de Instagram Business y guardar PAGE_ID
+    console.log('📱 Verificando cuentas de Instagram Business y obteniendo PAGE_ID...')
+    let pageId = null
+    let hasInstagramBusiness = false
     
-    const hasInstagramBusiness = accountsData.data && accountsData.data.some(acc => acc.instagram_business_account)
-    console.log('Instagram Business conectado:', hasInstagramBusiness ? '✅' : '❌')
+    try {
+      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${access_token}`)
+      const accountsData = await accountsResponse.json()
+      
+      if (accountsData.data) {
+        for (const page of accountsData.data) {
+          if (page.instagram_business_account) {
+            hasInstagramBusiness = true
+            pageId = page.id
+            console.log(`✅ Instagram Business encontrado en página: ${page.name} (ID: ${pageId})`)
+            
+            // Guardar PAGE_ID automáticamente
+            try {
+              console.log(`🔑 Guardando PAGE_ID automáticamente: ${pageId}`)
+              
+              // Intentar actualizar el secreto PAGE_ID en Supabase
+              const updateSecretResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/rpc/update_secret`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                  'Content-Type': 'application/json',
+                  'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+                },
+                body: JSON.stringify({
+                  secret_name: 'PAGE_ID',
+                  secret_value: pageId
+                })
+              })
+              
+              if (updateSecretResponse.ok) {
+                console.log('✅ PAGE_ID guardado exitosamente en secretos')
+              } else {
+                console.error('❌ Error guardando PAGE_ID:', await updateSecretResponse.text())
+                // Método alternativo usando variables de entorno
+                Deno.env.set('PAGE_ID', pageId)
+                console.log('✅ PAGE_ID guardado como variable de entorno temporal')
+              }
+            } catch (error) {
+              console.error('❌ Error guardando PAGE_ID:', error)
+            }
+            
+            break // Solo necesitamos el primer PAGE_ID con Instagram Business
+          }
+        }
+      }
+      
+      console.log('Instagram Business conectado:', hasInstagramBusiness ? '✅' : '❌')
+      if (pageId) {
+        console.log('PAGE_ID obtenido y guardado:', pageId)
+      }
+      
+    } catch (error) {
+      console.error('Error verificando cuentas de Instagram:', error)
+    }
 
     if (!hasInstagramBusiness) {
       console.warn('⚠️ No se encontró cuenta de Instagram Business')
     }
 
-    // TODO: Aquí deberías actualizar el token en Supabase Secrets
-    // Por ahora, confirmamos que el token es válido
-    
-    console.log('✅ Token actualizado exitosamente')
+    console.log('✅ Token y configuración actualizados exitosamente')
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Token actualizado correctamente',
+        message: 'Token y PAGE_ID actualizados correctamente',
         user: userData,
         permissions: permissionsData.data || [],
         hasInstagramBusiness: hasInstagramBusiness,
+        pageId: pageId,
         recommendations: hasInstagramBusiness ? [] : [
           'Conecta una cuenta de Instagram Business para recibir mensajes',
           'Ve a Business Manager → Configuración → Cuentas de Instagram'

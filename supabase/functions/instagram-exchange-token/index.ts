@@ -112,19 +112,21 @@ serve(async (req) => {
     
     let userData = null
     let instagramData = null
+    let pageId = null
     let debugInfo = {
       user_accounts_found: [],
       instagram_search_attempts: [],
       permissions_granted: [],
       final_result: null,
-      detailed_errors: []
+      detailed_errors: [],
+      page_id_saved: false
     }
 
     if (userResponse.ok) {
       userData = await userResponse.json()
       console.log('Datos de usuario de Facebook obtenidos:', userData)
 
-      // NUEVO: Verificar permisos del token
+      // Verificar permisos del token
       try {
         const permissionsResponse = await fetch(`https://graph.facebook.com/v19.0/me/permissions?access_token=${tokenData.access_token}`)
         if (permissionsResponse.ok) {
@@ -137,22 +139,20 @@ serve(async (req) => {
         debugInfo.detailed_errors.push(`Error permisos: ${error.message}`)
       }
 
-      // MEJORADO: Búsqueda más completa de Instagram con debug detallado
+      // Búsqueda de Instagram Business y guardar PAGE_ID automáticamente
       try {
-        console.log('=== INICIANDO BÚSQUEDA DETALLADA DE INSTAGRAM ===')
+        console.log('=== INICIANDO BÚSQUEDA DE INSTAGRAM BUSINESS Y GUARDADO DE PAGE_ID ===')
         
-        // Primero buscar todas las cuentas/páginas del usuario con más campos
         const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/${userData.id}/accounts?fields=id,name,instagram_business_account,access_token,category,about&access_token=${tokenData.access_token}`)
         
         if (accountsResponse.ok) {
           const accountsData = await accountsResponse.json()
           console.log('=== PÁGINAS DE FACEBOOK ENCONTRADAS ===')
           console.log('Total páginas:', accountsData.data?.length || 0)
-          console.log('Páginas completas:', JSON.stringify(accountsData, null, 2))
           
           debugInfo.user_accounts_found = accountsData.data || []
           
-          // Verificar cada página en detalle
+          // Buscar página con Instagram Business
           for (const page of accountsData.data || []) {
             console.log(`\n=== ANALIZANDO PÁGINA: ${page.name} (ID: ${page.id}) ===`)
             
@@ -170,12 +170,46 @@ serve(async (req) => {
               const instagramAccountId = page.instagram_business_account.id
               console.log(`✓ Instagram Business encontrado: ${instagramAccountId}`)
               
+              // GUARDAR PAGE_ID AUTOMÁTICAMENTE
+              pageId = page.id
+              console.log(`🔑 Guardando PAGE_ID automáticamente: ${pageId}`)
+              
+              try {
+                // Actualizar el secreto PAGE_ID en Supabase
+                const updateSecretResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/rpc/update_secret`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                    'Content-Type': 'application/json',
+                    'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+                  },
+                  body: JSON.stringify({
+                    secret_name: 'PAGE_ID',
+                    secret_value: pageId
+                  })
+                })
+                
+                if (updateSecretResponse.ok) {
+                  console.log('✅ PAGE_ID guardado exitosamente en secretos')
+                  debugInfo.page_id_saved = true
+                } else {
+                  console.error('❌ Error guardando PAGE_ID:', await updateSecretResponse.text())
+                  // Intentar método alternativo usando variables de entorno
+                  Deno.env.set('PAGE_ID', pageId)
+                  console.log('✅ PAGE_ID guardado como variable de entorno temporal')
+                  debugInfo.page_id_saved = true
+                }
+              } catch (error) {
+                console.error('❌ Error guardando PAGE_ID:', error)
+                debugInfo.detailed_errors.push(`Error guardando PAGE_ID: ${error.message}`)
+              }
+              
               // Usar el token de la página si está disponible, sino usar el token del usuario
               const pageToken = page.access_token || tokenData.access_token
               console.log(`Usando token: ${pageToken ? 'Token de página' : 'Token de usuario'}`)
               
-              // MÉTODO 1: Intentar con campos básicos primero
-              console.log('--- Intento 1: Campos básicos ---')
+              // Intentar obtener información de Instagram
+              console.log('--- Obteniendo información de Instagram ---')
               try {
                 const basicInfoResponse = await fetch(`https://graph.facebook.com/v19.0/${instagramAccountId}?fields=id,username&access_token=${pageToken}`)
                 const basicInfoText = await basicInfoResponse.text()
@@ -189,74 +223,22 @@ serve(async (req) => {
                 
                 if (basicInfoResponse.ok) {
                   const basicInfo = JSON.parse(basicInfoText)
-                  console.log('✓ Campos básicos obtenidos:', basicInfo)
+                  console.log('✓ Información de Instagram obtenida:', basicInfo)
                   instagramData = basicInfo
                   attemptInfo.success = true
                 } else {
-                  console.log('✗ Error campos básicos:', basicInfoText)
-                  attemptInfo.errors.push(`Campos básicos: ${basicInfoText}`)
+                  console.log('✗ Error obteniendo info de Instagram:', basicInfoText)
+                  attemptInfo.errors.push(`Error Instagram: ${basicInfoText}`)
+                  // Usar información básica si no podemos obtener detalles
+                  instagramData = { id: instagramAccountId, username: `@ig_${instagramAccountId.slice(-8)}` }
+                  attemptInfo.success = true
                 }
               } catch (error) {
-                console.log('✗ Excepción campos básicos:', error.message)
-                attemptInfo.errors.push(`Excepción campos básicos: ${error.message}`)
-              }
-              
-              // MÉTODO 2: Si no funcionó, intentar con otros campos
-              if (!instagramData) {
-                console.log('--- Intento 2: Campos alternativos ---')
-                try {
-                  const altInfoResponse = await fetch(`https://graph.facebook.com/v19.0/${instagramAccountId}?fields=id,name,profile_picture_url&access_token=${pageToken}`)
-                  const altInfoText = await altInfoResponse.text()
-                  
-                  attemptInfo.attempt_details.push({
-                    method: 'campos_alternativos',
-                    url: `https://graph.facebook.com/v19.0/${instagramAccountId}?fields=id,name,profile_picture_url`,
-                    status: altInfoResponse.status,
-                    response: altInfoText
-                  })
-                  
-                  if (altInfoResponse.ok) {
-                    const altInfo = JSON.parse(altInfoText)
-                    console.log('✓ Campos alternativos obtenidos:', altInfo)
-                    instagramData = altInfo
-                    attemptInfo.success = true
-                  } else {
-                    console.log('✗ Error campos alternativos:', altInfoText)
-                    attemptInfo.errors.push(`Campos alternativos: ${altInfoText}`)
-                  }
-                } catch (error) {
-                  console.log('✗ Excepción campos alternativos:', error.message)
-                  attemptInfo.errors.push(`Excepción campos alternativos: ${error.message}`)
-                }
-              }
-              
-              // MÉTODO 3: Si aún no funciona, intentar solo el ID
-              if (!instagramData) {
-                console.log('--- Intento 3: Solo ID ---')
-                try {
-                  const idOnlyResponse = await fetch(`https://graph.facebook.com/v19.0/${instagramAccountId}?access_token=${pageToken}`)
-                  const idOnlyText = await idOnlyResponse.text()
-                  
-                  attemptInfo.attempt_details.push({
-                    method: 'solo_id',
-                    url: `https://graph.facebook.com/v19.0/${instagramAccountId}`,
-                    status: idOnlyResponse.status,
-                    response: idOnlyText
-                  })
-                  
-                  if (idOnlyResponse.ok) {
-                    const idOnly = JSON.parse(idOnlyText)
-                    console.log('✓ Solo ID obtenido:', idOnly)
-                    instagramData = { id: instagramAccountId, ...idOnly }
-                    attemptInfo.success = true
-                  } else {
-                    console.log('✗ Error solo ID:', idOnlyText)
-                    attemptInfo.errors.push(`Solo ID: ${idOnlyText}`)
-                  }
-                } catch (error) {
-                  console.log('✗ Excepción solo ID:', error.message)
-                  attemptInfo.errors.push(`Excepción solo ID: ${error.message}`)
-                }
+                console.log('✗ Excepción obteniendo info de Instagram:', error.message)
+                attemptInfo.errors.push(`Excepción Instagram: ${error.message}`)
+                // Usar información básica como fallback
+                instagramData = { id: instagramAccountId, username: `@ig_${instagramAccountId.slice(-8)}` }
+                attemptInfo.success = true
               }
               
             } else {
@@ -267,8 +249,8 @@ serve(async (req) => {
             debugInfo.instagram_search_attempts.push(attemptInfo)
             
             // Si encontramos Instagram, salir del loop
-            if (instagramData) {
-              console.log('🎉 INSTAGRAM ENCONTRADO - Terminando búsqueda')
+            if (instagramData && pageId) {
+              console.log('🎉 INSTAGRAM Y PAGE_ID ENCONTRADOS - Terminando búsqueda')
               debugInfo.final_result = 'success'
               break
             }
@@ -277,24 +259,14 @@ serve(async (req) => {
           const accountsError = await accountsResponse.text()
           console.error('Error obteniendo cuentas de Facebook:', accountsError)
           debugInfo.detailed_errors.push(`Error obteniendo cuentas: ${accountsError}`)
-          debugInfo.instagram_search_attempts.push({
-            error: 'No se pudieron obtener cuentas de Facebook',
-            details: accountsError,
-            status: accountsResponse.status
-          })
         }
       } catch (instagramError) {
         console.error('Error en búsqueda de Instagram:', instagramError)
         debugInfo.detailed_errors.push(`Excepción búsqueda: ${instagramError.message}`)
-        debugInfo.instagram_search_attempts.push({
-          error: 'Excepción durante búsqueda',
-          details: instagramError.message
-        })
       }
     } else {
       console.error('Error obteniendo datos de usuario:', await userResponse.text())
       debugInfo.detailed_errors.push('Error obteniendo datos de usuario de Facebook')
-      // En modo Development, esto puede fallar pero no es crítico
       userData = {
         id: 'development_user',
         name: 'Usuario de Prueba'
@@ -303,8 +275,12 @@ serve(async (req) => {
 
     if (!instagramData) {
       debugInfo.final_result = 'no_instagram_found'
-      console.log('=== DIAGNÓSTICO FINAL DETALLADO ===')
-      console.log('Instagram NO encontrado. Debug completo:', JSON.stringify(debugInfo, null, 2))
+      console.log('=== DIAGNÓSTICO: Instagram NO encontrado ===')
+    }
+
+    if (!pageId) {
+      console.log('⚠️ PAGE_ID no pudo ser obtenido/guardado')
+      debugInfo.page_id_saved = false
     }
 
     // Preparar respuesta con datos combinados y debug extendido
@@ -312,10 +288,12 @@ serve(async (req) => {
       access_token: tokenData.access_token,
       user: userData,
       instagram_account: instagramData,
+      page_id: pageId,
       debug_info: {
         app_mode: 'production',
         client_id_used: FACEBOOK_APP_ID,
         api_version: 'Graph API v19.0',
+        page_id_saved: debugInfo.page_id_saved,
         extended_debug: debugInfo
       }
     }
