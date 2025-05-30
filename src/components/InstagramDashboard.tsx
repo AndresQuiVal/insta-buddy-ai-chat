@@ -71,7 +71,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     messagesReceived: 0,
     messagesSent: 0,
     averageResponseTime: 0,
-    todayMessages: 0,
+    todayMessages: 0, // Este campo se mantendrá pero no se actualizará automáticamente
     totalInvitations: 0,
     responseRate: 0,
     lastMessageDate: null
@@ -143,29 +143,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
       });
     }
 
-    // Análisis de actividad diaria
-    if (stats.todayMessages === 0) {
-      recs.push({
-        type: 'warning',
-        title: 'Sin Actividad Hoy',
-        message: 'No has contactado nuevos prospectos hoy. La consistencia es clave para el éxito en prospección.',
-        action: 'Establece una meta diaria de al menos 10-20 nuevos prospectos para mantener el momentum.'
-      });
-    } else if (stats.todayMessages < 10) {
-      recs.push({
-        type: 'info',
-        title: 'Actividad Baja Hoy',
-        message: `Has contactado ${stats.todayMessages} nuevos prospectos hoy. Considera aumentar tu volumen diario.`,
-        action: 'Intenta contactar al menos 20 nuevos prospectos diarios para mejores resultados.'
-      });
-    } else if (stats.todayMessages >= 20) {
-      recs.push({
-        type: 'success',
-        title: '¡Gran Actividad Hoy!',
-        message: `Has contactado ${stats.todayMessages} nuevos prospectos hoy. ¡Excelente trabajo!`,
-        action: 'Mantén esta consistencia para maximizar tus resultados.'
-      });
-    }
+    // Nota: Se eliminó el análisis de actividad diaria ya que no se actualizará automáticamente
 
     // Análisis de conversión
     if (stats.totalInvitations === 0 && stats.messagesSent > 0) {
@@ -314,16 +292,16 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
       const messagesReceived = calculateUniqueResponses(messages || []);
       const totalInvitations = messages?.filter(m => m.is_invitation).length || 0;
 
-      // Mensajes de hoy (siempre calculado para el día actual)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const { data: todayData } = await supabase
-        .from('instagram_messages')
-        .select('*')
-        .eq('message_type', 'sent')
-        .gte('created_at', today.toISOString());
+      // NO calcular mensajes de hoy automáticamente - se mantendrá el valor actual
+      // const today = new Date();
+      // today.setHours(0, 0, 0, 0);
+      // const { data: todayData } = await supabase
+      //   .from('instagram_messages')
+      //   .select('*')
+      //   .eq('message_type', 'sent')
+      //   .gte('created_at', today.toISOString());
 
-      const todayMessages = todayData?.length || 0;
+      // const todayMessages = todayData?.length || 0;
 
       // Calcular tiempo promedio de respuesta real
       const averageResponseTime = calculateAverageResponseTime(messages || []);
@@ -341,7 +319,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
         messagesReceived,
         messagesSent,
         averageResponseTime,
-        todayMessages,
+        todayMessages: stats.todayMessages, // Mantener el valor actual, no actualizar automáticamente
         totalInvitations,
         responseRate,
         lastMessageDate: lastMessage?.created_at || null
@@ -471,12 +449,12 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           icon={<UserPlus className="w-6 h-6 text-white" />}
           color="bg-gradient-to-r from-blue-500 to-purple-500"
           tooltip={{
-            title: "Nuevos prospectos contactados hoy",
-            description: "Número de personas nuevas a las que has enviado un primer mensaje hoy. Esta métrica te ayuda a medir tu actividad diaria de prospección.",
+            title: "Nuevos prospectos contactados (manual)",
+            description: "Número de personas nuevas contactadas. Este valor se actualiza manualmente y no se incrementa automáticamente.",
             examples: [
-              "Enviaste mensaje a @usuario1, @usuario2, @usuario3 = 3",
-              "Solo cuenta el primer contacto con cada persona",
-              "Se reinicia cada día a las 00:00"
+              "Se actualiza solo cuando lo hagas manualmente",
+              "No se incrementa automáticamente al enviar mensajes",
+              "Representa tu actividad de prospección manual"
             ]
           }}
         />

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,11 +27,12 @@ const stateConfig = {
 
 const ProspectList = () => {
   const { prospects, loading } = useProspects();
-  // Cambiar a un objeto que almacene las sugerencias por ID de prospecto
   const [suggestions, setSuggestions] = useState<Record<string, string>>({});
   const [loadingProspects, setLoadingProspects] = useState<Set<string>>(new Set());
 
   const getAISuggestion = async (prospect: any) => {
+    console.log('🤖 Iniciando sugerencia de IA para prospecto:', prospect.username);
+    
     setLoadingProspects(prev => new Set(prev).add(prospect.id));
     
     try {
@@ -43,7 +45,7 @@ const ProspectList = () => {
         })
         .join('\n');
 
-      console.log('Enviando conversación para análisis:', conversationHistory);
+      console.log('📝 Conversación preparada:', conversationHistory.substring(0, 200) + '...');
 
       const requestBody = {
         message: `Analiza esta conversación y dame una sugerencia del siguiente mensaje o paso que debería realizar con este prospecto:
@@ -54,39 +56,65 @@ ${conversationHistory}
 Estado actual: ${stateConfig[prospect.state].label}
 
 Dame una sugerencia específica y accionable para el siguiente paso.`,
-        systemPrompt: 'Eres un experto en ventas y marketing que ayuda a mejorar las conversaciones con prospectos. Proporciona sugerencias específicas, prácticas y orientadas a resultados.'
+        systemPrompt: 'Eres un experto en ventas y marketing que ayuda a mejorar las conversaciones con prospectos. Proporciona sugerencias específicas, prácticas y orientadas a resultados en español.'
       };
 
-      console.log('Enviando solicitud a chatgpt-response:', requestBody);
+      console.log('🚀 Enviando solicitud a chatgpt-response...');
 
       const { data, error } = await supabase.functions.invoke('chatgpt-response', {
         body: requestBody
       });
 
-      console.log('Respuesta de chatgpt-response:', { data, error });
+      console.log('📥 Respuesta recibida:', { data, error });
 
       if (error) {
-        console.error('Error getting AI suggestion:', error);
+        console.error('❌ Error invocando función:', error);
+        let errorMessage = 'Error al conectar con el servicio de IA';
+        
+        if (error.message) {
+          if (error.message.includes('API key')) {
+            errorMessage = 'API key de OpenAI no configurada correctamente. Ve a configuración para añadirla.';
+          } else if (error.message.includes('quota')) {
+            errorMessage = 'Cuota de OpenAI agotada. Verifica tu plan de OpenAI.';
+          } else {
+            errorMessage = `Error: ${error.message}`;
+          }
+        }
+        
         setSuggestions(prev => ({
           ...prev,
-          [prospect.id]: `Error al conectar con el servicio de IA: ${error.message || 'Error desconocido'}`
+          [prospect.id]: errorMessage
         }));
       } else if (data?.response) {
+        console.log('✅ Sugerencia generada exitosamente');
         setSuggestions(prev => ({
           ...prev,
           [prospect.id]: data.response
         }));
       } else {
+        console.error('❌ Respuesta vacía de la función');
         setSuggestions(prev => ({
           ...prev,
-          [prospect.id]: 'No se pudo generar una sugerencia. La respuesta de la IA está vacía.'
+          [prospect.id]: 'No se pudo generar una sugerencia. Verifica que la API key de OpenAI esté configurada correctamente.'
         }));
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('💥 Error inesperado:', error);
+      let errorMessage = 'Error de conexión';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Error de red. Verifica tu conexión a internet.';
+        } else if (error.message.includes('API key')) {
+          errorMessage = 'API key de OpenAI no configurada. Ve a configuración del proyecto.';
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      
       setSuggestions(prev => ({
         ...prev,
-        [prospect.id]: `Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}`
+        [prospect.id]: errorMessage
       }));
     } finally {
       setLoadingProspects(prev => {
@@ -168,19 +196,19 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                 {suggestions[prospect.id] && (
                   <div className="mt-3 p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-100">
                     <div className="flex items-start gap-3">
-                      {suggestions[prospect.id]?.includes('Error') ? (
+                      {suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? (
                         <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-1" />
                       ) : (
                         <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mt-1" />
                       )}
                       <div>
                         <h4 className="font-medium text-purple-900 text-sm sm:text-base mb-1">
-                          {suggestions[prospect.id]?.includes('Error') ? 'Error de Configuración' : 'Sugerencia de IA'}
+                          {suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? 'Error de Configuración' : 'Sugerencia de IA'}
                         </h4>
                         {loadingProspects.has(prospect.id) ? (
                           <p className="text-xs sm:text-sm text-purple-600">Analizando conversación...</p>
                         ) : (
-                          <p className={`text-xs sm:text-sm ${suggestions[prospect.id]?.includes('Error') ? 'text-red-700' : 'text-purple-700'}`}>
+                          <p className={`text-xs sm:text-sm ${suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? 'text-red-700' : 'text-purple-700'}`}>
                             {suggestions[prospect.id]}
                           </p>
                         )}
