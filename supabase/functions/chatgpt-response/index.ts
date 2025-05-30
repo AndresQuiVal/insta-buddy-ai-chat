@@ -52,9 +52,9 @@ serve(async (req) => {
     }
 
     console.log('✅ OpenAI API Key configurada, generando respuesta...');
-    console.log('Mensaje a analizar (primeros 200 chars):', message.substring(0, 200));
+    console.log('Análisis completo de conversación iniciado...');
 
-    // Llamar a OpenAI API con estructura específica
+    // Llamar a OpenAI API con análisis completo y enfoque estratégico
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -66,14 +66,33 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Eres un experto en ventas. Responde con esta estructura EXACTA:\n\n**Contexto:** [Descripción breve de la situación en 1-2 oraciones]\n**Sugerencia:** [Mensaje específico que debe enviar o acción que debe tomar]\n\nSé directo, conciso y práctico.'
+            content: `Eres un experto en ventas y conversiones de Instagram/DM. Tu objetivo PRINCIPAL es ayudar a conseguir una llamada telefónica o el número de WhatsApp del prospecto.
+
+INSTRUCCIONES ESPECÍFICAS:
+1. Analiza TODA la conversación completa, no solo los últimos mensajes
+2. Identifica el nivel de interés, objeciones, y momento de la conversación
+3. Considera el historial: ¿ya mostró interés? ¿hay resistencia? ¿está tibio/caliente?
+4. Tu sugerencia debe estar SIEMPRE orientada a conseguir el contacto (llamada o WhatsApp)
+
+RESPONDE CON ESTA ESTRUCTURA EXACTA:
+**Contexto:** [Análisis breve del estado actual de la conversación y el prospecto en 1-2 oraciones]
+**Sugerencia:** [Mensaje específico orientado a conseguir llamada/WhatsApp o paso previo necesario]
+
+ESTRATEGIAS CLAVE:
+- Si el prospecto mostró interés: propón llamada directamente
+- Si está tibio: genera más interés antes de pedir contacto  
+- Si hay resistencia: maneja objeciones primero
+- Si es primera interacción: construye rapport antes del ask
+- Siempre sé natural, no agresivo
+
+Sé directo, estratégico y enfocado en la conversión.`
           },
           {
             role: 'user',
             content: message
           }
         ],
-        max_tokens: 120, // Ajustado para permitir la estructura pero mantener concisión
+        max_tokens: 150, // Incrementado para análisis más completo pero manteniendo concisión
         temperature: 0.7
       }),
     });
@@ -124,12 +143,12 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ Respuesta generada exitosamente');
+    console.log('✅ Respuesta estratégica generada exitosamente');
     console.log('Respuesta:', generatedResponse.substring(0, 100) + '...');
 
     return new Response(
       JSON.stringify({ 
-        response: generatedResponse.trim(), // Removemos espacios extra
+        response: generatedResponse.trim(),
         success: true
       }),
       { 
