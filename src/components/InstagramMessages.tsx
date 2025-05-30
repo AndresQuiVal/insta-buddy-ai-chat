@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -72,7 +73,11 @@ const InstagramMessages: React.FC = () => {
       try {
         const res = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${pageAccessToken}`);
         const data = await res.json();
-        if (data.id) setPageId(data.id);
+        if (data.id) {
+          setPageId(data.id);
+          localStorage.setItem('hower-page-id', data.id);
+          console.log('PAGE-ID obtenido y guardado:', data.id);
+        }
       } catch (e) {
         console.error('No se pudo obtener el PAGE-ID automáticamente', e);
       }
@@ -122,7 +127,7 @@ const InstagramMessages: React.FC = () => {
         return;
       }
 
-      // Filtrar mensajes reales y agrupar por conversación
+      // Filtrar mensajes reales
       const realMessages = data?.filter((message: any) => {
         return !message.sender_id.includes('webhook_') && 
                !message.sender_id.includes('debug') && 
@@ -132,64 +137,81 @@ const InstagramMessages: React.FC = () => {
                message.sender_id !== 'diagnostic_user';
       }) || [];
 
-      // Obtener mi page ID para identificar qué mensajes son míos
+      // Obtener mi page ID
       const myPageId = pageId || localStorage.getItem('hower-page-id');
-      console.log('Mi Page ID:', myPageId);
+      console.log('Mi Page ID para agrupación:', myPageId);
 
-      // Agrupar mensajes por conversación (por el otro participante)
+      // Agrupar mensajes por conversación
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
+      
       realMessages.forEach((message: any) => {
-        // Determinar quién es el "otro" en la conversación
-        let otherId = message.sender_id;
-        if (myPageId && message.sender_id === myPageId) {
-          otherId = message.recipient_id;
-        } else if (myPageId && message.recipient_id === myPageId) {
-          otherId = message.sender_id;
+        // Determinar el ID del prospecto (la otra persona en la conversación)
+        let prospectId = '';
+        
+        if (myPageId) {
+          // Si tengo mi PAGE-ID, usar lógica correcta
+          if (message.sender_id === myPageId) {
+            // Yo envié el mensaje, el prospecto es el recipient
+            prospectId = message.recipient_id;
+          } else {
+            // El prospecto me envió el mensaje
+            prospectId = message.sender_id;
+          }
+        } else {
+          // Fallback: usar sender_id como prospecto
+          prospectId = message.sender_id;
         }
         
-        if (!conversationGroups[otherId]) {
-          conversationGroups[otherId] = [];
+        console.log(`Mensaje: "${message.message_text}" - Prospecto ID: ${prospectId}`);
+        
+        if (!conversationGroups[prospectId]) {
+          conversationGroups[prospectId] = [];
         }
-        conversationGroups[otherId].push(message);
+        
+        // Determinar el tipo de mensaje correcto
+        const messageWithCorrectType = {
+          ...message,
+          message_type: myPageId && message.sender_id === myPageId ? 'sent' : 'received'
+        };
+        
+        conversationGroups[prospectId].push(messageWithCorrectType);
       });
+
+      console.log('Grupos de conversación creados:', Object.keys(conversationGroups));
 
       // Cargar matches de localStorage
       const localMatches = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
 
-      // Convertir a array de conversaciones y fusionar matches
-      const conversationsArray = Object.entries(conversationGroups).map(([sender_id, messages]) => {
-        // Ordenar mensajes por timestamp ascendente para mostrar cronológicamente
+      // Convertir a array de conversaciones
+      const conversationsArray = Object.entries(conversationGroups).map(([prospectId, messages]) => {
+        // Ordenar mensajes por timestamp ascendente
         const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        const unreadCount = messages.filter(msg => {
-          // Un mensaje está sin leer si lo recibimos (no lo enviamos nosotros)
-          return myPageId && msg.sender_id !== myPageId;
-        }).length;
+        
+        // Contar mensajes sin leer (solo los que recibí del prospecto)
+        const unreadCount = messages.filter(msg => msg.message_type === 'received').length;
         
         // Buscar matchPoints/metTraits en localStorage
-        const localMatch = localMatches.find((c: any) => c.sender_id === sender_id) || {};
+        const localMatch = localMatches.find((c: any) => c.sender_id === prospectId) || {};
         
         return {
-          sender_id,
+          sender_id: prospectId,
           messages: sortedMessages,
-          last_message: sortedMessages[sortedMessages.length - 1], // El más reciente
+          last_message: sortedMessages[sortedMessages.length - 1],
           unread_count: unreadCount,
           matchPoints: localMatch.matchPoints || 0,
           metTraits: localMatch.metTraits || []
         };
       });
 
-      // Ordenar conversaciones por:
-      // 1. Número de estrellas (matchPoints) - más estrellas primero
-      // 2. Tiempo del último mensaje - más reciente primero
+      // Ordenar conversaciones por matchPoints y luego por último mensaje
       conversationsArray.sort((a, b) => {
-        // Primero por matchPoints (descendente)
         if ((b.matchPoints || 0) !== (a.matchPoints || 0)) {
           return (b.matchPoints || 0) - (a.matchPoints || 0);
         }
-        // Si tienen las mismas estrellas, ordenar por último mensaje (más reciente primero)
         return new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime();
       });
 
+      console.log('Conversaciones finales:', conversationsArray.length);
       setConversations(conversationsArray);
       
       // Seleccionar la primera conversación si no hay ninguna seleccionada
@@ -250,6 +272,7 @@ const InstagramMessages: React.FC = () => {
         // EXTRAER MATCHPOINTS Y GUARDAR EN LA CONVERSACIÓN
         const idealTraits = businessConfig.idealClientTraits;
         const { matchPoints, metTraits } = extractMatchFromAIResponse(aiResponse, idealTraits);
+        
         // Actualizar la conversación en localStorage
         const savedConvs = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
         const idx = savedConvs.findIndex((c: any) => c.sender_id === message.sender_id);
@@ -266,7 +289,7 @@ const InstagramMessages: React.FC = () => {
         }
         localStorage.setItem('hower-conversations', JSON.stringify(savedConvs));
         
-        // Enviar la respuesta automática usando la API real de Instagram
+        // Enviar la respuesta automática
         const sendResult = await sendInstagramMessage(
           message.sender_id,
           aiResponse,
@@ -326,17 +349,8 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
-  // Determinar el tipo correcto de mensaje basado en mi page ID
-  const myPageId = pageId || localStorage.getItem('hower-page-id');
-  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages.map(msg => {
-    // Si el sender_id del mensaje es mi page ID, entonces YO envié el mensaje
-    // Si no, entonces el prospecto me envió el mensaje
-    const isMyMessage = myPageId && msg.sender_id === myPageId;
-    return {
-      ...msg,
-      message_type: isMyMessage ? 'sent' : 'received'
-    };
-  }) || [];
+  // Obtener mensajes de la conversación seleccionada
+  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages || [];
 
   // Botón Alimentar IA
   const handleFeedAI = async () => {
@@ -434,92 +448,17 @@ const InstagramMessages: React.FC = () => {
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex flex-col">
       <div className="flex items-center justify-between p-4 border-b border-purple-100">
         <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
-          <MessageCircle className="w-6 h-6" /> Mensajes
+          <MessageCircle className="w-6 h-6" /> Mensajes de Instagram
         </h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowPersona((v) => !v)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors"
-          >
-            <Brain className="w-5 h-5" /> Ver personalidad
-          </button>
-          <button
-            onClick={handleFeedAI}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
-          >
-            <Brain className="w-5 h-5" /> Alimentar IA
-          </button>
-        </div>
       </div>
-      {showPersona && (
-        <div className="p-4 border-b border-purple-100 bg-purple-50/50">
-          <h3 className="text-sm font-semibold text-purple-700 mb-1 flex items-center gap-2">
-            <Brain className="w-4 h-4" /> Personalidad actual de la IA
-          </h3>
-          <div className="text-xs text-gray-700 whitespace-pre-line bg-white/70 rounded p-2 border border-purple-100">
-            {iaPersona ? iaPersona : 'Aún no has alimentado la IA con tus mensajes.'}
-          </div>
-        </div>
-      )}
-      {/* Panel de configuración */}
-      {showSettings && (
-        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 w-96 max-w-[90%]">
-            <h3 className="text-lg font-semibold mb-4">Configuración de IA</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={aiEnabled}
-                    onChange={(e) => setAiEnabled(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <span>Respuestas automáticas habilitadas</span>
-                </label>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Delay de respuesta (segundos)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={aiDelay}
-                  onChange={(e) => setAiDelay(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
-              >
-                Guardar
-              </button>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Layout principal: bandejas y chat uno al lado del otro */}
+      {/* Layout principal: bandejas y chat */}
       <div className="flex flex-1 h-0 min-h-0">
-        {/* Panel de bandejas */}
+        {/* Panel de conversaciones individuales */}
         <div className="w-1/3 min-w-[260px] max-w-[400px] border-r border-purple-100 flex-shrink-0 flex flex-col">
           <div className="p-4 border-b border-purple-100">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-800">Bandejas</h3>
+              <h3 className="font-semibold text-gray-800">Conversaciones</h3>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowSettings(true)}
@@ -614,24 +553,52 @@ const InstagramMessages: React.FC = () => {
             )}
           </div>
         </div>
+
         {/* Panel de chat */}
         <div className="flex-1 flex flex-col min-w-0">
           {selectedConversation ? (
             <>
               {/* Header del chat */}
               <div className="p-4 border-b border-purple-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-white" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-800">
+                        {getUserDisplayName(selectedConversation)}
+                      </h3>
+                      <p className="text-sm text-green-600">● En línea</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      {getUserDisplayName(selectedConversation)}
-                    </h3>
-                    <p className="text-sm text-green-600">● En línea</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowPersona((v) => !v)}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors"
+                    >
+                      <Brain className="w-5 h-5" /> Ver personalidad
+                    </button>
+                    <button
+                      onClick={handleFeedAI}
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
+                    >
+                      <Brain className="w-5 h-5" /> Alimentar IA
+                    </button>
                   </div>
                 </div>
               </div>
+
+              {showPersona && (
+                <div className="p-4 border-b border-purple-100 bg-purple-50/50">
+                  <h3 className="text-sm font-semibold text-purple-700 mb-1 flex items-center gap-2">
+                    <Brain className="w-4 h-4" /> Personalidad actual de la IA
+                  </h3>
+                  <div className="text-xs text-gray-700 whitespace-pre-line bg-white/70 rounded p-2 border border-purple-100">
+                    {iaPersona ? iaPersona : 'Aún no has alimentado la IA con tus mensajes.'}
+                  </div>
+                </div>
+              )}
 
               {/* Mensajes */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -705,15 +672,68 @@ const InstagramMessages: React.FC = () => {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <MessageCircle className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Selecciona una bandeja</h3>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">Selecciona una conversación</h3>
                 <p className="text-gray-500">Elige una conversación para ver los mensajes</p>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Panel de configuración */}
+      {showSettings && (
+        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl p-6 w-96 max-w-[90%]">
+            <h3 className="text-lg font-semibold mb-4">Configuración de IA</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={aiEnabled}
+                    onChange={(e) => setAiEnabled(e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <span>Respuestas automáticas habilitadas</span>
+                </label>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Delay de respuesta (segundos)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={aiDelay}
+                  onChange={(e) => setAiDelay(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+              >
+                Guardar
+              </button>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default InstagramMessages;
+
