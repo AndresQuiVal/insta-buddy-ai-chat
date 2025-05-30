@@ -7,6 +7,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Función para detectar enlaces de invitación
+function detectInvitationLinks(messageText: string): boolean {
+  const invitationPatterns = [
+    // Zoom
+    /zoom\.us\/j\/\d+/i,
+    /zoom\.us\/meeting\/\d+/i,
+    /us\d+\.zoom\.us/i,
+    
+    // Google Meet
+    /meet\.google\.com\/[a-z0-9-]+/i,
+    /g\.co\/meet\/[a-z0-9-]+/i,
+    
+    // Microsoft Teams
+    /teams\.microsoft\.com\/l\/meetup-join/i,
+    /teams\.live\.com\/meet/i,
+    
+    // Skype
+    /join\.skype\.com\/[a-zA-Z0-9]+/i,
+    
+    // GoToMeeting
+    /gotomeeting\.com\/join\/\d+/i,
+    /gotomeet\.me\/\d+/i,
+    
+    // Webex
+    /webex\.com\/meet\/[a-zA-Z0-9.]+/i,
+    /cisco\.webex\.com/i,
+    
+    // Jitsi
+    /meet\.jit\.si\/[a-zA-Z0-9-]+/i,
+    
+    // Discord
+    /discord\.gg\/[a-zA-Z0-9]+/i,
+    /discord\.com\/invite\/[a-zA-Z0-9]+/i,
+    
+    // Palabras clave que indican invitación
+    /\b(únete|join|meeting|reunión|llamada|videollamada|conferencia)\b.*\b(link|enlace|url|http)\b/i,
+    /\b(te invito|invitación|cita|appointment)\b/i
+  ];
+
+  return invitationPatterns.some(pattern => pattern.test(messageText));
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -123,6 +165,10 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
     const recipientId = messagingEvent.recipient?.id || pageId
     const messageText = message.text || 'Mensaje sin texto'
     
+    // Detectar si el mensaje contiene enlaces de invitación
+    const isInvitation = detectInvitationLinks(messageText)
+    console.log(`🔍 Detección de invitación: ${isInvitation ? 'SÍ' : 'NO'} para mensaje: "${messageText}"`)
+    
     // Determinar el nombre del usuario más legible
     const userName = `Usuario ${senderId.slice(-4)}`
 
@@ -133,14 +179,16 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
       message_text: messageText,
       timestamp: new Date(messagingEvent.timestamp || Date.now()).toISOString(),
       message_type: 'received',
+      is_invitation: isInvitation,
       raw_data: { 
         original_event: messagingEvent,
         processed_at: new Date().toISOString(),
-        source: 'messaging'
+        source: 'messaging',
+        invitation_detected: isInvitation
       }
     }
 
-    console.log(`💾 Guardando mensaje: "${messageText}" de ${userName}`)
+    console.log(`💾 Guardando mensaje: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -152,7 +200,7 @@ async function processTextMessage(messagingEvent: any, pageId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Mensaje guardado exitosamente`)
+    console.log(`✅ Mensaje guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''}`)
 
     // Ya no generamos respuesta automática aquí - se maneja desde el frontend
     console.log(`📱 Mensaje procesado, respuesta automática se manejará desde el frontend`)
@@ -175,6 +223,10 @@ async function processChangeMessage(changeValue: any, pageId: string) {
     const recipientId = changeValue.recipient?.id || pageId
     const messageText = message?.text || 'Mensaje sin texto'
     
+    // Detectar si el mensaje contiene enlaces de invitación
+    const isInvitation = detectInvitationLinks(messageText)
+    console.log(`🔍 Detección de invitación: ${isInvitation ? 'SÍ' : 'NO'} para mensaje: "${messageText}"`)
+    
     // Determinar el nombre del usuario más legible
     const userName = `Usuario ${senderId.slice(-4)}`
 
@@ -191,14 +243,16 @@ async function processChangeMessage(changeValue: any, pageId: string) {
       message_text: messageText,
       timestamp: new Date(timestamp || Date.now()).toISOString(),
       message_type: 'received',
+      is_invitation: isInvitation,
       raw_data: { 
         original_change: changeValue,
         processed_at: new Date().toISOString(),
-        source: 'changes'
+        source: 'changes',
+        invitation_detected: isInvitation
       }
     }
 
-    console.log(`💾 Guardando mensaje de change: "${messageText}" de ${userName}`)
+    console.log(`💾 Guardando mensaje de change: "${messageText}" de ${userName} ${isInvitation ? '(INVITACIÓN DETECTADA)' : ''}`)
 
     const { data, error } = await supabase
       .from('instagram_messages')
@@ -210,7 +264,7 @@ async function processChangeMessage(changeValue: any, pageId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log(`✅ Mensaje de change guardado exitosamente`)
+    console.log(`✅ Mensaje de change guardado exitosamente ${isInvitation ? 'con marcador de invitación' : ''}`)
 
     // Ya no generamos respuesta automática aquí - se maneja desde el frontend
     console.log(`📱 Mensaje procesado, respuesta automática se manejará desde el frontend`)
