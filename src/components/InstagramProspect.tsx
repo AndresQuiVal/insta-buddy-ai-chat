@@ -82,9 +82,9 @@ const InstagramProspect = () => {
   const insertTemplate = (templateMessage: string) => {
     let finalMessage = templateMessage;
     
-    // Reemplazar la cuenta en el mensaje
+    // Reemplazar la cuenta en el mensaje usando replace con regex global
     if (instagramAccount && !instagramAccount.includes("www.instagram.com")) {
-      finalMessage = finalMessage.replaceAll("cuentadelapublicacion", instagramAccount);
+      finalMessage = finalMessage.replace(/cuentadelapublicacion/g, instagramAccount);
     }
 
     // Insertar el mensaje en el textarea
@@ -646,4 +646,4 @@ const InstagramProspect = () => {
   );
 };
 
-export default InstagramProspect; 
+export default InstagramProspect;

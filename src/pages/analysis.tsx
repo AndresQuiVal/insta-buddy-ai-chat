@@ -1,17 +1,18 @@
+
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AdvancedMetrics from '@/components/AdvancedMetrics';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 
 const AnalysisPage: React.FC = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <Button
-          onClick={() => router.push('/dashboard')}
+          onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
           variant="ghost"
         >
@@ -29,4 +30,4 @@ const AnalysisPage: React.FC = () => {
   );
 };
 
-export default AnalysisPage; 
+export default AnalysisPage;
