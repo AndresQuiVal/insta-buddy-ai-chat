@@ -77,11 +77,11 @@ const Beta: React.FC = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Video Section */}
           <div className="order-2 lg:order-1">
-            <div className="relative">
+            <div className="relative max-w-md mx-auto lg:max-w-full">
               <div className="rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
                 <div 
                   className="wistia_responsive_padding" 
-                  style={{ padding: '53.89% 0 0 0', position: 'relative' }}
+                  style={{ padding: '56.25% 0 0 0', position: 'relative' }}
                 >
                   <div 
                     className="wistia_responsive_wrapper" 
