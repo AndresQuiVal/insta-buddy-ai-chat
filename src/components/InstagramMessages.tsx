@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -68,6 +66,13 @@ const InstagramMessages: React.FC = () => {
   useEffect(() => {
     // Obtener PAGE-ID automáticamente al montar
     const fetchPageId = async () => {
+      const storedPageId = localStorage.getItem('hower-page-id');
+      if (storedPageId) {
+        setPageId(storedPageId);
+        console.log('PAGE-ID cargado desde localStorage:', storedPageId);
+        return;
+      }
+
       const pageAccessToken = localStorage.getItem('hower-instagram-token');
       if (!pageAccessToken) return;
       try {
@@ -147,31 +152,40 @@ const InstagramMessages: React.FC = () => {
       realMessages.forEach((message: any) => {
         // Determinar el ID del prospecto (la otra persona en la conversación)
         let prospectId = '';
+        let messageType: 'sent' | 'received' = 'received';
         
         if (myPageId) {
           // Si tengo mi PAGE-ID, usar lógica correcta
           if (message.sender_id === myPageId) {
             // Yo envié el mensaje, el prospecto es el recipient
             prospectId = message.recipient_id;
+            messageType = 'sent';
           } else {
             // El prospecto me envió el mensaje
             prospectId = message.sender_id;
+            messageType = 'received';
           }
         } else {
-          // Fallback: usar sender_id como prospecto
-          prospectId = message.sender_id;
+          // Fallback: revisar si es mensaje echo o determinar por raw_data
+          if (message.raw_data?.is_echo || message.message_type === 'sent') {
+            messageType = 'sent';
+            prospectId = message.recipient_id;
+          } else {
+            messageType = 'received';
+            prospectId = message.sender_id;
+          }
         }
         
-        console.log(`Mensaje: "${message.message_text}" - Prospecto ID: ${prospectId}`);
+        console.log(`Mensaje: "${message.message_text}" - Prospecto ID: ${prospectId} - Tipo: ${messageType}`);
         
         if (!conversationGroups[prospectId]) {
           conversationGroups[prospectId] = [];
         }
         
-        // Determinar el tipo de mensaje correcto
+        // Aplicar el tipo de mensaje correcto
         const messageWithCorrectType = {
           ...message,
-          message_type: myPageId && message.sender_id === myPageId ? 'sent' : 'received'
+          message_type: messageType
         };
         
         conversationGroups[prospectId].push(messageWithCorrectType);
@@ -348,9 +362,6 @@ const InstagramMessages: React.FC = () => {
       setSending(false);
     }
   };
-
-  // Obtener mensajes de la conversación seleccionada
-  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages || [];
 
   // Botón Alimentar IA
   const handleFeedAI = async () => {
@@ -736,4 +747,3 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
-
