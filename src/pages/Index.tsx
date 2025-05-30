@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import InstagramDashboard, { DashboardDebugPanel } from '@/components/InstagramDashboard';
 import InstagramMessages from '@/components/InstagramMessages';
 import InstagramDiagnostic from '@/components/InstagramDiagnostic';
@@ -6,6 +6,7 @@ import AdvancedMetrics from '@/components/AdvancedMetrics';
 import TokenManager from '@/components/TokenManager';
 import InstagramProspect from '@/components/InstagramProspect';
 import HamburgerMenu from '@/components/HamburgerMenu';
+import InstagramLogin from '@/components/InstagramLogin';
 import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Key, Brain, LogOut, Bug, Users, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import PersonalityEditor from '@/components/PersonalityEditor';
 import MyProspects from '@/components/MyProspects';
+import { checkInstagramConnection } from '@/services/instagramService';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -23,6 +25,42 @@ const Index = () => {
   const [openaiKey, setOpenaiKey] = useState('');
   const [instagramToken, setInstagramToken] = useState('');
   const [pageId, setPageId] = useState('');
+  const [isInstagramConnected, setIsInstagramConnected] = useState(false);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+
+  // Verificar conexión de Instagram al cargar
+  useEffect(() => {
+    const checkConnection = () => {
+      console.log('🔍 Verificando conexión de Instagram...');
+      const connected = checkInstagramConnection();
+      console.log('Estado de conexión:', connected);
+      setIsInstagramConnected(connected);
+      setIsCheckingConnection(false);
+    };
+
+    checkConnection();
+
+    // Verificar periodicamente si el usuario se conecta
+    const interval = setInterval(checkConnection, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Si está verificando la conexión, mostrar loading
+  if (isCheckingConnection) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando conexión...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no está conectado a Instagram, mostrar pantalla de login
+  if (!isInstagramConnected) {
+    return <InstagramLogin />;
+  }
 
   const handleSaveToken = () => {
     if (!accessToken.trim()) {
