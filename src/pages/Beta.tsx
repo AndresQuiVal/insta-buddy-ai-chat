@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,7 +79,7 @@ const Beta: React.FC = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Video Section */}
           <div className="order-2 lg:order-1">
-            <div className="relative max-w-lg mx-auto lg:max-w-lg">
+            <div className="relative max-w-sm mx-auto lg:max-w-sm">
               <div className="rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
                 <div 
                   className="wistia_responsive_padding" 
@@ -310,3 +311,4 @@ const Beta: React.FC = () => {
 };
 
 export default Beta;
+
