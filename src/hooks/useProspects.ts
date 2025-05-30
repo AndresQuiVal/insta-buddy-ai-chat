@@ -6,7 +6,7 @@ export interface Prospect {
   id: string;
   senderId: string;
   username: string;
-  state: 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited';
+  state: 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up';
   lastMessageTime: string;
   lastMessageType: 'sent' | 'received';
   conversationMessages: any[];
@@ -16,7 +16,7 @@ export const useProspects = () => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const determineProspectState = (messages: any[]): 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited' => {
+  const determineProspectState = (messages: any[]): 'first_message_sent' | 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up' => {
     if (messages.length === 0) return 'first_message_sent';
 
     // Ordenar mensajes por timestamp
@@ -51,20 +51,27 @@ export const useProspects = () => {
 
       console.log(`📊 Último mensaje enviado hace ${hoursSinceLastSent.toFixed(1)} horas`);
 
-      // Si han pasado más de 24 horas sin respuesta
-      if (hoursSinceLastSent > 24) {
-        // Verificar si ya había una conversación previa (si el prospecto había respondido antes)
-        const receivedMessages = messages.filter(msg => msg.message_type === 'received');
-        if (receivedMessages.length > 0) {
+      // Verificar si ya había una conversación previa (si el prospecto había respondido antes)
+      const receivedMessages = messages.filter(msg => msg.message_type === 'received');
+      
+      if (receivedMessages.length > 0) {
+        // Ya había conversación previa
+        if (hoursSinceLastSent > 24) {
           console.log(`✅ Estado: REACTIVATION_SENT (${hoursSinceLastSent.toFixed(1)}h sin respuesta, había conversación)`);
           return 'reactivation_sent';
         } else {
-          console.log(`✅ Estado: NO_RESPONSE (${hoursSinceLastSent.toFixed(1)}h sin respuesta, primera vez)`);
-          return 'no_response';
+          console.log(`✅ Estado: FOLLOW_UP (mensaje reciente con conversación previa: ${hoursSinceLastSent.toFixed(1)}h)`);
+          return 'follow_up';
         }
       } else {
-        console.log(`✅ Estado: FIRST_MESSAGE_SENT (mensaje reciente: ${hoursSinceLastSent.toFixed(1)}h)`);
-        return 'first_message_sent';
+        // No había conversación previa (el usuario nunca ha respondido)
+        if (hoursSinceLastSent > 24) {
+          console.log(`✅ Estado: NO_RESPONSE (${hoursSinceLastSent.toFixed(1)}h sin respuesta, primera vez)`);
+          return 'no_response';
+        } else {
+          console.log(`✅ Estado: FIRST_MESSAGE_SENT (mensaje reciente, primera vez: ${hoursSinceLastSent.toFixed(1)}h)`);
+          return 'first_message_sent';
+        }
       }
     }
 
@@ -88,6 +95,16 @@ export const useProspects = () => {
         if (message.raw_data.from?.username) {
           return `@${message.raw_data.from.username}`;
         }
+        if (message.raw_data.sender?.username) {
+          return `@${message.raw_data.sender.username}`;
+        }
+        // Buscar en el webhook data original
+        if (message.raw_data.original_event?.sender?.username) {
+          return `@${message.raw_data.original_event.sender.username}`;
+        }
+        if (message.raw_data.original_change?.sender?.username) {
+          return `@${message.raw_data.original_change.sender.username}`;
+        }
       }
     }
     
@@ -96,7 +113,7 @@ export const useProspects = () => {
     if (senderId) {
       // Crear un username más legible basado en el sender_id
       const shortId = senderId.slice(-8);
-      return `@usuario_${shortId}`;
+      return `@user_${shortId}`;
     }
     
     return 'Usuario desconocido';
@@ -145,7 +162,8 @@ export const useProspects = () => {
           totalMessages: senderMessages.length,
           lastMessageType: lastMessage.message_type,
           state: state,
-          lastMessageTime: lastMessage.timestamp
+          lastMessageTime: lastMessage.timestamp,
+          hasReceivedMessages: senderMessages.filter((msg: any) => msg.message_type === 'received').length
         });
 
         return {

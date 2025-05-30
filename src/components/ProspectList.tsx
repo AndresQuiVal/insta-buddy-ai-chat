@@ -11,6 +11,10 @@ const stateConfig = {
     label: 'Primer mensaje enviado',
     color: 'bg-blue-100 text-blue-700'
   },
+  follow_up: {
+    label: 'En seguimiento',
+    color: 'bg-orange-100 text-orange-700'
+  },
   reactivation_sent: {
     label: 'Mensaje reactivación enviado',
     color: 'bg-yellow-100 text-yellow-700'
@@ -34,6 +38,7 @@ const ProspectList = () => {
   const getAISuggestion = async (prospect: any) => {
     setIsLoadingSuggestion(true);
     setSelectedProspect(prospect.id);
+    setSuggestion(null);
     
     try {
       // Preparar historial de conversación en formato legible
@@ -47,9 +52,8 @@ const ProspectList = () => {
 
       console.log('Enviando conversación para análisis:', conversationHistory);
 
-      const { data, error } = await supabase.functions.invoke('chatgpt-response', {
-        body: {
-          message: `Analiza esta conversación y dame una sugerencia del siguiente mensaje o paso que debería realizar con este prospecto:
+      const requestBody = {
+        message: `Analiza esta conversación y dame una sugerencia del siguiente mensaje o paso que debería realizar con este prospecto:
 
 Conversación:
 ${conversationHistory}
@@ -57,21 +61,28 @@ ${conversationHistory}
 Estado actual: ${stateConfig[prospect.state].label}
 
 Dame una sugerencia específica y accionable para el siguiente paso.`,
-          systemPrompt: 'Eres un experto en ventas y marketing que ayuda a mejorar las conversaciones con prospectos. Proporciona sugerencias específicas, prácticas y orientadas a resultados.'
-        }
+        systemPrompt: 'Eres un experto en ventas y marketing que ayuda a mejorar las conversaciones con prospectos. Proporciona sugerencias específicas, prácticas y orientadas a resultados.'
+      };
+
+      console.log('Enviando solicitud a chatgpt-response:', requestBody);
+
+      const { data, error } = await supabase.functions.invoke('chatgpt-response', {
+        body: requestBody
       });
+
+      console.log('Respuesta de chatgpt-response:', { data, error });
 
       if (error) {
         console.error('Error getting AI suggestion:', error);
-        setSuggestion('Error al conectar con el servicio de IA. Verifica que la API key de OpenAI esté configurada en la configuración de Supabase.');
+        setSuggestion(`Error al conectar con el servicio de IA: ${error.message || 'Error desconocido'}`);
       } else if (data?.response) {
         setSuggestion(data.response);
       } else {
-        setSuggestion('No se pudo generar una sugerencia. Intenta nuevamente.');
+        setSuggestion('No se pudo generar una sugerencia. La respuesta de la IA está vacía.');
       }
     } catch (error) {
       console.error('Error:', error);
-      setSuggestion('Error de conexión. Verifica que la función de IA esté configurada correctamente.');
+      setSuggestion(`Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setIsLoadingSuggestion(false);
     }
@@ -126,7 +137,7 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                       })} • {prospect.lastMessageType === 'sent' ? 'Enviado por ti' : 'Recibido'}
                     </div>
                     <div className="text-xs text-gray-400">
-                      {prospect.conversationMessages.length} mensaje(s) en total
+                      {prospect.conversationMessages.length} mensaje(s) en total • {prospect.conversationMessages.filter(msg => msg.message_type === 'received').length} respuesta(s) del prospecto
                     </div>
                   </div>
                   <Button
@@ -145,10 +156,10 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                   </Button>
                 </div>
                 
-                {selectedProspect === prospect.id && (
+                {selectedProspect === prospect.id && suggestion && (
                   <div className="mt-3 p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-100">
                     <div className="flex items-start gap-3">
-                      {suggestion?.includes('Error') || suggestion?.includes('Verifica') ? (
+                      {suggestion?.includes('Error') ? (
                         <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-1" />
                       ) : (
                         <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mt-1" />
