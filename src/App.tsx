@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
 import InstagramCallback from "./pages/InstagramCallback";
 import Settings from "./pages/Settings";
+import Beta from "./pages/Beta";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/beta" element={<Beta />} />
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
