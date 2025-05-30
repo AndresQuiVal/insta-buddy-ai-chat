@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -162,7 +161,7 @@ const Beta: React.FC = () => {
                   <Brain className="w-5 h-5 text-pink-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Sugerencias de seguimientos con IA</span>
+                  <span className="text-sm font-semibold text-gray-800">Sugerencias con IA</span>
                   <p className="text-xs text-gray-600">Recomendaciones inteligentes</p>
                 </div>
               </div>
@@ -268,7 +267,7 @@ const Beta: React.FC = () => {
               <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Qué incluye la beta?</h3>
               <p className="text-gray-600">
                 Acceso completo a los 4 procesos inteligentes de Hower Assistant: prospección móvil, 
-                sugerencias de seguimientos con IA, filtrado de procesos y métricas automáticas con sugerencias.
+                sugerencias con IA, filtrado de procesos y métricas automáticas con sugerencias.
               </p>
             </Card>
 
