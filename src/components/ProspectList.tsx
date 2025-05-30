@@ -31,14 +31,12 @@ const stateConfig = {
 
 const ProspectList = () => {
   const { prospects, loading } = useProspects();
-  const [selectedProspect, setSelectedProspect] = useState<string | null>(null);
-  const [suggestion, setSuggestion] = useState<string | null>(null);
-  const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false);
+  // Cambiar a un objeto que almacene las sugerencias por ID de prospecto
+  const [suggestions, setSuggestions] = useState<Record<string, string>>({});
+  const [loadingProspects, setLoadingProspects] = useState<Set<string>>(new Set());
 
   const getAISuggestion = async (prospect: any) => {
-    setIsLoadingSuggestion(true);
-    setSelectedProspect(prospect.id);
-    setSuggestion(null);
+    setLoadingProspects(prev => new Set(prev).add(prospect.id));
     
     try {
       // Preparar historial de conversación en formato legible
@@ -74,17 +72,33 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
 
       if (error) {
         console.error('Error getting AI suggestion:', error);
-        setSuggestion(`Error al conectar con el servicio de IA: ${error.message || 'Error desconocido'}`);
+        setSuggestions(prev => ({
+          ...prev,
+          [prospect.id]: `Error al conectar con el servicio de IA: ${error.message || 'Error desconocido'}`
+        }));
       } else if (data?.response) {
-        setSuggestion(data.response);
+        setSuggestions(prev => ({
+          ...prev,
+          [prospect.id]: data.response
+        }));
       } else {
-        setSuggestion('No se pudo generar una sugerencia. La respuesta de la IA está vacía.');
+        setSuggestions(prev => ({
+          ...prev,
+          [prospect.id]: 'No se pudo generar una sugerencia. La respuesta de la IA está vacía.'
+        }));
       }
     } catch (error) {
       console.error('Error:', error);
-      setSuggestion(`Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setSuggestions(prev => ({
+        ...prev,
+        [prospect.id]: `Error de conexión: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      }));
     } finally {
-      setIsLoadingSuggestion(false);
+      setLoadingProspects(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(prospect.id);
+        return newSet;
+      });
     }
   };
 
@@ -145,9 +159,9 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                     size="sm"
                     className="flex items-center justify-center gap-2 w-full sm:w-auto"
                     onClick={() => getAISuggestion(prospect)}
-                    disabled={isLoadingSuggestion && selectedProspect === prospect.id}
+                    disabled={loadingProspects.has(prospect.id)}
                   >
-                    {isLoadingSuggestion && selectedProspect === prospect.id ? (
+                    {loadingProspects.has(prospect.id) ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Sparkles className="w-4 h-4" />
@@ -156,23 +170,23 @@ Dame una sugerencia específica y accionable para el siguiente paso.`,
                   </Button>
                 </div>
                 
-                {selectedProspect === prospect.id && suggestion && (
+                {suggestions[prospect.id] && (
                   <div className="mt-3 p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-100">
                     <div className="flex items-start gap-3">
-                      {suggestion?.includes('Error') ? (
+                      {suggestions[prospect.id]?.includes('Error') ? (
                         <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-1" />
                       ) : (
                         <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mt-1" />
                       )}
                       <div>
                         <h4 className="font-medium text-purple-900 text-sm sm:text-base mb-1">
-                          {suggestion?.includes('Error') ? 'Error de Configuración' : 'Sugerencia de IA'}
+                          {suggestions[prospect.id]?.includes('Error') ? 'Error de Configuración' : 'Sugerencia de IA'}
                         </h4>
-                        {isLoadingSuggestion ? (
+                        {loadingProspects.has(prospect.id) ? (
                           <p className="text-xs sm:text-sm text-purple-600">Analizando conversación...</p>
                         ) : (
-                          <p className={`text-xs sm:text-sm ${suggestion?.includes('Error') ? 'text-red-700' : 'text-purple-700'}`}>
-                            {suggestion}
+                          <p className={`text-xs sm:text-sm ${suggestions[prospect.id]?.includes('Error') ? 'text-red-700' : 'text-purple-700'}`}>
+                            {suggestions[prospect.id]}
                           </p>
                         )}
                       </div>
