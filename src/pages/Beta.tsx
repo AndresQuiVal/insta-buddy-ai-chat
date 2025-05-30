@@ -44,15 +44,7 @@ const Beta: React.FC = () => {
   };
 
   const handleRegister = () => {
-    // Guardar datos en localStorage para tracking
-    if (formData.name || formData.email || formData.business) {
-      localStorage.setItem('hower-beta-lead', JSON.stringify({
-        ...formData,
-        timestamp: new Date().toISOString()
-      }));
-    }
-    
-    // Redirigir a Stripe
+    // Redirigir directamente a Stripe
     window.open('https://buy.stripe.com/cNi6oG9gYdRIf1HdFm3wQ0u', '_blank');
   };
 
@@ -190,67 +182,29 @@ const Beta: React.FC = () => {
         </div>
       </div>
 
-      {/* Formulario de Registro */}
+      {/* Botón de Registro Simplificado */}
       <div className="container mx-auto px-4 py-12">
         <Card className="max-w-lg mx-auto p-8 shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-gray-800">Asegura tu acceso a la Beta</h2>
-              <p className="text-gray-600">Únete por solo $1 USD</p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre completo *
-                </label>
-                <Input
-                  type="text"
-                  placeholder="Tu nombre completo"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email *
-                </label>
-                <Input
-                  type="email"
-                  placeholder="tu@email.com"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Empresa/Negocio (opcional)
-                </label>
-                <Input
-                  type="text"
-                  placeholder="Nombre de tu empresa o negocio"
-                  value={formData.business}
-                  onChange={(e) => handleInputChange('business', e.target.value)}
-                  className="w-full"
-                />
-              </div>
+          <div className="space-y-6 text-center">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-gray-800">Asegura tu acceso a la Beta</h2>
+              <p className="text-lg text-gray-600">Únete por solo $1 USD</p>
+              <p className="text-sm text-gray-500">
+                Acceso completo a los 4 procesos inteligentes desde mediados de junio
+              </p>
             </div>
 
             <Button
               onClick={handleRegister}
-              disabled={!isFormValid}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 text-lg"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 text-xl"
+              size="lg"
             >
               Registrarse por $1 USD
             </Button>
 
             <div className="text-center">
               <p className="text-sm text-gray-500">
-                Al hacer clic serás redirigido a Stripe para completar el pago
+                Al hacer clic serás redirigido a Stripe para completar el pago seguro
               </p>
             </div>
           </div>
