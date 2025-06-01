@@ -25,10 +25,12 @@ const Index = () => {
   const [openaiKey, setOpenaiKey] = useState('');
   const [instagramToken, setInstagramToken] = useState('');
   const [pageId, setPageId] = useState('');
-  const [isInstagramConnected, setIsInstagramConnected] = useState(false);
-  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+  // TEMPORALMENTE SIEMPRE CONECTADO PARA PRUEBAS
+  const [isInstagramConnected, setIsInstagramConnected] = useState(true);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
 
-  // Verificar conexión de Instagram al cargar
+  // Comentamos la verificación de conexión para pruebas
+  /*
   useEffect(() => {
     const checkConnection = () => {
       console.log('🔍 Verificando conexión de Instagram...');
@@ -44,6 +46,7 @@ const Index = () => {
     const interval = setInterval(checkConnection, 2000);
     return () => clearInterval(interval);
   }, []);
+  */
 
   // Si está verificando la conexión, mostrar loading
   if (isCheckingConnection) {
@@ -57,10 +60,12 @@ const Index = () => {
     );
   }
 
-  // Si no está conectado a Instagram, mostrar pantalla de login
+  // COMENTAMOS ESTA VERIFICACIÓN PARA PRUEBAS
+  /*
   if (!isInstagramConnected) {
     return <InstagramLogin />;
   }
+  */
 
   const handleSaveToken = () => {
     if (!accessToken.trim()) {
