@@ -31,6 +31,12 @@ interface Conversation {
   metTraitIndices?: number[];
 }
 
+interface TraitWithPosition {
+  trait: string;
+  enabled: boolean;
+  position: number;
+}
+
 const InstagramMessages: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -51,7 +57,7 @@ const InstagramMessages: React.FC = () => {
   
   // Hook de análisis de características
   const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
-  const { isAnalyzing: isAnalyzingAI, analyzeAll, loadIdealTraits } = useAITraitAnalysis();
+  const { isAnalyzing: isAnalyzingAI, analyzeAll } = useAITraitAnalysis();
 
   useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
 
@@ -74,7 +80,7 @@ const InstagramMessages: React.FC = () => {
   }, []);
 
   // Función para cargar características desde localStorage
-  const loadIdealTraits = () => {
+  const loadTraitsFromStorage = (): TraitWithPosition[] => {
     try {
       const savedTraits = localStorage.getItem('hower-ideal-client-traits');
       if (savedTraits) {
@@ -270,13 +276,7 @@ const InstagramMessages: React.FC = () => {
         console.log(`🔍 Buscando match para ${prospectId}:`, localMatch);
         
         // Obtener características actuales
-        let traits = [];
-        try {
-          const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-          if (savedTraits) {
-            traits = JSON.parse(savedTraits).filter((t: any) => t.enabled);
-          }
-        } catch {}
+        const traits = loadTraitsFromStorage().filter(t => t.enabled);
         
         // Calcular matchPoints dinámicamente según metTraitIndices válidos
         const metTraitIndices = localMatch.metTraitIndices || [];
@@ -329,7 +329,7 @@ const InstagramMessages: React.FC = () => {
     console.log("🔍 NUEVO MENSAJE RECIBIDO - ANALIZANDO:", message.message_text);
 
     // ANALIZAR EL MENSAJE INMEDIATAMENTE
-    const idealTraits = loadIdealTraits();
+    const idealTraits = loadTraitsFromStorage();
     await analyzeAndUpdateProspect(
       message.sender_id,
       `Usuario ${message.sender_id.slice(-4)}`,
@@ -633,13 +633,7 @@ const InstagramMessages: React.FC = () => {
             ) : (
               conversations.map((conversation) => {
                 // Obtener características actuales para calcular el máximo
-                let traits = [];
-                try {
-                  const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-                  if (savedTraits) {
-                    traits = JSON.parse(savedTraits).filter((t: any) => t.enabled);
-                  }
-                } catch {}
+                const traits = loadTraitsFromStorage().filter(t => t.enabled);
                 const maxPoints = traits.length || 4;
 
                 return (
@@ -772,18 +766,12 @@ const InstagramMessages: React.FC = () => {
                 <div className="flex flex-wrap gap-2">
                   {(() => {
                     // Obtener características actuales
-                    let traits = [];
-                    try {
-                      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-                      if (savedTraits) {
-                        traits = JSON.parse(savedTraits).filter((t: any) => t.enabled);
-                      }
-                    } catch {}
+                    const traits = loadTraitsFromStorage().filter(t => t.enabled);
                     // Obtener las cumplidas para este prospecto
                     const selectedConv = conversations.find(c => c.sender_id === selectedConversation);
                     const metTraitIndices = selectedConv?.metTraitIndices || [];
                     
-                    return traits.map((trait: any, idx: number) => {
+                    return traits.map((trait: TraitWithPosition, idx: number) => {
                       const isMet = metTraitIndices.includes(idx);
                       return (
                         <span
