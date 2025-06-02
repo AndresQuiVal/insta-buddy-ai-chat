@@ -8,17 +8,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Key, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
 const TokenManager: React.FC = () => {
-  const [token, setToken] = useState('EAAp0ic0E6bEBO2mZCzP4ddQsX5OeCx9gKdkO9gIPZBsZCCQlcYELpVzTAToBc3wog6CYL11AZB4BjHbpQvbE7S9G5r1QplWhLBqgRknuzvmpH34blv8l3GR7sMD1cwhx06mkAsxE4iDYJ4UZBSLf8y2qank7kJBGQlwgYZBxA0p3XwCi5Pw8lnuKp2Pz40oKBbZC8ymSPwiUxraoxk1tZB52ZBuZAY2DmyMalMgn16');
+  const [token, setToken] = useState('EAAp0ic0E6bEBO5tVGAmkwZCerz8UFId7xKzg8SomYmchBU0Q4BlQ1S03yYwMCGKzIXVcRTlbWunnrfLHrZBEM28ab1pT2v9dGxXi7qBbJZCc74LE5JaJ0CqgZC5Da0vH6Q3sZAnEy1XuNROV6HZCPIwfZBnZBaVaMbfpZBZBWja9EZBAKKVuvMHvZCmnJ1rZAiN8NOC0pbOxdU9l7ZC8IZBuM9VzjbwcTV7CAZDZD');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
   const { toast } = useToast();
 
-  // Auto-validar el token al cargar el componente
+  // Auto-validar el nuevo token al cargar el componente
   useEffect(() => {
-    if (token) {
-      validateTokenDetailed(token);
-    }
+    console.log('🔄 Nuevo token detectado, validando automáticamente...');
+    validateTokenDetailed(token);
   }, []);
 
   const validateTokenDetailed = async (tokenToTest: string) => {
@@ -40,6 +39,11 @@ const TokenManager: React.FC = () => {
           error: basicData.error.message,
           details: basicData
         });
+        toast({
+          title: "Token inválido",
+          description: basicData.error.message,
+          variant: "destructive"
+        });
         return false;
       }
 
@@ -50,7 +54,7 @@ const TokenManager: React.FC = () => {
       console.log('🔑 Permisos:', permissionsData);
 
       // Test 3: Verificar cuentas de Instagram Business
-      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${tokenToTest}`);
+      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${tokenToTest}`);
       const accountsData = await accountsResponse.json();
       
       console.log('📱 Cuentas Instagram:', accountsData);
@@ -65,6 +69,11 @@ const TokenManager: React.FC = () => {
         hasInstagramBusiness: hasInstagramBusiness
       });
 
+      toast({
+        title: "¡Token válido!",
+        description: `Usuario: ${basicData.name}`,
+      });
+
       return true;
     } catch (error) {
       console.error('❌ Error validando token:', error);
@@ -72,6 +81,11 @@ const TokenManager: React.FC = () => {
         isValid: false,
         error: error.message,
         details: { error: 'Network error' }
+      });
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo verificar el token",
+        variant: "destructive"
       });
       return false;
     } finally {
@@ -92,23 +106,7 @@ const TokenManager: React.FC = () => {
     setIsUpdating(true);
 
     try {
-      console.log('🚀 Iniciando actualización de token...');
-      
-      // Primero validar el token si no lo hemos hecho
-      if (!validationResult || !validationResult.isValid) {
-        const isValid = await validateTokenDetailed(token);
-        
-        if (!isValid) {
-          toast({
-            title: "Token inválido",
-            description: validationResult?.error || "El token no es válido",
-            variant: "destructive"
-          });
-          return;
-        }
-      }
-
-      console.log('✅ Token validado, actualizando en servidor...');
+      console.log('🚀 Actualizando token en servidor...');
 
       // Actualizar en el servidor usando la edge function
       const { data, error } = await supabase.functions.invoke('update-instagram-token', {
@@ -133,7 +131,7 @@ const TokenManager: React.FC = () => {
 
       toast({
         title: "¡Token actualizado exitosamente!",
-        description: `Usuario: ${validationResult.user.name || validationResult.user.id}`,
+        description: `Token guardado correctamente`,
       });
       
     } catch (error) {
@@ -145,20 +143,6 @@ const TokenManager: React.FC = () => {
       });
     } finally {
       setIsUpdating(false);
-    }
-  };
-
-  const testCurrentToken = async () => {
-    const currentToken = localStorage.getItem('instagram_access_token') || localStorage.getItem('hower-instagram-token');
-    if (currentToken) {
-      console.log('🧪 Probando token actual...');
-      await validateTokenDetailed(currentToken);
-    } else {
-      toast({
-        title: "No hay token",
-        description: "No se encontró ningún token guardado",
-        variant: "destructive"
-      });
     }
   };
 
@@ -179,7 +163,7 @@ const TokenManager: React.FC = () => {
             <Input
               id="token"
               type="password"
-              placeholder="Token cargado automáticamente..."
+              placeholder="Tu nuevo token..."
               value={token}
               onChange={(e) => {
                 setToken(e.target.value);
@@ -214,9 +198,9 @@ const TokenManager: React.FC = () => {
           )}
         </Button>
 
-        {/* Validar token diferente */}
+        {/* Validar token */}
         <div className="p-4 bg-blue-50 rounded-lg">
-          <h4 className="font-medium mb-2">🧪 Validar Token</h4>
+          <h4 className="font-medium mb-2">🧪 Estado del Token</h4>
           <Button 
             onClick={() => validateTokenDetailed(token)}
             disabled={isValidating || !token}
@@ -229,7 +213,7 @@ const TokenManager: React.FC = () => {
                 Validando...
               </>
             ) : (
-              'Validar Token Actual'
+              'Volver a Validar'
             )}
           </Button>
         </div>
@@ -257,7 +241,9 @@ const TokenManager: React.FC = () => {
                   <summary className="cursor-pointer text-blue-600">Ver permisos detallados</summary>
                   <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
                     {validationResult.permissions.map((perm, idx) => (
-                      <div key={idx}>{perm.permission}: {perm.status}</div>
+                      <div key={idx} className={`px-1 py-0.5 rounded mb-1 ${perm.status === 'granted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {perm.permission}: {perm.status}
+                      </div>
                     ))}
                   </div>
                 </details>
@@ -272,9 +258,9 @@ const TokenManager: React.FC = () => {
 
         <div className="text-sm text-gray-600 space-y-1">
           <p>• Tu nuevo token está cargado automáticamente</p>
-          <p>• Haz clic en "Actualizar Token" para guardarlo</p>
-          <p>• Asegúrate de tener permisos: pages_messaging, instagram_basic</p>
-          <p>• Necesitas una cuenta de Instagram Business conectada</p>
+          <p>• Se está validando automáticamente al cargar</p>
+          <p>• Haz clic en "Actualizar Token" para guardarlo en el servidor</p>
+          <p>• Necesitas una cuenta de Instagram Business conectada para mensajes</p>
         </div>
       </div>
     </div>
