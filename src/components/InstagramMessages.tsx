@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -8,7 +6,7 @@ import { handleAutomaticResponse } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { analyzeInstagramMessage } from '@/services/instagramTraitAnalysis';
+import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
 
 interface InstagramMessage {
   id: string;
@@ -42,12 +40,14 @@ const InstagramMessages: React.FC = () => {
   const [pageId, setPageId] = useState<string | null>(null);
   const [iaPersona, setIaPersona] = useState<string>('');
   const [showPersona, setShowPersona] = useState<boolean>(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const aiEnabledRef = useRef(aiEnabled);
   const [isTabLeader, setIsTabLeader] = useState(false);
   const TAB_KEY = 'hower-active-tab';
   const myTabId = React.useRef(`${Date.now()}-${Math.random()}`);
   const isMobile = useIsMobile();
+  
+  // Hook de análisis de características
+  const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
 
   useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
 
@@ -68,6 +68,26 @@ const InstagramMessages: React.FC = () => {
       }
     };
   }, []);
+
+  // Función para cargar características desde localStorage
+  const loadIdealTraits = () => {
+    try {
+      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+      if (savedTraits) {
+        return JSON.parse(savedTraits);
+      }
+    } catch (error) {
+      console.error("Error al cargar características:", error);
+    }
+    
+    // Características por defecto
+    return [
+      { trait: "Interesado en nuestros productos o servicios", enabled: true, position: 0 },
+      { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true, position: 1 },
+      { trait: "Está listo para tomar una decisión de compra", enabled: true, position: 2 },
+      { trait: "Se encuentra en nuestra zona de servicio", enabled: true, position: 3 }
+    ];
+  };
 
   useEffect(() => {
     // Obtener PAGE-ID automáticamente al montar
@@ -122,24 +142,44 @@ const InstagramMessages: React.FC = () => {
   // Función para analizar automáticamente TODOS los mensajes existentes
   const analyzeExistingMessages = async () => {
     console.log("🔍 ANALIZANDO TODOS LOS MENSAJES EXISTENTES...");
-    setIsAnalyzing(true);
     
     try {
+      const idealTraits = loadIdealTraits();
+      const enabledTraits = idealTraits.filter((t: any) => t.enabled);
+      
+      if (enabledTraits.length === 0) {
+        toast({
+          title: "No hay características habilitadas",
+          description: "Ve a Configuración para habilitar características del cliente ideal",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log("✅ Características cargadas:", enabledTraits.map((t: any) => t.trait));
+      
       // Analizar cada conversación
+      let totalAnalyzed = 0;
       for (const conversation of conversations) {
         console.log(`📝 Analizando conversación de ${conversation.sender_id}`);
         
         // Analizar todos los mensajes del usuario (no los enviados por nosotros)
         const userMessages = conversation.messages.filter(msg => msg.message_type === 'received');
         
-        for (const message of userMessages) {
-          console.log(`🔍 Analizando mensaje: "${message.message_text}"`);
+        if (userMessages.length > 0) {
+          // Concatenar todos los mensajes del usuario
+          const allUserMessages = userMessages.map(msg => msg.message_text).join(' ');
           
-          await analyzeInstagramMessage(
-            message.sender_id,
-            message.message_text,
-            `Usuario ${message.sender_id.slice(-4)}`
+          console.log(`🔍 Analizando mensajes concatenados: "${allUserMessages}"`);
+          
+          await analyzeAndUpdateProspect(
+            conversation.sender_id,
+            `Usuario ${conversation.sender_id.slice(-4)}`,
+            allUserMessages,
+            idealTraits
           );
+          
+          totalAnalyzed++;
         }
       }
       
@@ -148,8 +188,8 @@ const InstagramMessages: React.FC = () => {
       await loadConversations();
       
       toast({
-        title: "Análisis completado",
-        description: "Se han analizado todos los mensajes existentes",
+        title: "✅ Análisis completado",
+        description: `Se analizaron ${totalAnalyzed} conversaciones exitosamente`,
       });
       
     } catch (error) {
@@ -159,8 +199,6 @@ const InstagramMessages: React.FC = () => {
         description: "Hubo un problema analizando los mensajes",
         variant: "destructive"
       });
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
@@ -257,6 +295,7 @@ const InstagramMessages: React.FC = () => {
         const localMatch = localMatches.find((c: any) => 
           c.sender_id === prospectId || 
           c.id === prospectId ||
+          c.senderId === prospectId ||
           c.userName === `Usuario ${prospectId.slice(-4)}`
         ) || {};
         
@@ -300,33 +339,18 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
-  // Utilidad para extraer matchPoints y características de la respuesta de la IA
-  const extractMatchFromAIResponse = (aiResponse: string, idealTraits: string[]) => {
-    let matchPoints = 0;
-    let metTraits: string[] = [];
-    // Buscar la nota interna
-    const matchRegex = /([0-4])\s*\/\s*4|Prospecto ideal \(4\/4\)/i;
-    const found = aiResponse.match(matchRegex);
-    if (found) {
-      matchPoints = found[1] ? parseInt(found[1], 10) : 4;
-    }
-    // Opcional: buscar nombres de características cumplidas (si la IA los lista)
-    if (matchPoints && idealTraits) {
-      metTraits = idealTraits.slice(0, matchPoints);
-    }
-    return { matchPoints, metTraits };
-  };
-
   const handleNewIncomingMessage = async (message: InstagramMessage) => {
     if (!aiEnabled) return;
 
     console.log("🔍 NUEVO MENSAJE RECIBIDO - ANALIZANDO:", message.message_text);
 
     // ANALIZAR EL MENSAJE INMEDIATAMENTE
-    await analyzeInstagramMessage(
+    const idealTraits = loadIdealTraits();
+    await analyzeAndUpdateProspect(
       message.sender_id,
+      `Usuario ${message.sender_id.slice(-4)}`,
       message.message_text,
-      `Usuario ${message.sender_id.slice(-4)}`
+      idealTraits
     );
 
     console.log(`Generando respuesta automática en ${aiDelay} segundos...`);
@@ -389,6 +413,23 @@ const InstagramMessages: React.FC = () => {
         console.error('Error generando respuesta automática:', error);
       }
     }, aiDelay * 1000);
+  };
+
+  // Utilidad para extraer matchPoints y características de la respuesta de la IA
+  const extractMatchFromAIResponse = (aiResponse: string, idealTraits: string[]) => {
+    let matchPoints = 0;
+    let metTraits: string[] = [];
+    // Buscar la nota interna
+    const matchRegex = /([0-4])\s*\/\s*4|Prospecto ideal \(4\/4\)/i;
+    const found = aiResponse.match(matchRegex);
+    if (found) {
+      matchPoints = found[1] ? parseInt(found[1], 10) : 4;
+    }
+    // Opcional: buscar nombres de características cumplidas (si la IA los lista)
+    if (matchPoints && idealTraits) {
+      metTraits = idealTraits.slice(0, matchPoints);
+    }
+    return { matchPoints, metTraits };
   };
 
   const getUserDisplayName = (senderId: string) => {
@@ -523,14 +564,17 @@ const InstagramMessages: React.FC = () => {
       loadConversations();
     };
 
+    const handleConversationsUpdate = () => {
+      console.log('📦 Conversations updated event detected, recargando...');
+      loadConversations();
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    
-    // También escuchar eventos custom
-    window.addEventListener('traits-updated', handleStorageChange);
+    window.addEventListener('conversations-updated', handleConversationsUpdate);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('traits-updated', handleStorageChange);
+      window.removeEventListener('conversations-updated', handleConversationsUpdate);
     };
   }, []);
 
@@ -562,7 +606,7 @@ const InstagramMessages: React.FC = () => {
 
       {/* Layout principal: bandejas y chat */}
       <div className="flex flex-1 h-0 min-h-0">
-        {/* Panel de conversaciones individuales - En móvil se oculta cuando hay conversación seleccionada */}
+        {/* Panel de conversaciones individuales */}
         <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} ${isMobile ? 'w-full' : 'w-1/3 min-w-[260px] max-w-[400px]'} border-r border-purple-100 flex-shrink-0 flex-col`}>
           <div className="p-4 border-b border-purple-100">
             <div className="flex items-center justify-between mb-3">
@@ -584,12 +628,10 @@ const InstagramMessages: React.FC = () => {
               </div>
             </div>
 
-            {/* Botón de sincronización histórica */}
             <div className="mb-3">
               <HistoricalSyncButton />
             </div>
             
-            {/* Indicador de estado de IA */}
             <div className="flex items-center gap-2 text-sm">
               <div className={`w-2 h-2 rounded-full ${aiEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
               <span className="text-gray-600">
@@ -629,6 +671,9 @@ const InstagramMessages: React.FC = () => {
                                 className={`w-4 h-4 ${i < (conversation.matchPoints || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
                               />
                             ))}
+                            <span className="ml-1 text-xs text-gray-500">
+                              ({conversation.matchPoints || 0}/4)
+                            </span>
                           </span>
                         </h4>
                       </div>
@@ -638,11 +683,16 @@ const InstagramMessages: React.FC = () => {
                       {/* Criterios cumplidos */}
                       {conversation.metTraits && conversation.metTraits.length > 0 && (
                         <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
-                          {conversation.metTraits.map((trait, idx) => (
-                            <span key={idx} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
-                              {trait}
+                          {conversation.metTraits.slice(0, 2).map((trait, idx) => (
+                            <span key={idx} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200 truncate">
+                              ✅ {trait.split(' ').slice(0, 3).join(' ')}...
                             </span>
                           ))}
+                          {conversation.metTraits.length > 2 && (
+                            <span className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
+                              +{conversation.metTraits.length - 2} más
+                            </span>
+                          )}
                         </div>
                       )}
                       <p className="text-xs text-gray-400 flex items-center gap-1">
@@ -657,7 +707,7 @@ const InstagramMessages: React.FC = () => {
           </div>
         </div>
 
-        {/* Panel de chat - En móvil ocupa toda la pantalla cuando hay conversación seleccionada */}
+        {/* Panel de chat */}
         <div className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} ${isMobile ? 'w-full' : 'flex-1'} flex-col min-w-0`}>
           {selectedConversation ? (
             <>
@@ -665,7 +715,6 @@ const InstagramMessages: React.FC = () => {
               <div className="p-4 border-b border-purple-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    {/* Botón de volver en móvil */}
                     {isMobile && (
                       <button
                         onClick={() => setSelectedConversation(null)}
@@ -715,7 +764,6 @@ const InstagramMessages: React.FC = () => {
               {/* Mensajes */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {selectedMessages.map((message) => {
-                  // Determinar si el mensaje es enviado por mí
                   const isSentByMe = message.message_type === 'sent' || message.sender_id === pageId;
                   
                   return (
@@ -842,4 +890,3 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
-
