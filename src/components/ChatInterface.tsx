@@ -198,6 +198,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         
         // Disparar evento para que otros componentes (ConversationList) se actualicen
         window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('conversations-updated'));
         
         console.log("💾 DEBUG: Conversación guardada con puntos:", currentMatchPoints, "características:", metTraits);
       } catch (e) {
@@ -311,7 +312,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       
       console.log("✅ DEBUG: Resultado del análisis AUTOMÁTICO:", result);
       
-      // Actualizar estado local
+      // Actualizar estado local INMEDIATAMENTE
+      console.log("🔄 DEBUG: Actualizando estado local...");
       setCurrentMatchPoints(result.matchPoints);
       setMetTraits(result.metTraits);
       

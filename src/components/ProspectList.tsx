@@ -1,245 +1,285 @@
-import React, { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { MessageSquare, Sparkles, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
-import { useProspects } from '@/hooks/useProspects';
-import { supabase } from '@/integrations/supabase/client';
 
-const stateConfig = {
-  follow_up: {
-    label: 'En seguimiento',
-    color: 'bg-orange-100 text-orange-700'
-  },
-  reactivation_sent: {
-    label: 'Mensaje reactivación enviado',
-    color: 'bg-yellow-100 text-yellow-700'
-  },
-  no_response: {
-    label: 'Sin contestar',
-    color: 'bg-red-100 text-red-700'
-  },
-  invited: {
-    label: 'Invitado',
-    color: 'bg-green-100 text-green-700'
-  }
-};
+import React, { useState, useEffect } from 'react';
+import { Star, MessageCircle, Calendar, Filter, Search, Brain, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
+import { toast } from '@/hooks/use-toast';
+
+interface Prospect {
+  id: string;
+  userName: string;
+  lastMessage: string;
+  timestamp: string;
+  unread: boolean;
+  avatar?: string;
+  matchPoints: number;
+  metTraits: string[];
+}
 
 const ProspectList = () => {
-  const { prospects, loading } = useProspects();
-  const [suggestions, setSuggestions] = useState<Record<string, string>>({});
-  const [loadingProspects, setLoadingProspects] = useState<Set<string>>(new Set());
+  const [prospects, setProspects] = useState<Prospect[]>([]);
+  const [filteredProspects, setFilteredProspects] = useState<Prospect[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterByStars, setFilterByStars] = useState<number | null>(null);
+  const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
+  const { isAnalyzing, analyzeAll, loadIdealTraits } = useAITraitAnalysis();
 
-  const getInstagramProfileUrl = (username: string): string => {
-    // Limpiar username y construir URL
-    const cleanUsername = username.replace('@', '').replace('user_', '');
-    
-    // Si es un username válido (no es nuestro fallback), crear enlace
-    if (!cleanUsername.match(/^\d{8}$/)) {
-      return `https://instagram.com/${cleanUsername}`;
-    }
-    
-    // Si es nuestro fallback (8 dígitos), no crear enlace
-    return '';
+  useEffect(() => {
+    loadProspects();
+    loadTraits();
+
+    // Escuchar eventos de actualización
+    const handleStorageChange = () => {
+      loadProspects();
+    };
+
+    const handleConversationsUpdate = () => {
+      loadProspects();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('conversations-updated', handleConversationsUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('conversations-updated', handleConversationsUpdate);
+    };
+  }, []);
+
+  const loadTraits = () => {
+    const traits = loadIdealTraits();
+    setIdealTraits(traits);
+    console.log("📋 DEBUG: Características cargadas en ProspectList:", traits);
   };
 
-  const getAISuggestion = async (prospect: any) => {
-    console.log('🤖 Iniciando sugerencia de IA para prospecto:', prospect.username);
-    
-    setLoadingProspects(prev => new Set(prev).add(prospect.id));
-    
+  const loadProspects = () => {
     try {
-      // Preparar historial de conversación en formato legible
-      const conversationHistory = prospect.conversationMessages
-        .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-        .map((msg: any) => {
-          const sender = msg.message_type === 'sent' ? 'Yo' : prospect.username;
-          return `${sender}: ${msg.message_text}`;
-        })
-        .join('\n');
-
-      console.log('📝 Conversación preparada:', conversationHistory.substring(0, 200) + '...');
-
-      const requestBody = {
-        message: `Analiza esta conversación y dame una sugerencia del siguiente mensaje o paso que debería realizar con este prospecto:
-
-Conversación:
-${conversationHistory}
-
-Estado actual: ${stateConfig[prospect.state].label}
-
-Dame una sugerencia específica y accionable para el siguiente paso.`,
-        systemPrompt: 'Eres un experto en ventas y marketing que ayuda a mejorar las conversaciones con prospectos. Proporciona sugerencias específicas, prácticas y orientadas a resultados en español.'
-      };
-
-      console.log('🚀 Enviando solicitud a chatgpt-response...');
-
-      const { data, error } = await supabase.functions.invoke('chatgpt-response', {
-        body: requestBody
-      });
-
-      console.log('📥 Respuesta recibida:', { data, error });
-
-      if (error) {
-        console.error('❌ Error invocando función:', error);
-        let errorMessage = 'Error al conectar con el servicio de IA';
-        
-        if (error.message) {
-          if (error.message.includes('API key')) {
-            errorMessage = 'API key de OpenAI no configurada correctamente. Ve a configuración para añadirla.';
-          } else if (error.message.includes('quota')) {
-            errorMessage = 'Cuota de OpenAI agotada. Verifica tu plan de OpenAI.';
-          } else {
-            errorMessage = `Error: ${error.message}`;
-          }
-        }
-        
-        setSuggestions(prev => ({
-          ...prev,
-          [prospect.id]: errorMessage
-        }));
-      } else if (data?.response) {
-        console.log('✅ Sugerencia generada exitosamente');
-        setSuggestions(prev => ({
-          ...prev,
-          [prospect.id]: data.response
-        }));
-      } else {
-        console.error('❌ Respuesta vacía de la función');
-        setSuggestions(prev => ({
-          ...prev,
-          [prospect.id]: 'No se pudo generar una sugerencia. Verifica que la API key de OpenAI esté configurada correctamente.'
-        }));
+      const savedConversations = localStorage.getItem('hower-conversations');
+      if (savedConversations) {
+        const conversations = JSON.parse(savedConversations);
+        console.log("💾 DEBUG: Conversaciones cargadas:", conversations);
+        setProspects(conversations);
+        setFilteredProspects(conversations);
       }
     } catch (error) {
-      console.error('💥 Error inesperado:', error);
-      let errorMessage = 'Error de conexión';
+      console.error("Error loading prospects:", error);
+    }
+  };
+
+  const handleAnalyzeAll = async () => {
+    console.log("🔍 DEBUG: ProspectList - Iniciando análisis completo con IA...");
+    
+    try {
+      await analyzeAll();
       
-      if (error instanceof Error) {
-        if (error.message.includes('Failed to fetch')) {
-          errorMessage = 'Error de red. Verifica tu conexión a internet.';
-        } else if (error.message.includes('API key')) {
-          errorMessage = 'API key de OpenAI no configurada. Ve a configuración del proyecto.';
-        } else {
-          errorMessage = `Error: ${error.message}`;
-        }
-      }
+      toast({
+        title: "🤖 ¡Análisis completado!",
+        description: "Todas las conversaciones han sido analizadas con IA",
+      });
       
-      setSuggestions(prev => ({
-        ...prev,
-        [prospect.id]: errorMessage
-      }));
-    } finally {
-      setLoadingProspects(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(prospect.id);
-        return newSet;
+      // Recargar prospectos después del análisis
+      loadProspects();
+      
+    } catch (error) {
+      console.error("Error en análisis:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al analizar las conversaciones",
+        variant: "destructive"
       });
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4 px-2 sm:px-0">
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
-            <span className="ml-2 text-gray-600">Cargando prospectos...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    let filtered = prospects;
+
+    // Filtrar por término de búsqueda
+    if (searchTerm) {
+      filtered = filtered.filter(prospect =>
+        prospect.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        prospect.lastMessage.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtrar por estrellas
+    if (filterByStars !== null) {
+      filtered = filtered.filter(prospect => prospect.matchPoints >= filterByStars);
+    }
+
+    // Ordenar por puntuación (mayor a menor)
+    filtered = filtered.sort((a, b) => (b.matchPoints || 0) - (a.matchPoints || 0));
+
+    setFilteredProspects(filtered);
+  }, [prospects, searchTerm, filterByStars]);
+
+  const getCompatibilityLevel = (points: number, maxPoints: number) => {
+    if (maxPoints === 0) return { label: 'No configurado', color: 'bg-gray-500' };
+    
+    const percentage = (points / maxPoints) * 100;
+    if (percentage === 100) return { label: 'Perfecto', color: 'bg-green-500' };
+    if (percentage >= 75) return { label: 'Excelente', color: 'bg-green-400' };
+    if (percentage >= 50) return { label: 'Bueno', color: 'bg-yellow-500' };
+    if (percentage >= 25) return { label: 'Regular', color: 'bg-orange-500' };
+    if (percentage > 0) return { label: 'Bajo', color: 'bg-red-500' };
+    return { label: 'Sin evaluar', color: 'bg-gray-400' };
+  };
+
+  const maxPoints = idealTraits.filter(t => t.enabled).length || 4;
 
   return (
-    <div className="space-y-4 px-2 sm:px-0">
-      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Mis Prospectos</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Mis Prospectos</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            {filteredProspects.length} prospecto{filteredProspects.length !== 1 ? 's' : ''} 
+            {filterByStars !== null && ` con ${filterByStars}+ estrella${filterByStars !== 1 ? 's' : ''}`}
+          </p>
+        </div>
         
-        {prospects.length === 0 ? (
-          <div className="text-center py-8">
-            <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No hay prospectos aún</p>
-            <p className="text-sm text-gray-500">Los prospectos aparecerán cuando recibas mensajes</p>
+        {/* Botón Analizar Todo con IA */}
+        <button
+          onClick={handleAnalyzeAll}
+          disabled={isAnalyzing}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          <Brain className="w-4 h-4" />
+          {isAnalyzing ? 'Analizando...' : `🔍 Analizar Todo (${idealTraits.filter(t => t.enabled).length} criterios)`}
+          {isAnalyzing && <RefreshCw className="w-4 h-4 animate-spin ml-2" />}
+        </button>
+      </div>
+
+      {/* Filtros y búsqueda */}
+      <div className="flex gap-4 flex-wrap">
+        <div className="flex-1 min-w-[300px]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Buscar por nombre o mensaje..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
+        </div>
+        
+        <div className="flex gap-2">
+          {[1, 2, 3, 4].map((stars) => (
+            <Button
+              key={stars}
+              variant={filterByStars === stars ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterByStars(filterByStars === stars ? null : stars)}
+              className="flex items-center gap-1"
+            >
+              <Star className="w-3 h-3" />
+              {stars}+
+            </Button>
+          ))}
+          {filterByStars !== null && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilterByStars(null)}
+            >
+              Limpiar
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Lista de prospectos */}
+      <div className="grid gap-4">
+        {filteredProspects.length === 0 ? (
+          <Card className="p-8 text-center">
+            <div className="text-gray-500">
+              {prospects.length === 0 ? (
+                <>
+                  <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-medium mb-2">No hay prospectos aún</h3>
+                  <p>Cuando tengas conversaciones, aparecerán aquí</p>
+                </>
+              ) : (
+                <>
+                  <Filter className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-medium mb-2">No se encontraron prospectos</h3>
+                  <p>Intenta ajustar los filtros de búsqueda</p>
+                </>
+              )}
+            </div>
+          </Card>
         ) : (
-          <div className="space-y-3">
-            {prospects.map((prospect) => {
-              const profileUrl = getInstagramProfileUrl(prospect.username);
-              const isValidUsername = !prospect.username.match(/^user_\d{8}$/);
-              
-              return (
-                <div 
-                  key={prospect.id} 
-                  className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                        <div className="flex items-center gap-2">
-                          {isValidUsername && profileUrl ? (
-                            <a 
-                              href={profileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-medium text-purple-600 hover:text-purple-700 text-sm sm:text-base flex items-center gap-1 hover:underline"
-                            >
-                              @{prospect.username}
-                              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </a>
-                          ) : (
-                            <span className="font-medium text-gray-500 text-sm sm:text-base">
-                              @{prospect.username} 
-                            </span>
-                          )}
-                        </div>
-                        <Badge className={`${stateConfig[prospect.state].color} text-xs sm:text-sm whitespace-nowrap`}>
-                          {stateConfig[prospect.state].label}
+          filteredProspects.map((prospect) => {
+            const compatibility = getCompatibilityLevel(prospect.matchPoints || 0, maxPoints);
+            
+            return (
+              <Card key={prospect.id} className="p-4 hover:shadow-lg transition-shadow">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-medium">
+                      {prospect.userName?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium text-gray-900 truncate">
+                          {prospect.userName}
+                        </h3>
+                        <Badge variant="secondary" className={`${compatibility.color} text-white`}>
+                          {compatibility.label}
                         </Badge>
                       </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center justify-center gap-2 w-full sm:w-auto"
-                      onClick={() => getAISuggestion(prospect)}
-                      disabled={loadingProspects.has(prospect.id)}
-                    >
-                      {loadingProspects.has(prospect.id) ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4" />
-                      )}
-                      <span className="text-xs sm:text-sm">Sugerencia IA</span>
-                    </Button>
-                  </div>
-                  
-                  {suggestions[prospect.id] && (
-                    <div className="mt-3 p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-100">
-                      <div className="flex items-start gap-3">
-                        {suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? (
-                          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-1" />
-                        ) : (
-                          <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mt-1" />
-                        )}
-                        <div>
-                          <h4 className="font-medium text-purple-900 text-sm sm:text-base mb-1">
-                            {suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? 'Error de Configuración' : 'Sugerencia de IA'}
-                          </h4>
-                          {loadingProspects.has(prospect.id) ? (
-                            <p className="text-xs sm:text-sm text-purple-600">Analizando conversación...</p>
-                          ) : (
-                            <p className={`text-xs sm:text-sm ${suggestions[prospect.id]?.includes('Error') || suggestions[prospect.id]?.includes('API key') ? 'text-red-700' : 'text-purple-700'}`}>
-                              {suggestions[prospect.id]}
-                            </p>
-                          )}
+                      
+                      <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                        {prospect.lastMessage}
+                      </p>
+                      
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {prospect.timestamp}
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3 h-3" />
+                          {prospect.matchPoints || 0}/{maxPoints} características
                         </div>
                       </div>
+                      
+                      {prospect.metTraits && prospect.metTraits.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {prospect.metTraits.slice(0, 2).map((trait, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              ✓ {trait.length > 30 ? trait.substring(0, 30) + '...' : trait}
+                            </Badge>
+                          ))}
+                          {prospect.metTraits.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{prospect.metTraits.length - 2} más
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  
+                  <div className="flex items-center gap-1 ml-2">
+                    {[...Array(maxPoints)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < (prospect.matchPoints || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
