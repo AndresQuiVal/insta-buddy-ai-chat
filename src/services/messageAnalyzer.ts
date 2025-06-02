@@ -57,7 +57,7 @@ export function detectConfirmation(message: string): boolean {
 }
 
 export async function analyzeMessage(message: string, conversationHistory: ChatMessage[]): Promise<MessageAnalysis> {
-  const messages = [
+  const messages: ChatMessage[] = [
     {
       role: 'system',
       content: `Eres un asistente especializado en analizar mensajes de Instagram para determinar el estado de un prospecto.
@@ -77,10 +77,7 @@ export async function analyzeMessage(message: string, conversationHistory: ChatM
         "reason": "explicación_del_estado"
       }`
     },
-    ...conversationHistory.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    })),
+    ...conversationHistory,
     {
       role: 'user',
       content: message
@@ -100,4 +97,4 @@ export async function analyzeMessage(message: string, conversationHistory: ChatM
   }
 
   return analysis;
-} 
+}

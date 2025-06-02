@@ -7,6 +7,7 @@ import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { analyzeMessage } from '@/services/traitAnalysisService';
+import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
 
 interface InstagramMessage {
   id: string;
