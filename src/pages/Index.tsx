@@ -7,6 +7,7 @@ import TokenManager from '@/components/TokenManager';
 import InstagramProspect from '@/components/InstagramProspect';
 import HamburgerMenu from '@/components/HamburgerMenu';
 import InstagramLogin from '@/components/InstagramLogin';
+import InstagramAccountDiagnostic from '@/components/InstagramAccountDiagnostic';
 import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Key, Brain, LogOut, Bug, Users, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -207,6 +208,9 @@ Responde siempre con el tono y estilo de la personalidad indicada arriba.
       case 'settings':
         return (
           <div className="space-y-6">
+            {/* Diagnóstico de cuenta Instagram - NUEVO */}
+            <InstagramAccountDiagnostic />
+            
             <TokenManager />
             <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl p-6">
               <div className="flex items-center gap-2 mb-4">
