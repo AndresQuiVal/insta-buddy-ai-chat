@@ -6,10 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Star, Plus, Trash2, Save, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Trait {
-  id?: string;
   trait: string;
   enabled: boolean;
   position: number;
@@ -18,213 +16,82 @@ interface Trait {
 const IdealClientTraits: React.FC = () => {
   const [traits, setTraits] = useState<Trait[]>([]);
   const [newTrait, setNewTrait] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  // Cargar características desde la base de datos
+  // Cargar características desde localStorage
   useEffect(() => {
-    loadTraitsFromDatabase();
+    loadTraitsFromStorage();
   }, []);
 
-  const loadTraitsFromDatabase = async () => {
+  const loadTraitsFromStorage = () => {
     try {
-      setIsLoading(true);
-      
-      // Verificar si el usuario está autenticado
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log("Usuario no autenticado, usando características por defecto");
-        setDefaultTraits();
-        setIsLoading(false);
-        return;
-      }
-
-      // Cargar características del usuario desde la base de datos
-      const { data, error } = await supabase
-        .from('ideal_client_traits')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('position', { ascending: true });
-
-      if (error) {
-        console.error("Error al cargar características:", error);
-        setDefaultTraits();
-        return;
-      }
-
-      if (data && data.length > 0) {
-        // Convertir datos de la base de datos al formato del componente
-        const loadedTraits = data.map(item => ({
-          id: item.id,
-          trait: item.trait,
-          enabled: item.enabled,
-          position: item.position
-        }));
-        setTraits(loadedTraits);
+      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+      if (savedTraits) {
+        const parsedTraits = JSON.parse(savedTraits);
+        setTraits(parsedTraits);
+        console.log("✅ Características cargadas desde localStorage:", parsedTraits);
       } else {
-        // Si no hay características guardadas, crear las por defecto
-        await createDefaultTraits(user.id);
+        setDefaultTraits();
       }
     } catch (error) {
-      console.error("Error al cargar características:", error);
+      console.error("Error al cargar características desde localStorage:", error);
       setDefaultTraits();
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las características. Usando valores por defecto.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const setDefaultTraits = () => {
-    setTraits([
+    const defaultTraits = [
       { trait: "Interesado en nuestros productos o servicios", enabled: true, position: 0 },
       { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true, position: 1 },
       { trait: "Está listo para tomar una decisión de compra", enabled: true, position: 2 },
       { trait: "Se encuentra en nuestra zona de servicio", enabled: true, position: 3 }
-    ]);
+    ];
+    setTraits(defaultTraits);
+    saveTraitsToStorage(defaultTraits);
   };
 
-  const createDefaultTraits = async (userId: string) => {
+  const saveTraitsToStorage = (traitsToSave: Trait[]) => {
     try {
-      const defaultTraits = [
-        { trait: "Interesado en nuestros productos o servicios", enabled: true, position: 0 },
-        { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true, position: 1 },
-        { trait: "Está listo para tomar una decisión de compra", enabled: true, position: 2 },
-        { trait: "Se encuentra en nuestra zona de servicio", enabled: true, position: 3 }
-      ];
-
-      const traitsToInsert = defaultTraits.map(trait => ({
-        user_id: userId,
-        trait: trait.trait,
-        enabled: trait.enabled,
-        position: trait.position
-      }));
-
-      const { data, error } = await supabase
-        .from('ideal_client_traits')
-        .insert(traitsToInsert)
-        .select();
-
-      if (error) {
-        console.error("Error al crear características por defecto:", error);
-        setDefaultTraits();
-        return;
-      }
-
-      if (data) {
-        const loadedTraits = data.map(item => ({
-          id: item.id,
-          trait: item.trait,
-          enabled: item.enabled,
-          position: item.position
-        }));
-        setTraits(loadedTraits);
-      }
+      localStorage.setItem('hower-ideal-client-traits', JSON.stringify(traitsToSave));
+      console.log("💾 Características guardadas en localStorage:", traitsToSave);
+      
+      // Disparar evento para que otros componentes se actualicen
+      window.dispatchEvent(new CustomEvent('traits-updated', { detail: traitsToSave }));
     } catch (error) {
-      console.error("Error al crear características por defecto:", error);
-      setDefaultTraits();
+      console.error("Error al guardar características en localStorage:", error);
     }
   };
 
-  const saveTraits = async () => {
-    try {
-      setIsSaving(true);
+  const saveTraits = () => {
+    setIsSaving(true);
+    
+    setTimeout(() => {
+      saveTraitsToStorage(traits);
+      setIsSaving(false);
       
-      // Verificar si el usuario está autenticado
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Error",
-          description: "Debes estar autenticado para guardar las características",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Primero, eliminar todas las características existentes del usuario
-      const { error: deleteError } = await supabase
-        .from('ideal_client_traits')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (deleteError) {
-        console.error("Error al eliminar características existentes:", deleteError);
-        toast({
-          title: "Error",
-          description: "No se pudieron actualizar las características",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Luego, insertar las nuevas características
-      const traitsToInsert = traits.map((trait, index) => ({
-        user_id: user.id,
-        trait: trait.trait,
-        enabled: trait.enabled,
-        position: index
-      }));
-
-      const { data, error } = await supabase
-        .from('ideal_client_traits')
-        .insert(traitsToInsert)
-        .select();
-
-      if (error) {
-        console.error("Error al guardar características:", error);
-        toast({
-          title: "Error",
-          description: "No se pudieron guardar las características",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Actualizar los IDs en el estado local
-      if (data) {
-        const updatedTraits = data.map(item => ({
-          id: item.id,
-          trait: item.trait,
-          enabled: item.enabled,
-          position: item.position
-        }));
-        setTraits(updatedTraits);
-      }
-
-      console.log("Características guardadas en la base de datos:", data);
       toast({
         title: "Características guardadas",
-        description: "Las características del cliente ideal se han actualizado correctamente en la base de datos",
+        description: "Las características del cliente ideal se han actualizado correctamente",
       });
-    } catch (error) {
-      console.error("Error al guardar características:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron guardar las características",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    }, 500);
   };
 
   const addTrait = () => {
     if (newTrait.trim() && traits.length < 6) {
-      setTraits([...traits, { trait: newTrait.trim(), enabled: true, position: traits.length }]);
+      const newTraits = [...traits, { trait: newTrait.trim(), enabled: true, position: traits.length }];
+      setTraits(newTraits);
       setNewTrait('');
+      saveTraitsToStorage(newTraits);
     }
   };
 
   const removeTrait = (index: number) => {
     if (traits.length > 1) {
       const updatedTraits = traits.filter((_, i) => i !== index);
-      // Reajustar las posiciones
       const reindexedTraits = updatedTraits.map((trait, i) => ({ ...trait, position: i }));
       setTraits(reindexedTraits);
+      saveTraitsToStorage(reindexedTraits);
     }
   };
 
@@ -238,20 +105,10 @@ const IdealClientTraits: React.FC = () => {
     const updatedTraits = [...traits];
     updatedTraits[index].enabled = !updatedTraits[index].enabled;
     setTraits(updatedTraits);
+    saveTraitsToStorage(updatedTraits);
   };
 
   const enabledTraitsCount = traits.filter(t => t.enabled).length;
-
-  if (isLoading) {
-    return (
-      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6">
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
-          <span>Cargando características...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6">
@@ -278,7 +135,7 @@ const IdealClientTraits: React.FC = () => {
         </div>
 
         {traits.map((trait, index) => (
-          <div key={trait.id || index} className="space-y-2 p-4 border border-gray-200 rounded-lg">
+          <div key={index} className="space-y-2 p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Característica {index + 1}</Label>
               <div className="flex items-center gap-2">
@@ -338,13 +195,14 @@ const IdealClientTraits: React.FC = () => {
       </Button>
 
       <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
-        <p><strong>Cómo funciona:</strong></p>
+        <p><strong>🚀 Sistema Automático Activado:</strong></p>
         <ul className="list-disc list-inside mt-1 space-y-1">
-          <li>La IA analiza automáticamente las conversaciones</li>
-          <li>Detecta cuando los prospectos cumplen estas características</li>
-          <li>Asigna puntos de compatibilidad (estrellitas) basándose en las características cumplidas</li>
-          <li>Los prospectos se ordenan automáticamente por compatibilidad</li>
-          <li>Ahora tus características se guardan en la base de datos y se sincronizan entre dispositivos</li>
+          <li>✅ La IA analiza automáticamente las conversaciones en tiempo real</li>
+          <li>⭐ Detecta cuando los prospectos cumplen estas características</li>
+          <li>📊 Asigna puntos de compatibilidad automáticamente (1-4 estrellas)</li>
+          <li>🎯 Los prospectos aparecen ordenados por compatibilidad en "Mis Prospectos"</li>
+          <li>🤖 La IA responde automáticamente según tu configuración</li>
+          <li>💾 Todo se guarda localmente en tu navegador</li>
         </ul>
       </div>
     </div>

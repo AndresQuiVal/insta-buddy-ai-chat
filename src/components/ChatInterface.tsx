@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ChatMessage, handleAutomaticResponse, isOpenAIConfigured } from '@/services/openaiService';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -43,43 +43,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Cargar las características ideales del cliente desde la base de datos
+  // Cargar las características ideales del cliente desde localStorage
   useEffect(() => {
-    loadIdealTraitsFromDatabase();
+    loadIdealTraitsFromStorage();
+    
+    // Escuchar actualizaciones de características
+    const handleTraitsUpdate = (event: CustomEvent) => {
+      console.log("🔔 Características actualizadas, recargando...", event.detail);
+      setIdealTraits(event.detail);
+    };
+
+    window.addEventListener('traits-updated', handleTraitsUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('traits-updated', handleTraitsUpdate as EventListener);
+    };
   }, []);
 
-  const loadIdealTraitsFromDatabase = async () => {
+  const loadIdealTraitsFromStorage = () => {
     try {
-      // Verificar si el usuario está autenticado
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log("Usuario no autenticado, usando características por defecto");
-        setDefaultTraits();
-        return;
-      }
-
-      // Cargar características del usuario desde la base de datos
-      const { data, error } = await supabase
-        .from('ideal_client_traits')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('position', { ascending: true });
-
-      if (error) {
-        console.error("Error al cargar características:", error);
-        setDefaultTraits();
-        return;
-      }
-
-      if (data && data.length > 0) {
-        // Convertir datos de la base de datos al formato del componente
-        const loadedTraits = data.map(item => ({
+      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+      if (savedTraits) {
+        const parsedTraits = JSON.parse(savedTraits);
+        const formattedTraits = parsedTraits.map((item: any) => ({
           trait: item.trait,
           enabled: item.enabled
         }));
-        setIdealTraits(loadedTraits);
+        setIdealTraits(formattedTraits);
+        console.log("✅ Características cargadas en ChatInterface:", formattedTraits);
       } else {
-        // Si no hay características guardadas, usar las por defecto
         setDefaultTraits();
       }
     } catch (error) {
@@ -190,6 +182,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         
         // Disparar evento para que otros componentes (ConversationList) se actualicen
         window.dispatchEvent(new Event('storage'));
+        
+        console.log("💾 Conversación guardada con puntos:", currentMatchPoints, "características:", metTraits);
       } catch (e) {
         console.error("Error al guardar conversación:", e);
       }
@@ -218,7 +212,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     businessDescription: "Asistente virtual que ayuda a filtrar prospectos potenciales.",
     tone: aiConfig.personality === 'amigable' ? 'amigable y cercano' : 
           aiConfig.personality === 'profesional' ? 'profesional y formal' : 'casual y relajado',
-    // Usar las características cargadas desde la base de datos
     idealClientTraits: idealTraits.filter(trait => trait.enabled).map(trait => trait.trait)
   };
 
@@ -251,12 +244,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     return personalityResponses[Math.floor(Math.random() * personalityResponses.length)];
   };
 
-  // Improved function to analyze conversation with better keyword detection
+  // Función mejorada para analizar conversación con mejor detección de palabras clave
   const analyzeConversation = (newMessages: Message[]) => {
     if (idealTraits.length === 0) return;
 
     setIsAnalyzing(true);
-    console.log("🔍 INICIANDO ANÁLISIS DE CARACTERÍSTICAS...");
+    console.log("🔍 INICIANDO ANÁLISIS AUTOMÁTICO DE CARACTERÍSTICAS...");
 
     // Obtener solo las características habilitadas
     const enabledTraits = idealTraits.filter(t => t.enabled).map(t => t.trait);
@@ -290,22 +283,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         "Interesado en nuestros productos o servicios": [
           "interesa", "producto", "servicio", "necesito", "busco", 
           "quiero", "comprar", "tienen", "ofrecen", "información",
-          "conocer", "saber", "precio", "cotización", "propuesta"
+          "conocer", "saber", "precio", "cotización", "propuesta", "me gusta"
         ],
         "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
           "presupuesto", "dispongo", "puedo pagar", "cuesta", "precio", 
           "inversión", "económico", "financiar", "pago", "costo",
-          "dinero", "gastar", "pagar", "efectivo", "tarjeta", "recursos"
+          "dinero", "gastar", "pagar", "efectivo", "tarjeta", "recursos", "vale la pena"
         ],
         "Está listo para tomar una decisión de compra": [
           "decidido", "comprar", "adquirir", "cuando", "ahora", 
           "inmediato", "listo", "proceder", "compra", "ya",
-          "hoy", "pronto", "mañana", "semana", "momento", "urgente"
+          "hoy", "pronto", "mañana", "semana", "momento", "urgente", "necesito ya"
         ],
         "Se encuentra en nuestra zona de servicio": [
           "vivo", "ubicado", "dirección", "ciudad", "zona", "región", 
           "local", "envío", "entrega", "domicilio", "casa",
-          "oficina", "trabajo", "calle", "avenida", "país", "área"
+          "oficina", "trabajo", "calle", "avenida", "país", "área", "cerca"
         ]
       };
       
@@ -314,7 +307,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       
       // Verifica si alguna palabra clave está contenida en la conversación
       const matchFound = keywords.some(keyword => {
-        // Buscar la palabra como substring (más permisivo)
         return conversationText.includes(keyword.toLowerCase());
       });
       
@@ -327,7 +319,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         
         // Mostrar toast cuando se detecta una nueva característica
         toast({
-          title: "¡Nueva característica detectada!",
+          title: "🎯 ¡Característica detectada automáticamente!",
           description: trait,
         });
       }
@@ -341,8 +333,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       
       if (newTraitsDetected > 0) {
         toast({
-          title: `${newTraitsDetected} característica${newTraitsDetected > 1 ? 's' : ''} nueva${newTraitsDetected > 1 ? 's' : ''}`,
-          description: `Puntuación actual: ${newMetTraits.length}/${enabledTraits.length} estrella${newMetTraits.length !== 1 ? 's' : ''}`,
+          title: `🚀 ${newTraitsDetected} característica${newTraitsDetected > 1 ? 's' : ''} nueva${newTraitsDetected > 1 ? 's' : ''}`,
+          description: `Puntuación automática: ${newMetTraits.length}/${enabledTraits.length} estrella${newMetTraits.length !== 1 ? 's' : ''}`,
         });
       }
     }
@@ -364,10 +356,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     setMessages(newMessages);
     setNewMessage('');
 
-    // Analizar la conversación para detectar rasgos
+    // Analizar la conversación para detectar rasgos AUTOMÁTICAMENTE
+    console.log("🤖 Iniciando análisis automático...");
     analyzeConversation(newMessages);
 
+    // Respuesta automática de IA (si está habilitada)
     if (aiConfig.autoRespond) {
+      console.log("🤖 IA configurada para responder automáticamente...");
       setIsTyping(true);
       
       // Determinar si se usa OpenAI o la respuesta simple
@@ -388,8 +383,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
               newMessage,
               conversationHistory,
               businessConfig,
-              savedPrompt // Pasar el prompt personalizado si existe
+              savedPrompt
             );
+            console.log("✅ Respuesta generada con OpenAI:", responseText);
           } catch (error) {
             console.error("Error al generar respuesta con OpenAI:", error);
             responseText = generateSimpleResponse(newMessage);
@@ -397,6 +393,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         } else {
           // Usar respuesta simple
           responseText = generateSimpleResponse(newMessage);
+          console.log("✅ Respuesta generada simple:", responseText);
         }
         
         const aiResponse: Message = {
@@ -414,7 +411,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         analyzeConversation(finalMessages);
         
         toast({
-          title: "IA Respondió",
+          title: "🤖 IA Respondió Automáticamente",
           description: `${aiConfig.name} ha enviado una respuesta`,
         });
       }, aiConfig.responseDelay);
@@ -434,13 +431,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     const maxPoints = enabledTraits.length || 4;
     
     return (
-      <div className="flex flex-col p-4 border-t border-purple-100">
+      <div className="flex flex-col p-4 border-t border-purple-100 bg-gradient-to-r from-blue-50 to-purple-50">
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-sm font-medium text-gray-700">
-            Compatibilidad del prospecto
+            🎯 Compatibilidad automática
             {isAnalyzing && (
               <span className="ml-2 text-xs text-blue-600 animate-pulse">
-                Analizando...
+                Analizando en tiempo real...
               </span>
             )}
           </h4>
@@ -505,7 +502,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
           </div>
           <div>
             <h3 className="font-semibold text-gray-800">{aiConfig.name}</h3>
-            <p className="text-sm text-green-600">● Activo</p>
+            <p className="text-sm text-green-600">● Activo - Respuestas automáticas: {aiConfig.autoRespond ? 'ON' : 'OFF'}</p>
           </div>
         </div>
       </div>
@@ -566,7 +563,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Indicador de compatibilidad */}
+      {/* Indicador de compatibilidad automática */}
       {renderCompatibilityIndicator()}
 
       {/* Input de mensaje */}
