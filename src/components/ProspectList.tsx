@@ -29,7 +29,6 @@ const ProspectList: React.FC = () => {
   const [pageId, setPageId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get PAGE-ID from localStorage
     const storedPageId = localStorage.getItem('hower-page-id');
     if (storedPageId) {
       setPageId(storedPageId);
@@ -64,7 +63,6 @@ const ProspectList: React.FC = () => {
         return;
       }
 
-      // Filter real messages (exclude webhooks, debug, etc.)
       const realMessages = data?.filter((message: any) => {
         return !message.sender_id.includes('webhook_') && 
                !message.sender_id.includes('debug') && 
@@ -74,10 +72,7 @@ const ProspectList: React.FC = () => {
                message.sender_id !== 'diagnostic_user';
       }) || [];
 
-      // Get my page ID
       const myPageId = pageId || localStorage.getItem('hower-page-id');
-
-      // Group messages by prospect
       const prospectGroups: { [key: string]: InstagramMessage[] } = {};
       
       realMessages.forEach((message: any) => {
@@ -112,7 +107,6 @@ const ProspectList: React.FC = () => {
         });
       });
 
-      // Convert to prospects array
       const prospectsArray = Object.entries(prospectGroups).map(([prospectId, messages]) => {
         const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         
@@ -124,7 +118,6 @@ const ProspectList: React.FC = () => {
         };
       });
 
-      // Sort by most recent message
       prospectsArray.sort((a, b) => 
         new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
       );
@@ -138,7 +131,6 @@ const ProspectList: React.FC = () => {
     }
   };
 
-  // Filter prospects based on search term
   const filteredProspects = prospects.filter(prospect => {
     const userName = getUserDisplayName(prospect.sender_id).toLowerCase();
     const lastMessage = prospect.last_message.message_text.toLowerCase();
@@ -175,7 +167,6 @@ const ProspectList: React.FC = () => {
         </button>
       </div>
 
-      {/* Search bar */}
       <div className="p-4 border-b border-purple-100">
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -189,7 +180,6 @@ const ProspectList: React.FC = () => {
         </div>
       </div>
 
-      {/* Prospects list */}
       <div className="flex-1 overflow-y-auto">
         {filteredProspects.length === 0 ? (
           <div className="p-8 text-center">
