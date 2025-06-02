@@ -13,7 +13,10 @@ export const useAITraitAnalysis = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const analyzeAllWithAI = useCallback(async (idealTraits: Trait[]) => {
+    console.log("🤖 useAITraitAnalysis - Recibidas características:", idealTraits);
+    
     if (idealTraits.length === 0) {
+      console.log("❌ No hay características para analizar");
       toast({
         title: "⚠️ No hay características configuradas",
         description: "Configure las características del cliente ideal primero",
@@ -22,6 +25,18 @@ export const useAITraitAnalysis = () => {
       return;
     }
 
+    const enabledTraits = idealTraits.filter(t => t.enabled);
+    if (enabledTraits.length === 0) {
+      console.log("❌ No hay características habilitadas");
+      toast({
+        title: "⚠️ No hay características habilitadas",
+        description: "Habilite al menos una característica en la configuración",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log("🎯 Características habilitadas que se van a usar:", enabledTraits);
     setIsAnalyzing(true);
     
     try {
@@ -29,9 +44,10 @@ export const useAITraitAnalysis = () => {
       
       toast({
         title: "🤖 Iniciando análisis masivo con IA",
-        description: "Analizando todas las conversaciones...",
+        description: `Analizando conversaciones con ${enabledTraits.length} características: ${enabledTraits.map(t => t.trait).join(', ')}`,
       });
 
+      // Pasar las características al servicio de análisis
       await analyzeAllConversations(idealTraits);
 
       toast({

@@ -27,15 +27,21 @@ export const analyzeConversationWithAI = async (
   idealTraits: Trait[]
 ): Promise<AIAnalysisResult> => {
   console.log("🤖 INICIANDO ANÁLISIS CON IA REAL...");
+  console.log("📝 Conversación a analizar:", conversationText.substring(0, 200) + "...");
+  console.log("🎯 Características objetivo:", idealTraits);
   
   if (!conversationText || idealTraits.length === 0) {
+    console.log("❌ No hay conversación o características para analizar");
     return { matchPoints: 0, metTraits: [], metTraitIndices: [], confidence: 0 };
   }
 
   const enabledTraits = idealTraits.filter(t => t.enabled);
   if (enabledTraits.length === 0) {
+    console.log("❌ No hay características habilitadas");
     return { matchPoints: 0, metTraits: [], metTraitIndices: [], confidence: 0 };
   }
+
+  console.log("✅ Características habilitadas para análisis:", enabledTraits);
 
   try {
     // Crear el prompt para la IA
@@ -67,6 +73,7 @@ ${conversationText}
 Analiza esta conversación y determina qué características cumple el prospecto.`;
 
     console.log("📤 Enviando conversación a OpenAI...");
+    console.log("🎯 Sistema prompt:", systemPrompt.substring(0, 300) + "...");
 
     // Llamar a la función edge de ChatGPT
     const { data, error } = await supabase.functions.invoke('chatgpt-response', {
@@ -104,11 +111,17 @@ Analiza esta conversación y determina qué características cumple el prospecto
     const metTraitIndices: number[] = [];
     let totalConfidence = 0;
 
+    console.log("🔍 Procesando matches de la IA:", aiResponse.matches);
+
     aiResponse.matches.forEach(match => {
       // Buscar la característica exacta
       const traitIndex = enabledTraits.findIndex(t => 
         t.trait.toLowerCase().trim() === match.trait.toLowerCase().trim()
       );
+      
+      console.log(`🔍 Buscando "${match.trait}" en características habilitadas...`);
+      console.log(`   Índice encontrado: ${traitIndex}`);
+      console.log(`   Confianza: ${match.confidence}`);
       
       if (traitIndex !== -1 && match.confidence >= 0.7) {
         metTraits.push(enabledTraits[traitIndex].trait);
@@ -117,6 +130,10 @@ Analiza esta conversación y determina qué características cumple el prospecto
         
         console.log(`✅ CARACTERÍSTICA DETECTADA: ${match.trait} (confianza: ${match.confidence})`);
         console.log(`   Razón: ${match.reason}`);
+      } else if (traitIndex === -1) {
+        console.log(`⚠️ Característica "${match.trait}" no encontrada en la lista habilitada`);
+      } else {
+        console.log(`⚠️ Confianza muy baja para "${match.trait}": ${match.confidence}`);
       }
     });
 
@@ -138,24 +155,19 @@ Analiza esta conversación y determina qué características cumple el prospecto
 
   } catch (error) {
     console.error("💥 Error en análisis con IA:", error);
-    // Fallback al análisis básico si falla la IA
-    console.log("🔄 Usando análisis básico como fallback...");
     
-    // Importar el análisis básico como fallback
-    const { analyzeMessage: basicAnalyze } = await import('./traitAnalysisService');
-    const basicResult = await basicAnalyze(conversationText, idealTraits);
+    // Mostrar error detallado
+    if (error instanceof Error && error.message.includes('API key')) {
+      throw new Error("Configura la API key de OpenAI en Supabase");
+    }
     
-    return {
-      matchPoints: basicResult.matchPoints,
-      metTraits: basicResult.metTraits,
-      metTraitIndices: basicResult.metTraitIndices || [],
-      confidence: 0.5 // Confianza baja para análisis básico
-    };
+    throw error;
   }
 };
 
 export const analyzeAllConversations = async (idealTraits: Trait[]) => {
   console.log("🔍 INICIANDO ANÁLISIS MASIVO CON IA...");
+  console.log("🎯 Características recibidas para análisis masivo:", idealTraits);
   
   try {
     // Obtener todas las conversaciones del localStorage
@@ -177,6 +189,7 @@ export const analyzeAllConversations = async (idealTraits: Trait[]) => {
           .join('\n');
 
         console.log(`🔍 Analizando conversación: ${conversation.userName}`);
+        console.log(`📝 Texto de conversación: ${conversationText.substring(0, 200)}...`);
 
         const result = await analyzeConversationWithAI(conversationText, idealTraits);
 
@@ -186,7 +199,10 @@ export const analyzeAllConversations = async (idealTraits: Trait[]) => {
         conversation.metTraitIndices = result.metTraitIndices;
         conversation.aiConfidence = result.confidence;
 
-        console.log(`✅ Conversación ${conversation.userName} actualizada: ${result.matchPoints} características`);
+        console.log(`✅ Conversación ${conversation.userName} actualizada:`);
+        console.log(`   Match points: ${result.matchPoints}`);
+        console.log(`   Características: ${result.metTraits.join(', ')}`);
+        console.log(`   Confianza: ${(result.confidence * 100).toFixed(1)}%`);
       }
     }
 
