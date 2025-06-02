@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -41,6 +42,7 @@ const InstagramMessages: React.FC = () => {
   const [pageId, setPageId] = useState<string | null>(null);
   const [iaPersona, setIaPersona] = useState<string>('');
   const [showPersona, setShowPersona] = useState<boolean>(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const aiEnabledRef = useRef(aiEnabled);
   const [isTabLeader, setIsTabLeader] = useState(false);
   const TAB_KEY = 'hower-active-tab';
@@ -120,29 +122,46 @@ const InstagramMessages: React.FC = () => {
   // Función para analizar automáticamente TODOS los mensajes existentes
   const analyzeExistingMessages = async () => {
     console.log("🔍 ANALIZANDO TODOS LOS MENSAJES EXISTENTES...");
+    setIsAnalyzing(true);
     
-    // Analizar cada conversación
-    conversations.forEach(async (conversation) => {
-      console.log(`📝 Analizando conversación de ${conversation.sender_id}`);
-      
-      // Analizar todos los mensajes del usuario (no los enviados por nosotros)
-      const userMessages = conversation.messages.filter(msg => msg.message_type === 'received');
-      
-      for (const message of userMessages) {
-        console.log(`🔍 Analizando mensaje: "${message.message_text}"`);
+    try {
+      // Analizar cada conversación
+      for (const conversation of conversations) {
+        console.log(`📝 Analizando conversación de ${conversation.sender_id}`);
         
-        await analyzeInstagramMessage(
-          message.sender_id,
-          message.message_text,
-          `Usuario ${message.sender_id.slice(-4)}`
-        );
+        // Analizar todos los mensajes del usuario (no los enviados por nosotros)
+        const userMessages = conversation.messages.filter(msg => msg.message_type === 'received');
+        
+        for (const message of userMessages) {
+          console.log(`🔍 Analizando mensaje: "${message.message_text}"`);
+          
+          await analyzeInstagramMessage(
+            message.sender_id,
+            message.message_text,
+            `Usuario ${message.sender_id.slice(-4)}`
+          );
+        }
       }
-    });
-    
-    // Recargar conversaciones después del análisis
-    setTimeout(() => {
-      loadConversations();
-    }, 2000);
+      
+      // Esperar un poco y recargar conversaciones
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await loadConversations();
+      
+      toast({
+        title: "Análisis completado",
+        description: "Se han analizado todos los mensajes existentes",
+      });
+      
+    } catch (error) {
+      console.error("Error en análisis:", error);
+      toast({
+        title: "Error en análisis",
+        description: "Hubo un problema analizando los mensajes",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const loadConversations = async () => {
@@ -227,17 +246,21 @@ const InstagramMessages: React.FC = () => {
 
       // Cargar matches de localStorage
       const localMatches = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
+      console.log('💾 Matches locales cargados:', localMatches);
 
       // Convertir a array de conversaciones
       const conversationsArray = Object.entries(conversationGroups).map(([prospectId, messages]) => {
         // Ordenar mensajes por timestamp ascendente
         const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         
-        // Contar mensajes sin leer (solo los que recibí del prospecto)
-        const unreadCount = messages.filter(msg => msg.message_type === 'received').length;
+        // Buscar matchPoints/metTraits en localStorage - probar múltiples claves
+        const localMatch = localMatches.find((c: any) => 
+          c.sender_id === prospectId || 
+          c.id === prospectId ||
+          c.userName === `Usuario ${prospectId.slice(-4)}`
+        ) || {};
         
-        // Buscar matchPoints/metTraits en localStorage
-        const localMatch = localMatches.find((c: any) => c.sender_id === prospectId || c.id === prospectId) || {};
+        console.log(`🔍 Prospecto ${prospectId}: Match encontrado:`, localMatch);
         
         return {
           sender_id: prospectId,
@@ -257,7 +280,12 @@ const InstagramMessages: React.FC = () => {
         return new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime();
       });
 
-      console.log('Conversaciones finales:', conversationsArray.length);
+      console.log('✅ Conversaciones finales con matches:', conversationsArray.map(c => ({
+        id: c.sender_id,
+        matchPoints: c.matchPoints,
+        metTraits: c.metTraits?.length || 0
+      })));
+      
       setConversations(conversationsArray);
       
       // Seleccionar la primera conversación si no hay ninguna seleccionada
@@ -488,13 +516,23 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
-  // Ejecutar análisis automático cuando cambian las conversaciones
+  // Escuchar cambios en localStorage para actualizar conversaciones
   useEffect(() => {
-    if (conversations.length > 0) {
-      console.log("🔄 Conversaciones cargadas, ejecutando análisis automático...");
-      analyzeExistingMessages();
-    }
-  }, [conversations.length]);
+    const handleStorageChange = () => {
+      console.log('📦 Storage change detected, recargando conversaciones...');
+      loadConversations();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // También escuchar eventos custom
+    window.addEventListener('traits-updated', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('traits-updated', handleStorageChange);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -515,9 +553,10 @@ const InstagramMessages: React.FC = () => {
         </h2>
         <button
           onClick={analyzeExistingMessages}
-          className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm"
+          disabled={isAnalyzing}
+          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          🔍 Analizar Todo
+          {isAnalyzing ? '⏳ Analizando...' : '🔍 Analizar Todo'}
         </button>
       </div>
 
@@ -803,3 +842,4 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
+
