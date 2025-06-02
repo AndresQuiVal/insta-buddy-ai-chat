@@ -23,79 +23,51 @@ export const analyzeMessage = async (messageText: string, idealTraits: Trait[]):
     return { matchPoints: 0, metTraits: [], metTraitIndices: [] };
   }
 
-  // Normalizar texto para análisis
+  // Normalizar texto para análisis - MÁS SIMPLE Y EFECTIVO
   const conversationText = messageText.toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-    .replace(/[^\w\s]/g, ' ') // Reemplazar puntuación con espacios
-    .replace(/\s+/g, ' ') // Normalizar espacios
     .trim();
   
-  console.log("📝 Texto normalizado para análisis:", conversationText.substring(0, 200) + "...");
+  console.log("📝 Texto normalizado para análisis:", conversationText);
   
-  // Mapa de palabras clave MEJORADO y más específico
+  // Mapa de palabras clave MEJORADO - MÁS ESPECÍFICO Y DIRECTO
   const keywordMap: Record<string, string[]> = {
     "Interesado en nuestros productos o servicios": [
-      // Interés directo
-      "interesa", "intereso", "me interesa", "estoy interesado", "interesado", "interesada",
-      "quiero", "quisiera", "necesito", "busco", "requiero", "solicito",
-      "producto", "servicio", "oferta", "promocion", "paquete", "plan",
-      "informacion", "info", "detalles", "conocer", "saber",
-      "precio", "costo", "cotizacion", "presupuesto", "tarifa",
-      "comprar", "adquirir", "contratar", "obtener",
+      // Expresiones de interés directo
+      "me interesa", "me interesan", "interesa", "interesan", "interesado", "interesada",
+      "me gusta", "me gustan", "me encanta", "me encantan",
+      "quiero", "quisiera", "necesito", "busco", "requiero",
+      "producto", "servicio", "oferta", "promocion", "paquete",
+      "precio", "costo", "cotizacion", "presupuesto",
+      "comprar", "adquirir", "contratar",
       // Productos específicos
-      "cruceros", "crucero", "viajes", "viaje", "tours", "tour", 
-      "excursiones", "excursion", "vacaciones", "destinos", "destino",
-      "paquetes turisticos", "turismo", "aventura",
-      // Expresiones de interés
-      "me gusta", "me encanta", "me fascina", "amo", "adoro",
-      "cuéntame", "dime", "explícame", "háblame", "mándame", "envía", "envia",
-      "perfecto", "excelente", "genial", "buenísimo", "increíble", "maravilloso",
-      "tiene", "tienen", "ofrecen", "manejan", "disponible", "opciones"
+      "crucero", "cruceros", "viaje", "viajes", "tour", "tours",
+      "excursion", "excursiones", "vacaciones", "destino", "destinos",
+      "turismo", "aventura",
+      // Frases completas
+      "me interesan los cruceros", "quiero un crucero", "busco cruceros"
     ],
     "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
-      // Presupuesto directo
-      "presupuesto", "dinero", "efectivo", "pago", "pagar", "pagos",
-      "precio", "costo", "cuesta", "vale", "valor", "inversion",
-      "puedo pagar", "dispongo", "tengo para", "cuento con",
-      "tarjeta", "credito", "financiamiento", "credito", "prestamo",
-      // Cantidades y monedas
-      "mil", "miles", "pesos", "dolares", "euros", "usd", "mxn",
-      "cuanto", "cuánto", "costoso", "caro", "barato", "economico",
-      "accesible", "asequible", "vale la pena", "inversion",
-      // Modalidades de pago
-      "meses", "cuotas", "mensualidades", "abonos", "plazos",
-      "contado", "una sola exhibicion", "financiar"
+      "presupuesto", "dinero", "pago", "pagar", "precio", "costo",
+      "puedo pagar", "tengo dinero", "dispongo", "cuento con",
+      "tarjeta", "efectivo", "financiamiento",
+      "mil", "pesos", "dolares", "euros",
+      "cuanto cuesta", "cuanto vale", "costoso", "caro", "barato",
+      "meses", "cuotas", "mensualidades", "contado"
     ],
     "Está listo para tomar una decisión de compra": [
-      // Decisión inmediata
       "decidido", "decidida", "listo", "lista", "preparado", "preparada",
-      "comprar", "adquirir", "contratar", "reservar", "apartar",
-      "ahora", "ya", "hoy", "inmediato", "pronto", "rapido",
-      "cuando", "fecha", "programar", "agendar", "confirmar",
-      // Urgencia
-      "urgente", "necesito ya", "lo antes posible", "cuanto antes",
-      "este mes", "esta semana", "mañana", "siguiente",
-      // Confirmación
-      "perfecto", "de acuerdo", "acepto", "si", "sí", "claro",
-      "por supuesto", "esta bien", "está bien", "okay", "ok",
-      "adelante", "hagamos", "vamos", "proceder", "seguir"
+      "comprar", "reservar", "apartar", "confirmar",
+      "ahora", "hoy", "ya", "pronto", "inmediato",
+      "cuando", "fecha", "programar", "agendar",
+      "perfecto", "de acuerdo", "acepto", "si", "claro", "ok"
     ],
     "Se encuentra en nuestra zona de servicio": [
-      // Ubicación
-      "vivo", "vivo en", "estoy en", "me encuentro", "ubicado", "radico",
-      "direccion", "domicilio", "casa", "oficina", "trabajo",
-      "ciudad", "estado", "pais", "zona", "region", "area",
-      "cerca", "lejos", "distancia", "ubicacion",
-      // Lugares específicos
-      "mexico", "méxico", "cdmx", "ciudad de mexico", "df",
-      "guadalajara", "monterrey", "puebla", "cancun", "merida",
-      "tijuana", "leon", "queretaro", "toluca", "aguascalientes",
-      "morelia", "saltillo", "hermosillo", "culiacan", "chihuahua",
-      // Servicios de ubicación
-      "envio", "entrega", "domicilio", "envío a", "llegan a",
-      "calle", "avenida", "colonia", "fraccionamiento", "municipio",
-      "delegacion", "alcaldia", "codigo postal", "cp"
+      "vivo", "estoy", "me encuentro", "ubicado", "radico",
+      "direccion", "ciudad", "estado", "zona", "region",
+      "mexico", "españa", "guadalajara", "madrid", "barcelona",
+      "envio", "entrega", "domicilio", "cerca", "lejos"
     ]
   };
   
@@ -106,18 +78,18 @@ export const analyzeMessage = async (messageText: string, idealTraits: Trait[]):
     const keywords = keywordMap[trait.trait] || [];
     
     console.log(`🎯 Analizando característica: "${trait.trait}"`);
-    console.log(`   Palabras clave a buscar: ${keywords.slice(0, 10).join(', ')}...`);
+    console.log(`   Palabras clave: ${keywords.join(', ')}`);
     
-    // Buscar coincidencias más inteligentes
     let matchFound = false;
     const foundKeywords: string[] = [];
     
+    // BÚSQUEDA MÁS SIMPLE Y DIRECTA
     for (const keyword of keywords) {
-      // Buscar palabra completa o como parte de una palabra más larga
-      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
-      if (regex.test(conversationText) || conversationText.includes(keyword.toLowerCase())) {
+      // Simplemente verificar si la palabra clave está contenida en el texto
+      if (conversationText.includes(keyword)) {
         matchFound = true;
         foundKeywords.push(keyword);
+        console.log(`   ✅ COINCIDENCIA ENCONTRADA: "${keyword}"`);
       }
     }
     
