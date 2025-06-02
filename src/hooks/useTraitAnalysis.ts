@@ -24,25 +24,71 @@ interface ProspectData {
   unread: boolean;
 }
 
+async function analyzeWithOpenAI(conversationText: string, idealTraits: Trait[]): Promise<{matchPoints: number, metTraits: string[], metTraitIndices: number[]}> {
+  const openaiKey = localStorage.getItem('hower-openai-key-demo') || localStorage.getItem('hower-openai-key');
+  if (!openaiKey) throw new Error('No hay API Key de OpenAI configurada.');
+  if (!conversationText.trim() || idealTraits.length === 0) return { matchPoints: 0, metTraits: [], metTraitIndices: [] };
+
+  const prompt = `Dada la siguiente conversación de Instagram:
+"""
+${conversationText}
+"""
+Y estas características del cliente ideal:
+${idealTraits.map((t, i) => `${i + 1}. ${t.trait}`).join('\n')}
+
+Responde SOLO con una lista JSON de los números de las características que cumple el prospecto. Ejemplo: [1,3,4] si cumple la 1, 3 y 4. Si no cumple ninguna, responde [].`;
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${openaiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'Eres un asistente de análisis de prospectos para Instagram.' },
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 100,
+      temperature: 0.2,
+    }),
+  });
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content || '';
+  let indices: number[] = [];
+  try {
+    indices = JSON.parse(content);
+    if (!Array.isArray(indices)) indices = [];
+  } catch {
+    indices = [];
+  }
+  const metTraits = indices.map(idx => idealTraits[idx - 1]?.trait).filter(Boolean);
+  const metTraitIndices = indices.map(idx => idx - 1).filter(idx => idx >= 0 && idx < idealTraits.length);
+  return { matchPoints: metTraits.length, metTraits, metTraitIndices };
+}
+
 export const useTraitAnalysis = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const analyzeMessage = useCallback((messageText: string, idealTraits: Trait[]): AnalysisResult => {
+  const analyzeMessage = useCallback(async (messageText: string, idealTraits: Trait[]): Promise<AnalysisResult> => {
+    // Si hay API Key, usar OpenAI
+    const openaiKey = localStorage.getItem('hower-openai-key-demo') || localStorage.getItem('hower-openai-key');
+    if (openaiKey) {
+      try {
+        const result = await analyzeWithOpenAI(messageText, idealTraits);
+        return result;
+      } catch (e) {
+        console.error('Fallo análisis con OpenAI, usando palabras clave:', e);
+        // Fallback a palabras clave
+      }
+    }
+    // Fallback: palabras clave local
     if (!messageText || idealTraits.length === 0) {
-      return { matchPoints: 0, metTraits: [] };
+      return { matchPoints: 0, metTraits: [], metTraitIndices: [] };
     }
-
-    console.log("🔍 ANALIZANDO MENSAJE:", messageText);
-    
     const enabledTraits = idealTraits.filter(t => t.enabled);
-    if (enabledTraits.length === 0) {
-      return { matchPoints: 0, metTraits: [] };
-    }
-
     const conversationText = messageText.toLowerCase();
-    console.log("📝 Texto normalizado:", conversationText);
-    
-    // Permitir que el usuario defina palabras clave personalizadas en localStorage
     let customKeywordMap: Record<string, string[]> = {};
     try {
       const stored = localStorage.getItem('hower-ideal-client-keywords');
@@ -52,8 +98,6 @@ export const useTraitAnalysis = () => {
     } catch (e) {
       customKeywordMap = {};
     }
-
-    // Mapa extendido de palabras clave (por defecto)
     const defaultKeywordMap: Record<string, string[]> = {
       "Interesado en nuestros productos o servicios": [
         "interesa", "producto", "servicio", "necesito", "busco", "quiero", "comprar", 
@@ -82,37 +126,19 @@ export const useTraitAnalysis = () => {
         "méxico", "cdmx", "guadalajara", "monterrey", "puebla", "cancún"
       ]
     };
-
     const metTraits: string[] = [];
     const metTraitIndices: number[] = [];
-    
     enabledTraits.forEach((trait, idx) => {
-      // Usar palabras clave personalizadas si existen, si no, las por defecto
       const keywords = customKeywordMap[trait.trait] || defaultKeywordMap[trait.trait] || [];
-      
-      // Buscar coincidencias exactas o parciales (palabra completa o parte de la palabra)
       const matchFound = keywords.some(keyword => {
-        // Coincidencia exacta o parcial (palabra completa o parte de la palabra)
         return conversationText.includes(keyword.toLowerCase());
       });
-      
-      console.log(`🎯 Característica "${trait.trait}"`);
-      console.log(`   Palabras clave: ${keywords.slice(0, 5).join(', ')}...`);
-      console.log(`   Coincidencia: ${matchFound}`);
-      
       if (matchFound) {
         metTraits.push(trait.trait);
         metTraitIndices.push(idx);
-        console.log(`✅ CARACTERÍSTICA DETECTADA: ${trait.trait}`);
       }
     });
-    
     const matchPoints = metTraits.length;
-    
-    console.log("📊 RESULTADO DEL ANÁLISIS:");
-    console.log(`   Características detectadas: ${metTraits.length}`);
-    console.log(`   Puntos de compatibilidad: ${matchPoints}/${enabledTraits.length}`);
-    
     return { matchPoints, metTraits, metTraitIndices };
   }, []);
 
@@ -205,7 +231,7 @@ export const useTraitAnalysis = () => {
     setIsAnalyzing(true);
     
     try {
-      const result = analyzeMessage(messageText, idealTraits);
+      const result = await analyzeMessage(messageText, idealTraits);
       
       if (result.matchPoints > 0) {
         updateProspectInStorage(senderId, userName, result.matchPoints, result.metTraits, messageText, result.metTraitIndices);
