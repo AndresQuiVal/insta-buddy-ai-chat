@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ChatMessage, handleAutomaticResponse, isOpenAIConfigured } from '@/services/openaiService';
+import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
 
 interface Message {
   id: string;
@@ -40,8 +40,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
   const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
   const [currentMatchPoints, setCurrentMatchPoints] = useState(0);
   const [metTraits, setMetTraits] = useState<string[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isAnalyzing, analyzeMessage } = useTraitAnalysis();
 
   // Cargar las características ideales del cliente desde localStorage
   useEffect(() => {
@@ -244,102 +244,50 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     return personalityResponses[Math.floor(Math.random() * personalityResponses.length)];
   };
 
-  // Función mejorada para analizar conversación con mejor detección de palabras clave
-  const analyzeConversation = (newMessages: Message[]) => {
+  // Función mejorada para analizar conversación
+  const analyzeConversationForTraits = (newMessages: Message[]) => {
     if (idealTraits.length === 0) return;
 
-    setIsAnalyzing(true);
     console.log("🔍 INICIANDO ANÁLISIS AUTOMÁTICO DE CARACTERÍSTICAS...");
 
     // Obtener solo las características habilitadas
-    const enabledTraits = idealTraits.filter(t => t.enabled).map(t => t.trait);
-    if (enabledTraits.length === 0) {
-      setIsAnalyzing(false);
-      return;
-    }
+    const enabledTraits = idealTraits.filter(t => t.enabled).map(t => ({ ...t, position: 0 }));
+    if (enabledTraits.length === 0) return;
 
     console.log("✅ Características habilitadas para análisis:", enabledTraits);
 
     // Solo analizar los mensajes del usuario, no los del AI
     const userMessages = newMessages.filter(msg => msg.sender === 'user');
     
-    if (userMessages.length === 0) {
-      setIsAnalyzing(false);
-      return;
-    }
+    if (userMessages.length === 0) return;
     
-    // Analizar cada mensaje del usuario individualmente y concatenarlos
-    const conversationText = userMessages.map(msg => msg.text.toLowerCase()).join(' ');
+    // Obtener el último mensaje del usuario para análisis individual
+    const lastUserMessage = userMessages[userMessages.length - 1];
     
-    console.log("📝 Analizando texto de conversación:", conversationText);
+    console.log("📝 Analizando mensaje:", lastUserMessage.text);
     
-    // Verificar cada característica
-    const newMetTraits: string[] = [...metTraits];
-    let newTraitsDetected = 0;
+    // Usar el hook de análisis
+    const result = analyzeMessage(lastUserMessage.text, enabledTraits);
     
-    enabledTraits.forEach(trait => {
-      // Palabras clave relacionadas con cada característica - más específicas y con variaciones
-      const keywordMap: Record<string, string[]> = {
-        "Interesado en nuestros productos o servicios": [
-          "interesa", "producto", "servicio", "necesito", "busco", 
-          "quiero", "comprar", "tienen", "ofrecen", "información",
-          "conocer", "saber", "precio", "cotización", "propuesta", "me gusta"
-        ],
-        "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
-          "presupuesto", "dispongo", "puedo pagar", "cuesta", "precio", 
-          "inversión", "económico", "financiar", "pago", "costo",
-          "dinero", "gastar", "pagar", "efectivo", "tarjeta", "recursos", "vale la pena"
-        ],
-        "Está listo para tomar una decisión de compra": [
-          "decidido", "comprar", "adquirir", "cuando", "ahora", 
-          "inmediato", "listo", "proceder", "compra", "ya",
-          "hoy", "pronto", "mañana", "semana", "momento", "urgente", "necesito ya"
-        ],
-        "Se encuentra en nuestra zona de servicio": [
-          "vivo", "ubicado", "dirección", "ciudad", "zona", "región", 
-          "local", "envío", "entrega", "domicilio", "casa",
-          "oficina", "trabajo", "calle", "avenida", "país", "área", "cerca"
-        ]
-      };
-      
-      // Obtiene las palabras clave para esta característica
-      const keywords = keywordMap[trait] || [];
-      
-      // Verifica si alguna palabra clave está contenida en la conversación
-      const matchFound = keywords.some(keyword => {
-        return conversationText.includes(keyword.toLowerCase());
-      });
-      
-      console.log(`🎯 Característica "${trait}" - Coincidencia encontrada: ${matchFound}`);
-      
-      if (matchFound && !newMetTraits.includes(trait)) {
-        console.log(`✅ NUEVA CARACTERÍSTICA DETECTADA: ${trait}`);
-        newMetTraits.push(trait);
-        newTraitsDetected++;
-        
-        // Mostrar toast cuando se detecta una nueva característica
-        toast({
-          title: "🎯 ¡Característica detectada automáticamente!",
-          description: trait,
-        });
-      }
-    });
+    // Combinar con características ya detectadas
+    const newMetTraits = [...new Set([...metTraits, ...result.metTraits])];
+    const newMatchPoints = Math.min(newMetTraits.length, enabledTraits.length);
     
     // Solo actualizar si hay cambios
     if (JSON.stringify(newMetTraits) !== JSON.stringify(metTraits)) {
       console.log("📊 Actualizando características cumplidas:", newMetTraits);
       setMetTraits(newMetTraits);
-      setCurrentMatchPoints(Math.min(newMetTraits.length, enabledTraits.length));
+      setCurrentMatchPoints(newMatchPoints);
       
+      // Mostrar toast para nuevas características detectadas
+      const newTraitsDetected = newMetTraits.length - metTraits.length;
       if (newTraitsDetected > 0) {
         toast({
-          title: `🚀 ${newTraitsDetected} característica${newTraitsDetected > 1 ? 's' : ''} nueva${newTraitsDetected > 1 ? 's' : ''}`,
-          description: `Puntuación automática: ${newMetTraits.length}/${enabledTraits.length} estrella${newMetTraits.length !== 1 ? 's' : ''}`,
+          title: `🎯 ¡${newTraitsDetected} característica${newTraitsDetected > 1 ? 's' : ''} detectada${newTraitsDetected > 1 ? 's' : ''}!`,
+          description: `Puntuación: ${newMatchPoints}/${enabledTraits.length} estrella${newMatchPoints !== 1 ? 's' : ''}`,
         });
       }
     }
-    
-    setTimeout(() => setIsAnalyzing(false), 1000);
   };
 
   const sendMessage = async () => {
@@ -358,7 +306,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
 
     // Analizar la conversación para detectar rasgos AUTOMÁTICAMENTE
     console.log("🤖 Iniciando análisis automático...");
-    analyzeConversation(newMessages);
+    analyzeConversationForTraits(newMessages);
 
     // Respuesta automática de IA (si está habilitada)
     if (aiConfig.autoRespond) {
@@ -408,7 +356,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         setIsTyping(false);
         
         // Analizar nuevamente con la respuesta de la IA
-        analyzeConversation(finalMessages);
+        analyzeConversationForTraits(finalMessages);
         
         toast({
           title: "🤖 IA Respondió Automáticamente",

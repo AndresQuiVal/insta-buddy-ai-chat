@@ -6,6 +6,7 @@ import { handleAutomaticResponse } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { analyzeInstagramMessage } from '@/services/instagramTraitAnalysis';
 
 interface InstagramMessage {
   id: string;
@@ -448,6 +449,36 @@ const InstagramMessages: React.FC = () => {
       });
     }
   };
+
+  useEffect(() => {
+    // Configurar análisis automático para mensajes nuevos
+    const handleNewMessage = async (messageData: any) => {
+      console.log("📱 Nuevo mensaje recibido para análisis:", messageData);
+      
+      // Solo analizar mensajes entrantes (no enviados)
+      if (messageData.sender && messageData.text && !messageData.is_echo) {
+        await analyzeInstagramMessage(
+          messageData.sender.id,
+          messageData.text,
+          messageData.username
+        );
+      }
+    };
+    
+    // Simular análisis para mensajes existentes (solo para pruebas)
+    if (messages.length > 0) {
+      messages.forEach(async (message) => {
+        if (message.sender && message.message_text && !message.is_echo) {
+          await analyzeInstagramMessage(
+            message.sender_id,
+            message.message_text,
+            message.username || `Usuario ${message.sender_id.slice(-4)}`
+          );
+        }
+      });
+    }
+    
+  }, [messages]);
 
   if (loading) {
     return (
