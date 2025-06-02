@@ -466,19 +466,19 @@ const InstagramMessages: React.FC = () => {
     };
     
     // Simular análisis para mensajes existentes (solo para pruebas)
-    if (messages.length > 0) {
-      messages.forEach(async (message) => {
-        if (message.sender && message.message_text && !message.is_echo) {
+    if (selectedMessages.length > 0) {
+      selectedMessages.forEach(async (message) => {
+        if (message.sender_id && message.message_text && !message.raw_data?.is_echo) {
           await analyzeInstagramMessage(
             message.sender_id,
             message.message_text,
-            message.username || `Usuario ${message.sender_id.slice(-4)}`
+            `Usuario ${message.sender_id.slice(-4)}`
           );
         }
       });
     }
     
-  }, [messages]);
+  }, [selectedMessages]);
 
   if (loading) {
     return (
