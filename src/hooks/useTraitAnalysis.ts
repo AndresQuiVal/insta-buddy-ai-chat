@@ -33,7 +33,6 @@ export const useTraitAnalysis = () => {
 
     console.log("🔍 ANALIZANDO MENSAJE:", messageText);
     
-    // Obtener solo las características habilitadas
     const enabledTraits = idealTraits.filter(t => t.enabled);
     if (enabledTraits.length === 0) {
       return { matchPoints: 0, metTraits: [] };
@@ -42,7 +41,7 @@ export const useTraitAnalysis = () => {
     const conversationText = messageText.toLowerCase();
     console.log("📝 Texto normalizado:", conversationText);
     
-    // Mapa extendido de palabras clave para cada característica
+    // Mapa extendido de palabras clave
     const keywordMap: Record<string, string[]> = {
       "Interesado en nuestros productos o servicios": [
         "interesa", "producto", "servicio", "necesito", "busco", "quiero", "comprar", 
@@ -72,13 +71,11 @@ export const useTraitAnalysis = () => {
       ]
     };
     
-    // Verificar cada característica
     const metTraits: string[] = [];
     
     enabledTraits.forEach(trait => {
       const keywords = keywordMap[trait.trait] || [];
       
-      // Verificar si alguna palabra clave está en el mensaje
       const matchFound = keywords.some(keyword => {
         return conversationText.includes(keyword.toLowerCase());
       });
@@ -93,13 +90,87 @@ export const useTraitAnalysis = () => {
       }
     });
     
-    const matchPoints = Math.min(metTraits.length, enabledTraits.length);
+    const matchPoints = metTraits.length;
     
     console.log("📊 RESULTADO DEL ANÁLISIS:");
     console.log(`   Características detectadas: ${metTraits.length}`);
     console.log(`   Puntos de compatibilidad: ${matchPoints}/${enabledTraits.length}`);
     
     return { matchPoints, metTraits };
+  }, []);
+
+  const updateProspectInStorage = useCallback((
+    senderId: string,
+    userName: string,
+    matchPoints: number,
+    metTraits: string[],
+    messageText: string
+  ) => {
+    try {
+      const savedConversationsStr = localStorage.getItem('hower-conversations');
+      let conversations: ProspectData[] = [];
+      
+      if (savedConversationsStr) {
+        conversations = JSON.parse(savedConversationsStr);
+      }
+      
+      const existingIndex = conversations.findIndex(conv => 
+        conv.id === senderId || 
+        conv.senderId === senderId ||
+        conv.userName === userName
+      );
+      
+      if (existingIndex !== -1) {
+        // Actualizar conversación existente - ACUMULAR características
+        const existing = conversations[existingIndex];
+        const combinedTraits = [...new Set([...(existing.metTraits || []), ...metTraits])];
+        
+        conversations[existingIndex] = {
+          ...existing,
+          matchPoints: combinedTraits.length,
+          metTraits: combinedTraits,
+          lastMessage: messageText.substring(0, 100),
+          timestamp: '1m'
+        };
+        
+        console.log(`✅ PROSPECTO ACTUALIZADO: ${userName}`, {
+          matchPoints: combinedTraits.length,
+          metTraits: combinedTraits
+        });
+      } else {
+        // Crear nueva conversación
+        const newConversation: ProspectData = {
+          id: senderId,
+          senderId,
+          userName: userName || `Usuario ${senderId.slice(-4)}`,
+          matchPoints,
+          metTraits,
+          lastMessage: messageText.substring(0, 100),
+          timestamp: '1m',
+          unread: true
+        };
+        
+        conversations.push(newConversation);
+        
+        console.log(`✅ PROSPECTO CREADO: ${userName}`, {
+          matchPoints,
+          metTraits
+        });
+      }
+      
+      localStorage.setItem('hower-conversations', JSON.stringify(conversations));
+      
+      // Forzar actualización de la UI
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('conversations-updated', { 
+        detail: { senderId, matchPoints, metTraits }
+      }));
+      
+      console.log("💾 DATOS GUARDADOS EN LOCALSTORAGE CORRECTAMENTE");
+      
+    } catch (error) {
+      console.error("❌ Error al actualizar prospecto:", error);
+    }
   }, []);
 
   const analyzeAndUpdateProspect = useCallback(async (
@@ -112,100 +183,22 @@ export const useTraitAnalysis = () => {
     
     setIsAnalyzing(true);
     
-    // Analizar el mensaje
-    const result = analyzeMessage(messageText, idealTraits);
-    
     try {
-      // Actualizar en localStorage para que se refleje en Mis Prospectos
-      const savedConversationsStr = localStorage.getItem('hower-conversations');
-      let conversations: ProspectData[] = [];
+      const result = analyzeMessage(messageText, idealTraits);
       
-      if (savedConversationsStr) {
-        conversations = JSON.parse(savedConversationsStr);
+      if (result.matchPoints > 0) {
+        updateProspectInStorage(senderId, userName, result.matchPoints, result.metTraits, messageText);
       }
       
-      // Buscar conversación existente
-      const existingIndex = conversations.findIndex(conv => 
-        conv.id === senderId || 
-        conv.senderId === senderId ||
-        conv.userName === userName
-      );
-      
-      if (existingIndex !== -1) {
-        // Actualizar conversación existente - ACUMULAR características
-        const existing = conversations[existingIndex];
-        const combinedTraits = [...new Set([...(existing.metTraits || []), ...result.metTraits])];
-        
-        conversations[existingIndex] = {
-          ...existing,
-          matchPoints: combinedTraits.length,
-          metTraits: combinedTraits,
-          lastMessage: messageText.substring(0, 100),
-          timestamp: '1m'
-        };
-        
-        console.log(`✅ PROSPECTO ACTUALIZADO (existente): ${userName}`, {
-          matchPoints: combinedTraits.length,
-          metTraits: combinedTraits
-        });
-      } else {
-        // Crear nueva conversación
-        const newConversation: ProspectData = {
-          id: senderId,
-          senderId,
-          userName: userName || `Usuario ${senderId.slice(-4)}`,
-          matchPoints: result.matchPoints,
-          metTraits: result.metTraits,
-          lastMessage: messageText.substring(0, 100),
-          timestamp: '1m',
-          unread: true
-        };
-        
-        conversations.push(newConversation);
-        
-        console.log(`✅ PROSPECTO CREADO (nuevo): ${userName}`, {
-          matchPoints: result.matchPoints,
-          metTraits: result.metTraits
-        });
-      }
-      
-      // Guardar en localStorage
-      localStorage.setItem('hower-conversations', JSON.stringify(conversations));
-      
-      // Disparar eventos para actualizar la UI
-      window.dispatchEvent(new Event('storage'));
-      window.dispatchEvent(new CustomEvent('conversations-updated', { 
-        detail: { senderId, matchPoints: result.matchPoints, metTraits: result.metTraits }
-      }));
-      
-      console.log("💾 LOCALSTORAGE ACTUALIZADO CORRECTAMENTE");
-      
-    } catch (error) {
-      console.error("❌ Error al actualizar prospecto:", error);
+      return result;
     } finally {
       setIsAnalyzing(false);
     }
-    
-    return result;
-  }, [analyzeMessage]);
-
-  const analyzeConversation = useCallback((messages: string[], idealTraits: Trait[]): AnalysisResult => {
-    if (messages.length === 0) {
-      return { matchPoints: 0, metTraits: [] };
-    }
-
-    console.log("🔍 ANALIZANDO CONVERSACIÓN COMPLETA:", messages.length, "mensajes");
-    
-    // Concatenar todos los mensajes
-    const fullConversation = messages.join(' ').toLowerCase();
-    
-    return analyzeMessage(fullConversation, idealTraits);
-  }, [analyzeMessage]);
+  }, [analyzeMessage, updateProspectInStorage]);
 
   return {
     isAnalyzing,
     analyzeMessage,
-    analyzeConversation,
     analyzeAndUpdateProspect
   };
 };

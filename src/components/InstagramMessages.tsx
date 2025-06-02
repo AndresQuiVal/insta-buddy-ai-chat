@@ -144,6 +144,7 @@ const InstagramMessages: React.FC = () => {
     console.log("🔍 ANALIZANDO TODOS LOS MENSAJES EXISTENTES...");
     
     try {
+      setLoading(true);
       const idealTraits = loadIdealTraits();
       const enabledTraits = idealTraits.filter((t: any) => t.enabled);
       
@@ -158,20 +159,20 @@ const InstagramMessages: React.FC = () => {
 
       console.log("✅ Características cargadas:", enabledTraits.map((t: any) => t.trait));
       
-      // Analizar cada conversación
       let totalAnalyzed = 0;
+      
+      // Analizar cada conversación SECUENCIALMENTE
       for (const conversation of conversations) {
         console.log(`📝 Analizando conversación de ${conversation.sender_id}`);
         
-        // Analizar todos los mensajes del usuario (no los enviados por nosotros)
         const userMessages = conversation.messages.filter(msg => msg.message_type === 'received');
         
         if (userMessages.length > 0) {
-          // Concatenar todos los mensajes del usuario
           const allUserMessages = userMessages.map(msg => msg.message_text).join(' ');
           
-          console.log(`🔍 Analizando mensajes concatenados: "${allUserMessages}"`);
+          console.log(`🔍 Analizando: "${allUserMessages}"`);
           
+          // Usar el hook para analizar y guardar
           await analyzeAndUpdateProspect(
             conversation.sender_id,
             `Usuario ${conversation.sender_id.slice(-4)}`,
@@ -180,16 +181,19 @@ const InstagramMessages: React.FC = () => {
           );
           
           totalAnalyzed++;
+          
+          // Esperar un poco entre análisis
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
       
-      // Esperar un poco y recargar conversaciones
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Recargar conversaciones después del análisis
+      await new Promise(resolve => setTimeout(resolve, 500));
       await loadConversations();
       
       toast({
         title: "✅ Análisis completado",
-        description: `Se analizaron ${totalAnalyzed} conversaciones exitosamente`,
+        description: `Se analizaron ${totalAnalyzed} conversaciones. Las estrellas deberían actualizarse ahora.`,
       });
       
     } catch (error) {
@@ -199,6 +203,8 @@ const InstagramMessages: React.FC = () => {
         description: "Hubo un problema analizando los mensajes",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -282,7 +288,7 @@ const InstagramMessages: React.FC = () => {
 
       console.log('Grupos de conversación creados:', Object.keys(conversationGroups));
 
-      // Cargar matches de localStorage
+      // CARGAR DATOS DE ANÁLISIS DESDE LOCALSTORAGE
       const localMatches = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
       console.log('💾 Matches locales cargados:', localMatches);
 
@@ -322,7 +328,8 @@ const InstagramMessages: React.FC = () => {
       console.log('✅ Conversaciones finales con matches:', conversationsArray.map(c => ({
         id: c.sender_id,
         matchPoints: c.matchPoints,
-        metTraits: c.metTraits?.length || 0
+        metTraits: c.metTraits?.length || 0,
+        lastMessage: c.last_message.message_text
       })));
       
       setConversations(conversationsArray);
@@ -598,7 +605,7 @@ const InstagramMessages: React.FC = () => {
         <button
           onClick={analyzeExistingMessages}
           disabled={isAnalyzing}
-          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm font-semibold ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {isAnalyzing ? '⏳ Analizando...' : '🔍 Analizar Todo'}
         </button>
