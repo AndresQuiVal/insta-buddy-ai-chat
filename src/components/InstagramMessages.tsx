@@ -143,7 +143,7 @@ const InstagramMessages: React.FC = () => {
 
   // Función para analizar automáticamente TODOS los mensajes existentes
   const analyzeExistingMessages = async () => {
-    console.log("🔍 ANALIZANDO TODOS LOS MENSAJES EXISTENTES...");
+    console.log("🔍 INICIANDO ANÁLISIS COMPLETO DE TODAS LAS CONVERSACIONES...");
     
     try {
       setLoading(true);
@@ -161,108 +161,112 @@ const InstagramMessages: React.FC = () => {
         return;
       }
 
-      console.log("✅ Características cargadas:", enabledTraits.map((t: any) => t.trait));
+      console.log("✅ Características ideales cargadas:", enabledTraits.map((t: any) => t.trait));
       
       let totalAnalyzed = 0;
-      let updatedProspects: any[] = [];
+      let prospectsWithMatches = 0;
+      const updatedProspects: any[] = [];
       
-      // Analizar cada conversación
+      // Limpiar datos anteriores
+      localStorage.removeItem('hower-conversations');
+      
+      console.log(`📊 Total de conversaciones a analizar: ${conversations.length}`);
+      
+      // Analizar cada conversación COMPLETA
       for (const conversation of conversations) {
-        console.log(`📝 Analizando conversación de ${conversation.sender_id}`);
+        console.log(`\n🔍 ANALIZANDO CONVERSACIÓN COMPLETA DE: ${conversation.sender_id}`);
         
-        const userMessages = conversation.messages.filter(msg => msg.message_type === 'received');
+        // Obtener TODOS los mensajes del prospecto (solo los que recibimos)
+        const userMessages = conversation.messages
+          .filter(msg => msg.message_type === 'received')
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        
+        console.log(`📝 Mensajes del prospecto encontrados: ${userMessages.length}`);
         
         if (userMessages.length > 0) {
-          const allUserMessages = userMessages.map(msg => msg.message_text).join(' ');
+          // Concatenar TODOS los mensajes del prospecto
+          const allUserText = userMessages
+            .map(msg => msg.message_text)
+            .join(' ')
+            .trim();
           
-          console.log(`🔍 Analizando: "${allUserMessages.substring(0, 100)}..."`);
+          console.log(`💬 Texto completo del prospecto (${allUserText.length} caracteres):`);
+          console.log(`"${allUserText.substring(0, 300)}${allUserText.length > 300 ? '...' : '"}"`);
           
-          // Usar el servicio de análisis
-          const analysisResult = await analyzeMessage(allUserMessages, enabledTraits);
+          // Usar el servicio de análisis mejorado
+          const analysisResult = await analyzeMessage(allUserText, enabledTraits);
+          
+          console.log(`🎯 Resultado del análisis:`, {
+            matchPoints: analysisResult.matchPoints,
+            metTraits: analysisResult.metTraits,
+            metTraitIndices: analysisResult.metTraitIndices
+          });
+          
+          // Solo guardar si hay coincidencias O si queremos guardar todos los prospectos
+          const prospectData = {
+            id: conversation.sender_id,
+            senderId: conversation.sender_id,
+            sender_id: conversation.sender_id,
+            userName: `Usuario ${conversation.sender_id.slice(-4)}`,
+            matchPoints: analysisResult.matchPoints,
+            metTraits: analysisResult.metTraits,
+            metTraitIndices: analysisResult.metTraitIndices,
+            lastMessage: allUserText.substring(0, 100),
+            timestamp: '1m',
+            unread: true,
+            analyzed: true
+          };
+          
+          updatedProspects.push(prospectData);
           
           if (analysisResult.matchPoints > 0) {
-            // Actualizar localStorage con formato correcto
-            const savedConversationsStr = localStorage.getItem('hower-conversations');
-            let savedConversations: any[] = [];
-            
-            if (savedConversationsStr) {
-              try {
-                savedConversations = JSON.parse(savedConversationsStr);
-              } catch (e) {
-                savedConversations = [];
-              }
-            }
-            
-            // Buscar conversación existente con múltiples claves posibles
-            const existingIndex = savedConversations.findIndex(conv => 
-              conv.id === conversation.sender_id || 
-              conv.senderId === conversation.sender_id ||
-              conv.sender_id === conversation.sender_id
-            );
-            
-            const prospectData = {
-              id: conversation.sender_id,
-              senderId: conversation.sender_id,
-              sender_id: conversation.sender_id, // Asegurar compatibilidad
-              userName: `Usuario ${conversation.sender_id.slice(-4)}`,
-              matchPoints: analysisResult.matchPoints,
-              metTraits: analysisResult.metTraits,
-              metTraitIndices: analysisResult.metTraitIndices,
-              lastMessage: allUserMessages.substring(0, 100),
-              timestamp: '1m',
-              unread: true
-            };
-            
-            if (existingIndex !== -1) {
-              // Actualizar existente
-              savedConversations[existingIndex] = {
-                ...savedConversations[existingIndex],
-                ...prospectData
-              };
-            } else {
-              // Crear nuevo
-              savedConversations.push(prospectData);
-            }
-            
-            localStorage.setItem('hower-conversations', JSON.stringify(savedConversations));
-            updatedProspects.push(prospectData);
-            
-            console.log(`✅ PROSPECTO ACTUALIZADO: ${conversation.sender_id}`, {
-              matchPoints: analysisResult.matchPoints,
-              metTraits: analysisResult.metTraits
-            });
+            prospectsWithMatches++;
+            console.log(`✅ PROSPECTO CON COINCIDENCIAS: ${conversation.sender_id} (${analysisResult.matchPoints}/${enabledTraits.length})`);
+          } else {
+            console.log(`⚪ Prospecto sin coincidencias: ${conversation.sender_id}`);
           }
           
           totalAnalyzed++;
           
-          // Pequeña pausa entre análisis
-          await new Promise(resolve => setTimeout(resolve, 50));
+          // Pausa pequeña entre análisis para no sobrecargar
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } else {
+          console.log(`⚠️ No se encontraron mensajes del prospecto: ${conversation.sender_id}`);
         }
       }
+      
+      // Guardar TODOS los resultados del análisis
+      console.log(`💾 Guardando ${updatedProspects.length} prospectos analizados...`);
+      localStorage.setItem('hower-conversations', JSON.stringify(updatedProspects));
       
       // Forzar eventos de actualización
       window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new CustomEvent('conversations-updated', { 
-        detail: { updatedProspects }
+        detail: { updatedProspects, totalAnalyzed, prospectsWithMatches }
       }));
       
-      // Recargar conversaciones después del análisis
-      console.log("🔄 Recargando conversaciones después del análisis...");
+      // Recargar conversaciones para mostrar los resultados
+      console.log("🔄 Recargando conversaciones con resultados del análisis...");
       setTimeout(() => {
         loadConversations();
-      }, 200);
+      }, 500);
       
       toast({
-        title: "✅ Análisis completado",
-        description: `Se analizaron ${totalAnalyzed} conversaciones. ${updatedProspects.length} prospectos actualizados.`,
+        title: "✅ Análisis completado exitosamente",
+        description: `Analizadas ${totalAnalyzed} conversaciones. ${prospectsWithMatches} prospectos con coincidencias encontrados.`,
+        duration: 5000
       });
       
+      console.log("🏁 ANÁLISIS COMPLETO FINALIZADO");
+      console.log(`📊 Resumen: ${totalAnalyzed} analizadas, ${prospectsWithMatches} con coincidencias`);
+      
     } catch (error) {
-      console.error("Error en análisis:", error);
+      console.error("❌ Error en análisis completo:", error);
       toast({
         title: "Error en análisis",
-        description: "Hubo un problema analizando los mensajes",
-        variant: "destructive"
+        description: "Hubo un problema analizando las conversaciones: " + (error as Error).message,
+        variant: "destructive",
+        duration: 8000
       });
     } finally {
       setLoading(false);
