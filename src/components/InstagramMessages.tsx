@@ -6,7 +6,7 @@ import { handleAutomaticResponse } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
+import { analyzeMessage } from '@/services/traitAnalysisService';
 
 interface InstagramMessage {
   id: string;
@@ -146,6 +146,8 @@ const InstagramMessages: React.FC = () => {
     
     try {
       setLoading(true);
+      
+      // Cargar características ideales
       const idealTraits = loadIdealTraits();
       const enabledTraits = idealTraits.filter((t: any) => t.enabled);
       
@@ -161,8 +163,9 @@ const InstagramMessages: React.FC = () => {
       console.log("✅ Características cargadas:", enabledTraits.map((t: any) => t.trait));
       
       let totalAnalyzed = 0;
+      let updatedProspects: any[] = [];
       
-      // Analizar cada conversación SECUENCIALMENTE
+      // Analizar cada conversación
       for (const conversation of conversations) {
         console.log(`📝 Analizando conversación de ${conversation.sender_id}`);
         
@@ -171,30 +174,86 @@ const InstagramMessages: React.FC = () => {
         if (userMessages.length > 0) {
           const allUserMessages = userMessages.map(msg => msg.message_text).join(' ');
           
-          console.log(`🔍 Analizando: "${allUserMessages}"`);
+          console.log(`🔍 Analizando: "${allUserMessages.substring(0, 100)}..."`);
           
-          // Usar el hook para analizar y guardar
-          await analyzeAndUpdateProspect(
-            conversation.sender_id,
-            `Usuario ${conversation.sender_id.slice(-4)}`,
-            allUserMessages,
-            idealTraits
-          );
+          // Usar el servicio de análisis
+          const analysisResult = await analyzeMessage(allUserMessages, enabledTraits);
+          
+          if (analysisResult.matchPoints > 0) {
+            // Actualizar localStorage con formato correcto
+            const savedConversationsStr = localStorage.getItem('hower-conversations');
+            let savedConversations: any[] = [];
+            
+            if (savedConversationsStr) {
+              try {
+                savedConversations = JSON.parse(savedConversationsStr);
+              } catch (e) {
+                savedConversations = [];
+              }
+            }
+            
+            // Buscar conversación existente con múltiples claves posibles
+            const existingIndex = savedConversations.findIndex(conv => 
+              conv.id === conversation.sender_id || 
+              conv.senderId === conversation.sender_id ||
+              conv.sender_id === conversation.sender_id
+            );
+            
+            const prospectData = {
+              id: conversation.sender_id,
+              senderId: conversation.sender_id,
+              sender_id: conversation.sender_id, // Asegurar compatibilidad
+              userName: `Usuario ${conversation.sender_id.slice(-4)}`,
+              matchPoints: analysisResult.matchPoints,
+              metTraits: analysisResult.metTraits,
+              metTraitIndices: analysisResult.metTraitIndices,
+              lastMessage: allUserMessages.substring(0, 100),
+              timestamp: '1m',
+              unread: true
+            };
+            
+            if (existingIndex !== -1) {
+              // Actualizar existente
+              savedConversations[existingIndex] = {
+                ...savedConversations[existingIndex],
+                ...prospectData
+              };
+            } else {
+              // Crear nuevo
+              savedConversations.push(prospectData);
+            }
+            
+            localStorage.setItem('hower-conversations', JSON.stringify(savedConversations));
+            updatedProspects.push(prospectData);
+            
+            console.log(`✅ PROSPECTO ACTUALIZADO: ${conversation.sender_id}`, {
+              matchPoints: analysisResult.matchPoints,
+              metTraits: analysisResult.metTraits
+            });
+          }
           
           totalAnalyzed++;
           
-          // Esperar un poco entre análisis
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Pequeña pausa entre análisis
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
       }
       
+      // Forzar eventos de actualización
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('conversations-updated', { 
+        detail: { updatedProspects }
+      }));
+      
       // Recargar conversaciones después del análisis
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await loadConversations();
+      console.log("🔄 Recargando conversaciones después del análisis...");
+      setTimeout(() => {
+        loadConversations();
+      }, 200);
       
       toast({
         title: "✅ Análisis completado",
-        description: `Se analizaron ${totalAnalyzed} conversaciones. Las estrellas deberían actualizarse ahora.`,
+        description: `Se analizaron ${totalAnalyzed} conversaciones. ${updatedProspects.length} prospectos actualizados.`,
       });
       
     } catch (error) {
@@ -289,7 +348,7 @@ const InstagramMessages: React.FC = () => {
 
       console.log('Grupos de conversación creados:', Object.keys(conversationGroups));
 
-      // CARGAR DATOS DE ANÁLISIS DESDE LOCALSTORAGE
+      // CARGAR DATOS DE ANÁLISIS DESDE LOCALSTORAGE con logging detallado
       const localMatches = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
       console.log('💾 Matches locales cargados:', localMatches);
 
@@ -298,13 +357,16 @@ const InstagramMessages: React.FC = () => {
         // Ordenar mensajes por timestamp ascendente
         const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         
-        // Buscar matchPoints/metTraits/metTraitIndices en localStorage - probar múltiples claves
+        // Buscar matchPoints/metTraits/metTraitIndices en localStorage - BÚSQUEDA MEJORADA
         const localMatch = localMatches.find((c: any) => 
           c.sender_id === prospectId || 
           c.id === prospectId ||
           c.senderId === prospectId ||
           c.userName === `Usuario ${prospectId.slice(-4)}`
         ) || {};
+        
+        console.log(`🔍 Buscando match para ${prospectId}:`, localMatch);
+        
         // Obtener características actuales
         let traits = [];
         try {
