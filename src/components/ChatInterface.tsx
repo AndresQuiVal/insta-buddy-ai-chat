@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -205,6 +206,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     }
   }, [activeConversation, currentMatchPoints, metTraits, messages]);
 
+  // 🔥 NUEVO: Analizar automáticamente cuando cambian los mensajes
+  useEffect(() => {
+    if (messages.length > 0 && idealTraits.length > 0) {
+      console.log("🤖 DEBUG: TRIGGER - Mensajes cambiaron, analizando automáticamente...");
+      console.log("📊 DEBUG: Total mensajes:", messages.length);
+      console.log("🎯 DEBUG: Características disponibles:", idealTraits.filter(t => t.enabled).length);
+      
+      // Solo analizar si hay mensajes del usuario
+      const userMessages = messages.filter(m => m.sender === 'user');
+      if (userMessages.length > 0) {
+        console.log("👤 DEBUG: Mensajes de usuario encontrados:", userMessages.length);
+        analyzeConversationForTraits(messages);
+      } else {
+        console.log("⚠️ DEBUG: No hay mensajes de usuario para analizar");
+      }
+    }
+  }, [messages, idealTraits]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -261,7 +280,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
 
   // Función mejorada para analizar conversación con IA
   const analyzeConversationForTraits = async (newMessages: Message[]) => {
-    console.log("🤖 DEBUG: === INICIANDO ANÁLISIS CON IA ===");
+    console.log("🤖 DEBUG: === INICIANDO ANÁLISIS AUTOMÁTICO ===");
     console.log("📊 DEBUG: Número de características ideales:", idealTraits.length);
     console.log("🎯 DEBUG: Características habilitadas:", idealTraits.filter(t => t.enabled));
     console.log("💬 DEBUG: Número de mensajes a analizar:", newMessages.length);
@@ -290,14 +309,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       // Usar el análisis con IA
       const result = await analyzeConversation(conversationMessages);
       
-      console.log("✅ DEBUG: Resultado del análisis:", result);
+      console.log("✅ DEBUG: Resultado del análisis AUTOMÁTICO:", result);
       
       // Actualizar estado local
       setCurrentMatchPoints(result.matchPoints);
       setMetTraits(result.metTraits);
       
-      console.log("🎯 DEBUG: Puntos actualizados:", result.matchPoints);
-      console.log("📋 DEBUG: Características detectadas:", result.metTraits);
+      console.log("🎯 DEBUG: Puntos actualizados AUTOMÁTICAMENTE:", result.matchPoints);
+      console.log("📋 DEBUG: Características detectadas AUTOMÁTICAMENTE:", result.metTraits);
       
       // Actualizar en localStorage
       if (activeConversation) {
@@ -312,10 +331,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         });
       }
       
-      console.log("✅ DEBUG: Análisis completado exitosamente");
+      console.log("✅ DEBUG: Análisis AUTOMÁTICO completado exitosamente");
       
     } catch (error) {
-      console.error("❌ DEBUG: Error en análisis:", error);
+      console.error("❌ DEBUG: Error en análisis AUTOMÁTICO:", error);
     }
   };
 
@@ -341,10 +360,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     setNewMessage('');
 
     console.log("📊 DEBUG: Total de mensajes después del envío:", newMessages.length);
-
-    // Analizar la conversación automáticamente con IA
-    console.log("🤖 DEBUG: Iniciando análisis automático con IA...");
-    await analyzeConversationForTraits(newMessages);
+    console.log("🚀 DEBUG: El useEffect debería detectar este cambio y analizar automáticamente...");
 
     // Respuesta automática de IA (si está habilitada)
     if (aiConfig.autoRespond) {
@@ -393,8 +409,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         setMessages(finalMessages);
         setIsTyping(false);
         
-        // Analizar nuevamente con la respuesta de la IA
-        analyzeConversationForTraits(finalMessages);
+        console.log("🚀 DEBUG: Respuesta de IA agregada, el useEffect debería analizar nuevamente...");
         
         toast({
           title: "🤖 IA Respondió Automáticamente",
