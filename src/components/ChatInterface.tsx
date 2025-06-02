@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, Star } from 'lucide-react';
+import { Send, Bot, User, Star, Sparkles } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ChatMessage, handleAutomaticResponse, isOpenAIConfigured } from '@/services/openaiService';
-import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
+import { analyzeConversationWithAI } from '@/services/aiTraitAnalysisService';
 
 interface Message {
   id: string;
@@ -31,17 +31,19 @@ interface Conversation {
   matchPoints: number;
   metTraits: string[];
   messages?: Message[];
+  aiConfidence?: number;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiConfig }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
+  const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean, position: number}[]>([]);
   const [currentMatchPoints, setCurrentMatchPoints] = useState(0);
   const [metTraits, setMetTraits] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiConfidence, setAiConfidence] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isAnalyzing, analyzeMessage } = useTraitAnalysis();
 
   // Cargar las características ideales del cliente desde localStorage
   useEffect(() => {
@@ -67,7 +69,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         const parsedTraits = JSON.parse(savedTraits);
         const formattedTraits = parsedTraits.map((item: any) => ({
           trait: item.trait,
-          enabled: item.enabled
+          enabled: item.enabled,
+          position: item.position || 0
         }));
         setIdealTraits(formattedTraits);
         console.log("✅ Características cargadas en ChatInterface:", formattedTraits);
@@ -82,10 +85,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
 
   const setDefaultTraits = () => {
     setIdealTraits([
-      { trait: "Interesado en nuestros productos o servicios", enabled: true },
-      { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true },
-      { trait: "Está listo para tomar una decisión de compra", enabled: true },
-      { trait: "Se encuentra en nuestra zona de servicio", enabled: true }
+      { trait: "Interesado en nuestros productos o servicios", enabled: true, position: 0 },
+      { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true, position: 1 },
+      { trait: "Está listo para tomar una decisión de compra", enabled: true, position: 2 },
+      { trait: "Se encuentra en nuestra zona de servicio", enabled: true, position: 3 }
     ]);
   };
 
@@ -121,6 +124,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
           if (currentConv) {
             setCurrentMatchPoints(currentConv.matchPoints || 0);
             setMetTraits(currentConv.metTraits || []);
+            setAiConfidence(currentConv.aiConfidence || 0);
             
             // Si hay mensajes guardados, usarlos en lugar de los del simulador
             if (currentConv.messages && currentConv.messages.length > 0) {
@@ -130,6 +134,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
             // Inicializar para una nueva conversación
             setCurrentMatchPoints(0);
             setMetTraits([]);
+            setAiConfidence(0);
           }
         }
       } catch (e) {
@@ -161,7 +166,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
             timestamp: '1m',
             matchPoints: currentMatchPoints,
             metTraits: metTraits,
-            messages: messages
+            messages: messages,
+            aiConfidence: aiConfidence
           };
         } else {
           // Crear nueva conversación
@@ -173,7 +179,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
             unread: false,
             matchPoints: currentMatchPoints,
             metTraits: metTraits,
-            messages: messages
+            messages: messages,
+            aiConfidence: aiConfidence
           });
         }
         
@@ -188,7 +195,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         console.error("Error al guardar conversación:", e);
       }
     }
-  }, [activeConversation, currentMatchPoints, metTraits, messages]);
+  }, [activeConversation, currentMatchPoints, metTraits, messages, aiConfidence]);
 
   useEffect(() => {
     scrollToBottom();
@@ -244,49 +251,51 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     return personalityResponses[Math.floor(Math.random() * personalityResponses.length)];
   };
 
-  // Función mejorada para analizar conversación
-  const analyzeConversationForTraits = (newMessages: Message[]) => {
-    if (idealTraits.length === 0) return;
+  // Función para analizar conversación COMPLETA con IA
+  const analyzeCompleteConversationWithAI = async (conversationMessages: Message[]) => {
+    if (idealTraits.length === 0 || conversationMessages.length === 0) return;
 
-    console.log("🔍 INICIANDO ANÁLISIS AUTOMÁTICO DE CARACTERÍSTICAS...");
+    console.log("🤖 INICIANDO ANÁLISIS COMPLETO CON IA...");
+    setIsAnalyzing(true);
 
-    // Obtener solo las características habilitadas
-    const enabledTraits = idealTraits.filter(t => t.enabled).map(t => ({ ...t, position: 0 }));
-    if (enabledTraits.length === 0) return;
+    try {
+      // Crear texto de conversación completa
+      const conversationText = conversationMessages
+        .map(msg => `${msg.sender === 'user' ? 'Usuario' : 'Asistente'}: ${msg.text}`)
+        .join('\n');
 
-    console.log("✅ Características habilitadas para análisis:", enabledTraits);
+      console.log("📝 Conversación a analizar:", conversationText.substring(0, 300) + "...");
 
-    // Solo analizar los mensajes del usuario, no los del AI
-    const userMessages = newMessages.filter(msg => msg.sender === 'user');
-    
-    if (userMessages.length === 0) return;
-    
-    // Obtener el último mensaje del usuario para análisis individual
-    const lastUserMessage = userMessages[userMessages.length - 1];
-    
-    console.log("📝 Analizando mensaje:", lastUserMessage.text);
-    
-    // Usar el hook de análisis
-    const result = analyzeMessage(lastUserMessage.text, enabledTraits);
-    
-    // Combinar con características ya detectadas
-    const newMetTraits = [...new Set([...metTraits, ...result.metTraits])];
-    const newMatchPoints = Math.min(newMetTraits.length, enabledTraits.length);
-    
-    // Solo actualizar si hay cambios
-    if (JSON.stringify(newMetTraits) !== JSON.stringify(metTraits)) {
-      console.log("📊 Actualizando características cumplidas:", newMetTraits);
-      setMetTraits(newMetTraits);
-      setCurrentMatchPoints(newMatchPoints);
-      
-      // Mostrar toast para nuevas características detectadas
-      const newTraitsDetected = newMetTraits.length - metTraits.length;
-      if (newTraitsDetected > 0) {
+      // Analizar con IA
+      const result = await analyzeConversationWithAI(conversationText, idealTraits);
+
+      // Actualizar estado
+      setCurrentMatchPoints(result.matchPoints);
+      setMetTraits(result.metTraits);
+      setAiConfidence(result.confidence);
+
+      // Mostrar toast con resultados
+      if (result.matchPoints > 0) {
         toast({
-          title: `🎯 ¡${newTraitsDetected} característica${newTraitsDetected > 1 ? 's' : ''} detectada${newTraitsDetected > 1 ? 's' : ''}!`,
-          description: `Puntuación: ${newMatchPoints}/${enabledTraits.length} estrella${newMatchPoints !== 1 ? 's' : ''}`,
+          title: `🤖 ¡IA detectó ${result.matchPoints} característica${result.matchPoints > 1 ? 's' : ''}!`,
+          description: `Confianza: ${(result.confidence * 100).toFixed(1)}% | ${result.metTraits.join(', ')}`,
+        });
+      } else {
+        toast({
+          title: "🤖 Análisis IA completado",
+          description: "No se detectaron características específicas aún.",
         });
       }
+
+    } catch (error) {
+      console.error("❌ Error en análisis IA:", error);
+      toast({
+        title: "❌ Error en análisis IA",
+        description: "Revisa la configuración de OpenAI en Supabase",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -303,10 +312,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setNewMessage('');
-
-    // Analizar la conversación para detectar rasgos AUTOMÁTICAMENTE
-    console.log("🤖 Iniciando análisis automático...");
-    analyzeConversationForTraits(newMessages);
 
     // Respuesta automática de IA (si está habilitada)
     if (aiConfig.autoRespond) {
@@ -355,14 +360,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         setMessages(finalMessages);
         setIsTyping(false);
         
-        // Analizar nuevamente con la respuesta de la IA
-        analyzeConversationForTraits(finalMessages);
+        // ANALIZAR CONVERSACIÓN COMPLETA CON IA después de respuesta
+        setTimeout(() => {
+          analyzeCompleteConversationWithAI(finalMessages);
+        }, 1000);
         
         toast({
           title: "🤖 IA Respondió Automáticamente",
           description: `${aiConfig.name} ha enviado una respuesta`,
         });
       }, aiConfig.responseDelay);
+    } else {
+      // Si no hay autorespuesta, analizar inmediatamente
+      setTimeout(() => {
+        analyzeCompleteConversationWithAI(newMessages);
+      }, 500);
     }
   };
 
@@ -371,6 +383,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       e.preventDefault();
       sendMessage();
     }
+  };
+
+  // Función para analizar manualmente
+  const handleManualAnalysis = () => {
+    if (messages.length === 0) {
+      toast({
+        title: "⚠️ No hay conversación",
+        description: "Necesitas tener mensajes para analizar",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    analyzeCompleteConversationWithAI(messages);
   };
 
   // Renderizar indicadores de compatibilidad
@@ -382,25 +408,41 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       <div className="flex flex-col p-4 border-t border-purple-100 bg-gradient-to-r from-blue-50 to-purple-50">
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-sm font-medium text-gray-700">
-            🎯 Compatibilidad automática
+            🤖 Análisis IA en tiempo real
             {isAnalyzing && (
               <span className="ml-2 text-xs text-blue-600 animate-pulse">
-                Analizando en tiempo real...
+                Analizando con IA...
               </span>
             )}
           </h4>
-          <div className="flex items-center">
-            {[...Array(maxPoints)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  i < currentMatchPoints ? 'fill-primary text-primary' : 'text-gray-300'
-                }`}
-              />
-            ))}
-            <span className="text-xs text-gray-500 ml-1">{currentMatchPoints}/{maxPoints}</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleManualAnalysis}
+              disabled={isAnalyzing || messages.length === 0}
+              className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50 flex items-center gap-1"
+            >
+              <Sparkles className="w-3 h-3" />
+              Analizar
+            </button>
+            <div className="flex items-center">
+              {[...Array(maxPoints)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < currentMatchPoints ? 'fill-primary text-primary' : 'text-gray-300'
+                  }`}
+                />
+              ))}
+              <span className="text-xs text-gray-500 ml-1">{currentMatchPoints}/{maxPoints}</span>
+            </div>
           </div>
         </div>
+        
+        {aiConfidence > 0 && (
+          <div className="text-xs text-gray-600 mb-2">
+            Confianza IA: {(aiConfidence * 100).toFixed(1)}%
+          </div>
+        )}
         
         <div className="space-y-1 mt-1">
           {enabledTraits.map((trait, idx) => {
@@ -450,7 +492,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
           </div>
           <div>
             <h3 className="font-semibold text-gray-800">{aiConfig.name}</h3>
-            <p className="text-sm text-green-600">● Activo - Respuestas automáticas: {aiConfig.autoRespond ? 'ON' : 'OFF'}</p>
+            <p className="text-sm text-green-600">● Activo - Análisis IA: ON | Respuestas: {aiConfig.autoRespond ? 'ON' : 'OFF'}</p>
           </div>
         </div>
       </div>
@@ -511,7 +553,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Indicador de compatibilidad automática */}
+      {/* Indicador de compatibilidad con IA */}
       {renderCompatibilityIndicator()}
 
       {/* Input de mensaje */}
