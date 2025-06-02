@@ -1,216 +1,579 @@
-
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Users, TrendingUp, Activity, Sparkles, Brain } from 'lucide-react';
-import ConversationList from './ConversationList';
-import ChatInterface from './ChatInterface';
-import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { disconnectInstagram } from '@/services/instagramService';
+import RecommendationsCarousel from './RecommendationsCarousel';
+import MetricTooltip from './MetricTooltip';
+import { 
+  MessageCircle, 
+  Users, 
+  TrendingUp, 
+  Clock,
+  Send,
+  Inbox,
+  BarChart3,
+  RefreshCw,
+  LogOut,
+  Bug,
+  Target,
+  Award,
+  Calendar,
+  Zap,
+  Brain,
+  ChevronDown,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  Lightbulb,
+  ArrowLeft,
+  UserPlus
+} from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import AdvancedMetrics from './AdvancedMetrics';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-const InstagramDashboard = () => {
-  const [activeConversation, setActiveConversation] = useState<string | null>(null);
-  const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean, position: number}[]>([]);
-  const { isAnalyzing, analyzeAllWithAI } = useAITraitAnalysis();
+interface DashboardStats {
+  totalMessages: number;
+  totalConversations: number;
+  messagesReceived: number;
+  messagesSent: number;
+  averageResponseTime: number;
+  todayMessages: number;
+  totalInvitations: number;
+  responseRate: number;
+  lastMessageDate: string | null;
+}
 
-  // Configuración básica de la IA
-  const [aiConfig] = useState({
-    name: 'Asistente IA',
-    personality: 'amigable',
-    responseDelay: 2000,
-    autoRespond: true
+interface AIRecommendation {
+  type: 'success' | 'warning' | 'danger' | 'info';
+  title: string;
+  message: string;
+  action?: string;
+}
+
+type TimeFilter = 'today' | 'week' | 'month' | 'all';
+
+interface InstagramDashboardProps {
+  onShowAnalysis?: () => void;
+}
+
+const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis }) => {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalMessages: 0,
+    totalConversations: 0,
+    messagesReceived: 0,
+    messagesSent: 0,
+    averageResponseTime: 0,
+    todayMessages: 0, // Este campo se mantendrá pero no se actualizará automáticamente
+    totalInvitations: 0,
+    responseRate: 0,
+    lastMessageDate: null
   });
+  const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showDebug, setShowDebug] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
+  const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showMetrics, setShowMetrics] = useState(false);
 
-  // Cargar características del cliente ideal
+  const timeFilterOptions = [
+    { value: 'today', label: 'Hoy' },
+    { value: 'week', label: 'Esta Semana' },
+    { value: 'month', label: 'Este Mes' },
+    { value: 'all', label: 'Todo el Tiempo' }
+  ];
+
   useEffect(() => {
-    loadIdealTraitsFromStorage();
-    
-    // Escuchar cambios en las características
-    const handleTraitsUpdate = () => {
-      loadIdealTraitsFromStorage();
-    };
+    loadDashboardStats();
 
-    window.addEventListener('traits-updated', handleTraitsUpdate);
-    window.addEventListener('storage', handleTraitsUpdate);
-    
+    // Subscribe to real-time updates
+    const subscription = supabase
+      .channel('dashboard-updates')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'instagram_messages'
+      }, () => {
+        loadDashboardStats();
+      })
+      .subscribe();
+
     return () => {
-      window.removeEventListener('traits-updated', handleTraitsUpdate);
-      window.removeEventListener('storage', handleTraitsUpdate);
+      supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [timeFilter]);
 
-  const loadIdealTraitsFromStorage = () => {
-    try {
-      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-      console.log("🔍 CARGANDO CARACTERÍSTICAS DESDE LOCALSTORAGE:", savedTraits);
-      
-      if (savedTraits) {
-        const parsedTraits = JSON.parse(savedTraits);
-        console.log("📋 CARACTERÍSTICAS PARSEADAS:", parsedTraits);
-        
-        const formattedTraits = parsedTraits.map((item: any) => ({
-          trait: item.trait,
-          enabled: item.enabled,
-          position: item.position || 0
-        }));
-        
-        setIdealTraits(formattedTraits);
-        console.log("✅ Características cargadas en Dashboard:", formattedTraits);
-        
-        // Mostrar toast con las características cargadas
-        const enabledCount = formattedTraits.filter((t: any) => t.enabled).length;
-        toast({
-          title: `🎯 ${enabledCount} características cargadas`,
-          description: `Listas para análisis con IA: ${formattedTraits.filter((t: any) => t.enabled).map((t: any) => t.trait).join(', ')}`,
-        });
-      } else {
-        console.log("⚠️ No se encontraron características en localStorage");
-        setIdealTraits([]);
+  const handleLogout = () => {
+    disconnectInstagram();
+    window.location.reload();
+  };
+
+  const generateAIRecommendations = (stats: DashboardStats) => {
+    const recs: AIRecommendation[] = [];
+
+    // Análisis de tasa de respuesta
+    if (stats.responseRate < 10) {
+      recs.push({
+        type: 'danger',
+        title: 'Tasa de Respuesta Baja',
+        message: `Tu tasa de respuesta es del ${stats.responseRate.toFixed(1)}%, muy por debajo del 10% ideal. Esto indica que tus mensajes no están generando el interés esperado.`,
+        action: 'Revisa el contenido de tus mensajes y considera personalizar más tu enfoque.'
+      });
+    } else if (stats.responseRate >= 10 && stats.responseRate < 15) {
+      recs.push({
+        type: 'warning',
+        title: 'Tasa de Respuesta Aceptable',
+        message: `Tu tasa de respuesta es del ${stats.responseRate.toFixed(1)}%, está en el rango aceptable pero se puede mejorar.`,
+        action: 'Experimenta con diferentes horarios de envío y mensajes más atractivos.'
+      });
+    } else if (stats.responseRate >= 15) {
+      recs.push({
+        type: 'success',
+        title: '¡Excelente Tasa de Respuesta!',
+        message: `Tu tasa de respuesta es del ${stats.responseRate.toFixed(1)}%, ¡esto está por encima del promedio ideal!`,
+        action: 'Mantén esta estrategia y considera escalar tu volumen de mensajes.'
+      });
+    }
+
+    // Nota: Se eliminó el análisis de actividad diaria ya que no se actualizará automáticamente
+
+    // Análisis de conversión
+    if (stats.totalInvitations === 0 && stats.messagesSent > 0) {
+      recs.push({
+        type: 'warning',
+        title: 'Sin Invitaciones',
+        message: 'Has enviado mensajes pero no has logrado invitaciones.',
+        action: 'Enfócate en generar más interés antes de hacer la invitación formal.'
+      });
+    }
+
+    setRecommendations(recs);
+  };
+
+  const getDateFilter = () => {
+    const now = new Date();
+    switch (timeFilter) {
+      case 'today':
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return today.toISOString();
+      case 'week':
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return weekAgo.toISOString();
+      case 'month':
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        return monthAgo.toISOString();
+      default:
+        return null;
+    }
+  };
+
+  // Función para calcular respuestas únicas
+  const calculateUniqueResponses = (messages: any[]) => {
+    // Agrupar mensajes por sender_id (prospecto)
+    const messagesByProspect = messages.reduce((acc, message) => {
+      if (message.message_type === 'received') {
+        if (!acc[message.sender_id]) {
+          acc[message.sender_id] = [];
+        }
+        acc[message.sender_id].push(message);
       }
-    } catch (error) {
-      console.error("❌ Error al cargar características:", error);
-      setIdealTraits([]);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    let uniqueResponses = 0;
+
+    // Para cada prospecto, contar respuestas únicas
+    Object.values(messagesByProspect).forEach((prospectMessages: any[]) => {
+      // Ordenar mensajes por timestamp
+      const sortedMessages = prospectMessages.sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      // La primera respuesta siempre cuenta
+      if (sortedMessages.length > 0) {
+        uniqueResponses++;
+      }
+
+      // Verificar gaps de 5+ horas entre respuestas
+      for (let i = 1; i < sortedMessages.length; i++) {
+        const currentTime = new Date(sortedMessages[i].timestamp).getTime();
+        const previousTime = new Date(sortedMessages[i - 1].timestamp).getTime();
+        const timeDiff = (currentTime - previousTime) / (1000 * 60 * 60); // diferencia en horas
+
+        if (timeDiff >= 5) {
+          uniqueResponses++;
+        }
+      }
+    });
+
+    return uniqueResponses;
+  };
+
+  // Función para calcular tiempo promedio de respuesta real
+  const calculateAverageResponseTime = (messages: any[]) => {
+    const responseTimes: number[] = [];
+    
+    // Agrupar mensajes por sender_id (prospecto)
+    const messagesByProspect = messages.reduce((acc, message) => {
+      if (!acc[message.sender_id]) {
+        acc[message.sender_id] = [];
+      }
+      acc[message.sender_id].push(message);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    // Para cada prospecto, calcular tiempos de respuesta
+    Object.values(messagesByProspect).forEach((prospectMessages: any[]) => {
+      const sortedMessages = prospectMessages.sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      for (let i = 1; i < sortedMessages.length; i++) {
+        const currentMsg = sortedMessages[i];
+        const previousMsg = sortedMessages[i - 1];
+
+        // Si el mensaje actual es una respuesta (received) y el anterior fue enviado (sent)
+        if (currentMsg.message_type === 'received' && previousMsg.message_type === 'sent') {
+          const responseTime = new Date(currentMsg.timestamp).getTime() - new Date(previousMsg.timestamp).getTime();
+          const responseTimeInSeconds = responseTime / 1000;
+          responseTimes.push(responseTimeInSeconds);
+        }
+      }
+    });
+
+    return responseTimes.length > 0 
+      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length 
+      : 0;
+  };
+
+  // Función para formatear tiempo de respuesta
+  const formatResponseTime = (seconds: number): string => {
+    if (seconds < 60) {
+      return `${Math.round(seconds)}s`;
+    } else if (seconds < 3600) {
+      return `${Math.round(seconds / 60)}m`;
+    } else if (seconds < 86400) {
+      return `${Math.round(seconds / 3600)}h`;
+    } else {
+      return `${Math.round(seconds / 86400)}d`;
     }
   };
 
-  const handleAnalyzeAll = () => {
-    console.log("🤖 Botón de análisis masivo presionado");
-    console.log("🎯 Características que se van a usar:", idealTraits);
-    
-    if (idealTraits.length === 0) {
+  const loadDashboardStats = async () => {
+    try {
+      setLoading(true);
+      const dateFilter = getDateFilter();
+
+      // Construir query base
+      let messagesQuery = supabase.from('instagram_messages').select('*');
+      
+      if (dateFilter) {
+        messagesQuery = messagesQuery.gte('created_at', dateFilter);
+      }
+
+      const { data: messages, error } = await messagesQuery;
+
+      if (error) {
+        console.error('Error loading messages:', error);
+        return;
+      }
+
+      // Calcular estadísticas filtradas
+      const messagesSent = messages?.filter(m => m.message_type === 'sent').length || 0;
+      const messagesReceived = calculateUniqueResponses(messages || []);
+      const totalInvitations = messages?.filter(m => m.is_invitation).length || 0;
+
+      // NO calcular mensajes de hoy automáticamente - se mantendrá el valor actual
+      // const today = new Date();
+      // today.setHours(0, 0, 0, 0);
+      // const { data: todayData } = await supabase
+      //   .from('instagram_messages')
+      //   .select('*')
+      //   .eq('message_type', 'sent')
+      //   .gte('created_at', today.toISOString());
+
+      // const todayMessages = todayData?.length || 0;
+
+      // Calcular tiempo promedio de respuesta real
+      const averageResponseTime = calculateAverageResponseTime(messages || []);
+
+      // Calcular tasa de respuesta
+      const responseRate = messagesSent > 0 ? (messagesReceived / messagesSent) * 100 : 0;
+
+      // Fecha del último mensaje
+      const lastMessage = messages?.filter(m => m.message_type === 'sent')
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+      const dashboardStats = {
+        totalMessages: messagesSent + messagesReceived,
+        totalConversations: 0, // No se muestra en el dashboard
+        messagesReceived,
+        messagesSent,
+        averageResponseTime,
+        todayMessages: stats.todayMessages, // Mantener el valor actual, no actualizar automáticamente
+        totalInvitations,
+        responseRate,
+        lastMessageDate: lastMessage?.created_at || null
+      };
+
+      setStats(dashboardStats);
+      generateAIRecommendations(dashboardStats);
+
+    } catch (error) {
+      console.error('Error loading dashboard stats:', error);
       toast({
-        title: "⚠️ No hay características configuradas",
-        description: "Ve a Configuración → Cliente Ideal para configurar las características primero",
+        title: "Error",
+        description: "No se pudieron cargar las estadísticas",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-    
-    const enabledTraits = idealTraits.filter(t => t.enabled);
-    if (enabledTraits.length === 0) {
-      toast({
-        title: "⚠️ No hay características habilitadas",
-        description: "Habilita al menos una característica en la configuración del cliente ideal",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    console.log("🚀 INICIANDO ANÁLISIS CON CARACTERÍSTICAS:", enabledTraits);
-    analyzeAllWithAI(idealTraits);
   };
+
+  const StatCard: React.FC<{
+    title: string;
+    value: string | number;
+    icon: React.ReactNode;
+    color: string;
+    tooltip?: {
+      title: string;
+      description: string;
+      examples?: string[];
+    };
+  }> = ({ title, value, icon, color, tooltip }) => {
+    const cardContent = (
+      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 hover:shadow-xl transition-all duration-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+          </div>
+          <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center`}>
+            {icon}
+          </div>
+        </div>
+      </div>
+    );
+
+    if (tooltip) {
+      return (
+        <MetricTooltip
+          title={tooltip.title}
+          description={tooltip.description}
+          examples={tooltip.examples}
+        >
+          {cardContent}
+        </MetricTooltip>
+      );
+    }
+
+    return cardContent;
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-800">Dashboard Instagram</h2>
+          <RefreshCw className="w-6 h-6 text-purple-400 animate-spin" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 animate-pulse">
+              <div className="h-20 bg-gray-200 rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Instagram IA Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Gestiona tus conversaciones con análisis inteligente en tiempo real
-          </p>
-          
-          {/* Debug info de características */}
-          <div className="mt-2 p-2 bg-blue-50 rounded-lg text-xs text-blue-800">
-            <strong>🔍 Debug Características:</strong> {idealTraits.length} total, {idealTraits.filter(t => t.enabled).length} habilitadas
-            {idealTraits.length > 0 && (
-              <div className="mt-1">
-                {idealTraits.map((trait, idx) => (
-                  <span key={idx} className={`inline-block mr-2 px-2 py-1 rounded ${trait.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                    {trait.trait}
-                  </span>
+    <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <div className="flex gap-2">
+          {/* Filtro de tiempo */}
+          <div className="relative">
+            <button
+              onClick={() => setShowTimeDropdown(!showTimeDropdown)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Calendar className="w-4 h-4" />
+              {timeFilterOptions.find(opt => opt.value === timeFilter)?.label}
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            {showTimeDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                {timeFilterOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setTimeFilter(option.value as TimeFilter);
+                      setShowTimeDropdown(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 hover:bg-gray-50 ${
+                      timeFilter === option.value ? 'bg-purple-50 text-purple-600' : ''
+                    }`}
+                  >
+                    {option.label}
+                  </button>
                 ))}
               </div>
             )}
           </div>
-          
-          {/* Botón de análisis masivo */}
+          <button
+            onClick={loadDashboardStats}
+            className="p-2 bg-transparent hover:bg-purple-100 rounded-full text-purple-500 border border-transparent hover:border-purple-200 transition-colors"
+            title="Actualizar"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Métricas Principales */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Nuevos prospectos contactados"
+          value={stats.todayMessages}
+          icon={<UserPlus className="w-6 h-6 text-white" />}
+          color="bg-gradient-to-r from-blue-500 to-purple-500"
+          tooltip={{
+            title: "Nuevos prospectos contactados (manual)",
+            description: "Número de personas nuevas contactadas. Este valor se actualiza manualmente y no se incrementa automáticamente.",
+            examples: [
+              "Se actualiza solo cuando lo hagas manualmente",
+              "No se incrementa automáticamente al enviar mensajes",
+              "Representa tu actividad de prospección manual"
+            ]
+          }}
+        />
+
+        <StatCard
+          title="Respuestas Recibidas"
+          value={stats.messagesReceived}
+          icon={<Inbox className="w-6 h-6 text-white" />}
+          color="bg-gradient-to-r from-green-500 to-teal-500"
+          tooltip={{
+            title: "Respuestas recibidas únicas",
+            description: "Número de prospectos que han respondido a tus mensajes. Solo cuenta la primera respuesta de cada persona o respuestas después de 5+ horas de silencio.",
+            examples: [
+              "Prospecto responde por primera vez = +1",
+              "Prospecto responde después de 5+ horas = +1", 
+              "Respuestas inmediatas en conversación = no cuenta"
+            ]
+          }}
+        />
+
+        <StatCard
+          title="Invitaciones"
+          value={stats.totalInvitations}
+          icon={<Target className="w-6 h-6 text-white" />}
+          color="bg-gradient-to-r from-orange-500 to-red-500"
+          tooltip={{
+            title: "Enlaces de reunión enviados",
+            description: "Número de veces que has enviado enlaces de Zoom, Google Meet u otras plataformas de videollamada a tus prospectos.",
+            examples: [
+              "Links de Zoom: zoom.us/j/123456",
+              "Links de Google Meet: meet.google.com/abc-def",
+              "Links de Teams, Skype, etc."
+            ]
+          }}
+        />
+
+        <StatCard
+          title="Tiempo de Respuesta"
+          value={formatResponseTime(stats.averageResponseTime)}
+          icon={<Clock className="w-6 h-6 text-white" />}
+          color="bg-gradient-to-r from-pink-500 to-rose-500"
+          tooltip={{
+            title: "Tiempo promedio de respuesta",
+            description: "Tiempo promedio que tardan tus prospectos en responderte desde que envías un mensaje. Un tiempo menor indica mayor interés.",
+            examples: [
+              "Menos de 1 hora = muy interesado",
+              "1-24 horas = interés moderado",
+              "Más de 24 horas = interés bajo"
+            ]
+          }}
+        />
+      </div>
+
+      {/* Recomendaciones de Hower Assistant en Carousel */}
+      <div className="mt-8">
+        <button
+          className="flex items-center gap-2 text-purple-600 font-semibold focus:outline-none hover:underline"
+          onClick={() => setShowRecommendations(!showRecommendations)}
+        >
+          <Lightbulb className="w-5 h-5" />
+          {showRecommendations ? 'Ocultar Recomendaciones' : 'Ver Recomendaciones de Hower Assistant'}
+        </button>
+        {showRecommendations && (
           <div className="mt-4">
-            <button
-              onClick={handleAnalyzeAll}
-              disabled={isAnalyzing}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+            <RecommendationsCarousel recommendations={recommendations} />
+          </div>
+        )}
+      </div>
+
+      {/* Botón de Análisis Detallado */}
+      <div className="mt-8">
+        <Button 
+          onClick={onShowAnalysis}
+          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+        >
+          <Brain className="w-4 h-4 mr-2" />
+          Análisis detallado
+        </Button>
+      </div>
+
+      {/* Modal de Análisis Detallado */}
+      {showMetrics && (
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-8">
+            <Button
+              onClick={() => setShowMetrics(false)}
+              className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
+              variant="ghost"
             >
-              {isAnalyzing ? (
-                <>
-                  <Activity className="w-5 h-5 animate-spin" />
-                  Analizando con IA...
-                </>
-              ) : (
-                <>
-                  <Brain className="w-5 h-5" />
-                  Analizar Todo con IA ({idealTraits.filter(t => t.enabled).length} características)
-                </>
-              )}
-            </button>
-            <p className="text-xs text-gray-500 mt-2">
-              Analiza todas las conversaciones con inteligencia artificial
-            </p>
+              <ArrowLeft className="w-4 h-4" />
+              Volver al Dashboard
+            </Button>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Análisis Detallado</h1>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <AdvancedMetrics />
           </div>
         </div>
+      )}
+    </div>
+  );
+};
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 border border-purple-100 shadow-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Conversaciones</p>
-                <p className="text-2xl font-bold text-gray-800">12</p>
-              </div>
-              <MessageSquare className="w-8 h-8 text-purple-500" />
-            </div>
-          </div>
-
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 border border-purple-100 shadow-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Prospectos Activos</p>
-                <p className="text-2xl font-bold text-gray-800">8</p>
-              </div>
-              <Users className="w-8 h-8 text-blue-500" />
-            </div>
-          </div>
-
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 border border-purple-100 shadow-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Tasa de Respuesta</p>
-                <p className="text-2xl font-bold text-gray-800">85%</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-500" />
-            </div>
-          </div>
-
-          <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 border border-purple-100 shadow-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Características IA</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {idealTraits.filter(t => t.enabled).length}
-                </p>
-              </div>
-              <Sparkles className="w-8 h-8 text-pink-500" />
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Conversation List */}
-          <div className="lg:col-span-1">
-            <ConversationList 
-              activeConversation={activeConversation}
-              onSelectConversation={setActiveConversation}
-            />
-          </div>
-
-          {/* Chat Interface */}
-          <div className="lg:col-span-2">
-            <ChatInterface 
-              activeConversation={activeConversation}
-              aiConfig={aiConfig}
-            />
-          </div>
+export const DashboardDebugPanel: React.FC<{ show: boolean; onClose: () => void }> = ({ show, onClose }) => {
+  if (!show) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl p-8 shadow-2xl max-w-lg w-full relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100"
+        >
+          <Bug className="w-5 h-5 text-orange-500" />
+        </button>
+        <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-orange-600">
+          <Bug className="w-5 h-5" /> Debug
+        </h3>
+        <div className="text-sm text-gray-700">
+          <p>Panel de diagnóstico y depuración del sistema.</p>
         </div>
       </div>
     </div>

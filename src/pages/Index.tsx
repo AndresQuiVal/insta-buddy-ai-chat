@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import InstagramDashboard from '@/components/InstagramDashboard';
+import InstagramDashboard, { DashboardDebugPanel } from '@/components/InstagramDashboard';
 import InstagramMessages from '@/components/InstagramMessages';
 import InstagramDiagnostic from '@/components/InstagramDiagnostic';
 import AdvancedMetrics from '@/components/AdvancedMetrics';
@@ -100,7 +99,7 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <InstagramDashboard />;
+        return <InstagramDashboard onShowAnalysis={() => setActiveTab('analysis')} />;
       case 'my_prospects':
         return <MyProspects />;
       case 'messages':
@@ -137,7 +136,7 @@ const Index = () => {
           </div>
         );
       default:
-        return <InstagramDashboard />;
+        return <InstagramDashboard onShowAnalysis={() => setActiveTab('analysis')} />;
     }
   };
 
