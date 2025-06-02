@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { MessageCircle, RefreshCw, Search, User, Clock } from 'lucide-react';
+import { MessageCircle, RefreshCw, Search, Bot } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface InstagramMessage {
   id: string;
@@ -42,6 +44,26 @@ const ProspectList: React.FC = () => {
       return `Usuario ${senderId.slice(-4)}`;
     }
     return `Usuario ${senderId}`;
+  };
+
+  const getProspectState = (prospect: Prospect) => {
+    const receivedMessages = prospect.messages.filter(msg => msg.message_type === 'received');
+    const sentMessages = prospect.messages.filter(msg => msg.message_type === 'sent');
+    
+    if (receivedMessages.length === 0) {
+      return 'Sin respuesta';
+    } else if (prospect.last_message.message_type === 'received') {
+      return 'Esperando respuesta';
+    } else {
+      return 'En seguimiento';
+    }
+  };
+
+  const handleAISuggestion = (prospect: Prospect) => {
+    toast({
+      title: "Sugerencia con IA",
+      description: `Generando sugerencia para ${getUserDisplayName(prospect.sender_id)}...`
+    });
   };
 
   const loadProspects = async () => {
@@ -180,9 +202,9 @@ const ProspectList: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-4">
         {filteredProspects.length === 0 ? (
-          <div className="p-8 text-center">
+          <div className="text-center py-8">
             <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-700 mb-2">
               {searchTerm ? 'No se encontraron prospectos' : 'No hay prospectos aún'}
@@ -192,38 +214,46 @@ const ProspectList: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-2 p-4">
-            {filteredProspects.map((prospect) => (
-              <div
-                key={prospect.sender_id}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-gray-800">
-                        {getUserDisplayName(prospect.sender_id)}
-                      </h4>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <MessageCircle className="w-3 h-3" />
-                        <span>{prospect.message_count} mensajes</span>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 truncate mt-1">
-                      {prospect.last_message.message_text}
-                    </p>
-                    <p className="text-xs text-gray-400 flex items-center gap-1 mt-2">
-                      <Clock className="w-3 h-3" />
-                      {new Date(prospect.last_message.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Usuario</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredProspects.map((prospect) => (
+                <TableRow key={prospect.sender_id}>
+                  <TableCell className="font-medium">
+                    {getUserDisplayName(prospect.sender_id)}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      getProspectState(prospect) === 'Sin respuesta' 
+                        ? 'bg-red-100 text-red-800'
+                        : getProspectState(prospect) === 'Esperando respuesta'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {getProspectState(prospect)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAISuggestion(prospect)}
+                      className="flex items-center gap-2"
+                    >
+                      <Bot className="w-4 h-4" />
+                      Sugerencia con IA
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
     </div>
