@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -116,6 +117,34 @@ const InstagramMessages: React.FC = () => {
     };
   }, [isTabLeader]);
 
+  // Función para analizar automáticamente TODOS los mensajes existentes
+  const analyzeExistingMessages = async () => {
+    console.log("🔍 ANALIZANDO TODOS LOS MENSAJES EXISTENTES...");
+    
+    // Analizar cada conversación
+    conversations.forEach(async (conversation) => {
+      console.log(`📝 Analizando conversación de ${conversation.sender_id}`);
+      
+      // Analizar todos los mensajes del usuario (no los enviados por nosotros)
+      const userMessages = conversation.messages.filter(msg => msg.message_type === 'received');
+      
+      for (const message of userMessages) {
+        console.log(`🔍 Analizando mensaje: "${message.message_text}"`);
+        
+        await analyzeInstagramMessage(
+          message.sender_id,
+          message.message_text,
+          `Usuario ${message.sender_id.slice(-4)}`
+        );
+      }
+    });
+    
+    // Recargar conversaciones después del análisis
+    setTimeout(() => {
+      loadConversations();
+    }, 2000);
+  };
+
   const loadConversations = async () => {
     try {
       setLoading(true);
@@ -208,7 +237,7 @@ const InstagramMessages: React.FC = () => {
         const unreadCount = messages.filter(msg => msg.message_type === 'received').length;
         
         // Buscar matchPoints/metTraits en localStorage
-        const localMatch = localMatches.find((c: any) => c.sender_id === prospectId) || {};
+        const localMatch = localMatches.find((c: any) => c.sender_id === prospectId || c.id === prospectId) || {};
         
         return {
           sender_id: prospectId,
@@ -262,6 +291,15 @@ const InstagramMessages: React.FC = () => {
 
   const handleNewIncomingMessage = async (message: InstagramMessage) => {
     if (!aiEnabled) return;
+
+    console.log("🔍 NUEVO MENSAJE RECIBIDO - ANALIZANDO:", message.message_text);
+
+    // ANALIZAR EL MENSAJE INMEDIATAMENTE
+    await analyzeInstagramMessage(
+      message.sender_id,
+      message.message_text,
+      `Usuario ${message.sender_id.slice(-4)}`
+    );
 
     console.log(`Generando respuesta automática en ${aiDelay} segundos...`);
     
@@ -450,35 +488,13 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
+  // Ejecutar análisis automático cuando cambian las conversaciones
   useEffect(() => {
-    // Configurar análisis automático para mensajes nuevos
-    const handleNewMessage = async (messageData: any) => {
-      console.log("📱 Nuevo mensaje recibido para análisis:", messageData);
-      
-      // Solo analizar mensajes entrantes (no enviados)
-      if (messageData.sender && messageData.text && !messageData.is_echo) {
-        await analyzeInstagramMessage(
-          messageData.sender.id,
-          messageData.text,
-          messageData.username
-        );
-      }
-    };
-    
-    // Simular análisis para mensajes existentes (solo para pruebas)
-    if (selectedMessages.length > 0) {
-      selectedMessages.forEach(async (message) => {
-        if (message.sender_id && message.message_text && !message.raw_data?.is_echo) {
-          await analyzeInstagramMessage(
-            message.sender_id,
-            message.message_text,
-            `Usuario ${message.sender_id.slice(-4)}`
-          );
-        }
-      });
+    if (conversations.length > 0) {
+      console.log("🔄 Conversaciones cargadas, ejecutando análisis automático...");
+      analyzeExistingMessages();
     }
-    
-  }, [selectedMessages]);
+  }, [conversations.length]);
 
   if (loading) {
     return (
@@ -497,6 +513,12 @@ const InstagramMessages: React.FC = () => {
         <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
           <MessageCircle className="w-6 h-6" /> Mensajes de Instagram
         </h2>
+        <button
+          onClick={analyzeExistingMessages}
+          className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm"
+        >
+          🔍 Analizar Todo
+        </button>
       </div>
 
       {/* Layout principal: bandejas y chat */}
