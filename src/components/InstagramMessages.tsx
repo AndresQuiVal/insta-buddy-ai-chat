@@ -8,6 +8,7 @@ import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { analyzeMessage } from '@/services/traitAnalysisService';
 import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
+import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
 
 interface InstagramMessage {
   id: string;
@@ -50,6 +51,7 @@ const InstagramMessages: React.FC = () => {
   
   // Hook de análisis de características
   const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
+  const { isAnalyzing: isAnalyzingAI, analyzeAll, loadIdealTraits } = useAITraitAnalysis();
 
   useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
 
@@ -141,135 +143,30 @@ const InstagramMessages: React.FC = () => {
     };
   }, [isTabLeader]);
 
-  // Función para analizar automáticamente TODOS los mensajes existentes
+  // Función para analizar automáticamente TODOS los mensajes existentes usando el hook correcto
   const analyzeExistingMessages = async () => {
-    console.log("🔍 INICIANDO ANÁLISIS COMPLETO DE TODAS LAS CONVERSACIONES...");
+    console.log("🔍 DEBUG: InstagramMessages - Iniciando análisis completo con IA...");
     
     try {
-      setLoading(true);
+      await analyzeAll();
       
-      // Cargar características ideales
-      const idealTraits = loadIdealTraits();
-      const enabledTraits = idealTraits.filter((t: any) => t.enabled);
+      toast({
+        title: "🤖 ¡Análisis completado!",
+        description: "Todas las conversaciones han sido analizadas con IA",
+      });
       
-      if (enabledTraits.length === 0) {
-        toast({
-          title: "No hay características habilitadas",
-          description: "Ve a Configuración para habilitar características del cliente ideal",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log("✅ Características ideales cargadas:", enabledTraits.map((t: any) => t.trait));
-      
-      let totalAnalyzed = 0;
-      let prospectsWithMatches = 0;
-      const updatedProspects: any[] = [];
-      
-      // Limpiar datos anteriores
-      localStorage.removeItem('hower-conversations');
-      
-      console.log("📊 Total de conversaciones a analizar:", conversations.length);
-      
-      // Analizar cada conversación COMPLETA
-      for (const conversation of conversations) {
-        console.log("🔍 ANALIZANDO CONVERSACIÓN COMPLETA DE:", conversation.sender_id);
-        
-        // Obtener TODOS los mensajes del prospecto (solo los que recibimos)
-        const userMessages = conversation.messages
-          .filter(msg => msg.message_type === 'received')
-          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        
-        console.log("📝 Mensajes del prospecto encontrados:", userMessages.length);
-        
-        if (userMessages.length > 0) {
-          // Concatenar TODOS los mensajes del prospecto
-          const allUserText = userMessages
-            .map(msg => msg.message_text)
-            .join(' ')
-            .trim();
-          
-          console.log("💬 Texto completo del prospecto (caracteres):", allUserText.length);
-          console.log("Texto:", allUserText.substring(0, 300) + (allUserText.length > 300 ? '...' : ''));
-          
-          // Usar el servicio de análisis mejorado
-          const analysisResult = await analyzeMessage(allUserText, enabledTraits);
-          
-          console.log("🎯 Resultado del análisis:", {
-            matchPoints: analysisResult.matchPoints,
-            metTraits: analysisResult.metTraits,
-            metTraitIndices: analysisResult.metTraitIndices
-          });
-          
-          // Solo guardar si hay coincidencias O si queremos guardar todos los prospectos
-          const prospectData = {
-            id: conversation.sender_id,
-            senderId: conversation.sender_id,
-            sender_id: conversation.sender_id,
-            userName: `Usuario ${conversation.sender_id.slice(-4)}`,
-            matchPoints: analysisResult.matchPoints,
-            metTraits: analysisResult.metTraits,
-            metTraitIndices: analysisResult.metTraitIndices,
-            lastMessage: allUserText.substring(0, 100),
-            timestamp: '1m',
-            unread: true,
-            analyzed: true
-          };
-          
-          updatedProspects.push(prospectData);
-          
-          if (analysisResult.matchPoints > 0) {
-            prospectsWithMatches++;
-            console.log("✅ PROSPECTO CON COINCIDENCIAS:", conversation.sender_id, "(" + analysisResult.matchPoints + "/" + enabledTraits.length + ")");
-          } else {
-            console.log("⚪ Prospecto sin coincidencias:", conversation.sender_id);
-          }
-          
-          totalAnalyzed++;
-          
-          // Pausa pequeña entre análisis para no sobrecargar
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } else {
-          console.log("⚠️ No se encontraron mensajes del prospecto:", conversation.sender_id);
-        }
-      }
-      
-      // Guardar TODOS los resultados del análisis
-      console.log("💾 Guardando prospectos analizados:", updatedProspects.length);
-      localStorage.setItem('hower-conversations', JSON.stringify(updatedProspects));
-      
-      // Forzar eventos de actualización
-      window.dispatchEvent(new Event('storage'));
-      window.dispatchEvent(new CustomEvent('conversations-updated', { 
-        detail: { updatedProspects, totalAnalyzed, prospectsWithMatches }
-      }));
-      
-      // Recargar conversaciones para mostrar los resultados
-      console.log("🔄 Recargando conversaciones con resultados del análisis...");
+      // Recargar conversaciones después del análisis
       setTimeout(() => {
         loadConversations();
-      }, 500);
-      
-      toast({
-        title: "✅ Análisis completado exitosamente",
-        description: `Analizadas ${totalAnalyzed} conversaciones. ${prospectsWithMatches} prospectos con coincidencias encontrados.`,
-        duration: 5000
-      });
-      
-      console.log("🏁 ANÁLISIS COMPLETO FINALIZADO");
-      console.log("📊 Resumen:", totalAnalyzed, "analizadas,", prospectsWithMatches, "con coincidencias");
+      }, 1000);
       
     } catch (error) {
-      console.error("❌ Error en análisis completo:", error);
+      console.error("Error en análisis:", error);
       toast({
-        title: "Error en análisis",
-        description: "Hubo un problema analizando las conversaciones: " + (error as Error).message,
-        variant: "destructive",
-        duration: 8000
+        title: "Error",
+        description: "Hubo un problema al analizar las conversaciones",
+        variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -380,10 +277,12 @@ const InstagramMessages: React.FC = () => {
             traits = JSON.parse(savedTraits).filter((t: any) => t.enabled);
           }
         } catch {}
+        
         // Calcular matchPoints dinámicamente según metTraitIndices válidos
         const metTraitIndices = localMatch.metTraitIndices || [];
         const validMetTraitIndices = metTraitIndices.filter((idx: number) => traits[idx]);
         const dynamicMatchPoints = validMetTraitIndices.length;
+        
         return {
           sender_id: prospectId,
           messages: sortedMessages,
@@ -682,10 +581,10 @@ const InstagramMessages: React.FC = () => {
         </h2>
         <button
           onClick={analyzeExistingMessages}
-          disabled={isAnalyzing}
-          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm font-semibold ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isAnalyzingAI}
+          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm font-semibold ${isAnalyzingAI ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          {isAnalyzing ? '⏳ Analizando...' : '🔍 Analizar Todo'}
+          {isAnalyzingAI ? '⏳ Analizando...' : '🔍 Analizar Todo'}
         </button>
       </div>
 
@@ -732,96 +631,81 @@ const InstagramMessages: React.FC = () => {
                 <p className="text-gray-500 text-sm">No hay conversaciones aún</p>
               </div>
             ) : (
-              conversations.map((conversation) => (
-                <div
-                  key={conversation.sender_id}
-                  onClick={() => setSelectedConversation(conversation.sender_id)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedConversation === conversation.sender_id ? 'bg-purple-50 border-purple-200' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-800 truncate flex items-center gap-2">
-                          {getUserDisplayName(conversation.sender_id)}
-                          {/* Estrellas de compatibilidad */}
-                          <span className="flex items-center ml-2">
-                            {[...Array(4)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${i < (conversation.matchPoints || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                              />
-                            ))}
-                            <span className="ml-1 text-xs text-gray-500">
-                              ({conversation.matchPoints || 0}/4)
-                            </span>
-                          </span>
-                        </h4>
+              conversations.map((conversation) => {
+                // Obtener características actuales para calcular el máximo
+                let traits = [];
+                try {
+                  const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+                  if (savedTraits) {
+                    traits = JSON.parse(savedTraits).filter((t: any) => t.enabled);
+                  }
+                } catch {}
+                const maxPoints = traits.length || 4;
+
+                return (
+                  <div
+                    key={conversation.sender_id}
+                    onClick={() => setSelectedConversation(conversation.sender_id)}
+                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedConversation === conversation.sender_id ? 'bg-purple-50 border-purple-200' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                        <User className="w-6 h-6 text-white" />
                       </div>
-                      <p className="text-sm text-gray-500 truncate">
-                        {conversation.last_message.message_text}
-                      </p>
-                      {/* Criterios cumplidos */}
-                      {(() => {
-                        // Obtener características actuales
-                        let traits = [];
-                        try {
-                          const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-                          if (savedTraits) {
-                            traits = JSON.parse(savedTraits).filter((t: any) => t.enabled);
-                          }
-                        } catch {}
-                        // Obtener los índices de las cumplidas para este prospecto
-                        const metTraitIndices = conversation.metTraitIndices || [];
-                        if (metTraitIndices.length > 0) {
-                          return (
-                            <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
-                              {metTraitIndices.slice(0, 2).map((idx, i) => (
-                                <span key={i} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200 truncate">
-                                  ✅ {traits[idx]?.trait?.split(' ').slice(0, 3).join(' ')}...
-                                </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-gray-800 truncate flex items-center gap-2">
+                            {getUserDisplayName(conversation.sender_id)}
+                            {/* Estrellas de compatibilidad */}
+                            <span className="flex items-center ml-2">
+                              {[...Array(maxPoints)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${i < (conversation.matchPoints || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                                />
                               ))}
-                              {metTraitIndices.length > 2 && (
-                                <span className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
-                                  +{metTraitIndices.length - 2} más
-                                </span>
-                              )}
-                            </div>
-                          );
-                        }
-                        // Fallback: método anterior por texto
-                        const metTraits = conversation.metTraits || [];
-                        const matchedTraitIndices = metTraits.map(trait => {
-                          return traits.findIndex((t: any) => t.trait === trait);
-                        }).filter(idx => idx !== -1);
-                        if (matchedTraitIndices.length === 0) return null;
-                        return (
-                          <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
-                            {matchedTraitIndices.slice(0, 2).map((idx, i) => (
-                              <span key={i} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200 truncate">
-                                ✅ {traits[idx]?.trait?.split(' ').slice(0, 3).join(' ')}...
+                              <span className="ml-1 text-xs text-gray-500">
+                                ({conversation.matchPoints || 0}/{maxPoints})
                               </span>
-                            ))}
-                            {matchedTraitIndices.length > 2 && (
-                              <span className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
-                                +{matchedTraitIndices.length - 2} más
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
-                      <p className="text-xs text-gray-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
-                      </p>
+                            </span>
+                          </h4>
+                        </div>
+                        <p className="text-sm text-gray-500 truncate">
+                          {conversation.last_message.message_text}
+                        </p>
+                        {/* Criterios cumplidos */}
+                        {(() => {
+                          // Obtener los índices de las cumplidas para este prospecto
+                          const metTraitIndices = conversation.metTraitIndices || [];
+                          if (metTraitIndices.length > 0) {
+                            return (
+                              <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
+                                {metTraitIndices.slice(0, 2).map((idx, i) => (
+                                  <span key={i} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200 truncate">
+                                    ✅ {traits[idx]?.trait?.split(' ').slice(0, 3).join(' ')}...
+                                  </span>
+                                ))}
+                                {metTraitIndices.length > 2 && (
+                                  <span className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
+                                    +{metTraitIndices.length - 2} más
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -896,9 +780,11 @@ const InstagramMessages: React.FC = () => {
                       }
                     } catch {}
                     // Obtener las cumplidas para este prospecto
-                    const metTraits = conversations.find(c => c.sender_id === selectedConversation)?.metTraits || [];
+                    const selectedConv = conversations.find(c => c.sender_id === selectedConversation);
+                    const metTraitIndices = selectedConv?.metTraitIndices || [];
+                    
                     return traits.map((trait: any, idx: number) => {
-                      const isMet = metTraits.includes(trait.trait);
+                      const isMet = metTraitIndices.includes(idx);
                       return (
                         <span
                           key={idx}
