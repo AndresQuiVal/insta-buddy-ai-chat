@@ -39,6 +39,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
   const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
   const [currentMatchPoints, setCurrentMatchPoints] = useState(0);
   const [metTraits, setMetTraits] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Cargar las características ideales del cliente
@@ -227,22 +228,34 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
   const analyzeConversation = (newMessages: Message[]) => {
     if (idealTraits.length === 0) return;
 
+    setIsAnalyzing(true);
+    console.log("🔍 INICIANDO ANÁLISIS DE CARACTERÍSTICAS...");
+
     // Obtener solo las características habilitadas
     const enabledTraits = idealTraits.filter(t => t.enabled).map(t => t.trait);
-    if (enabledTraits.length === 0) return;
+    if (enabledTraits.length === 0) {
+      setIsAnalyzing(false);
+      return;
+    }
+
+    console.log("✅ Características habilitadas para análisis:", enabledTraits);
 
     // Solo analizar los mensajes del usuario, no los del AI
     const userMessages = newMessages.filter(msg => msg.sender === 'user');
     
-    if (userMessages.length === 0) return;
+    if (userMessages.length === 0) {
+      setIsAnalyzing(false);
+      return;
+    }
     
     // Analizar cada mensaje del usuario individualmente y concatenarlos
     const conversationText = userMessages.map(msg => msg.text.toLowerCase()).join(' ');
     
-    console.log("Analyzing conversation text:", conversationText);
+    console.log("📝 Analizando texto de conversación:", conversationText);
     
     // Verificar cada característica
     const newMetTraits: string[] = [...metTraits];
+    let newTraitsDetected = 0;
     
     enabledTraits.forEach(trait => {
       // Palabras clave relacionadas con cada característica - más específicas y con variaciones
@@ -250,22 +263,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         "Interesado en nuestros productos o servicios": [
           "interesa", "producto", "servicio", "necesito", "busco", 
           "quiero", "comprar", "tienen", "ofrecen", "información",
-          "conocer", "saber", "precio"
+          "conocer", "saber", "precio", "cotización", "propuesta"
         ],
         "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
           "presupuesto", "dispongo", "puedo pagar", "cuesta", "precio", 
           "inversión", "económico", "financiar", "pago", "costo",
-          "dinero", "gastar", "pagar", "efectivo", "tarjeta"
+          "dinero", "gastar", "pagar", "efectivo", "tarjeta", "recursos"
         ],
         "Está listo para tomar una decisión de compra": [
           "decidido", "comprar", "adquirir", "cuando", "ahora", 
           "inmediato", "listo", "proceder", "compra", "ya",
-          "hoy", "pronto", "mañana", "semana", "momento"
+          "hoy", "pronto", "mañana", "semana", "momento", "urgente"
         ],
         "Se encuentra en nuestra zona de servicio": [
           "vivo", "ubicado", "dirección", "ciudad", "zona", "región", 
           "local", "envío", "entrega", "domicilio", "casa",
-          "oficina", "trabajo", "calle", "avenida", "país"
+          "oficina", "trabajo", "calle", "avenida", "país", "área"
         ]
       };
       
@@ -278,20 +291,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         return conversationText.includes(keyword.toLowerCase());
       });
       
-      console.log(`Trait "${trait}" - Match found: ${matchFound}`);
+      console.log(`🎯 Característica "${trait}" - Coincidencia encontrada: ${matchFound}`);
       
       if (matchFound && !newMetTraits.includes(trait)) {
-        console.log(`Adding new trait: ${trait}`);
+        console.log(`✅ NUEVA CARACTERÍSTICA DETECTADA: ${trait}`);
         newMetTraits.push(trait);
+        newTraitsDetected++;
+        
+        // Mostrar toast cuando se detecta una nueva característica
+        toast({
+          title: "¡Nueva característica detectada!",
+          description: trait,
+        });
       }
     });
     
     // Solo actualizar si hay cambios
     if (JSON.stringify(newMetTraits) !== JSON.stringify(metTraits)) {
-      console.log("Updating met traits:", newMetTraits);
+      console.log("📊 Actualizando características cumplidas:", newMetTraits);
       setMetTraits(newMetTraits);
-      setCurrentMatchPoints(Math.min(newMetTraits.length, 4)); // Máximo 4 puntos
+      setCurrentMatchPoints(Math.min(newMetTraits.length, enabledTraits.length));
+      
+      if (newTraitsDetected > 0) {
+        toast({
+          title: `${newTraitsDetected} característica${newTraitsDetected > 1 ? 's' : ''} nueva${newTraitsDetected > 1 ? 's' : ''}`,
+          description: `Puntuación actual: ${newMetTraits.length}/${enabledTraits.length} estrella${newMetTraits.length !== 1 ? 's' : ''}`,
+        });
+      }
     }
+    
+    setTimeout(() => setIsAnalyzing(false), 1000);
   };
 
   const sendMessage = async () => {
@@ -374,12 +403,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
 
   // Renderizar indicadores de compatibilidad
   const renderCompatibilityIndicator = () => {
+    const enabledTraits = idealTraits.filter(t => t.enabled);
+    const maxPoints = enabledTraits.length || 4;
+    
     return (
       <div className="flex flex-col p-4 border-t border-purple-100">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-medium text-gray-700">Compatibilidad del prospecto</h4>
+          <h4 className="text-sm font-medium text-gray-700">
+            Compatibilidad del prospecto
+            {isAnalyzing && (
+              <span className="ml-2 text-xs text-blue-600 animate-pulse">
+                Analizando...
+              </span>
+            )}
+          </h4>
           <div className="flex items-center">
-            {[...Array(4)].map((_, i) => (
+            {[...Array(maxPoints)].map((_, i) => (
               <Star
                 key={i}
                 className={`w-4 h-4 ${
@@ -387,25 +426,32 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
                 }`}
               />
             ))}
-            <span className="text-xs text-gray-500 ml-1">{currentMatchPoints}/4</span>
+            <span className="text-xs text-gray-500 ml-1">{currentMatchPoints}/{maxPoints}</span>
           </div>
         </div>
         
         <div className="space-y-1 mt-1">
-          {idealTraits
-            .filter(trait => trait.enabled)
-            .map((trait, idx) => {
+          {enabledTraits.map((trait, idx) => {
               const isMet = metTraits.includes(trait.trait);
               return (
                 <div key={idx} className="flex items-center text-xs">
                   <div className={`w-2 h-2 rounded-full mr-2 ${isMet ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                  <span className={`${isMet ? 'text-gray-800' : 'text-gray-500'}`}>
+                  <span className={`${isMet ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
                     {trait.trait}
                   </span>
+                  {isMet && (
+                    <span className="ml-1 text-green-600">✓</span>
+                  )}
                 </div>
               );
             })}
         </div>
+        
+        {enabledTraits.length === 0 && (
+          <div className="text-xs text-gray-500 italic">
+            No hay características configuradas. Ve a Configuración → Cliente Ideal para configurarlas.
+          </div>
+        )}
       </div>
     );
   };
