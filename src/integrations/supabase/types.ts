@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ideal_client_traits: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          position: number
+          trait: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          position?: number
+          trait: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          position?: number
+          trait?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       instagram_messages: {
         Row: {
           conversation_stage: string | null

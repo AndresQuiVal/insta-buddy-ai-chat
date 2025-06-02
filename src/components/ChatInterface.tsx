@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ChatMessage, handleAutomaticResponse, isOpenAIConfigured } from '@/services/openaiService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -42,17 +43,59 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Cargar las características ideales del cliente
+  // Cargar las características ideales del cliente desde la base de datos
   useEffect(() => {
-    try {
-      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-      if (savedTraits) {
-        setIdealTraits(JSON.parse(savedTraits));
-      }
-    } catch (e) {
-      console.error("Error al cargar características del cliente ideal:", e);
-    }
+    loadIdealTraitsFromDatabase();
   }, []);
+
+  const loadIdealTraitsFromDatabase = async () => {
+    try {
+      // Verificar si el usuario está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log("Usuario no autenticado, usando características por defecto");
+        setDefaultTraits();
+        return;
+      }
+
+      // Cargar características del usuario desde la base de datos
+      const { data, error } = await supabase
+        .from('ideal_client_traits')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('position', { ascending: true });
+
+      if (error) {
+        console.error("Error al cargar características:", error);
+        setDefaultTraits();
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // Convertir datos de la base de datos al formato del componente
+        const loadedTraits = data.map(item => ({
+          trait: item.trait,
+          enabled: item.enabled
+        }));
+        setIdealTraits(loadedTraits);
+      } else {
+        // Si no hay características guardadas, usar las por defecto
+        setDefaultTraits();
+      }
+    } catch (error) {
+      console.error("Error al cargar características:", error);
+      setDefaultTraits();
+    }
+  };
+
+  const setDefaultTraits = () => {
+    setIdealTraits([
+      { trait: "Interesado en nuestros productos o servicios", enabled: true },
+      { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true },
+      { trait: "Está listo para tomar una decisión de compra", enabled: true },
+      { trait: "Se encuentra en nuestra zona de servicio", enabled: true }
+    ]);
+  };
 
   // Simulador de conversaciones por usuario
   const conversationData: { [key: string]: Message[] } = {
@@ -175,24 +218,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     businessDescription: "Asistente virtual que ayuda a filtrar prospectos potenciales.",
     tone: aiConfig.personality === 'amigable' ? 'amigable y cercano' : 
           aiConfig.personality === 'profesional' ? 'profesional y formal' : 'casual y relajado',
-    // Cargar las características desde localStorage o usar valores por defecto
-    idealClientTraits: (() => {
-      try {
-        const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-        if (savedTraits) {
-          const traits = JSON.parse(savedTraits);
-          return traits.filter((trait: any) => trait.enabled).map((trait: any) => trait.trait);
-        }
-      } catch (e) {
-        console.error("Error al cargar características del cliente ideal:", e);
-      }
-      return [
-        "Interesado en nuestros productos o servicios",
-        "Tiene presupuesto adecuado para adquirir nuestras soluciones",
-        "Está listo para tomar una decisión de compra",
-        "Se encuentra en nuestra zona de servicio"
-      ];
-    })()
+    // Usar las características cargadas desde la base de datos
+    idealClientTraits: idealTraits.filter(trait => trait.enabled).map(trait => trait.trait)
   };
 
   const generateSimpleResponse = (userMessage: string): string => {
