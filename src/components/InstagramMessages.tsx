@@ -631,35 +631,75 @@ const InstagramMessages: React.FC = () => {
                 <p className="text-gray-500 text-sm">No hay conversaciones aún</p>
               </div>
             ) : (
-              conversations.map((conversation) => (
-                <div
-                  key={conversation.sender_id}
-                  onClick={() => setSelectedConversation(conversation.sender_id)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedConversation === conversation.sender_id ? 'bg-purple-50 border-purple-200' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-800 truncate">
-                          {getUserDisplayName(conversation.sender_id)}
-                        </h4>
+              conversations.map((conversation) => {
+                // Obtener características actuales para calcular el máximo
+                const traits = loadTraitsFromStorage().filter(t => t.enabled);
+                const maxPoints = traits.length || 4;
+
+                return (
+                  <div
+                    key={conversation.sender_id}
+                    onClick={() => setSelectedConversation(conversation.sender_id)}
+                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedConversation === conversation.sender_id ? 'bg-purple-50 border-purple-200' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                        <User className="w-6 h-6 text-white" />
                       </div>
-                      <p className="text-sm text-gray-500 truncate">
-                        {conversation.last_message.message_text}
-                      </p>
-                      <p className="text-xs text-gray-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-gray-800 truncate flex items-center gap-2">
+                            {getUserDisplayName(conversation.sender_id)}
+                            {/* Estrellas de compatibilidad */}
+                            <span className="flex items-center ml-2">
+                              {[...Array(maxPoints)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${i < (conversation.matchPoints || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                                />
+                              ))}
+                              <span className="ml-1 text-xs text-gray-500">
+                                ({conversation.matchPoints || 0}/{maxPoints})
+                              </span>
+                            </span>
+                          </h4>
+                        </div>
+                        <p className="text-sm text-gray-500 truncate">
+                          {conversation.last_message.message_text}
+                        </p>
+                        {/* Criterios cumplidos */}
+                        {(() => {
+                          // Obtener los índices de las cumplidas para este prospecto
+                          const metTraitIndices = conversation.metTraitIndices || [];
+                          if (metTraitIndices.length > 0) {
+                            return (
+                              <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
+                                {metTraitIndices.slice(0, 2).map((idx, i) => (
+                                  <span key={i} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200 truncate">
+                                    ✅ {traits[idx]?.trait?.split(' ').slice(0, 3).join(' ')}...
+                                  </span>
+                                ))}
+                                {metTraitIndices.length > 2 && (
+                                  <span className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
+                                    +{metTraitIndices.length - 2} más
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -717,6 +757,34 @@ const InstagramMessages: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Indicador de compatibilidad: mostrar todas las características */}
+              <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-blue-50 to-purple-50">
+                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  🎯 Características del cliente ideal
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {(() => {
+                    // Obtener características actuales
+                    const traits = loadTraitsFromStorage().filter(t => t.enabled);
+                    // Obtener las cumplidas para este prospecto
+                    const selectedConv = conversations.find(c => c.sender_id === selectedConversation);
+                    const metTraitIndices = selectedConv?.metTraitIndices || [];
+                    
+                    return traits.map((trait: TraitWithPosition, idx: number) => {
+                      const isMet = metTraitIndices.includes(idx);
+                      return (
+                        <span
+                          key={idx}
+                          className={`flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium ${isMet ? 'bg-green-100 border-green-300 text-green-800' : 'bg-gray-100 border-gray-300 text-gray-500'}`}
+                        >
+                          {isMet ? '✓' : <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />} {trait.trait}
+                        </span>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
 
               {/* Mensajes */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
