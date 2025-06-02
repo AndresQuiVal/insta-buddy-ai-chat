@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 
 interface Trait {
@@ -10,6 +9,7 @@ interface Trait {
 interface AnalysisResult {
   matchPoints: number;
   metTraits: string[];
+  metTraitIndices?: number[];
 }
 
 interface ProspectData {
@@ -18,6 +18,7 @@ interface ProspectData {
   userName: string;
   matchPoints: number;
   metTraits: string[];
+  metTraitIndices?: number[];
   lastMessage: string;
   timestamp: string;
   unread: boolean;
@@ -41,8 +42,19 @@ export const useTraitAnalysis = () => {
     const conversationText = messageText.toLowerCase();
     console.log("📝 Texto normalizado:", conversationText);
     
-    // Mapa extendido de palabras clave
-    const keywordMap: Record<string, string[]> = {
+    // Permitir que el usuario defina palabras clave personalizadas en localStorage
+    let customKeywordMap: Record<string, string[]> = {};
+    try {
+      const stored = localStorage.getItem('hower-ideal-client-keywords');
+      if (stored) {
+        customKeywordMap = JSON.parse(stored);
+      }
+    } catch (e) {
+      customKeywordMap = {};
+    }
+
+    // Mapa extendido de palabras clave (por defecto)
+    const defaultKeywordMap: Record<string, string[]> = {
       "Interesado en nuestros productos o servicios": [
         "interesa", "producto", "servicio", "necesito", "busco", "quiero", "comprar", 
         "tienen", "ofrecen", "información", "conocer", "saber", "precio", "cotización", 
@@ -70,13 +82,17 @@ export const useTraitAnalysis = () => {
         "méxico", "cdmx", "guadalajara", "monterrey", "puebla", "cancún"
       ]
     };
-    
+
     const metTraits: string[] = [];
+    const metTraitIndices: number[] = [];
     
-    enabledTraits.forEach(trait => {
-      const keywords = keywordMap[trait.trait] || [];
+    enabledTraits.forEach((trait, idx) => {
+      // Usar palabras clave personalizadas si existen, si no, las por defecto
+      const keywords = customKeywordMap[trait.trait] || defaultKeywordMap[trait.trait] || [];
       
+      // Buscar coincidencias exactas o parciales (palabra completa o parte de la palabra)
       const matchFound = keywords.some(keyword => {
+        // Coincidencia exacta o parcial (palabra completa o parte de la palabra)
         return conversationText.includes(keyword.toLowerCase());
       });
       
@@ -86,6 +102,7 @@ export const useTraitAnalysis = () => {
       
       if (matchFound) {
         metTraits.push(trait.trait);
+        metTraitIndices.push(idx);
         console.log(`✅ CARACTERÍSTICA DETECTADA: ${trait.trait}`);
       }
     });
@@ -96,7 +113,7 @@ export const useTraitAnalysis = () => {
     console.log(`   Características detectadas: ${metTraits.length}`);
     console.log(`   Puntos de compatibilidad: ${matchPoints}/${enabledTraits.length}`);
     
-    return { matchPoints, metTraits };
+    return { matchPoints, metTraits, metTraitIndices };
   }, []);
 
   const updateProspectInStorage = useCallback((
@@ -104,7 +121,8 @@ export const useTraitAnalysis = () => {
     userName: string,
     matchPoints: number,
     metTraits: string[],
-    messageText: string
+    messageText: string,
+    metTraitIndices?: number[]
   ) => {
     try {
       const savedConversationsStr = localStorage.getItem('hower-conversations');
@@ -124,11 +142,13 @@ export const useTraitAnalysis = () => {
         // Actualizar conversación existente - ACUMULAR características
         const existing = conversations[existingIndex];
         const combinedTraits = [...new Set([...(existing.metTraits || []), ...metTraits])];
+        const combinedTraitIndices = [...new Set([...(existing.metTraitIndices || []), ...(metTraitIndices || [])])];
         
         conversations[existingIndex] = {
           ...existing,
           matchPoints: combinedTraits.length,
           metTraits: combinedTraits,
+          metTraitIndices: combinedTraitIndices,
           lastMessage: messageText.substring(0, 100),
           timestamp: '1m'
         };
@@ -145,6 +165,7 @@ export const useTraitAnalysis = () => {
           userName: userName || `Usuario ${senderId.slice(-4)}`,
           matchPoints,
           metTraits,
+          metTraitIndices: metTraitIndices || [],
           lastMessage: messageText.substring(0, 100),
           timestamp: '1m',
           unread: true
@@ -163,7 +184,7 @@ export const useTraitAnalysis = () => {
       // Forzar actualización de la UI
       window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new CustomEvent('conversations-updated', { 
-        detail: { senderId, matchPoints, metTraits }
+        detail: { senderId, matchPoints, metTraits, metTraitIndices }
       }));
       
       console.log("💾 DATOS GUARDADOS EN LOCALSTORAGE CORRECTAMENTE");
@@ -187,7 +208,7 @@ export const useTraitAnalysis = () => {
       const result = analyzeMessage(messageText, idealTraits);
       
       if (result.matchPoints > 0) {
-        updateProspectInStorage(senderId, userName, result.matchPoints, result.metTraits, messageText);
+        updateProspectInStorage(senderId, userName, result.matchPoints, result.metTraits, messageText, result.metTraitIndices);
       }
       
       return result;

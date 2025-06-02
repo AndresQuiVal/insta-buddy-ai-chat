@@ -26,6 +26,7 @@ interface Conversation {
   unread_count: number;
   matchPoints?: number;
   metTraits?: string[];
+  metTraitIndices?: number[];
 }
 
 const InstagramMessages: React.FC = () => {
@@ -297,23 +298,33 @@ const InstagramMessages: React.FC = () => {
         // Ordenar mensajes por timestamp ascendente
         const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         
-        // Buscar matchPoints/metTraits en localStorage - probar múltiples claves
+        // Buscar matchPoints/metTraits/metTraitIndices en localStorage - probar múltiples claves
         const localMatch = localMatches.find((c: any) => 
           c.sender_id === prospectId || 
           c.id === prospectId ||
           c.senderId === prospectId ||
           c.userName === `Usuario ${prospectId.slice(-4)}`
         ) || {};
-        
-        console.log(`🔍 Prospecto ${prospectId}: Match encontrado:`, localMatch);
-        
+        // Obtener características actuales
+        let traits = [];
+        try {
+          const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+          if (savedTraits) {
+            traits = JSON.parse(savedTraits).filter((t: any) => t.enabled);
+          }
+        } catch {}
+        // Calcular matchPoints dinámicamente según metTraitIndices válidos
+        const metTraitIndices = localMatch.metTraitIndices || [];
+        const validMetTraitIndices = metTraitIndices.filter((idx: number) => traits[idx]);
+        const dynamicMatchPoints = validMetTraitIndices.length;
         return {
           sender_id: prospectId,
           messages: sortedMessages,
           last_message: sortedMessages[sortedMessages.length - 1],
           unread_count: 0, // Quitar conteo de no leídos
-          matchPoints: localMatch.matchPoints || 0,
-          metTraits: localMatch.metTraits || []
+          matchPoints: dynamicMatchPoints,
+          metTraits: localMatch.metTraits || [],
+          metTraitIndices: metTraitIndices,
         };
       });
 
@@ -688,20 +699,54 @@ const InstagramMessages: React.FC = () => {
                         {conversation.last_message.message_text}
                       </p>
                       {/* Criterios cumplidos */}
-                      {conversation.metTraits && conversation.metTraits.length > 0 && (
-                        <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
-                          {conversation.metTraits.slice(0, 2).map((trait, idx) => (
-                            <span key={idx} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200 truncate">
-                              ✅ {trait.split(' ').slice(0, 3).join(' ')}...
-                            </span>
-                          ))}
-                          {conversation.metTraits.length > 2 && (
-                            <span className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
-                              +{conversation.metTraits.length - 2} más
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {(() => {
+                        // Obtener características actuales
+                        let traits = [];
+                        try {
+                          const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+                          if (savedTraits) {
+                            traits = JSON.parse(savedTraits).filter((t: any) => t.enabled);
+                          }
+                        } catch {}
+                        // Obtener los índices de las cumplidas para este prospecto
+                        const metTraitIndices = conversation.metTraitIndices || [];
+                        if (metTraitIndices.length > 0) {
+                          return (
+                            <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
+                              {metTraitIndices.slice(0, 2).map((idx, i) => (
+                                <span key={i} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200 truncate">
+                                  ✅ {traits[idx]?.trait?.split(' ').slice(0, 3).join(' ')}...
+                                </span>
+                              ))}
+                              {metTraitIndices.length > 2 && (
+                                <span className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
+                                  +{metTraitIndices.length - 2} más
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }
+                        // Fallback: método anterior por texto
+                        const metTraits = conversation.metTraits || [];
+                        const matchedTraitIndices = metTraits.map(trait => {
+                          return traits.findIndex((t: any) => t.trait === trait);
+                        }).filter(idx => idx !== -1);
+                        if (matchedTraitIndices.length === 0) return null;
+                        return (
+                          <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
+                            {matchedTraitIndices.slice(0, 2).map((idx, i) => (
+                              <span key={i} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200 truncate">
+                                ✅ {traits[idx]?.trait?.split(' ').slice(0, 3).join(' ')}...
+                              </span>
+                            ))}
+                            {matchedTraitIndices.length > 2 && (
+                              <span className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
+                                +{matchedTraitIndices.length - 2} más
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                       <p className="text-xs text-gray-400 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
@@ -767,6 +812,38 @@ const InstagramMessages: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Indicador de compatibilidad: mostrar todas las características */}
+              <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-blue-50 to-purple-50">
+                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  🎯 Características del cliente ideal
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {(() => {
+                    // Obtener características actuales
+                    let traits = [];
+                    try {
+                      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+                      if (savedTraits) {
+                        traits = JSON.parse(savedTraits).filter((t: any) => t.enabled);
+                      }
+                    } catch {}
+                    // Obtener las cumplidas para este prospecto
+                    const metTraits = conversations.find(c => c.sender_id === selectedConversation)?.metTraits || [];
+                    return traits.map((trait: any, idx: number) => {
+                      const isMet = metTraits.includes(trait.trait);
+                      return (
+                        <span
+                          key={idx}
+                          className={`flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium ${isMet ? 'bg-green-100 border-green-300 text-green-800' : 'bg-gray-100 border-gray-300 text-gray-500'}`}
+                        >
+                          {isMet ? '✓' : <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />} {trait.trait}
+                        </span>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
 
               {/* Mensajes */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
