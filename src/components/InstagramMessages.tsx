@@ -170,18 +170,18 @@ const InstagramMessages: React.FC = () => {
       // Limpiar datos anteriores
       localStorage.removeItem('hower-conversations');
       
-      console.log(`📊 Total de conversaciones a analizar: ${conversations.length}`);
+      console.log("📊 Total de conversaciones a analizar:", conversations.length);
       
       // Analizar cada conversación COMPLETA
       for (const conversation of conversations) {
-        console.log(`\n🔍 ANALIZANDO CONVERSACIÓN COMPLETA DE: ${conversation.sender_id}`);
+        console.log("🔍 ANALIZANDO CONVERSACIÓN COMPLETA DE:", conversation.sender_id);
         
         // Obtener TODOS los mensajes del prospecto (solo los que recibimos)
         const userMessages = conversation.messages
           .filter(msg => msg.message_type === 'received')
           .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         
-        console.log(`📝 Mensajes del prospecto encontrados: ${userMessages.length}`);
+        console.log("📝 Mensajes del prospecto encontrados:", userMessages.length);
         
         if (userMessages.length > 0) {
           // Concatenar TODOS los mensajes del prospecto
@@ -190,13 +190,13 @@ const InstagramMessages: React.FC = () => {
             .join(' ')
             .trim();
           
-          console.log(`💬 Texto completo del prospecto (${allUserText.length} caracteres):`);
-          console.log(`"${allUserText.substring(0, 300)}${allUserText.length > 300 ? '...' : '"}"`);
+          console.log("💬 Texto completo del prospecto (caracteres):", allUserText.length);
+          console.log("Texto:", allUserText.substring(0, 300) + (allUserText.length > 300 ? '...' : ''));
           
           // Usar el servicio de análisis mejorado
           const analysisResult = await analyzeMessage(allUserText, enabledTraits);
           
-          console.log(`🎯 Resultado del análisis:`, {
+          console.log("🎯 Resultado del análisis:", {
             matchPoints: analysisResult.matchPoints,
             metTraits: analysisResult.metTraits,
             metTraitIndices: analysisResult.metTraitIndices
@@ -221,9 +221,9 @@ const InstagramMessages: React.FC = () => {
           
           if (analysisResult.matchPoints > 0) {
             prospectsWithMatches++;
-            console.log(`✅ PROSPECTO CON COINCIDENCIAS: ${conversation.sender_id} (${analysisResult.matchPoints}/${enabledTraits.length})`);
+            console.log("✅ PROSPECTO CON COINCIDENCIAS:", conversation.sender_id, "(" + analysisResult.matchPoints + "/" + enabledTraits.length + ")");
           } else {
-            console.log(`⚪ Prospecto sin coincidencias: ${conversation.sender_id}`);
+            console.log("⚪ Prospecto sin coincidencias:", conversation.sender_id);
           }
           
           totalAnalyzed++;
@@ -231,12 +231,12 @@ const InstagramMessages: React.FC = () => {
           // Pausa pequeña entre análisis para no sobrecargar
           await new Promise(resolve => setTimeout(resolve, 100));
         } else {
-          console.log(`⚠️ No se encontraron mensajes del prospecto: ${conversation.sender_id}`);
+          console.log("⚠️ No se encontraron mensajes del prospecto:", conversation.sender_id);
         }
       }
       
       // Guardar TODOS los resultados del análisis
-      console.log(`💾 Guardando ${updatedProspects.length} prospectos analizados...`);
+      console.log("💾 Guardando prospectos analizados:", updatedProspects.length);
       localStorage.setItem('hower-conversations', JSON.stringify(updatedProspects));
       
       // Forzar eventos de actualización
@@ -258,7 +258,7 @@ const InstagramMessages: React.FC = () => {
       });
       
       console.log("🏁 ANÁLISIS COMPLETO FINALIZADO");
-      console.log(`📊 Resumen: ${totalAnalyzed} analizadas, ${prospectsWithMatches} con coincidencias`);
+      console.log("📊 Resumen:", totalAnalyzed, "analizadas,", prospectsWithMatches, "con coincidencias");
       
     } catch (error) {
       console.error("❌ Error en análisis completo:", error);
