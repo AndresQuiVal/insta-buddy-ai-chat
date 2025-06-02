@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -45,7 +46,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
 
   // Cargar las características ideales del cliente desde localStorage
   useEffect(() => {
-    loadIdealTraits();
+    loadTraitsFromStorage();
     
     // Escuchar actualizaciones de características
     const handleTraitsUpdate = (event: CustomEvent) => {
@@ -60,7 +61,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     };
   }, []);
 
-  const loadIdealTraits = () => {
+  const loadTraitsFromStorage = () => {
     try {
       const savedTraits = localStorage.getItem('hower-ideal-client-traits');
       if (savedTraits) {
