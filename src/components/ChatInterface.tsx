@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ChatMessage, handleAutomaticResponse, isOpenAIConfigured } from '@/services/openaiService';
-import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
+import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
 
 interface Message {
   id: string;
@@ -41,11 +41,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
   const [currentMatchPoints, setCurrentMatchPoints] = useState(0);
   const [metTraits, setMetTraits] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isAnalyzing, analyzeMessage } = useTraitAnalysis();
+  const { isAnalyzing, analyzeConversation, updateConversationInStorage, loadIdealTraits } = useAITraitAnalysis();
 
   // Cargar las características ideales del cliente desde localStorage
   useEffect(() => {
-    loadIdealTraitsFromStorage();
+    loadIdealTraits();
     
     // Escuchar actualizaciones de características
     const handleTraitsUpdate = (event: CustomEvent) => {
@@ -60,7 +60,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     };
   }, []);
 
-  const loadIdealTraitsFromStorage = () => {
+  const loadIdealTraits = () => {
     try {
       const savedTraits = localStorage.getItem('hower-ideal-client-traits');
       if (savedTraits) {
@@ -244,49 +244,45 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     return personalityResponses[Math.floor(Math.random() * personalityResponses.length)];
   };
 
-  // Función mejorada para analizar conversación
-  const analyzeConversationForTraits = (newMessages: Message[]) => {
+  // Función mejorada para analizar conversación con IA
+  const analyzeConversationForTraits = async (newMessages: Message[]) => {
     if (idealTraits.length === 0) return;
 
-    console.log("🔍 INICIANDO ANÁLISIS AUTOMÁTICO DE CARACTERÍSTICAS...");
+    console.log("🤖 INICIANDO ANÁLISIS CON IA...");
 
-    // Obtener solo las características habilitadas
-    const enabledTraits = idealTraits.filter(t => t.enabled).map(t => ({ ...t, position: 0 }));
-    if (enabledTraits.length === 0) return;
+    try {
+      // Convertir mensajes al formato esperado
+      const conversationMessages = newMessages.map(msg => ({
+        id: msg.id,
+        text: msg.text,
+        sender: msg.sender,
+        timestamp: msg.timestamp
+      }));
 
-    console.log("✅ Características habilitadas para análisis:", enabledTraits);
-
-    // Solo analizar los mensajes del usuario, no los del AI
-    const userMessages = newMessages.filter(msg => msg.sender === 'user');
-    
-    if (userMessages.length === 0) return;
-    
-    // Obtener el último mensaje del usuario para análisis individual
-    const lastUserMessage = userMessages[userMessages.length - 1];
-    
-    console.log("📝 Analizando mensaje:", lastUserMessage.text);
-    
-    // Usar el hook de análisis
-    const result = analyzeMessage(lastUserMessage.text, enabledTraits);
-    
-    // Combinar con características ya detectadas
-    const newMetTraits = [...new Set([...metTraits, ...result.metTraits])];
-    const newMatchPoints = Math.min(newMetTraits.length, enabledTraits.length);
-    
-    // Solo actualizar si hay cambios
-    if (JSON.stringify(newMetTraits) !== JSON.stringify(metTraits)) {
-      console.log("📊 Actualizando características cumplidas:", newMetTraits);
-      setMetTraits(newMetTraits);
-      setCurrentMatchPoints(newMatchPoints);
+      // Usar el análisis con IA
+      const result = await analyzeConversation(conversationMessages);
       
-      // Mostrar toast para nuevas características detectadas
-      const newTraitsDetected = newMetTraits.length - metTraits.length;
-      if (newTraitsDetected > 0) {
+      // Actualizar estado local
+      setCurrentMatchPoints(result.matchPoints);
+      setMetTraits(result.metTraits);
+      
+      // Actualizar en localStorage
+      if (activeConversation) {
+        updateConversationInStorage(activeConversation, result.matchPoints, result.metTraits);
+      }
+      
+      // Mostrar toast si se detectaron nuevas características
+      if (result.matchPoints > 0) {
         toast({
-          title: `🎯 ¡${newTraitsDetected} característica${newTraitsDetected > 1 ? 's' : ''} detectada${newTraitsDetected > 1 ? 's' : ''}!`,
-          description: `Puntuación: ${newMatchPoints}/${enabledTraits.length} estrella${newMatchPoints !== 1 ? 's' : ''}`,
+          title: `🎯 ¡${result.matchPoints} característica${result.matchPoints > 1 ? 's' : ''} detectada${result.matchPoints > 1 ? 's' : ''}!`,
+          description: `Puntuación: ${result.matchPoints}/${idealTraits.filter(t => t.enabled).length} estrella${result.matchPoints !== 1 ? 's' : ''}`,
         });
       }
+      
+      console.log("✅ Análisis completado:", result);
+      
+    } catch (error) {
+      console.error("❌ Error en análisis:", error);
     }
   };
 
@@ -304,9 +300,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     setMessages(newMessages);
     setNewMessage('');
 
-    // Analizar la conversación para detectar rasgos AUTOMÁTICAMENTE
-    console.log("🤖 Iniciando análisis automático...");
-    analyzeConversationForTraits(newMessages);
+    // Analizar la conversación automáticamente con IA
+    console.log("🤖 Iniciando análisis automático con IA...");
+    await analyzeConversationForTraits(newMessages);
 
     // Respuesta automática de IA (si está habilitada)
     if (aiConfig.autoRespond) {
@@ -450,7 +446,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
           </div>
           <div>
             <h3 className="font-semibold text-gray-800">{aiConfig.name}</h3>
-            <p className="text-sm text-green-600">● Activo - Respuestas automáticas: {aiConfig.autoRespond ? 'ON' : 'OFF'}</p>
+            <p className="text-sm text-green-600">
+              ● Activo - Respuestas automáticas: {aiConfig.autoRespond ? 'ON' : 'OFF'}
+              {isAnalyzing && <span className="ml-2 text-blue-600 animate-pulse">Analizando con IA...</span>}
+            </p>
           </div>
         </div>
       </div>

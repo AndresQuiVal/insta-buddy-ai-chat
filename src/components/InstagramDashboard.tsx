@@ -38,6 +38,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
 
 interface DashboardStats {
   totalMessages: number;
@@ -71,7 +72,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     messagesReceived: 0,
     messagesSent: 0,
     averageResponseTime: 0,
-    todayMessages: 0, // Este campo se mantendrá pero no se actualizará automáticamente
+    todayMessages: 0,
     totalInvitations: 0,
     responseRate: 0,
     lastMessageDate: null
@@ -83,6 +84,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
+  const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
 
   const timeFilterOptions = [
     { value: 'today', label: 'Hoy' },
@@ -90,6 +92,8 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     { value: 'month', label: 'Este Mes' },
     { value: 'all', label: 'Todo el Tiempo' }
   ];
+
+  const { isAnalyzing, analyzeAll, loadIdealTraits } = useAITraitAnalysis();
 
   useEffect(() => {
     loadDashboardStats();
@@ -111,9 +115,39 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     };
   }, [timeFilter]);
 
+  useEffect(() => {
+    const traits = loadIdealTraits();
+    setIdealTraits(traits);
+    console.log("📋 Características cargadas en Dashboard:", traits);
+  }, [loadIdealTraits]);
+
   const handleLogout = () => {
     disconnectInstagram();
     window.location.reload();
+  };
+
+  const handleAnalyzeAll = async () => {
+    console.log("🔍 Iniciando análisis completo con IA...");
+    
+    try {
+      await analyzeAll();
+      
+      toast({
+        title: "🤖 ¡Análisis completado!",
+        description: "Todas las conversaciones han sido analizadas con IA",
+      });
+      
+      // Recargar estadísticas después del análisis
+      await loadDashboardStats();
+      
+    } catch (error) {
+      console.error("Error en análisis:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al analizar las conversaciones",
+        variant: "destructive"
+      });
+    }
   };
 
   const generateAIRecommendations = (stats: DashboardStats) => {
@@ -400,8 +434,26 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Dashboard Instagram</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Características configuradas: {idealTraits.filter(t => t.enabled).length} activas
+          </p>
+        </div>
+        
         <div className="flex gap-2">
+          {/* Botón Analizar Todo con IA */}
+          <button
+            onClick={handleAnalyzeAll}
+            disabled={isAnalyzing}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <Brain className="w-4 h-4" />
+            {isAnalyzing ? 'Analizando...' : `🔍 Analizar Todo (${idealTraits.filter(t => t.enabled).length} criterios)`}
+            {isAnalyzing && <RefreshCw className="w-4 h-4 animate-spin ml-2" />}
+          </button>
+          
           {/* Filtro de tiempo */}
           <div className="relative">
             <button
