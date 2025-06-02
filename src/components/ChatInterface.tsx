@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -64,6 +63,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
   const loadTraitsFromStorage = () => {
     try {
       const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+      console.log("🔍 DEBUG: Cargando características desde localStorage:", savedTraits);
+      
       if (savedTraits) {
         const parsedTraits = JSON.parse(savedTraits);
         const formattedTraits = parsedTraits.map((item: any) => ({
@@ -71,23 +72,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
           enabled: item.enabled
         }));
         setIdealTraits(formattedTraits);
-        console.log("✅ Características cargadas en ChatInterface:", formattedTraits);
+        console.log("✅ DEBUG: Características cargadas en ChatInterface:", formattedTraits);
+        console.log("🎯 DEBUG: Características habilitadas:", formattedTraits.filter((t: any) => t.enabled));
       } else {
+        console.log("⚠️ DEBUG: No hay características guardadas, usando por defecto");
         setDefaultTraits();
       }
     } catch (error) {
-      console.error("Error al cargar características:", error);
+      console.error("❌ DEBUG: Error al cargar características:", error);
       setDefaultTraits();
     }
   };
 
   const setDefaultTraits = () => {
-    setIdealTraits([
+    const defaultTraits = [
       { trait: "Interesado en nuestros productos o servicios", enabled: true },
       { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true },
       { trait: "Está listo para tomar una decisión de compra", enabled: true },
       { trait: "Se encuentra en nuestra zona de servicio", enabled: true }
-    ]);
+    ];
+    setIdealTraits(defaultTraits);
+    console.log("🔧 DEBUG: Características por defecto establecidas:", defaultTraits);
   };
 
   // Simulador de conversaciones por usuario
@@ -105,36 +110,45 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
   // Cargar conversación y datos de compatibilidad desde localStorage
   useEffect(() => {
     if (activeConversation) {
+      console.log("🔄 DEBUG: Cargando conversación:", activeConversation);
+      
       // Cargar mensajes específicos de la conversación
       if (conversationData[activeConversation]) {
         setMessages(conversationData[activeConversation]);
+        console.log("📝 DEBUG: Mensajes cargados desde conversationData:", conversationData[activeConversation]);
       } else {
         setMessages([]);
+        console.log("📭 DEBUG: No hay mensajes en conversationData para:", activeConversation);
       }
 
       // Cargar datos de compatibilidad guardados
       try {
         const savedConversations = localStorage.getItem('hower-conversations');
+        console.log("💾 DEBUG: Conversaciones guardadas en localStorage:", savedConversations);
+        
         if (savedConversations) {
           const conversations = JSON.parse(savedConversations);
           const currentConv = conversations.find((conv: Conversation) => conv.id === activeConversation);
           
           if (currentConv) {
+            console.log("✅ DEBUG: Conversación encontrada:", currentConv);
             setCurrentMatchPoints(currentConv.matchPoints || 0);
             setMetTraits(currentConv.metTraits || []);
             
             // Si hay mensajes guardados, usarlos en lugar de los del simulador
             if (currentConv.messages && currentConv.messages.length > 0) {
               setMessages(currentConv.messages);
+              console.log("📱 DEBUG: Usando mensajes guardados:", currentConv.messages);
             }
           } else {
+            console.log("🆕 DEBUG: Nueva conversación, inicializando puntos");
             // Inicializar para una nueva conversación
             setCurrentMatchPoints(0);
             setMetTraits([]);
           }
         }
       } catch (e) {
-        console.error("Error al cargar datos de conversación:", e);
+        console.error("❌ DEBUG: Error al cargar datos de conversación:", e);
       }
     }
   }, [activeConversation]);
@@ -184,9 +198,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         // Disparar evento para que otros componentes (ConversationList) se actualicen
         window.dispatchEvent(new Event('storage'));
         
-        console.log("💾 Conversación guardada con puntos:", currentMatchPoints, "características:", metTraits);
+        console.log("💾 DEBUG: Conversación guardada con puntos:", currentMatchPoints, "características:", metTraits);
       } catch (e) {
-        console.error("Error al guardar conversación:", e);
+        console.error("❌ DEBUG: Error al guardar conversación:", e);
       }
     }
   }, [activeConversation, currentMatchPoints, metTraits, messages]);
@@ -247,9 +261,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
 
   // Función mejorada para analizar conversación con IA
   const analyzeConversationForTraits = async (newMessages: Message[]) => {
-    if (idealTraits.length === 0) return;
+    console.log("🤖 DEBUG: === INICIANDO ANÁLISIS CON IA ===");
+    console.log("📊 DEBUG: Número de características ideales:", idealTraits.length);
+    console.log("🎯 DEBUG: Características habilitadas:", idealTraits.filter(t => t.enabled));
+    console.log("💬 DEBUG: Número de mensajes a analizar:", newMessages.length);
+    console.log("📝 DEBUG: Mensajes del usuario:", newMessages.filter(m => m.sender === 'user'));
+    
+    if (idealTraits.length === 0) {
+      console.log("⚠️ DEBUG: No hay características para analizar");
+      return;
+    }
 
-    console.log("🤖 INICIANDO ANÁLISIS CON IA...");
+    // Verificar si hay OpenAI configurado
+    const openaiKey = localStorage.getItem('hower-openai-key-demo') || localStorage.getItem('hower-openai-key');
+    console.log("🔑 DEBUG: OpenAI Key configurada:", openaiKey ? 'SÍ' : 'NO');
 
     try {
       // Convertir mensajes al formato esperado
@@ -260,12 +285,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         timestamp: msg.timestamp
       }));
 
+      console.log("🔄 DEBUG: Enviando a analyzeConversation...");
+      
       // Usar el análisis con IA
       const result = await analyzeConversation(conversationMessages);
+      
+      console.log("✅ DEBUG: Resultado del análisis:", result);
       
       // Actualizar estado local
       setCurrentMatchPoints(result.matchPoints);
       setMetTraits(result.metTraits);
+      
+      console.log("🎯 DEBUG: Puntos actualizados:", result.matchPoints);
+      console.log("📋 DEBUG: Características detectadas:", result.metTraits);
       
       // Actualizar en localStorage
       if (activeConversation) {
@@ -280,15 +312,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         });
       }
       
-      console.log("✅ Análisis completado:", result);
+      console.log("✅ DEBUG: Análisis completado exitosamente");
       
     } catch (error) {
-      console.error("❌ Error en análisis:", error);
+      console.error("❌ DEBUG: Error en análisis:", error);
     }
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !activeConversation) return;
+    if (!newMessage.trim() || !activeConversation) {
+      console.log("⚠️ DEBUG: No se puede enviar mensaje - mensaje vacío o sin conversación activa");
+      return;
+    }
+
+    console.log("📤 DEBUG: === ENVIANDO MENSAJE ===");
+    console.log("💬 DEBUG: Mensaje:", newMessage);
+    console.log("🎯 DEBUG: Conversación activa:", activeConversation);
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -301,13 +340,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     setMessages(newMessages);
     setNewMessage('');
 
+    console.log("📊 DEBUG: Total de mensajes después del envío:", newMessages.length);
+
     // Analizar la conversación automáticamente con IA
-    console.log("🤖 Iniciando análisis automático con IA...");
+    console.log("🤖 DEBUG: Iniciando análisis automático con IA...");
     await analyzeConversationForTraits(newMessages);
 
     // Respuesta automática de IA (si está habilitada)
     if (aiConfig.autoRespond) {
-      console.log("🤖 IA configurada para responder automáticamente...");
+      console.log("🤖 DEBUG: IA configurada para responder automáticamente...");
       setIsTyping(true);
       
       // Determinar si se usa OpenAI o la respuesta simple
@@ -330,15 +371,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
               businessConfig,
               savedPrompt
             );
-            console.log("✅ Respuesta generada con OpenAI:", responseText);
+            console.log("✅ DEBUG: Respuesta generada con OpenAI:", responseText);
           } catch (error) {
-            console.error("Error al generar respuesta con OpenAI:", error);
+            console.error("❌ DEBUG: Error al generar respuesta con OpenAI:", error);
             responseText = generateSimpleResponse(newMessage);
           }
         } else {
           // Usar respuesta simple
           responseText = generateSimpleResponse(newMessage);
-          console.log("✅ Respuesta generada simple:", responseText);
+          console.log("✅ DEBUG: Respuesta generada simple:", responseText);
         }
         
         const aiResponse: Message = {

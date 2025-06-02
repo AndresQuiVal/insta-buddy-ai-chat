@@ -1,4 +1,5 @@
 
+
 interface Trait {
   trait: string;
   enabled: boolean;
@@ -21,18 +22,23 @@ export const analyzeConversationWithAI = async (
   messages: ConversationMessage[], 
   idealTraits: Trait[]
 ): Promise<AnalysisResult> => {
-  console.log("🤖 INICIANDO ANÁLISIS CON IA...");
+  console.log("🤖 DEBUG: === ANÁLISIS CON IA - SERVICIO ===");
+  console.log("📊 DEBUG: Características recibidas:", idealTraits);
+  console.log("💬 DEBUG: Mensajes recibidos:", messages);
   
   const openaiKey = localStorage.getItem('hower-openai-key-demo') || localStorage.getItem('hower-openai-key');
+  console.log("🔑 DEBUG: OpenAI Key en servicio:", openaiKey ? 'CONFIGURADA' : 'NO CONFIGURADA');
   
   if (!openaiKey) {
-    console.log("⚠️ No hay API Key de OpenAI, usando análisis básico");
+    console.log("⚠️ DEBUG: No hay API Key de OpenAI, usando análisis básico");
     return analyzeWithKeywords(messages, idealTraits);
   }
 
   const enabledTraits = idealTraits.filter(t => t.enabled);
+  console.log("🎯 DEBUG: Características habilitadas para análisis:", enabledTraits);
+  
   if (enabledTraits.length === 0) {
-    console.log("⚠️ No hay características habilitadas");
+    console.log("⚠️ DEBUG: No hay características habilitadas");
     return { matchPoints: 0, metTraits: [], confidence: 0 };
   }
 
@@ -40,6 +46,8 @@ export const analyzeConversationWithAI = async (
   const conversationText = messages
     .map(msg => `${msg.sender === 'user' ? 'Prospecto' : 'Asistente'}: ${msg.text}`)
     .join('\n');
+
+  console.log("📝 DEBUG: Texto de conversación para IA:", conversationText);
 
   const prompt = `Analiza esta conversación de Instagram y determina qué características del cliente ideal cumple el prospecto:
 
@@ -56,8 +64,10 @@ INSTRUCCIONES:
 - Ejemplo: {"characteristics": [1, 3], "confidence": 0.8}
 - Si no cumple ninguna: {"characteristics": [], "confidence": 0}`;
 
+  console.log("🎯 DEBUG: Prompt para OpenAI:", prompt);
+
   try {
-    console.log("📡 Enviando consulta a OpenAI...");
+    console.log("📡 DEBUG: Enviando consulta a OpenAI...");
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -82,23 +92,33 @@ INSTRUCCIONES:
       }),
     });
 
+    console.log("📨 DEBUG: Respuesta HTTP de OpenAI:", response.status, response.statusText);
+
     if (!response.ok) {
+      console.error("❌ DEBUG: Error HTTP de OpenAI:", response.status);
       throw new Error(`Error OpenAI: ${response.status}`);
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
+    console.log("📋 DEBUG: Datos completos de OpenAI:", data);
     
-    console.log("🤖 Respuesta de OpenAI:", content);
+    const content = data.choices?.[0]?.message?.content || '';
+    console.log("🤖 DEBUG: Contenido de respuesta de OpenAI:", content);
 
     // Parsear respuesta JSON
     const parsed = JSON.parse(content);
+    console.log("🔍 DEBUG: JSON parseado:", parsed);
+    
     const characteristicIndices = parsed.characteristics || [];
     const confidence = parsed.confidence || 0;
+
+    console.log("📊 DEBUG: Índices de características detectadas:", characteristicIndices);
 
     const metTraits = characteristicIndices
       .map((index: number) => enabledTraits[index - 1]?.trait)
       .filter(Boolean);
+
+    console.log("✅ DEBUG: Características finales detectadas:", metTraits);
 
     const result = {
       matchPoints: metTraits.length,
@@ -106,22 +126,25 @@ INSTRUCCIONES:
       confidence
     };
 
-    console.log("✅ Análisis completado:", result);
+    console.log("🎯 DEBUG: Resultado final del análisis:", result);
     return result;
 
   } catch (error) {
-    console.error("❌ Error en análisis con IA:", error);
+    console.error("❌ DEBUG: Error en análisis con IA:", error);
+    console.log("🔄 DEBUG: Fallback a análisis por palabras clave");
     return analyzeWithKeywords(messages, idealTraits);
   }
 };
 
 // Análisis de respaldo con palabras clave
 const analyzeWithKeywords = (messages: ConversationMessage[], idealTraits: Trait[]): AnalysisResult => {
-  console.log("🔤 Usando análisis con palabras clave como respaldo");
+  console.log("🔤 DEBUG: === ANÁLISIS CON PALABRAS CLAVE ===");
   
   const enabledTraits = idealTraits.filter(t => t.enabled);
   const userMessages = messages.filter(msg => msg.sender === 'user');
   const conversationText = userMessages.map(msg => msg.text).join(' ').toLowerCase();
+
+  console.log("📝 DEBUG: Texto de usuario para análisis:", conversationText);
 
   const keywordMap: Record<string, string[]> = {
     "interesado en nuestros productos o servicios": [
@@ -143,35 +166,50 @@ const analyzeWithKeywords = (messages: ConversationMessage[], idealTraits: Trait
   
   enabledTraits.forEach(trait => {
     const keywords = keywordMap[trait.trait.toLowerCase()] || [];
-    const hasMatch = keywords.some(keyword => conversationText.includes(keyword));
+    console.log(`🔍 DEBUG: Verificando característica "${trait.trait}" con palabras:`, keywords);
+    
+    const hasMatch = keywords.some(keyword => {
+      const found = conversationText.includes(keyword);
+      if (found) {
+        console.log(`✅ DEBUG: Palabra clave encontrada: "${keyword}" en "${trait.trait}"`);
+      }
+      return found;
+    });
     
     if (hasMatch) {
       metTraits.push(trait.trait);
+      console.log(`🎯 DEBUG: Característica detectada: ${trait.trait}`);
     }
   });
 
-  return {
+  const result = {
     matchPoints: metTraits.length,
     metTraits,
     confidence: 0.7
   };
+
+  console.log("🔤 DEBUG: Resultado del análisis por palabras clave:", result);
+  return result;
 };
 
 export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<void> => {
-  console.log("🔍 ANALIZANDO TODAS LAS CONVERSACIONES...");
+  console.log("🔍 DEBUG: === ANALIZANDO TODAS LAS CONVERSACIONES ===");
   
   try {
     const conversationsStr = localStorage.getItem('hower-conversations');
+    console.log("💾 DEBUG: Conversaciones encontradas:", conversationsStr);
+    
     if (!conversationsStr) {
-      console.log("⚠️ No hay conversaciones para analizar");
+      console.log("⚠️ DEBUG: No hay conversaciones para analizar");
       return;
     }
 
     const conversations = JSON.parse(conversationsStr);
+    console.log("📊 DEBUG: Número de conversaciones a analizar:", conversations.length);
     
     for (const conv of conversations) {
       if (conv.messages && conv.messages.length > 0) {
-        console.log(`🔍 Analizando conversación: ${conv.userName}`);
+        console.log(`🔍 DEBUG: Analizando conversación: ${conv.userName} (${conv.messages.length} mensajes)`);
         
         const result = await analyzeConversationWithAI(conv.messages, idealTraits);
         
@@ -179,20 +217,24 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
         conv.matchPoints = result.matchPoints;
         conv.metTraits = result.metTraits;
         
-        console.log(`✅ ${conv.userName}: ${result.matchPoints} características detectadas`);
+        console.log(`✅ DEBUG: ${conv.userName}: ${result.matchPoints} características detectadas:`, result.metTraits);
+      } else {
+        console.log(`⚠️ DEBUG: Conversación ${conv.userName} sin mensajes`);
       }
     }
 
     // Guardar conversaciones actualizadas
     localStorage.setItem('hower-conversations', JSON.stringify(conversations));
+    console.log("💾 DEBUG: Conversaciones actualizadas guardadas");
     
     // Disparar evento para actualizar UI
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new CustomEvent('conversations-updated'));
     
-    console.log("✅ ANÁLISIS COMPLETO FINALIZADO");
+    console.log("✅ DEBUG: ANÁLISIS COMPLETO FINALIZADO");
     
   } catch (error) {
-    console.error("❌ Error al analizar conversaciones:", error);
+    console.error("❌ DEBUG: Error al analizar conversaciones:", error);
   }
 };
+
