@@ -1,5 +1,4 @@
 
-
 interface Trait {
   trait: string;
   enabled: boolean;
@@ -147,18 +146,17 @@ const analyzeWithKeywords = (messages: ConversationMessage[], idealTraits: Trait
   console.log("📝 DEBUG: Texto de usuario para análisis:", conversationText);
 
   const keywordMap: Record<string, string[]> = {
-    "interesado en nuestros productos o servicios": [
-      "interesa", "producto", "servicio", "necesito", "busco", "quiero", "comprar", 
-      "cruceros", "viajes", "tours", "vacaciones", "destinos"
+    "le gustan los cruceros": [
+      "crucero", "cruceros", "barco", "navegar", "mar", "oceano", "viaje", "vacation"
     ],
-    "tiene presupuesto adecuado para adquirir nuestras soluciones": [
-      "presupuesto", "dinero", "pagar", "precio", "cuesta", "inversión", "financiar"
+    "tiene 2 perros": [
+      "perro", "perros", "mascota", "mascotas", "dos perros", "2 perros", "cachorro"
     ],
-    "está listo para tomar una decisión de compra": [
-      "decidido", "comprar", "ahora", "listo", "cuando", "reservar", "confirmar"
+    "es de españa": [
+      "españa", "spanish", "madrid", "barcelona", "sevilla", "valencia", "español"
     ],
-    "se encuentra en nuestra zona de servicio": [
-      "vivo", "ubicado", "ciudad", "país", "zona", "méxico", "españa", "cerca"
+    "le gustan las hamburguesas": [
+      "hamburguesa", "hamburguesas", "burger", "mcdonalds", "comida", "fast food"
     ]
   };
 
@@ -208,19 +206,40 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
     console.log("📊 DEBUG: Número de conversaciones a analizar:", conversations.length);
     
     for (const conv of conversations) {
+      console.log(`🔍 DEBUG: Analizando conversación: ${conv.userName}`);
+      console.log(`📝 DEBUG: lastMessage: "${conv.lastMessage}"`);
+      console.log(`💬 DEBUG: messages array:`, conv.messages);
+      
+      let messagesToAnalyze: ConversationMessage[] = [];
+      
+      // Si hay mensajes estructurados, usarlos
       if (conv.messages && conv.messages.length > 0) {
-        console.log(`🔍 DEBUG: Analizando conversación: ${conv.userName} (${conv.messages.length} mensajes)`);
-        
-        const result = await analyzeConversationWithAI(conv.messages, idealTraits);
-        
-        // Actualizar la conversación con los resultados
-        conv.matchPoints = result.matchPoints;
-        conv.metTraits = result.metTraits;
-        
-        console.log(`✅ DEBUG: ${conv.userName}: ${result.matchPoints} características detectadas:`, result.metTraits);
+        messagesToAnalyze = conv.messages;
+        console.log(`✅ DEBUG: Usando ${messagesToAnalyze.length} mensajes estructurados`);
+      } 
+      // Si no hay mensajes estructurados pero hay lastMessage, crear un mensaje artificial
+      else if (conv.lastMessage && conv.lastMessage.trim()) {
+        messagesToAnalyze = [{
+          id: '1',
+          text: conv.lastMessage,
+          sender: 'user' as const,
+          timestamp: new Date()
+        }];
+        console.log(`🔄 DEBUG: Creando mensaje artificial desde lastMessage: "${conv.lastMessage}"`);
       } else {
-        console.log(`⚠️ DEBUG: Conversación ${conv.userName} sin mensajes`);
+        console.log(`⚠️ DEBUG: Conversación ${conv.userName} sin contenido para analizar`);
+        continue;
       }
+      
+      console.log(`🤖 DEBUG: Analizando ${messagesToAnalyze.length} mensajes para ${conv.userName}`);
+      
+      const result = await analyzeConversationWithAI(messagesToAnalyze, idealTraits);
+      
+      // Actualizar la conversación con los resultados
+      conv.matchPoints = result.matchPoints;
+      conv.metTraits = result.metTraits;
+      
+      console.log(`✅ DEBUG: ${conv.userName}: ${result.matchPoints} características detectadas:`, result.metTraits);
     }
 
     // Guardar conversaciones actualizadas
@@ -237,4 +256,3 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
     console.error("❌ DEBUG: Error al analizar conversaciones:", error);
   }
 };
-
