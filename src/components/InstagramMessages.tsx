@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -7,7 +6,6 @@ import { handleAutomaticResponse, ChatMessage } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { analyzeMessage } from '@/services/traitAnalysisService';
 import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
 
 interface InstagramMessage {
@@ -101,9 +99,9 @@ const InstagramMessages: React.FC = () => {
   const loadConversations = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Cargando conversaciones...');
+      console.log('🔄 CARGANDO CONVERSACIONES COMPLETAS...');
 
-      // Obtener mensajes de Supabase
+      // Obtener TODOS los mensajes de Supabase
       const { data: messages, error } = await supabase
         .from('instagram_messages')
         .select('*')
@@ -115,6 +113,8 @@ const InstagramMessages: React.FC = () => {
         return;
       }
 
+      console.log(`📥 TOTAL MENSAJES OBTENIDOS: ${messages?.length || 0}`);
+
       // Filtrar mensajes válidos
       const validMessages = messages?.filter((message: any) => {
         return !message.sender_id.includes('webhook_') && 
@@ -125,10 +125,12 @@ const InstagramMessages: React.FC = () => {
                message.sender_id !== 'diagnostic_user';
       }) || [];
 
+      console.log(`✅ MENSAJES VÁLIDOS: ${validMessages.length}`);
+
       const myPageId = pageId || localStorage.getItem('hower-page-id');
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
       
-      // Agrupar mensajes por conversación
+      // Agrupar TODOS los mensajes por conversación
       validMessages.forEach((message: any) => {
         let conversationId = '';
         let messageType: 'sent' | 'received' = 'received';
@@ -163,7 +165,7 @@ const InstagramMessages: React.FC = () => {
 
       const conversationsArray: Conversation[] = [];
       
-      // Cargar datos desde localStorage para análisis de características
+      // Cargar análisis previos desde localStorage
       let savedAnalysis: any = {};
       try {
         const savedConversationsStr = localStorage.getItem('hower-conversations');
@@ -181,7 +183,9 @@ const InstagramMessages: React.FC = () => {
         console.error("Error al cargar análisis guardado:", error);
       }
 
-      // Procesar cada conversación
+      // Procesar cada conversación y analizar COMPLETA
+      const traits = loadTraitsFromStorage();
+      
       for (const [conversationId, messages] of Object.entries(conversationGroups)) {
         if (messages.length === 0) continue;
         
@@ -189,26 +193,30 @@ const InstagramMessages: React.FC = () => {
         const lastMessage = sortedMessages[sortedMessages.length - 1];
         const unreadCount = sortedMessages.filter(m => m.message_type === 'received').length;
 
-        // ANÁLISIS AUTOMÁTICO: Obtener TODOS los mensajes del prospecto
+        console.log(`📋 PROCESANDO CONVERSACIÓN: ${conversationId.slice(-6)}`);
+        console.log(`   Total mensajes: ${sortedMessages.length}`);
+        
+        // ⭐ CAMBIO CRÍTICO: Obtener TODOS los mensajes del prospecto (no solo los recibidos)
         const allProspectMessages = sortedMessages
-          .filter(msg => msg.message_type === 'received')
+          .filter(msg => msg.message_type === 'received') // Solo mensajes del prospecto
           .map(msg => msg.message_text)
-          .join(' '); // Concatenar TODOS los mensajes del prospecto
+          .filter(text => text && text.trim()) // Filtrar textos vacíos
+          .join(' '); // Unir TODOS los mensajes
 
-        console.log(`📊 [${conversationId.slice(-6)}] Analizando TODA la conversación: "${allProspectMessages.substring(0, 100)}..."`);
+        console.log(`📝 TEXTO COMPLETO DEL PROSPECTO (${allProspectMessages.length} chars):`, 
+                   allProspectMessages.substring(0, 200) + "...");
         
         let analysis = savedAnalysis[conversationId] || { matchPoints: 0, metTraits: [], metTraitIndices: [] };
         
-        // Solo analizar si hay mensajes del prospecto y no hay análisis previo
-        if (allProspectMessages.trim() && analysis.matchPoints === 0) {
+        // Analizar si hay mensajes del prospecto
+        if (allProspectMessages.trim()) {
           try {
-            const traits = loadTraitsFromStorage();
-            console.log(`🔍 Analizando características para ${conversationId.slice(-6)}...`);
+            console.log(`🔍 INICIANDO ANÁLISIS COMPLETO para ${conversationId.slice(-6)}...`);
             
             const result = await analyzeAndUpdateProspect(
               conversationId,
               getUserDisplayName(conversationId),
-              allProspectMessages, // TODA la conversación
+              allProspectMessages, // ⭐ TODA la conversación del prospecto
               traits
             );
             
@@ -218,10 +226,16 @@ const InstagramMessages: React.FC = () => {
               metTraitIndices: result.metTraitIndices || []
             };
             
-            console.log(`✅ [${conversationId.slice(-6)}] Análisis completado: ${result.matchPoints} características detectadas`);
+            console.log(`✅ ANÁLISIS COMPLETADO [${conversationId.slice(-6)}]:`, {
+              matchPoints: result.matchPoints,
+              metTraits: result.metTraits.length,
+              características: result.metTraits
+            });
           } catch (error) {
             console.error(`❌ Error analizando conversación ${conversationId}:`, error);
           }
+        } else {
+          console.log(`⚠️ [${conversationId.slice(-6)}] Sin mensajes del prospecto para analizar`);
         }
 
         conversationsArray.push({
@@ -240,7 +254,7 @@ const InstagramMessages: React.FC = () => {
         new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
       );
 
-      console.log(`✅ ${conversationsArray.length} conversaciones cargadas con análisis`);
+      console.log(`✅ PROCESAMIENTO COMPLETO: ${conversationsArray.length} conversaciones con análisis completo`);
       setConversations(conversationsArray);
       
     } catch (error) {
@@ -257,10 +271,10 @@ const InstagramMessages: React.FC = () => {
 
   const handleNewIncomingMessage = async (message: InstagramMessage) => {
     try {
-      console.log('🔄 Procesando nuevo mensaje entrante:', message.message_text);
+      console.log('🔄 PROCESANDO NUEVO MENSAJE ENTRANTE:', message.message_text);
       
       if (message.message_type === 'received') {
-        // Obtener toda la conversación para este sender
+        // Obtener TODA la conversación para este sender
         const { data: allMessages } = await supabase
           .from('instagram_messages')
           .select('*')
@@ -268,21 +282,22 @@ const InstagramMessages: React.FC = () => {
           .order('timestamp', { ascending: true });
 
         if (allMessages) {
-          // Filtrar solo mensajes recibidos del prospecto
-          const prospectMessages = allMessages
+          // ⭐ CAMBIO: Filtrar TODOS los mensajes del prospecto y concatenar
+          const allProspectMessages = allMessages
             .filter(msg => msg.sender_id === message.sender_id && msg.message_type === 'received')
             .map(msg => msg.message_text)
-            .join(' ');
+            .filter(text => text && text.trim())
+            .join(' '); // TODA la conversación histórica
 
-          console.log(`📊 Analizando conversación completa: "${prospectMessages.substring(0, 100)}..."`);
+          console.log(`📊 ANALIZANDO CONVERSACIÓN COMPLETA ACTUALIZADA: "${allProspectMessages.substring(0, 150)}..."`);
           
-          // Analizar características
+          // Analizar características con TODA la conversación
           try {
             const traits = loadTraitsFromStorage();
             await analyzeAndUpdateProspect(
               message.sender_id,
               getUserDisplayName(message.sender_id),
-              prospectMessages, // TODA la conversación
+              allProspectMessages, // ⭐ TODA la conversación histórica + nueva
               traits
             );
           } catch (error) {
