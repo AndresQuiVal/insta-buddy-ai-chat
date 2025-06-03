@@ -319,13 +319,15 @@ const InstagramMessages: React.FC = () => {
               businessConfig
             );
             
-            // Handle the response properly with null checks
-            if (response && typeof response === 'string' && response.trim()) {
-              await sendMessage(response, message.sender_id);
-            } else if (response && typeof response === 'object' && 'success' in response && 'reply' in response) {
-              const responseObj = response as { success: boolean; reply: string };
-              if (responseObj.success && responseObj.reply) {
-                await sendMessage(responseObj.reply, message.sender_id);
+            // Handle the response properly with explicit null checks
+            if (response !== null && response !== undefined) {
+              if (typeof response === 'string' && response.trim()) {
+                await sendMessage(response, message.sender_id);
+              } else if (typeof response === 'object' && response !== null && 'success' in response && 'reply' in response) {
+                const responseObj = response as { success: boolean; reply: string };
+                if (responseObj.success && responseObj.reply) {
+                  await sendMessage(responseObj.reply, message.sender_id);
+                }
               }
             }
           } catch (error) {
