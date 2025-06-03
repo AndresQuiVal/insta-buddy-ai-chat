@@ -307,49 +307,39 @@ export const sendInstagramMessage = async (messageText: string, recipientId: str
     console.log('Message:', messageText);
     console.log('Recipient ID:', recipientId);
 
-    // Obtener el PAGE-ACCESS-TOKEN guardado
-    const pageAccessToken = localStorage.getItem('hower-instagram-token');
-    if (!pageAccessToken) {
-      throw new Error('No hay token de acceso de página configurado');
+    // Verificar que tenemos los datos necesarios
+    if (!messageText || !recipientId) {
+      throw new Error('Faltan parámetros requeridos: messageText y recipientId');
     }
 
-    // Construir el payload del mensaje
-    const messagePayload: any = {
-      recipient: {
-        id: recipientId
-      },
-      message: {
-        text: messageText
+    // Llamar a la edge function en lugar de hacer la llamada directamente
+    console.log('🚀 Usando edge function para enviar mensaje...');
+    
+    const { data, error } = await supabase.functions.invoke('instagram-send-message', {
+      body: {
+        recipient_id: recipientId,
+        message_text: messageText,
+        reply_to_message_id: replyToMessageId
       }
-    };
-
-    // Enviar mensaje usando Instagram Graph API (endpoint oficial)
-    const apiUrl = `https://graph.facebook.com/v19.0/me/messages?access_token=${pageAccessToken}`;
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(messagePayload)
     });
 
-    const responseData = await response.json();
-    console.log('📨 Respuesta de Instagram API:', {
-      status: response.status,
-      ok: response.ok,
-      data: responseData
+    console.log('📨 Respuesta de edge function:', {
+      data,
+      error
     });
 
-    if (!response.ok) {
-      console.error('❌ Error enviando mensaje a Instagram:', responseData);
-      let errorDescription = responseData.error?.message || 'Error enviando mensaje';
-      if (responseData.error?.code === 190) {
+    if (error) {
+      console.error('❌ Error desde edge function:', error);
+      let errorDescription = error.message || 'Error enviando mensaje';
+      
+      if (error.message?.includes('access_token_missing')) {
+        errorDescription = 'Token de acceso de Instagram no configurado. Reconecta tu cuenta.';
+      } else if (error.message?.includes('invalid_client')) {
         errorDescription = 'Token de acceso inválido o expirado. Reconecta tu cuenta de Instagram.';
-      } else if (responseData.error?.code === 200) {
-        errorDescription = 'Permisos insuficientes. Verifica la configuración de la app en Facebook Developers.';
-      } else if (responseData.error?.code === 100) {
-        errorDescription = 'Parámetros incorrectos en la solicitud.';
+      } else if (error.message?.includes('send_message_failed')) {
+        errorDescription = 'Falló el envío del mensaje. Verifica que el destinatario sea válido.';
       }
+      
       toast({
         title: "Error enviando mensaje",
         description: errorDescription,
@@ -358,24 +348,48 @@ export const sendInstagramMessage = async (messageText: string, recipientId: str
       throw new Error(errorDescription);
     }
 
-    console.log('✅ Mensaje enviado exitosamente a Instagram');
+    if (data?.error) {
+      console.error('❌ Error en respuesta de edge function:', data);
+      let errorDescription = data.error_description || data.error || 'Error enviando mensaje';
+      
+      toast({
+        title: "Error enviando mensaje",
+        description: errorDescription,
+        variant: "destructive"
+      });
+      throw new Error(errorDescription);
+    }
+
+    if (!data?.success) {
+      console.error('❌ Respuesta no exitosa:', data);
+      throw new Error('No se pudo enviar el mensaje');
+    }
+
+    console.log('✅ Mensaje enviado exitosamente a través de edge function');
     toast({
       title: "¡Mensaje enviado!",
       description: "Tu mensaje fue enviado exitosamente a Instagram",
     });
+    
     return {
       success: true,
-      message_id: responseData.message_id,
-      recipient_id: responseData.recipient_id
+      message_id: data.message_id,
+      recipient_id: data.recipient_id
     };
+    
   } catch (error) {
     console.error('💥 Error en sendInstagramMessage:', error);
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-    toast({
-      title: "Error de envío",
-      description: errorMessage,
-      variant: "destructive"
-    });
+    
+    // Solo mostrar toast si no se mostró antes
+    if (!errorMessage.includes('Token de acceso') && !errorMessage.includes('Falló el envío')) {
+      toast({
+        title: "Error de envío",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+    
     return {
       success: false,
       error: errorMessage
