@@ -301,11 +301,11 @@ export const getInstagramPosts = async () => {
 /**
  * Envía un mensaje de texto a través de Instagram usando la API oficial
  */
-export const sendInstagramMessage = async (recipientId: string, messageText: string, replyToMessageId?: string) => {
+export const sendInstagramMessage = async (messageText: string, recipientId: string, replyToMessageId?: string) => {
   try {
     console.log('📤 Enviando mensaje de Instagram...');
-    console.log('Recipient ID:', recipientId);
     console.log('Message:', messageText);
+    console.log('Recipient ID:', recipientId);
 
     // Obtener el PAGE-ACCESS-TOKEN guardado
     const pageAccessToken = localStorage.getItem('hower-instagram-token');
