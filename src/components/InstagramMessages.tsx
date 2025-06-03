@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -293,8 +294,16 @@ const InstagramMessages: React.FC = () => {
         const delay = parseInt(localStorage.getItem('hower-ai-delay') || '3');
         setTimeout(async () => {
           try {
-            const response = await handleAutomaticResponse(message.message_text, message.sender_id);
-            if (response?.success && response?.reply) {
+            const response = await handleAutomaticResponse(
+              message.message_text, 
+              message.sender_id,
+              getUserDisplayName(message.sender_id)
+            );
+            
+            // Handle the response properly - it might be a string or an object
+            if (typeof response === 'string' && response.trim()) {
+              await sendMessage(response, message.sender_id);
+            } else if (response && typeof response === 'object' && response.success && response.reply) {
               await sendMessage(response.reply, message.sender_id);
             }
           } catch (error) {
