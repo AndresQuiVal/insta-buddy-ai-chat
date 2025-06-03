@@ -323,10 +323,14 @@ const InstagramMessages: React.FC = () => {
             if (response !== null && response !== undefined) {
               if (typeof response === 'string' && response.trim()) {
                 await sendMessage(response, message.sender_id);
-              } else if (typeof response === 'object' && response !== null && 'success' in response && 'reply' in response) {
-                const responseObj = response as { success: boolean; reply: string };
-                if (responseObj.success && responseObj.reply) {
-                  await sendMessage(responseObj.reply, message.sender_id);
+              } else if (typeof response === 'object') {
+                // Additional type guard to ensure response is not null before accessing properties
+                const responseObj = response as any;
+                if (responseObj && 'success' in responseObj && 'reply' in responseObj) {
+                  const typedResponse = responseObj as { success: boolean; reply: string };
+                  if (typedResponse.success && typedResponse.reply) {
+                    await sendMessage(typedResponse.reply, message.sender_id);
+                  }
                 }
               }
             }
