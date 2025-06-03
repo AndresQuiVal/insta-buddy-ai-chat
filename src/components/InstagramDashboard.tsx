@@ -84,6 +84,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
+  const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
 
   const timeFilterOptions = [
     { value: 'today', label: 'Hoy' },
@@ -175,8 +176,6 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
         action: 'Mantén esta estrategia y considera escalar tu volumen de mensajes.'
       });
     }
-
-    // Nota: Se eliminó el análisis de actividad diaria ya que no se actualizará automáticamente
 
     // Análisis de conversión
     if (stats.totalInvitations === 0 && stats.messagesSent > 0) {

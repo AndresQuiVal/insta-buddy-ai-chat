@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -96,6 +97,10 @@ const InstagramMessages: React.FC = () => {
     console.log("📋 Características cargadas en Messages:", traits);
   }, [loadIdealTraits]);
 
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
   const handleAnalyzeAll = async () => {
     console.log("🔍 Iniciando análisis completo con IA...");
     
@@ -120,7 +125,182 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
-  // ... keep existing code (all other functions and methods)
+  const loadConversations = async () => {
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
+    
+    try {
+      setLoading(true);
+      
+      const { data: messages, error } = await supabase
+        .from('instagram_messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading messages:', error);
+        return;
+      }
+
+      // Obtener configuraciones de usuario
+      const { data: userData } = await supabase
+        .from('user_settings')
+        .select('*')
+        .single();
+
+      if (userData) {
+        setPageId(userData.instagram_page_id);
+        setIaPersona(userData.ia_persona || '');
+      }
+
+      // Agrupar mensajes por conversación
+      const conversationMap = new Map<string, Conversation>();
+
+      messages?.forEach((message) => {
+        const conversationId = message.sender_id;
+        
+        if (!conversationMap.has(conversationId)) {
+          conversationMap.set(conversationId, {
+            sender_id: conversationId,
+            messages: [],
+            last_message: message,
+            unread_count: 0,
+            matchPoints: 0,
+            metTraits: [],
+            metTraitIndices: []
+          });
+        }
+
+        const conversation = conversationMap.get(conversationId)!;
+        conversation.messages.push(message);
+        
+        // Actualizar último mensaje (el más reciente)
+        if (new Date(message.created_at) > new Date(conversation.last_message.created_at)) {
+          conversation.last_message = message;
+        }
+
+        // Contar mensajes no leídos
+        if (message.message_type === 'received' && !message.is_read) {
+          conversation.unread_count++;
+        }
+      });
+
+      // Cargar análisis guardados
+      const { data: analysisData } = await supabase
+        .from('prospect_analysis')
+        .select('*');
+
+      if (analysisData) {
+        analysisData.forEach(analysis => {
+          const conversation = conversationMap.get(analysis.sender_id);
+          if (conversation) {
+            conversation.matchPoints = analysis.match_points || 0;
+            conversation.metTraits = analysis.met_traits || [];
+            conversation.metTraitIndices = analysis.met_trait_indices || [];
+          }
+        });
+      }
+
+      const conversationsArray = Array.from(conversationMap.values())
+        .sort((a, b) => new Date(b.last_message.created_at).getTime() - new Date(a.last_message.created_at).getTime());
+
+      setConversations(conversationsArray);
+      
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las conversaciones",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      isLoadingRef.current = false;
+    }
+  };
+
+  const getUserDisplayName = (senderId: string): string => {
+    return `Usuario ${senderId.slice(-4)}`;
+  };
+
+  const selectedMessages = selectedConversation 
+    ? conversations.find(c => c.sender_id === selectedConversation)?.messages
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) || []
+    : [];
+
+  const sendMessage = async (messageText: string) => {
+    if (!selectedConversation || !messageText.trim() || !pageId) return;
+    
+    try {
+      setSending(true);
+      
+      const result = await sendInstagramMessage(selectedConversation, messageText);
+      
+      if (result.success) {
+        setNewMessage('');
+        toast({
+          title: "Mensaje enviado",
+          description: "Tu mensaje se ha enviado correctamente",
+        });
+        
+        // Recargar conversaciones para mostrar el nuevo mensaje
+        loadConversations();
+      } else {
+        toast({
+          title: "Error al enviar",
+          description: result.error || "No se pudo enviar el mensaje",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Error al enviar el mensaje",
+        variant: "destructive"
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleFeedAI = async () => {
+    try {
+      const { data: messages } = await supabase
+        .from('instagram_messages')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(50);
+
+      if (!messages || messages.length === 0) {
+        toast({
+          title: "No hay mensajes",
+          description: "No se encontraron mensajes para alimentar la IA",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Crear contexto de conversación
+      const conversationContext = messages.map(msg => ({
+        role: msg.message_type === 'sent' ? 'assistant' : 'user',
+        content: msg.message_text
+      }));
+
+      toast({
+        title: "IA Alimentada",
+        description: `Se alimentó la IA con ${messages.length} mensajes`,
+      });
+
+    } catch (error) {
+      console.error('Error feeding AI:', error);
+      toast({
+        title: "Error",
+        description: "Error al alimentar la IA",
+        variant: "destructive"
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -290,7 +470,7 @@ const InstagramMessages: React.FC = () => {
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {metTraitIndices.slice(0, 2).map((idx, i) => {
-                            const trait = traits[idx];
+                            const trait = idealTraits[idx];
                             if (!trait) return null;
                             
                             const shortTrait = trait.trait.length > 25 
