@@ -1,7 +1,18 @@
 import { toast } from '@/hooks/use-toast';
 
-// Using the API key provided by the user
-const OPENAI_API_KEY = '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';
+// Función para obtener la API key del localStorage
+const getOpenAIKey = (): string => {
+  const key = localStorage.getItem('hower-openai-key');
+  if (!key) {
+    toast({
+      title: "API Key requerida",
+      description: "Por favor, configura tu API key de OpenAI en Configuración",
+      variant: "destructive"
+    });
+    throw new Error('No hay API key de OpenAI configurada');
+  }
+  return key;
+};
 
 export interface OpenAIConfig {
   apiKey: string;
@@ -20,25 +31,29 @@ export interface ChatMessage {
  */
 export const generateAIResponse = async (
   messages: ChatMessage[], 
-  config: OpenAIConfig = {
-    apiKey: OPENAI_API_KEY,
-    model: 'gpt-4o', // Modelo por defecto
-    temperature: 0.7,
-    maxTokens: 500
-  }
+  config: Partial<OpenAIConfig> = {}
 ): Promise<string> => {
   try {
+    const apiKey = getOpenAIKey();
+    const finalConfig = {
+      apiKey,
+      model: 'gpt-4o',
+      temperature: 0.7,
+      maxTokens: 500,
+      ...config
+    };
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`
+        'Authorization': `Bearer ${finalConfig.apiKey}`
       },
       body: JSON.stringify({
-        model: config.model,
+        model: finalConfig.model,
         messages: messages,
-        temperature: config.temperature,
-        max_tokens: config.maxTokens
+        temperature: finalConfig.temperature,
+        max_tokens: finalConfig.maxTokens
       })
     });
 
@@ -51,6 +66,9 @@ export const generateAIResponse = async (
     return data.choices[0].message.content;
   } catch (error) {
     console.error('Error al generar respuesta con ChatGPT:', error);
+    if (error instanceof Error && error.message.includes('No hay API key')) {
+      return "⚠️ API Key de OpenAI no configurada. Ve a Configuración para agregarla.";
+    }
     toast({
       title: "Error de ChatGPT",
       description: "No se pudo generar una respuesta. Verifica tu API key.",
@@ -159,7 +177,8 @@ RESPONDE SOLO con tu siguiente mensaje natural, conversacional pero estratégico
  * Verifica si la configuración de OpenAI está completa
  */
 export const isOpenAIConfigured = (): boolean => {
-  return OPENAI_API_KEY.trim() !== '';
+  const key = localStorage.getItem('hower-openai-key');
+  return key !== null && key.trim() !== '';
 };
 
 /**
@@ -172,6 +191,8 @@ export const handleStrategicResponse = async (
   idealClientTraits: string[]
 ): Promise<string> => {
   try {
+    const apiKey = getOpenAIKey();
+    
     console.log("🎯 GENERANDO RESPUESTA ULTRA ESTRATÉGICA:");
     console.log(`📊 Progreso: ${currentMatchPoints}/${idealClientTraits.length} características`);
     console.log(`✅ Cumplidas: ${metTraits.join(', ')}`);
@@ -201,7 +222,7 @@ export const handleStrategicResponse = async (
     console.log("🚀 Enviando prompt ULTRA ESTRATÉGICO a OpenAI...");
     
     const response = await generateAIResponse(messages, {
-      apiKey: OPENAI_API_KEY,
+      apiKey,
       model: 'gpt-4o',
       temperature: 0.9, // Más creativo para conversaciones naturales pero directas
       maxTokens: 150 // Mensajes concisos y directos

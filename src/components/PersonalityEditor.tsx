@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Brain, Save, AlertCircle } from 'lucide-react';
@@ -18,9 +19,14 @@ const PersonalityEditor: React.FC = () => {
 
     try {
       setLoading(true);
-      const openaiKey = localStorage.getItem('hower-openai-key-demo');
+      const openaiKey = localStorage.getItem('hower-openai-key');
       if (!openaiKey) {
-        throw new Error('No hay API key de OpenAI configurada');
+        toast({
+          title: "Error",
+          description: "Por favor, configura tu API key de OpenAI primero en la pestaña 'OpenAI Key'",
+          variant: "destructive"
+        });
+        return;
       }
 
       // Enviar las conversaciones a OpenAI para analizar la personalidad
@@ -31,7 +37,7 @@ const PersonalityEditor: React.FC = () => {
           'Authorization': `Bearer ${openaiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'gpt-4o',
           messages: [
             {
               role: 'system',
