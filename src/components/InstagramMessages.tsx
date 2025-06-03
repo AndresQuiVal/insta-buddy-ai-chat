@@ -53,7 +53,6 @@ const InstagramMessages: React.FC = () => {
   const TAB_KEY = 'hower-active-tab';
   const myTabId = React.useRef(`${Date.now()}-${Math.random()}`);
   const isMobile = useIsMobile();
-  const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   
   // Hook de análisis de características
   const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
@@ -96,6 +95,262 @@ const InstagramMessages: React.FC = () => {
       { trait: "Está listo para tomar una decisión de compra", enabled: true, position: 2 },
       { trait: "Se encuentra en nuestra zona de servicio", enabled: true, position: 3 }
     ];
+  };
+
+  const loadConversations = async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 Cargando conversaciones...');
+
+      // Obtener mensajes de Supabase
+      const { data: messages, error } = await supabase
+        .from('instagram_messages')
+        .select('*')
+        .order('timestamp', { ascending: true });
+
+      if (error) {
+        console.error('Error loading messages:', error);
+        setLoading(false);
+        return;
+      }
+
+      // Filtrar mensajes válidos
+      const validMessages = messages?.filter((message: any) => {
+        return !message.sender_id.includes('webhook_') && 
+               !message.sender_id.includes('debug') && 
+               !message.sender_id.includes('error') &&
+               !message.message_text.includes('PAYLOAD COMPLETO') &&
+               !message.message_text.includes('ERROR:') &&
+               message.sender_id !== 'diagnostic_user';
+      }) || [];
+
+      const myPageId = pageId || localStorage.getItem('hower-page-id');
+      const conversationGroups: { [key: string]: InstagramMessage[] } = {};
+      
+      // Agrupar mensajes por conversación
+      validMessages.forEach((message: any) => {
+        let conversationId = '';
+        let messageType: 'sent' | 'received' = 'received';
+        
+        if (myPageId) {
+          if (message.sender_id === myPageId) {
+            conversationId = message.recipient_id;
+            messageType = 'sent';
+          } else {
+            conversationId = message.sender_id;
+            messageType = 'received';
+          }
+        } else {
+          if (message.raw_data?.is_echo || message.message_type === 'sent') {
+            messageType = 'sent';
+            conversationId = message.recipient_id;
+          } else {
+            messageType = 'received';
+            conversationId = message.sender_id;
+          }
+        }
+        
+        if (!conversationGroups[conversationId]) {
+          conversationGroups[conversationId] = [];
+        }
+        
+        conversationGroups[conversationId].push({
+          ...message,
+          message_type: messageType
+        });
+      });
+
+      const conversationsArray: Conversation[] = [];
+      
+      // Cargar datos desde localStorage para análisis de características
+      let savedAnalysis: any = {};
+      try {
+        const savedConversationsStr = localStorage.getItem('hower-conversations');
+        if (savedConversationsStr) {
+          const savedConversations = JSON.parse(savedConversationsStr);
+          savedConversations.forEach((conv: any) => {
+            savedAnalysis[conv.id || conv.senderId] = {
+              matchPoints: conv.matchPoints || 0,
+              metTraits: conv.metTraits || [],
+              metTraitIndices: conv.metTraitIndices || []
+            };
+          });
+        }
+      } catch (error) {
+        console.error("Error al cargar análisis guardado:", error);
+      }
+
+      // Procesar cada conversación
+      for (const [conversationId, messages] of Object.entries(conversationGroups)) {
+        if (messages.length === 0) continue;
+        
+        const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        const lastMessage = sortedMessages[sortedMessages.length - 1];
+        const unreadCount = sortedMessages.filter(m => m.message_type === 'received').length;
+
+        // ANÁLISIS AUTOMÁTICO: Obtener TODOS los mensajes del prospecto
+        const allProspectMessages = sortedMessages
+          .filter(msg => msg.message_type === 'received')
+          .map(msg => msg.message_text)
+          .join(' '); // Concatenar TODOS los mensajes del prospecto
+
+        console.log(`📊 [${conversationId.slice(-6)}] Analizando TODA la conversación: "${allProspectMessages.substring(0, 100)}..."`);
+        
+        let analysis = savedAnalysis[conversationId] || { matchPoints: 0, metTraits: [], metTraitIndices: [] };
+        
+        // Solo analizar si hay mensajes del prospecto y no hay análisis previo
+        if (allProspectMessages.trim() && analysis.matchPoints === 0) {
+          try {
+            const traits = loadTraitsFromStorage();
+            console.log(`🔍 Analizando características para ${conversationId.slice(-6)}...`);
+            
+            const result = await analyzeAndUpdateProspect(
+              conversationId,
+              getUserDisplayName(conversationId),
+              allProspectMessages, // TODA la conversación
+              traits
+            );
+            
+            analysis = {
+              matchPoints: result.matchPoints,
+              metTraits: result.metTraits,
+              metTraitIndices: result.metTraitIndices || []
+            };
+            
+            console.log(`✅ [${conversationId.slice(-6)}] Análisis completado: ${result.matchPoints} características detectadas`);
+          } catch (error) {
+            console.error(`❌ Error analizando conversación ${conversationId}:`, error);
+          }
+        }
+
+        conversationsArray.push({
+          sender_id: conversationId,
+          messages: sortedMessages,
+          last_message: lastMessage,
+          unread_count: unreadCount,
+          matchPoints: analysis.matchPoints,
+          metTraits: analysis.metTraits,
+          metTraitIndices: analysis.metTraitIndices
+        });
+      }
+
+      // Ordenar por timestamp del último mensaje
+      conversationsArray.sort((a, b) => 
+        new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
+      );
+
+      console.log(`✅ ${conversationsArray.length} conversaciones cargadas con análisis`);
+      setConversations(conversationsArray);
+      
+    } catch (error) {
+      console.error('Error in loadConversations:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las conversaciones",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewIncomingMessage = async (message: InstagramMessage) => {
+    try {
+      console.log('🔄 Procesando nuevo mensaje entrante:', message.message_text);
+      
+      if (message.message_type === 'received') {
+        // Obtener toda la conversación para este sender
+        const { data: allMessages } = await supabase
+          .from('instagram_messages')
+          .select('*')
+          .or(`sender_id.eq.${message.sender_id},recipient_id.eq.${message.sender_id}`)
+          .order('timestamp', { ascending: true });
+
+        if (allMessages) {
+          // Filtrar solo mensajes recibidos del prospecto
+          const prospectMessages = allMessages
+            .filter(msg => msg.sender_id === message.sender_id && msg.message_type === 'received')
+            .map(msg => msg.message_text)
+            .join(' ');
+
+          console.log(`📊 Analizando conversación completa: "${prospectMessages.substring(0, 100)}..."`);
+          
+          // Analizar características
+          try {
+            const traits = loadTraitsFromStorage();
+            await analyzeAndUpdateProspect(
+              message.sender_id,
+              getUserDisplayName(message.sender_id),
+              prospectMessages, // TODA la conversación
+              traits
+            );
+          } catch (error) {
+            console.error('Error en análisis de características:', error);
+          }
+        }
+
+        // Respuesta automática con IA
+        const delay = parseInt(localStorage.getItem('hower-ai-delay') || '3');
+        setTimeout(async () => {
+          try {
+            const response = await handleAutomaticResponse(message.message_text, message.sender_id);
+            if (response?.success && response?.reply) {
+              await sendMessage(response.reply, message.sender_id);
+            }
+          } catch (error) {
+            console.error('Error en respuesta automática:', error);
+          }
+        }, delay * 1000);
+      }
+    } catch (error) {
+      console.error('Error procesando mensaje entrante:', error);
+    }
+  };
+
+  const extractMatchFromAIResponse = (text: string): number => {
+    const match = text.match(/MATCH:\s*(\d+)/i);
+    return match ? parseInt(match[1]) : 0;
+  };
+
+  const getUserDisplayName = (senderId: string) => {
+    if (senderId === 'hower_bot') return 'Hower Assistant';
+    if (senderId.length > 8) {
+      return `Usuario ${senderId.slice(-4)}`;
+    }
+    return `Usuario ${senderId}`;
+  };
+
+  const sendMessage = async (text: string, recipientId?: string) => {
+    if ((!text.trim() && !recipientId) || (!selectedConversation && !recipientId)) return;
+    
+    const targetRecipient = recipientId || selectedConversation;
+    if (!targetRecipient) return;
+
+    try {
+      setSending(true);
+      console.log('📤 Enviando mensaje:', text, 'a:', targetRecipient);
+      
+      const result = await sendInstagramMessage(text, targetRecipient);
+      if (result.success) {
+        if (!recipientId) setNewMessage(''); // Solo limpiar si es mensaje manual
+        await loadConversations();
+        toast({
+          title: "Mensaje enviado",
+          description: "Tu mensaje se envió correctamente"
+        });
+      } else {
+        throw new Error(result.error || 'Error desconocido');
+      }
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo enviar el mensaje",
+        variant: "destructive"
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   useEffect(() => {
@@ -148,341 +403,9 @@ const InstagramMessages: React.FC = () => {
     };
   }, [isTabLeader]);
 
-  // Función para analizar automáticamente TODAS las conversaciones usando el servicio correcto
-  const analyzeExistingMessages = async () => {
-    console.log("🔍 DEBUG: InstagramMessages - Iniciando análisis completo con IA...");
-    
-    try {
-      setIsAnalyzingAI(true);
-      
-      // Cargar características del cliente ideal desde localStorage
-      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-      let idealTraits = [];
-      
-      if (savedTraits) {
-        idealTraits = JSON.parse(savedTraits);
-      } else {
-        // Características por defecto si no hay guardadas
-        idealTraits = [
-          { trait: "Interesado en nuestros productos o servicios", enabled: true },
-          { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true },
-          { trait: "Está listo para tomar una decisión de compra", enabled: true },
-          { trait: "Se encuentra en nuestra zona de servicio", enabled: true }
-        ];
-      }
-      
-      console.log("🎯 DEBUG: Características del cliente ideal cargadas:", idealTraits);
-      
-      // Llamar al servicio de análisis con IA
-      await analyzeAllConversations(idealTraits);
-      
-      toast({
-        title: "🤖 ¡Análisis completado!",
-        description: "Todas las conversaciones han sido analizadas con IA",
-      });
-      
-      // Recargar conversaciones después del análisis
-      setTimeout(() => {
-        loadConversations();
-      }, 1000);
-      
-    } catch (error) {
-      console.error("Error en análisis:", error);
-      toast({
-        title: "Error",
-        description: "Hubo un problema al analizar las conversaciones",
-        variant: "destructive"
-      });
-    } finally {
-      setIsAnalyzingAI(false);
-    }
-  };
+  // Obtener mensajes de la conversación seleccionada - MOSTRAR TODOS
+  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages || [];
 
-  const loadConversations = async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('instagram_messages')
-        .select('*')
-        .order('timestamp', { ascending: false });
-
-      if (error) {
-        console.error('Error loading messages:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los mensajes",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Filtrar mensajes reales
-      const realMessages = data?.filter((message: any) => {
-        return !message.sender_id.includes('webhook_') && 
-               !message.sender_id.includes('debug') && 
-               !message.sender_id.includes('error') &&
-               !message.message_text.includes('PAYLOAD COMPLETO') &&
-               !message.message_text.includes('ERROR:') &&
-               message.sender_id !== 'diagnostic_user';
-      }) || [];
-
-      // Obtener mi page ID
-      const myPageId = pageId || localStorage.getItem('hower-page-id');
-      console.log('Mi Page ID para agrupación:', myPageId);
-
-      // Agrupar mensajes por conversación
-      const conversationGroups: { [key: string]: InstagramMessage[] } = {};
-      
-      realMessages.forEach((message: any) => {
-        // Determinar el ID del prospecto (la otra persona en la conversación)
-        let prospectId = '';
-        let messageType: 'sent' | 'received' = 'received';
-        
-        if (myPageId) {
-          // Si tengo mi PAGE-ID, usar lógica correcta
-          if (message.sender_id === myPageId) {
-            // Yo envié el mensaje, el prospecto es el recipient
-            prospectId = message.recipient_id;
-            messageType = 'sent';
-          } else {
-            // El prospecto me envió el mensaje
-            prospectId = message.sender_id;
-            messageType = 'received';
-          }
-        } else {
-          // Fallback: revisar si es mensaje echo o determinar por raw_data
-          if (message.raw_data?.is_echo || message.message_type === 'sent') {
-            messageType = 'sent';
-            prospectId = message.recipient_id;
-          } else {
-            messageType = 'received';
-            prospectId = message.sender_id;
-          }
-        }
-        
-        console.log(`Mensaje: "${message.message_text}" - Prospecto ID: ${prospectId} - Tipo: ${messageType}`);
-        
-        if (!conversationGroups[prospectId]) {
-          conversationGroups[prospectId] = [];
-        }
-        
-        // Aplicar el tipo de mensaje correcto
-        const messageWithCorrectType = {
-          ...message,
-          message_type: messageType
-        };
-        
-        conversationGroups[prospectId].push(messageWithCorrectType);
-      });
-
-      console.log('Grupos de conversación creados:', Object.keys(conversationGroups));
-
-      // CARGAR DATOS DE ANÁLISIS DESDE LOCALSTORAGE con logging detallado
-      const localMatches = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
-      console.log('💾 Matches locales cargados:', localMatches);
-
-      // Convertir a array de conversaciones
-      const conversationsArray = Object.entries(conversationGroups).map(([prospectId, messages]) => {
-        // Ordenar mensajes por timestamp ascendente
-        const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        
-        // Buscar matchPoints/metTraits/metTraitIndices en localStorage - BÚSQUEDA MEJORADA
-        const localMatch = localMatches.find((c: any) => 
-          c.sender_id === prospectId || 
-          c.id === prospectId ||
-          c.senderId === prospectId ||
-          c.userName === `Usuario ${prospectId.slice(-4)}`
-        ) || {};
-        
-        console.log(`🔍 Buscando match para ${prospectId}:`, localMatch);
-        
-        // Obtener características actuales
-        const traits = loadTraitsFromStorage().filter(t => t.enabled);
-        
-        // Calcular matchPoints dinámicamente según metTraitIndices válidos
-        const metTraitIndices = localMatch.metTraitIndices || [];
-        const validMetTraitIndices = metTraitIndices.filter((idx: number) => traits[idx]);
-        const dynamicMatchPoints = validMetTraitIndices.length;
-        
-        return {
-          sender_id: prospectId,
-          messages: sortedMessages,
-          last_message: sortedMessages[sortedMessages.length - 1],
-          unread_count: 0, // Quitar conteo de no leídos
-          matchPoints: dynamicMatchPoints,
-          metTraits: localMatch.metTraits || [],
-          metTraitIndices: metTraitIndices,
-        };
-      });
-
-      // Ordenar conversaciones por matchPoints y luego por último mensaje
-      conversationsArray.sort((a, b) => {
-        if ((b.matchPoints || 0) !== (a.matchPoints || 0)) {
-          return (b.matchPoints || 0) - (a.matchPoints || 0);
-        }
-        return new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime();
-      });
-
-      console.log('✅ Conversaciones finales con matches:', conversationsArray.map(c => ({
-        id: c.sender_id,
-        matchPoints: c.matchPoints,
-        metTraits: c.metTraits?.length || 0,
-        lastMessage: c.last_message.message_text
-      })));
-      
-      setConversations(conversationsArray);
-      
-      // Seleccionar la primera conversación si no hay ninguna seleccionada
-      if (!selectedConversation && conversationsArray.length > 0) {
-        setSelectedConversation(conversationsArray[0].sender_id);
-      }
-
-    } catch (error) {
-      console.error('Error in loadConversations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleNewIncomingMessage = async (message: InstagramMessage) => {
-    if (!aiEnabled) return;
-
-    console.log("🔍 NUEVO MENSAJE RECIBIDO - ANALIZANDO:", message.message_text);
-
-    // ANALIZAR EL MENSAJE INMEDIATAMENTE
-    const idealTraits = loadTraitsFromStorage();
-    await analyzeAndUpdateProspect(
-      message.sender_id,
-      `Usuario ${message.sender_id.slice(-4)}`,
-      message.message_text,
-      idealTraits
-    );
-
-    console.log(`Generando respuesta automática en ${aiDelay} segundos...`);
-    
-    setTimeout(async () => {
-      try {
-        // Configuración básica del negocio
-        const businessConfig = {
-          businessName: "Hower Assistant",
-          businessDescription: "Asistente inteligente para Instagram",
-          tone: "Amigable, profesional y servicial",
-          idealClientTraits: [
-            "Interesado en nuestros productos o servicios",
-            "Tiene presupuesto adecuado",
-            "Está listo para tomar decisiones",
-            "Se encuentra en nuestra zona de servicio"
-          ]
-        };
-
-        const aiResponse = await handleAutomaticResponse(
-          message.message_text,
-          [], // Historial vacío por ahora
-          businessConfig
-        );
-
-        // EXTRAER MATCHPOINTS Y GUARDAR EN LA CONVERSACIÓN
-        const idealTraits = businessConfig.idealClientTraits;
-        const { matchPoints, metTraits } = extractMatchFromAIResponse(aiResponse, idealTraits);
-        
-        // Actualizar la conversación en localStorage
-        const savedConvs = JSON.parse(localStorage.getItem('hower-conversations') || '[]');
-        const idx = savedConvs.findIndex((c: any) => c.sender_id === message.sender_id);
-        if (idx !== -1) {
-          savedConvs[idx].matchPoints = matchPoints;
-          savedConvs[idx].metTraits = metTraits;
-        } else {
-          savedConvs.push({
-            sender_id: message.sender_id,
-            matchPoints,
-            metTraits,
-            messages: [message],
-          });
-        }
-        localStorage.setItem('hower-conversations', JSON.stringify(savedConvs));
-        
-        // Enviar la respuesta automática
-        const sendResult = await sendInstagramMessage(
-          message.sender_id,
-          aiResponse,
-          message.instagram_message_id
-        );
-
-        if (sendResult.success) {
-          console.log('✅ Respuesta automática enviada via Instagram API');
-        } else {
-          console.error('❌ Error enviando respuesta automática:', sendResult.error);
-        }
-
-      } catch (error) {
-        console.error('Error generando respuesta automática:', error);
-      }
-    }, aiDelay * 1000);
-  };
-
-  // Utilidad para extraer matchPoints y características de la respuesta de la IA
-  const extractMatchFromAIResponse = (aiResponse: string, idealTraits: string[]) => {
-    let matchPoints = 0;
-    let metTraits: string[] = [];
-    // Buscar la nota interna
-    const matchRegex = /([0-4])\s*\/\s*4|Prospecto ideal \(4\/4\)/i;
-    const found = aiResponse.match(matchRegex);
-    if (found) {
-      matchPoints = found[1] ? parseInt(found[1], 10) : 4;
-    }
-    // Opcional: buscar nombres de características cumplidas (si la IA los lista)
-    if (matchPoints && idealTraits) {
-      metTraits = idealTraits.slice(0, matchPoints);
-    }
-    return { matchPoints, metTraits };
-  };
-
-  const getUserDisplayName = (senderId: string) => {
-    if (senderId === 'hower_bot') return 'Hower Assistant';
-    if (senderId.length > 8) {
-      return `Usuario ${senderId.slice(-4)}`;
-    }
-    return `Usuario ${senderId}`;
-  };
-
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || sending) return;
-
-    try {
-      setSending(true);
-
-      // Enviar mensaje usando la API real de Instagram
-      const sendResult = await sendInstagramMessage(selectedConversation, newMessage.trim());
-
-      if (sendResult.success) {
-        setNewMessage('');
-        loadConversations();
-
-        toast({
-          title: "Mensaje enviado",
-          description: "Tu mensaje fue enviado exitosamente a Instagram",
-        });
-      } else {
-        throw new Error(sendResult.error || 'Error enviando mensaje');
-      }
-
-    } catch (error) {
-      console.error('Error in sendMessage:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error enviando mensaje",
-        variant: "destructive"
-      });
-    } finally {
-      setSending(false);
-    }
-  };
-
-  // Obtener mensajes de la conversación seleccionada
-  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages.slice(-20) || [];
-
-  // Botón Alimentar IA
   const handleFeedAI = async () => {
     try {
       const pageAccessToken = localStorage.getItem('hower-instagram-token');
@@ -584,6 +507,8 @@ const InstagramMessages: React.FC = () => {
     };
   }, []);
 
+  const traits = loadTraitsFromStorage();
+
   if (loading) {
     return (
       <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex items-center justify-center">
@@ -596,358 +521,280 @@ const InstagramMessages: React.FC = () => {
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b border-purple-100">
-        <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
-          <MessageCircle className="w-6 h-6" /> Mensajes de Instagram
-        </h2>
-      </div>
-
-      {/* Layout principal: bandejas y chat */}
-      <div className="flex flex-1 h-0 min-h-0">
-        {/* Panel de conversaciones individuales */}
-        <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} ${isMobile ? 'w-full' : 'w-1/3 min-w-[260px] max-w-[400px]'} border-r border-purple-100 flex-shrink-0 flex-col`}>
-          <div className="p-4 border-b border-purple-100">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-800">Conversaciones</h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Configuración de IA"
-                >
-                  <Settings className="w-4 h-4 text-gray-600" />
-                </button>
-                <button
-                  onClick={loadConversations}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
-            </div>
-
-            <div className="mb-3">
-              <HistoricalSyncButton />
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm">
-              <div className={`w-2 h-2 rounded-full ${aiEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-gray-600">
-                IA {aiEnabled ? 'Activa' : 'Inactiva'} • {aiDelay}s delay
-              </span>
-            </div>
+    <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex">
+      {/* Lista de conversaciones */}
+      <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full ${!isMobile ? 'max-w-md' : ''} border-r border-purple-100`}>
+        <div className="flex items-center justify-between p-4 border-b border-purple-100">
+          <div>
+            <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
+              <MessageCircle className="w-6 h-6" /> Conversaciones
+            </h2>
+            <p className="text-sm text-gray-600">{conversations.length} conversaciones</p>
           </div>
-          
-          <div className="overflow-y-auto h-[calc(100%-140px)]">
-            {conversations.length === 0 ? (
-              <div className="p-4 text-center">
-                <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm">No hay conversaciones aún</p>
-              </div>
-            ) : (
-              conversations.map((conversation) => {
-                // Obtener características actuales para calcular el máximo
-                const traits = loadTraitsFromStorage().filter(t => t.enabled);
-                const maxPoints = traits.length || 4;
-
-                return (
-                  <div
-                    key={conversation.sender_id}
-                    onClick={() => setSelectedConversation(conversation.sender_id)}
-                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      selectedConversation === conversation.sender_id ? 'bg-purple-50 border-purple-200' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                        <User className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-gray-800 truncate flex items-center gap-2">
-                            {getUserDisplayName(conversation.sender_id)}
-                            {/* Estrellas de compatibilidad */}
-                            <span className="flex items-center ml-2">
-                              {[...Array(maxPoints)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${i < (conversation.matchPoints || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                                />
-                              ))}
-                              <span className="ml-1 text-xs text-gray-500">
-                                ({conversation.matchPoints || 0}/{maxPoints})
-                              </span>
-                            </span>
-                          </h4>
-                        </div>
-                        <p className="text-sm text-gray-500 truncate">
-                          {conversation.last_message.message_text}
-                        </p>
-                        {/* Características cumplidas - MEJORADO */}
-                        {(() => {
-                          const metTraitIndices = conversation.metTraitIndices || [];
-                          if (metTraitIndices.length > 0) {
-                            return (
-                              <div className="mt-2 space-y-1">
-                                <div className="text-xs font-medium text-green-700">
-                                  ✅ Características cumplidas:
-                                </div>
-                                <div className="flex flex-wrap gap-1">
-                                  {metTraitIndices.slice(0, 2).map((idx, i) => {
-                                    const trait = traits[idx];
-                                    if (!trait) return null;
-                                    
-                                    // Crear versión abreviada del trait
-                                    const shortTrait = trait.trait.length > 25 
-                                      ? trait.trait.substring(0, 25) + "..." 
-                                      : trait.trait;
-                                    
-                                    return (
-                                      <span 
-                                        key={i} 
-                                        className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs border border-green-200"
-                                        title={trait.trait} // Tooltip con texto completo
-                                      >
-                                        {shortTrait}
-                                      </span>
-                                    );
-                                  })}
-                                  {metTraitIndices.length > 2 && (
-                                    <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs border border-green-200">
-                                      +{metTraitIndices.length - 2} más
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          } else if ((conversation.matchPoints || 0) === 0) {
-                            return (
-                              <div className="mt-2">
-                                <div className="text-xs text-gray-500 italic">
-                                  📋 Sin características analizadas
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              title="Configuración"
+            >
+              <Settings className="w-5 h-5 text-gray-600" />
+            </button>
+            <button
+              onClick={loadConversations}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              title="Recargar"
+            >
+              <RefreshCw className="w-5 h-5 text-gray-600" />
+            </button>
           </div>
         </div>
 
-        {/* Panel de chat */}
-        <div className={`${isMobile && !selectedConversation ? 'hidden' : 'flex'} ${isMobile ? 'w-full' : 'flex-1'} flex-col min-w-0`}>
-          {selectedConversation ? (
-            <>
-              {/* Header del chat */}
-              <div className="p-4 border-b border-purple-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {isMobile && (
-                      <button
-                        onClick={() => setSelectedConversation(null)}
-                        className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <ArrowLeft className="w-5 h-5 text-gray-600" />
-                      </button>
-                    )}
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">
-                        {getUserDisplayName(selectedConversation)}
-                      </h3>
-                      <p className="text-sm text-green-600">● En línea</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setShowPersona((v) => !v)}
-                      className={`flex items-center gap-2 px-3 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors ${isMobile ? 'text-xs' : ''}`}
-                    >
-                      <Brain className="w-4 h-4" /> {!isMobile && 'Ver personalidad'}
-                    </button>
-                    <button
-                      onClick={handleFeedAI}
-                      className={`flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors ${isMobile ? 'text-xs' : ''}`}
-                    >
-                      <Brain className="w-4 h-4" /> {!isMobile && 'Alimentar IA'}
-                    </button>
-                  </div>
-                </div>
+        {/* Configuración */}
+        {showSettings && (
+          <div className="p-4 border-b border-purple-100 bg-gray-50">
+            <h3 className="font-semibold text-gray-700 mb-3">Configuración IA</h3>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-gray-600">IA Habilitada</label>
+                <input
+                  type="checkbox"
+                  checked={aiEnabled}
+                  onChange={(e) => setAiEnabled(e.target.checked)}
+                  className="rounded"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm text-gray-600 block mb-1">
+                  Delay respuesta (segundos): {aiDelay}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={aiDelay}
+                  onChange={(e) => setAiDelay(parseInt(e.target.value))}
+                  className="w-full"
+                />
               </div>
 
-              {showPersona && (
-                <div className="p-4 border-b border-purple-100 bg-purple-50/50">
-                  <h3 className="text-sm font-semibold text-purple-700 mb-1 flex items-center gap-2">
-                    <Brain className="w-4 h-4" /> Personalidad actual de la IA
-                  </h3>
-                  <div className="text-xs text-gray-700 whitespace-pre-line bg-white/70 rounded p-2 border border-purple-100">
-                    {iaPersona ? iaPersona : 'Aún no has alimentado la IA con tus mensajes.'}
-                  </div>
+              <button
+                onClick={handleFeedAI}
+                className="w-full bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center justify-center gap-2"
+              >
+                <Brain className="w-4 h-4" />
+                Alimentar IA
+              </button>
+
+              <HistoricalSyncButton />
+
+              {iaPersona && (
+                <div className="mt-3">
+                  <button
+                    onClick={() => setShowPersona(!showPersona)}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    {showPersona ? 'Ocultar' : 'Ver'} personalidad IA
+                  </button>
+                  {showPersona && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-gray-700">
+                      {iaPersona}
+                    </div>
+                  )}
                 </div>
               )}
+            </div>
+          </div>
+        )}
 
-              {/* Indicador de compatibilidad: mostrar todas las características */}
-              <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-blue-50 to-purple-50">
-                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  🎯 Características del cliente ideal
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {(() => {
-                    // Obtener características actuales
-                    const traits = loadTraitsFromStorage().filter(t => t.enabled);
-                    // Obtener las cumplidas para este prospecto
-                    const selectedConv = conversations.find(c => c.sender_id === selectedConversation);
-                    const metTraitIndices = selectedConv?.metTraitIndices || [];
-                    
-                    return traits.map((trait: TraitWithPosition, idx: number) => {
-                      const isMet = metTraitIndices.includes(idx);
-                      return (
-                        <span
-                          key={idx}
-                          className={`flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium ${isMet ? 'bg-green-100 border-green-300 text-green-800' : 'bg-gray-100 border-gray-300 text-gray-500'}`}
-                        >
-                          {isMet ? '✓' : <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />} {trait.trait}
+        {/* Lista de conversaciones */}
+        <div className="flex-1 overflow-y-auto">
+          {conversations.length === 0 ? (
+            <div className="p-8 text-center">
+              <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">No hay conversaciones</h3>
+              <p className="text-gray-500">Las conversaciones aparecerán aquí cuando lleguen mensajes</p>
+            </div>
+          ) : (
+            conversations.map((conversation) => (
+              <div
+                key={conversation.sender_id}
+                onClick={() => setSelectedConversation(conversation.sender_id)}
+                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                  selectedConversation === conversation.sender_id ? 'bg-purple-50 border-purple-200' : ''
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-gray-800">
+                      {getUserDisplayName(conversation.sender_id)}
+                    </h4>
+                    {(conversation.matchPoints || 0) > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span className="text-sm font-medium text-yellow-700">
+                          {conversation.matchPoints}/4
                         </span>
-                      );
-                    });
-                  })()}
+                      </div>
+                    )}
+                  </div>
+                  {conversation.unread_count > 0 && (
+                    <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
+                      {conversation.unread_count}
+                    </span>
+                  )}
                 </div>
-              </div>
-
-              {/* Mensajes */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {selectedMessages.map((message) => {
-                  const isSentByMe = message.message_type === 'sent' || message.sender_id === pageId;
-                  
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${isSentByMe ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`flex gap-3 max-w-[80%] ${isMobile ? 'max-w-[90%]' : ''} ${isSentByMe ? 'flex-row-reverse' : ''}`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          isSentByMe 
-                            ? 'bg-gradient-to-r from-green-400 to-blue-500' 
-                            : 'bg-gradient-to-r from-purple-500 to-pink-500'
-                        }`}>
-                          {isSentByMe ? (
-                            <Bot className="w-5 h-5 text-white" />
-                          ) : (
-                            <User className="w-5 h-5 text-white" />
+                
+                <p className="text-sm text-gray-500 truncate">
+                  {conversation.last_message.message_text}
+                </p>
+                
+                {/* Características cumplidas - MEJORADO */}
+                {(() => {
+                  const metTraitIndices = conversation.metTraitIndices || [];
+                  if (metTraitIndices.length > 0) {
+                    return (
+                      <div className="mt-2 space-y-1">
+                        <div className="text-xs font-medium text-green-700">
+                          ✅ Características cumplidas:
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {metTraitIndices.slice(0, 2).map((idx, i) => {
+                            const trait = traits[idx];
+                            if (!trait) return null;
+                            
+                            // Crear versión abreviada del trait
+                            const shortTrait = trait.trait.length > 25 
+                              ? trait.trait.substring(0, 25) + "..." 
+                              : trait.trait;
+                            
+                            return (
+                              <span 
+                                key={i} 
+                                className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs border border-green-200"
+                                title={trait.trait} // Tooltip con texto completo
+                              >
+                                {shortTrait}
+                              </span>
+                            );
+                          })}
+                          {metTraitIndices.length > 2 && (
+                            <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs border border-green-200">
+                              +{metTraitIndices.length - 2} más
+                            </span>
                           )}
                         </div>
-                        <div className={`rounded-2xl px-4 py-3 ${
-                          isSentByMe
-                            ? 'bg-gradient-to-r from-green-400 to-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          <p className="text-sm">{message.message_text}</p>
-                          <div className={`text-xs mt-1 flex items-center gap-1 ${
-                            isSentByMe ? 'text-green-100' : 'text-gray-500'
-                          }`}>
-                            {message.raw_data?.auto_response && (
-                              <Bot className="w-3 h-3" />
-                            )}
-                            {message.raw_data?.historical_sync && (
-                              <Clock className="w-3 h-3" />
-                            )}
-                            <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
-                          </div>
+                      </div>
+                    );
+                  } else if ((conversation.matchPoints || 0) === 0) {
+                    return (
+                      <div className="mt-2">
+                        <div className="text-xs text-gray-500 italic">
+                          📋 Sin características analizadas
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  }
+                  return null;
+                })()}
+                
+                <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                  <Clock className="w-3 h-3" />
+                  {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
+                </p>
               </div>
-
-              {/* Input de mensaje */}
-              <div className="p-4 border-t border-purple-100">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Escribe tu respuesta..."
-                    className="flex-1 px-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-                    disabled={sending}
-                  />
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <MessageCircle className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Selecciona una conversación</h3>
-                <p className="text-gray-500">Elige una conversación para ver los mensajes</p>
-              </div>
-            </div>
+            ))
           )}
         </div>
       </div>
 
-      {/* Panel de configuración */}
-      {showSettings && (
-        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 w-96 max-w-[90%]">
-            <h3 className="text-lg font-semibold mb-4">Configuración de IA</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={aiEnabled}
-                    onChange={(e) => setAiEnabled(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <span>Respuestas automáticas habilitadas</span>
-                </label>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Delay de respuesta (segundos)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={aiDelay}
-                  onChange={(e) => setAiDelay(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-2 mt-6">
+      {/* Panel de chat */}
+      {selectedConversation ? (
+        <div className="flex-1 flex flex-col">
+          {/* Header del chat */}
+          <div className="p-4 border-b border-purple-100 flex items-center gap-3">
+            {isMobile && (
               <button
-                onClick={() => setShowSettings(false)}
-                className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                onClick={() => setSelectedConversation(null)}
+                className="p-1 rounded hover:bg-gray-100"
               >
-                Guardar
+                <ArrowLeft className="w-5 h-5" />
               </button>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+            )}
+            <div>
+              <h3 className="font-semibold text-gray-800">
+                {getUserDisplayName(selectedConversation)}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {selectedMessages.length} mensajes
+              </p>
+            </div>
+          </div>
+
+          {/* Mensajes */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {selectedMessages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.message_type === 'sent' ? 'justify-end' : 'justify-start'}`}
               >
-                Cancelar
+                <div
+                  className={`max-w-[70%] p-3 rounded-lg ${
+                    message.message_type === 'sent'
+                      ? 'bg-purple-500 text-white'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {message.message_type === 'sent' ? (
+                      <Bot className="w-4 h-4" />
+                    ) : (
+                      <User className="w-4 h-4" />
+                    )}
+                    <span className="text-xs opacity-75">
+                      {new Date(message.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <p className="text-sm">{message.message_text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Input de mensaje */}
+          <div className="p-4 border-t border-purple-100">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !sending && sendMessage(newMessage)}
+                placeholder="Escribe tu mensaje..."
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                disabled={sending}
+              />
+              <button
+                onClick={() => sendMessage(newMessage)}
+                disabled={sending || !newMessage.trim()}
+                className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                {sending ? 'Enviando...' : 'Enviar'}
               </button>
             </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">
+              Selecciona una conversación
+            </h3>
+            <p className="text-gray-500">
+              Elige una conversación de la lista para ver los mensajes
+            </p>
           </div>
         </div>
       )}
