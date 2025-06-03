@@ -8,7 +8,6 @@ import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { analyzeMessage } from '@/services/traitAnalysisService';
 import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
-import { analyzeAllConversations } from '@/services/aiTraitAnalysisService';
 
 interface InstagramMessage {
   id: string;
@@ -602,14 +601,6 @@ const InstagramMessages: React.FC = () => {
         <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
           <MessageCircle className="w-6 h-6" /> Mensajes de Instagram
         </h2>
-        <button
-          onClick={analyzeExistingMessages}
-          disabled={isAnalyzingAI}
-          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm font-semibold flex items-center gap-2 ${isAnalyzingAI ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          <Brain className="w-4 h-4" />
-          {isAnalyzingAI ? '⏳ Analizando...' : '🔍 Analizar Todo con IA'}
-        </button>
       </div>
 
       {/* Layout principal: bandejas y chat */}
