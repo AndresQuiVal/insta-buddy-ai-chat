@@ -54,10 +54,10 @@ const InstagramMessages: React.FC = () => {
   const TAB_KEY = 'hower-active-tab';
   const myTabId = React.useRef(`${Date.now()}-${Math.random()}`);
   const isMobile = useIsMobile();
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   
   // Hook de análisis de características
   const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
-  const { isAnalyzing: isAnalyzingAI } = useAITraitAnalysis();
 
   useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
 
@@ -154,7 +154,7 @@ const InstagramMessages: React.FC = () => {
     console.log("🔍 DEBUG: InstagramMessages - Iniciando análisis completo con IA...");
     
     try {
-      setIsAnalyzing(true);
+      setIsAnalyzingAI(true);
       
       // Cargar características del cliente ideal desde localStorage
       const savedTraits = localStorage.getItem('hower-ideal-client-traits');
@@ -195,7 +195,7 @@ const InstagramMessages: React.FC = () => {
         variant: "destructive"
       });
     } finally {
-      setIsAnalyzing(false);
+      setIsAnalyzingAI(false);
     }
   };
 
@@ -604,11 +604,11 @@ const InstagramMessages: React.FC = () => {
         </h2>
         <button
           onClick={analyzeExistingMessages}
-          disabled={isAnalyzing}
-          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm font-semibold flex items-center gap-2 ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isAnalyzingAI}
+          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm font-semibold flex items-center gap-2 ${isAnalyzingAI ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <Brain className="w-4 h-4" />
-          {isAnalyzing ? '⏳ Analizando...' : '🔍 Analizar Todo'}
+          {isAnalyzingAI ? '⏳ Analizando...' : '🔍 Analizar Todo'}
         </button>
       </div>
 
