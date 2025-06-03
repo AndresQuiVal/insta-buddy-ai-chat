@@ -241,6 +241,8 @@ const ProspectList: React.FC = () => {
           messages: sortedMessages,
           last_message: sortedMessages[sortedMessages.length - 1],
           message_count: sortedMessages.length,
+          matchPoints: 0,
+          metTraits: []
         };
       });
 

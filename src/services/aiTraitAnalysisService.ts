@@ -41,29 +41,35 @@ export const analyzeConversationWithAI = async (
     return { matchPoints: 0, metTraits: [], confidence: 0 };
   }
 
-  // Crear texto de conversación
-  const conversationText = messages
-    .map(msg => `${msg.sender === 'user' ? 'Prospecto' : 'Asistente'}: ${msg.text}`)
-    .join('\n');
+  // Crear texto de conversación SOLO del usuario
+  const userMessages = messages.filter(msg => msg.sender === 'user');
+  const conversationText = userMessages.map(msg => msg.text).join('\n');
 
-  console.log("📝 DEBUG: Texto de conversación para IA:", conversationText);
+  console.log("📝 DEBUG: Texto del usuario para IA:", conversationText);
 
-  const prompt = `Analiza esta conversación de Instagram y determina qué características del cliente ideal cumple el prospecto:
+  // MEJORAR EL PROMPT - MÁS ESPECÍFICO Y DIRECTO
+  const prompt = `Analiza este mensaje del prospecto y determina qué características cumple:
 
-CONVERSACIÓN:
-${conversationText}
+MENSAJE DEL PROSPECTO:
+"${conversationText}"
 
-CARACTERÍSTICAS DEL CLIENTE IDEAL:
+CARACTERÍSTICAS A EVALUAR:
 ${enabledTraits.map((trait, i) => `${i + 1}. ${trait.trait}`).join('\n')}
 
-INSTRUCCIONES:
-- Analiza SOLO los mensajes del prospecto
-- Responde únicamente con un JSON válido
-- Formato: {"characteristics": [números de las características que cumple], "confidence": número_entre_0_y_1}
-- Ejemplo: {"characteristics": [1, 3], "confidence": 0.8}
-- Si no cumple ninguna: {"characteristics": [], "confidence": 0}`;
+INSTRUCCIONES ESPECÍFICAS:
+- Analiza ÚNICAMENTE el contenido del mensaje del prospecto
+- Si menciona palabras relacionadas con cruceros, viajes, vacaciones → cumple característica sobre cruceros
+- Si menciona presupuesto, dinero, precios, "puedo pagar" → cumple característica sobre presupuesto  
+- Si dice "quiero", "necesito", "me interesa", "comprar" → cumple característica sobre interés
+- Si menciona ubicación, ciudad, país → cumple característica sobre zona de servicio
 
-  console.log("🎯 DEBUG: Prompt para OpenAI:", prompt);
+RESPUESTA:
+Responde SOLO con JSON válido en este formato exacto:
+{"characteristics": [números de características que SÍ cumple], "confidence": 0.8}
+
+Si NO cumple ninguna característica: {"characteristics": [], "confidence": 0}`;
+
+  console.log("🎯 DEBUG: Prompt mejorado para OpenAI:", prompt);
 
   try {
     console.log("📡 DEBUG: Enviando consulta a OpenAI...");
@@ -79,7 +85,7 @@ INSTRUCCIONES:
         messages: [
           {
             role: 'system',
-            content: 'Eres un experto analizador de prospectos. Responde solo con JSON válido.'
+            content: 'Eres un experto analizador de prospectos de ventas. Tu trabajo es identificar si un mensaje cumple características específicas del cliente ideal. Responde solo con JSON válido.'
           },
           {
             role: 'user',
@@ -135,36 +141,71 @@ INSTRUCCIONES:
   }
 };
 
-// Análisis de respaldo con palabras clave
+// ANÁLISIS MEJORADO CON PALABRAS CLAVE
 const analyzeWithKeywords = (messages: ConversationMessage[], idealTraits: Trait[]): AnalysisResult => {
-  console.log("🔤 DEBUG: === ANÁLISIS CON PALABRAS CLAVE ===");
+  console.log("🔤 DEBUG: === ANÁLISIS CON PALABRAS CLAVE MEJORADO ===");
   
   const enabledTraits = idealTraits.filter(t => t.enabled);
   const userMessages = messages.filter(msg => msg.sender === 'user');
-  const conversationText = userMessages.map(msg => msg.text).join(' ').toLowerCase();
+  const conversationText = userMessages.map(msg => msg.text).join(' ').toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, ''); // Quitar acentos
 
-  console.log("📝 DEBUG: Texto de usuario para análisis:", conversationText);
+  console.log("📝 DEBUG: Texto normalizado para análisis:", conversationText);
 
+  // MAPA DE PALABRAS CLAVE MÁS ESPECÍFICO
   const keywordMap: Record<string, string[]> = {
+    // Interés en productos/servicios
+    "interesado en nuestros productos o servicios": [
+      "crucero", "cruceros", "viaje", "viajes", "vacaciones", "turismo",
+      "tour", "tours", "excursion", "excursiones", "destino", "destinos",
+      "interesa", "intereso", "me gusta", "me gustan", "quiero", "quisiera",
+      "necesito", "busco", "producto", "servicio", "oferta", "informacion"
+    ],
     "le gustan los cruceros": [
-      "crucero", "cruceros", "barco", "navegar", "mar", "oceano", "viaje", "vacation"
+      "crucero", "cruceros", "barco", "navegar", "mar", "oceano", 
+      "navegacion", "cruise", "viaje en barco", "vacation", "vacaciones"
     ],
-    "tiene 2 perros": [
-      "perro", "perros", "mascota", "mascotas", "dos perros", "2 perros", "cachorro"
+    "tiene presupuesto adecuado": [
+      "presupuesto", "dinero", "pago", "pagar", "precio", "costo",
+      "puedo pagar", "tengo dinero", "dispongo", "cuento con",
+      "tarjeta", "efectivo", "financiamiento", "cuanto cuesta"
     ],
-    "es de españa": [
-      "españa", "spanish", "madrid", "barcelona", "sevilla", "valencia", "español"
+    "listo para decidir": [
+      "decidido", "decidida", "listo", "lista", "preparado", "preparada",
+      "comprar", "reservar", "apartar", "confirmar", "ahora", "ya", "hoy"
     ],
-    "le gustan las hamburguesas": [
-      "hamburguesa", "hamburguesas", "burger", "mcdonalds", "comida", "fast food"
+    "zona de servicio": [
+      "vivo", "estoy", "ubicado", "direccion", "ciudad", "mexico", "españa"
     ]
   };
 
   const metTraits: string[] = [];
   
   enabledTraits.forEach(trait => {
-    const keywords = keywordMap[trait.trait.toLowerCase()] || [];
-    console.log(`🔍 DEBUG: Verificando característica "${trait.trait}" con palabras:`, keywords);
+    const traitLower = trait.trait.toLowerCase();
+    console.log(`🔍 DEBUG: Analizando característica: "${trait.trait}"`);
+    
+    // Buscar coincidencias directas primero
+    let keywords: string[] = [];
+    
+    // Mapear características a palabras clave
+    if (traitLower.includes('crucero') || traitLower.includes('viaje')) {
+      keywords = keywordMap["le gustan los cruceros"];
+    } else if (traitLower.includes('interesado') || traitLower.includes('producto') || traitLower.includes('servicio')) {
+      keywords = keywordMap["interesado en nuestros productos o servicios"];
+    } else if (traitLower.includes('presupuesto') || traitLower.includes('dinero')) {
+      keywords = keywordMap["tiene presupuesto adecuado"];
+    } else if (traitLower.includes('decision') || traitLower.includes('compra')) {
+      keywords = keywordMap["listo para decidir"];
+    } else if (traitLower.includes('zona') || traitLower.includes('servicio') || traitLower.includes('ubicac')) {
+      keywords = keywordMap["zona de servicio"];
+    } else {
+      // Usar palabras de la característica misma
+      keywords = traitLower.split(' ').filter(word => word.length > 3);
+    }
+    
+    console.log(`   Palabras clave a buscar:`, keywords);
     
     const hasMatch = keywords.some(keyword => {
       const found = conversationText.includes(keyword);
@@ -177,13 +218,15 @@ const analyzeWithKeywords = (messages: ConversationMessage[], idealTraits: Trait
     if (hasMatch) {
       metTraits.push(trait.trait);
       console.log(`🎯 DEBUG: Característica detectada: ${trait.trait}`);
+    } else {
+      console.log(`❌ DEBUG: NO detectada: ${trait.trait}`);
     }
   });
 
   const result = {
     matchPoints: metTraits.length,
     metTraits,
-    confidence: 0.7
+    confidence: 0.8
   };
 
   console.log("🔤 DEBUG: Resultado del análisis por palabras clave:", result);
@@ -208,7 +251,6 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
     for (const conv of conversations) {
       console.log(`🔍 DEBUG: Analizando conversación: ${conv.userName}`);
       console.log(`📝 DEBUG: lastMessage: "${conv.lastMessage}"`);
-      console.log(`💬 DEBUG: messages array:`, conv.messages);
       
       let messagesToAnalyze: ConversationMessage[] = [];
       
@@ -245,6 +287,21 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
     // Guardar conversaciones actualizadas
     localStorage.setItem('hower-conversations', JSON.stringify(conversations));
     console.log("💾 DEBUG: Conversaciones actualizadas guardadas");
+    
+    // Mostrar resumen final
+    const totalMatches = conversations.reduce((sum: number, conv: any) => sum + (conv.matchPoints || 0), 0);
+    const totalTraits = conversations.reduce((sum: number, conv: any) => sum + (conv.metTraits?.length || 0), 0);
+    
+    console.log("🎯 DEBUG: RESUMEN FINAL:");
+    console.log(`📊 Conversaciones finales con matches: ${conversations.length}`);
+    console.log(`⭐ Total match points: ${totalMatches}`);
+    console.log(`🏷️ Total met traits: ${totalTraits}`);
+    
+    conversations.forEach((conv: any) => {
+      if (conv.matchPoints > 0) {
+        console.log(`✅ ${conv.userName}: ${conv.matchPoints} puntos, características: ${conv.metTraits?.join(', ') || 'ninguna'}`);
+      }
+    });
     
     // Disparar evento para actualizar UI
     window.dispatchEvent(new Event('storage'));
