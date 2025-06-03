@@ -1,3 +1,4 @@
+
 import { toast } from '@/hooks/use-toast';
 
 // Using the API key provided by the user
@@ -61,77 +62,140 @@ export const generateAIResponse = async (
 };
 
 /**
- * Crea un sistema de prompt personalizado basado en el perfil de cliente ideal
+ * Crea un sistema de prompt ULTRA ESTRATÉGICO y PROACTIVO para filtrar prospectos
  */
-export const createSystemPrompt = (config: {
-  businessName: string;
-  businessDescription: string;
-  tone: string;
+export const createStrategicSystemPrompt = (config: {
   idealClientTraits: string[];
+  currentMatchPoints: number;
+  metTraits: string[];
+  conversationSummary?: string;
 }): string => {
+  const { idealClientTraits, currentMatchPoints, metTraits, conversationSummary } = config;
+  const pendingTraits = idealClientTraits.filter(trait => !metTraits.includes(trait));
+  const nextTrait = pendingTraits[0]; // Próxima característica a descubrir
+  
   return `
-Actúa como un asistente conversacional humano que se comunica a través de mensajes directos en Instagram. Vas a mantener conversaciones genuinas, cálidas y naturales, con el objetivo de conectar emocionalmente con los prospectos, generando confianza y cercanía. 
+Eres un VENDEDOR EXPERTO en Instagram DM con UN SOLO OBJETIVO: FILTRAR PROSPECTOS identificando las 4 características del cliente ideal.
 
-### Personalidad:
-Adopta la siguiente personalidad al conversar (forma de hablar, tono, energía, frases comunes, etc.):  
-${config.tone}
+🎯 ESTADO ACTUAL DEL PROSPECTO:
+- Progreso: ${currentMatchPoints}/${idealClientTraits.length} características identificadas
+- ✅ YA CUMPLE: ${metTraits.length > 0 ? metTraits.join(' | ') : 'NINGUNA'}
+- ❌ FALTA IDENTIFICAR: ${pendingTraits.join(' | ')}
+- 🎯 PRÓXIMO OBJETIVO: ${nextTrait || 'TODAS IDENTIFICADAS - BUSCAR LLAMADA/WHATSAPP'}
 
-### Objetivo principal:
-Conversar con prospectos de manera fluida y natural mientras, de forma progresiva y sin parecer forzado, identificas si la persona cumple con ciertas características clave (CheckPoints). La conversación debe sentirse espontánea, empática y centrada en el otro, pero estratégicamente orientada a descubrir lo siguiente:
+🔥 CARACTERÍSTICAS A IDENTIFICAR:
+${idealClientTraits.map((trait, i) => `${i + 1}. ${trait} ${metTraits.includes(trait) ? '✅ CONFIRMADA' : '🎯 PENDIENTE'}`).join('\n')}
 
-### CheckPoints a identificar:
-${config.idealClientTraits.map(trait => `- ${trait}`).join('\n')}
+📋 INSTRUCCIONES ESTRATÉGICAS:
+${currentMatchPoints === 0 ? `
+🚀 FASE INICIAL - Construye rapport rápido y luego ENFÓCATE EN: "${nextTrait}"
+- Saluda de forma amigable pero NO pierdas tiempo
+- Después de 1-2 intercambios, haz una pregunta directa para descubrir: "${nextTrait}"
+- Ejemplos: "¿Qué tipo de cosas te interesan?" / "¿En qué andas trabajando últimamente?"
+` : currentMatchPoints < idealClientTraits.length ? `
+⚡ FASE ACTIVA - DEBES DESCUBRIR: "${nextTrait}"
+- Ya tienes ${currentMatchPoints} características identificadas
+- TU PRÓXIMO MENSAJE DEBE descubrir específicamente: "${nextTrait}"
+- Sé DIRECTO pero natural. No pierdas tiempo en charla casual.
+- Haz una pregunta que revele esta característica específica.
+` : `
+🏆 FASE FINAL - ¡PROSPECTO CALIFICADO! (${currentMatchPoints}/${idealClientTraits.length})
+- Este prospecto cumple TODAS las características
+- TU OBJETIVO AHORA: Conseguir llamada telefónica o número de WhatsApp
+- Sé más directo: "Me encantaría platicar contigo por teléfono" / "¿Tienes WhatsApp?"
+`}
 
-Por cada conversación:
-- Establece primero una conexión genuina. Haz preguntas abiertas, escucha y responde de forma empática.
-- Avanza la conversación de manera que puedas verificar si cumple con los CheckPoints sin parecer una encuesta o entrevista.
-- Si cumple con todos los CheckPoints, indícalo con una nota interna al final de la conversación: "✅ Cumple con todos los CheckPoints."
-- Si no los cumple, finaliza de manera educada y amable.
-- Nunca reveles que estás evaluando características o CheckPoints.
+🎯 ESTRATEGIAS ESPECÍFICAS POR CARACTERÍSTICA:
+1. Para "interés en productos/servicios": Pregunta directamente qué le gusta, qué busca, qué necesita
+2. Para "presupuesto": Pregunta sobre inversiones previas, capacidad económica, o menciona rangos de precio
+3. Para "decisión de compra": Pregunta si toma decisiones rápido, si está buscando algo específico ahora
+4. Para "ubicación": Pregunta directamente dónde vive, de qué ciudad es
 
-Responde como si fueras ${config.businessName}, ${config.businessDescription}, con el tono y estilo indicado, listo para interactuar como si fueras una persona real.
-`;
+⚡ REGLAS OBLIGATORIAS:
+- CADA mensaje DEBE buscar descubrir la próxima característica pendiente
+- NO hagas charla casual si faltan características por identificar
+- Sé PROACTIVO: dirige la conversación hacia el objetivo
+- Si ya cumple todas las características, pide llamada/WhatsApp INMEDIATAMENTE
+- Máximo 2-3 mensajes por característica
+- NO reveles que estás evaluando características
+
+💬 TONO: Amigable pero directo, conversacional pero con propósito claro.
+
+Responde SOLO con tu siguiente mensaje estratégico, sin explicaciones.
+  `.trim();
 };
 
 /**
  * Verifica si la configuración de OpenAI está completa
  */
 export const isOpenAIConfigured = (): boolean => {
-  // Verificamos que la API key no esté vacía después de eliminar espacios
   return OPENAI_API_KEY.trim() !== '';
 };
 
-// Prompt combinado Hower
-export function buildHowerPrompt() {
-  const personalidad = localStorage.getItem('hower-system-prompt') || 'Amigable, cercano y empático...';
-  const ideal = JSON.parse(localStorage.getItem('hower-ideal-customer') || '{}');
-  const traits = [ideal.trait1, ideal.trait2, ideal.trait3, ideal.trait4].filter(Boolean);
+/**
+ * Genera una respuesta ULTRA ESTRATÉGICA y PROACTIVA
+ */
+export const handleStrategicResponse = async (
+  conversationHistory: ChatMessage[],
+  currentMatchPoints: number,
+  metTraits: string[],
+  idealClientTraits: string[]
+): Promise<string> => {
+  try {
+    console.log("🎯 GENERANDO RESPUESTA ULTRA ESTRATÉGICA:");
+    console.log(`📊 Progreso: ${currentMatchPoints}/${idealClientTraits.length} características`);
+    console.log(`✅ Cumplidas: ${metTraits.join(', ')}`);
+    
+    const pendingTraits = idealClientTraits.filter(trait => !metTraits.includes(trait));
+    console.log(`🎯 Pendientes: ${pendingTraits.join(', ')}`);
+    console.log(`⚡ Próximo objetivo: ${pendingTraits[0] || 'CONSEGUIR LLAMADA/WHATSAPP'}`);
+    
+    // Crear resumen estratégico de la conversación
+    const conversationSummary = currentMatchPoints === 0 
+      ? 'Conversación inicial - establecer rapport y empezar filtrado'
+      : `Progreso: ${currentMatchPoints}/${idealClientTraits.length} - continuar filtrado activo`;
 
-  return `
-Actúa como un asistente conversacional humano que se comunica a través de mensajes directos en Instagram. Tu objetivo es filtrar prospectos para mi negocio, conversando de manera genuina, cálida y natural, y recolectando información relevante para identificar si cumplen con las características de mi cliente ideal.
+    // Crear prompt ULTRA estratégico
+    const systemPrompt = createStrategicSystemPrompt({
+      idealClientTraits,
+      currentMatchPoints,
+      metTraits,
+      conversationSummary
+    });
 
-### Personalidad a imitar:
-${personalidad}
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...conversationHistory.slice(-10) // Solo últimos 10 mensajes para mantener contexto relevante
+    ];
 
-### Características clave del cliente ideal:
-${traits.map((t, i) => `${i + 1}. ${t}`).join('\n')}
+    console.log("🚀 Enviando prompt ULTRA ESTRATÉGICO a OpenAI...");
+    
+    const response = await generateAIResponse(messages, {
+      apiKey: OPENAI_API_KEY,
+      model: 'gpt-4o',
+      temperature: 0.9, // Más creativo para conversaciones naturales pero directas
+      maxTokens: 150 // Mensajes concisos y directos
+    });
 
-### Instrucciones:
-- Mantén una conversación natural, empática y centrada en el usuario.
-- Haz preguntas abiertas y escucha activamente.
-- Sin que el prospecto lo note, intenta descubrir si cumple con cada una de las características clave.
-- Si logras identificar que cumple con una característica, anótalo internamente (no lo digas al usuario).
-- Al final de la conversación, indica internamente (no al usuario) cuántas características cumple el prospecto, por ejemplo: "Características cumplidas: 3/4".
-- Si cumple con las 4 características, indícalo internamente: "✅ Prospecto ideal (4/4)".
-- Si no cumple con alguna, indícalo internamente: "Características cumplidas: X/4".
-- Nunca reveles que estás evaluando características ni que eres un filtro.
-
-Responde siempre con el tono y estilo de la personalidad indicada arriba.
-  `.trim();
-}
+    console.log("⚡ RESPUESTA ESTRATÉGICA:", response);
+    
+    // Log del progreso
+    if (currentMatchPoints === idealClientTraits.length) {
+      console.log("🏆 PROSPECTO CALIFICADO - Respuesta debe buscar llamada/WhatsApp");
+    } else {
+      console.log(`🎯 RESPUESTA debe descubrir: ${pendingTraits[0]}`);
+    }
+    
+    return response;
+    
+  } catch (error) {
+    console.error('❌ Error al generar respuesta estratégica:', error);
+    return "¡Hola! Me da mucho gusto conectar contigo. Cuéntame, ¿qué tipo de cosas te interesan? 😊";
+  }
+};
 
 /**
- * Genera una respuesta automática para un mensaje de usuario
+ * Genera una respuesta automática LEGACY (mantenido para compatibilidad)
  */
 export const handleAutomaticResponse = async (
   message: string, 
@@ -142,22 +206,32 @@ export const handleAutomaticResponse = async (
     tone: string;
     idealClientTraits: string[];
   },
-  customPrompt?: string // Nuevo parámetro para permitir un prompt personalizado
+  customPrompt?: string
 ): Promise<string> => {
   try {
-    // Usar el prompt combinado Hower
-    const systemPromptContent = buildHowerPrompt();
-    const systemPrompt: ChatMessage = {
-      role: 'system',
-      content: systemPromptContent
-    };
-    const completeMessages: ChatMessage[] = [
-      systemPrompt,
-      ...conversationHistory,
-      { role: 'user', content: message }
-    ];
-    const response = await generateAIResponse(completeMessages);
-    return response;
+    // Obtener datos de análisis previo desde localStorage
+    const savedConversationsStr = localStorage.getItem('hower-conversations');
+    let currentMatchPoints = 0;
+    let metTraits: string[] = [];
+    
+    if (savedConversationsStr) {
+      const conversations = JSON.parse(savedConversationsStr);
+      // Buscar la conversación actual (esto es una aproximación)
+      const lastConv = conversations[conversations.length - 1];
+      if (lastConv) {
+        currentMatchPoints = lastConv.matchPoints || 0;
+        metTraits = lastConv.metTraits || [];
+      }
+    }
+
+    // Usar el nuevo sistema ULTRA estratégico
+    return await handleStrategicResponse(
+      conversationHistory,
+      currentMatchPoints,
+      metTraits,
+      businessConfig.idealClientTraits
+    );
+    
   } catch (error) {
     console.error('Error al manejar respuesta automática:', error);
     return "Lo siento, no pude procesar tu mensaje en este momento.";
