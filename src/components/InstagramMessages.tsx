@@ -64,6 +64,9 @@ const InstagramMessages: React.FC = () => {
   // Hook de análisis de características
   const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
 
+  // 🔥 NUEVA FLAG PARA EVITAR BUCLES
+  const isLoadingRef = useRef(false);
+
   useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
 
   useEffect(() => {
@@ -104,7 +107,7 @@ const InstagramMessages: React.FC = () => {
     ];
   };
 
-  // 🔥 NUEVA FUNCIÓN: Cargar análisis previos de localStorage
+  // 🔥 CARGAR ANÁLISIS PREVIOS SIN DISPARAR EVENTOS
   const loadSavedAnalysis = (): Record<string, SavedAnalysis> => {
     try {
       const savedConversationsStr = localStorage.getItem('hower-conversations');
@@ -134,28 +137,10 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
-  // 🔥 NUEVA FUNCIÓN: Verificar si necesita re-análisis
-  const needsAnalysis = (conversationId: string, messageCount: number, savedAnalysis: Record<string, SavedAnalysis>): boolean => {
-    const analysis = savedAnalysis[conversationId];
-    
-    if (!analysis) {
-      console.log(`🔍 [${conversationId.slice(-6)}] NECESITA ANÁLISIS: No hay análisis previo`);
-      return true;
-    }
-    
-    if (analysis.messageCount !== messageCount) {
-      console.log(`🔍 [${conversationId.slice(-6)}] NECESITA ANÁLISIS: Mensajes cambiaron ${analysis.messageCount} → ${messageCount}`);
-      return true;
-    }
-    
-    console.log(`✅ [${conversationId.slice(-6)}] USANDO ANÁLISIS GUARDADO: ${analysis.matchPoints}/4 características`);
-    return false;
-  };
-
-  const loadConversations = async () => {
+  // 🔥 FUNCIÓN SEPARADA PARA CARGAR SOLO MENSAJES (SIN ANÁLISIS)
+  const loadConversationsOnly = async () => {
     try {
-      setLoading(true);
-      console.log('🔄 CARGANDO CONVERSACIONES OPTIMIZADO...');
+      console.log('🔄 CARGANDO CONVERSACIONES (SIN ANÁLISIS)...');
 
       // Obtener TODOS los mensajes de Supabase
       const { data: messages, error } = await supabase
@@ -165,8 +150,7 @@ const InstagramMessages: React.FC = () => {
 
       if (error) {
         console.error('Error loading messages:', error);
-        setLoading(false);
-        return;
+        return [];
       }
 
       console.log(`📥 TOTAL MENSAJES OBTENIDOS: ${messages?.length || 0}`);
@@ -219,14 +203,13 @@ const InstagramMessages: React.FC = () => {
         });
       });
 
-      // 🔥 CARGAR ANÁLISIS PREVIOS
+      // 🔥 CARGAR ANÁLISIS GUARDADOS (SIN DISPARAR EVENTOS)
       const savedAnalysis = loadSavedAnalysis();
-      const traits = loadTraitsFromStorage();
       const conversationsArray: Conversation[] = [];
 
-      console.log("🎯 INICIANDO PROCESAMIENTO OPTIMIZADO DE CONVERSACIONES...");
+      console.log("📋 PROCESANDO CONVERSACIONES CON ANÁLISIS GUARDADO...");
 
-      // Procesar cada conversación 
+      // Procesar cada conversación SIN ANÁLISIS
       for (const [conversationId, messages] of Object.entries(conversationGroups)) {
         if (messages.length === 0) continue;
         
@@ -234,42 +217,14 @@ const InstagramMessages: React.FC = () => {
         const lastMessage = sortedMessages[sortedMessages.length - 1];
         const unreadCount = sortedMessages.filter(m => m.message_type === 'received').length;
 
-        // Contar mensajes del prospecto para detectar cambios
-        const prospectMessages = sortedMessages.filter(msg => msg.message_type === 'received');
-        const prospectMessageCount = prospectMessages.length;
+        // 🔥 USAR ANÁLISIS GUARDADO (NO GENERAR NUEVO)
+        const analysis = savedAnalysis[conversationId] || { 
+          matchPoints: 0, 
+          metTraits: [], 
+          metTraitIndices: [] 
+        };
 
-        console.log(`📋 [${conversationId.slice(-6)}] Mensajes total: ${sortedMessages.length}, Prospecto: ${prospectMessageCount}`);
-        
-        let analysis = savedAnalysis[conversationId] || { matchPoints: 0, metTraits: [], metTraitIndices: [] };
-        
-        // 🔥 SOLO ANALIZAR SI ES NECESARIO
-        if (prospectMessageCount > 0 && needsAnalysis(conversationId, prospectMessageCount, savedAnalysis)) {
-          try {
-            const allProspectMessages = prospectMessages
-              .map(msg => msg.message_text)
-              .filter(text => text && text.trim())
-              .join(' ');
-
-            console.log(`🤖 ANALIZANDO [${conversationId.slice(-6)}] con OpenAI...`);
-            
-            const result = await analyzeAndUpdateProspect(
-              conversationId,
-              getUserDisplayName(conversationId),
-              allProspectMessages,
-              traits
-            );
-            
-            analysis = {
-              matchPoints: result.matchPoints,
-              metTraits: result.metTraits,
-              metTraitIndices: result.metTraitIndices || []
-            };
-            
-            console.log(`✅ [${conversationId.slice(-6)}] ANÁLISIS COMPLETADO: ${result.matchPoints}/4 características`);
-          } catch (error) {
-            console.error(`❌ Error analizando [${conversationId.slice(-6)}]:`, error);
-          }
-        }
+        console.log(`📋 [${conversationId.slice(-6)}] USANDO ANÁLISIS GUARDADO: ${analysis.matchPoints}/4 características`);
 
         conversationsArray.push({
           sender_id: conversationId,
@@ -287,7 +242,28 @@ const InstagramMessages: React.FC = () => {
         new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
       );
 
-      console.log(`✅ PROCESAMIENTO OPTIMIZADO COMPLETO: ${conversationsArray.length} conversaciones`);
+      console.log(`✅ CONVERSACIONES CARGADAS: ${conversationsArray.length} (CON ANÁLISIS GUARDADO)`);
+      return conversationsArray;
+      
+    } catch (error) {
+      console.error('Error in loadConversationsOnly:', error);
+      return [];
+    }
+  };
+
+  // 🔥 FUNCIÓN PRINCIPAL QUE EVITA BUCLES
+  const loadConversations = async () => {
+    // Evitar bucles
+    if (isLoadingRef.current) {
+      console.log("🚫 EVITANDO BUCLE - Ya está cargando");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      isLoadingRef.current = true;
+      
+      const conversationsArray = await loadConversationsOnly();
       setConversations(conversationsArray);
       
     } catch (error) {
@@ -299,6 +275,47 @@ const InstagramMessages: React.FC = () => {
       });
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
+    }
+  };
+
+  // 🔥 FUNCIÓN SEPARADA PARA ANALIZAR SOLO CONVERSACIONES NUEVAS
+  const analyzeNewConversation = async (senderId: string, messageText: string) => {
+    try {
+      console.log(`🤖 ANALIZANDO CONVERSACIÓN NUEVA: [${senderId.slice(-6)}]`);
+      
+      // Obtener TODA la conversación para este sender
+      const { data: allMessages } = await supabase
+        .from('instagram_messages')
+        .select('*')
+        .or(`sender_id.eq.${senderId},recipient_id.eq.${senderId}`)
+        .order('timestamp', { ascending: true });
+
+      if (allMessages) {
+        // Filtrar TODOS los mensajes del prospecto
+        const allProspectMessages = allMessages
+          .filter(msg => msg.sender_id === senderId && msg.message_type === 'received')
+          .map(msg => msg.message_text)
+          .filter(text => text && text.trim())
+          .join(' ');
+
+        console.log(`📊 ANALIZANDO CONVERSACIÓN COMPLETA: "${allProspectMessages.substring(0, 150)}..."`);
+        
+        // Analizar características SOLO para esta conversación
+        const traits = loadTraitsFromStorage();
+        await analyzeAndUpdateProspect(
+          senderId,
+          getUserDisplayName(senderId),
+          allProspectMessages,
+          traits
+        );
+
+        // Recargar SOLO las conversaciones (sin re-análisis)
+        const updatedConversations = await loadConversationsOnly();
+        setConversations(updatedConversations);
+      }
+    } catch (error) {
+      console.error('Error analizando conversación nueva:', error);
     }
   };
 
@@ -307,42 +324,20 @@ const InstagramMessages: React.FC = () => {
       console.log('🔄 PROCESANDO NUEVO MENSAJE ENTRANTE:', message.message_text);
       
       if (message.message_type === 'received') {
-        // Obtener TODA la conversación para este sender
-        const { data: allMessages } = await supabase
-          .from('instagram_messages')
-          .select('*')
-          .or(`sender_id.eq.${message.sender_id},recipient_id.eq.${message.sender_id}`)
-          .order('timestamp', { ascending: true });
-
-        if (allMessages) {
-          // Filtrar TODOS los mensajes del prospecto y concatenar
-          const allProspectMessages = allMessages
-            .filter(msg => msg.sender_id === message.sender_id && msg.message_type === 'received')
-            .map(msg => msg.message_text)
-            .filter(text => text && text.trim())
-            .join(' ');
-
-          console.log(`📊 ANALIZANDO CONVERSACIÓN COMPLETA ACTUALIZADA: "${allProspectMessages.substring(0, 150)}..."`);
-          
-          // Analizar características con TODA la conversación
-          try {
-            const traits = loadTraitsFromStorage();
-            await analyzeAndUpdateProspect(
-              message.sender_id,
-              getUserDisplayName(message.sender_id),
-              allProspectMessages,
-              traits
-            );
-          } catch (error) {
-            console.error('Error en análisis de características:', error);
-          }
-        }
+        // 🔥 ANALIZAR SOLO ESTA CONVERSACIÓN (SIN BUCLE)
+        await analyzeNewConversation(message.sender_id, message.message_text);
 
         // Respuesta automática con IA
         const delay = parseInt(localStorage.getItem('hower-ai-delay') || '3');
         setTimeout(async () => {
           try {
             // Build conversation history from all messages
+            const { data: allMessages } = await supabase
+              .from('instagram_messages')
+              .select('*')
+              .or(`sender_id.eq.${message.sender_id},recipient_id.eq.${message.sender_id}`)
+              .order('timestamp', { ascending: true });
+
             const conversationHistory: ChatMessage[] = allMessages
               ?.filter(msg => 
                 (msg.sender_id === message.sender_id || msg.recipient_id === message.sender_id) &&
@@ -569,16 +564,22 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
-  // Escuchar cambios en localStorage para actualizar conversaciones
+  // 🔥 EVENTOS SIN BUCLES - SOLO RECARGAR UI, NO RE-ANALIZAR
   useEffect(() => {
     const handleStorageChange = () => {
-      console.log('📦 Storage change detected, recargando conversaciones...');
-      loadConversations();
+      console.log('📦 Storage change detected, recargando SOLO UI...');
+      // Solo recargar conversaciones SIN análisis
+      if (!isLoadingRef.current) {
+        loadConversations();
+      }
     };
 
     const handleConversationsUpdate = () => {
-      console.log('📦 Conversations updated event detected, recargando...');
-      loadConversations();
+      console.log('📦 Conversations updated event detected, recargando SOLO UI...');
+      // Solo recargar conversaciones SIN análisis  
+      if (!isLoadingRef.current) {
+        loadConversations();
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
