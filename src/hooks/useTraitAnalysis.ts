@@ -23,6 +23,8 @@ interface ProspectData {
   lastMessage: string;
   timestamp: string;
   unread: boolean;
+  lastAnalyzedAt?: string;
+  messageCount?: number;
 }
 
 async function analyzeWithOpenAI(conversationText: string, idealTraits: Trait[]): Promise<{matchPoints: number, metTraits: string[], metTraitIndices: number[]}> {
@@ -73,7 +75,6 @@ INSTRUCCIONES:
     indices = JSON.parse(content.trim());
     if (!Array.isArray(indices)) indices = [];
   } catch {
-    // Intentar extraer números del texto si no es JSON válido
     const matches = content.match(/\d+/g);
     indices = matches ? matches.map(n => parseInt(n)).filter(n => n >= 1 && n <= idealTraits.length) : [];
   }
@@ -98,15 +99,13 @@ function analyzeWithKeywords(conversationText: string, idealTraits: Trait[]): An
     return { matchPoints: 0, metTraits: [], metTraitIndices: [] };
   }
 
-  // Normalizar TODA la conversación
   const fullText = conversationText.toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+    .replace(/[\u0300-\u036f]/g, '')
     .trim();
   
   console.log("📝 TEXTO COMPLETO NORMALIZADO:", fullText.substring(0, 300) + "...");
   
-  // Palabras clave mejoradas
   const keywordMap: Record<string, string[]> = {
     "Interesado en nuestros productos o servicios": [
       "me interesa", "me interesan", "interesa", "interesan", "interesado", "interesada",
@@ -160,7 +159,6 @@ function analyzeWithKeywords(conversationText: string, idealTraits: Trait[]): An
     let matchFound = false;
     const foundKeywords: string[] = [];
     
-    // Buscar en TODO el texto
     for (const keyword of keywords) {
       if (fullText.includes(keyword)) {
         matchFound = true;
@@ -194,7 +192,6 @@ export const useTraitAnalysis = () => {
     console.log("📝 Texto a analizar (primeros 500 chars):", messageText.substring(0, 500));
     console.log("🎯 Características a evaluar:", idealTraits.map(t => t.trait));
     
-    // Intentar con OpenAI primero si hay API key
     const openaiKey = localStorage.getItem('hower-openai-key-demo') || localStorage.getItem('hower-openai-key');
     if (openaiKey) {
       try {
@@ -207,7 +204,6 @@ export const useTraitAnalysis = () => {
       }
     }
     
-    // Fallback a palabras clave
     console.log("🔤 Usando análisis con palabras clave...");
     const result = analyzeWithKeywords(messageText, idealTraits);
     console.log("✅ Análisis palabras clave completado:", result);
@@ -244,8 +240,10 @@ export const useTraitAnalysis = () => {
         conv.userName === userName
       );
       
+      // 🔥 NUEVO: Contar mensajes del prospecto para detectar cambios futuros
+      const messageCount = messageText.split(' ').length; // Aproximación simple
+      
       if (existingIndex !== -1) {
-        // Actualizar - MANTENER características detectadas previamente
         const existing = conversations[existingIndex];
         const allTraits = [...new Set([...(existing.metTraits || []), ...metTraits])];
         const allIndices = [...new Set([...(existing.metTraitIndices || []), ...(metTraitIndices || [])])];
@@ -256,7 +254,9 @@ export const useTraitAnalysis = () => {
           metTraits: allTraits,
           metTraitIndices: allIndices,
           lastMessage: messageText.substring(0, 100),
-          timestamp: '1m'
+          timestamp: '1m',
+          lastAnalyzedAt: new Date().toISOString(),
+          messageCount: messageCount
         };
         
         console.log("✅ PROSPECTO ACTUALIZADO (ACUMULATIVO):", {
@@ -265,7 +265,6 @@ export const useTraitAnalysis = () => {
           caracteristicas: allTraits
         });
       } else {
-        // Crear nuevo
         const newConversation: ProspectData = {
           id: senderId,
           senderId,
@@ -275,7 +274,9 @@ export const useTraitAnalysis = () => {
           metTraitIndices: metTraitIndices || [],
           lastMessage: messageText.substring(0, 100),
           timestamp: '1m',
-          unread: true
+          unread: true,
+          lastAnalyzedAt: new Date().toISOString(),
+          messageCount: messageCount
         };
         
         conversations.push(newConversation);
@@ -289,7 +290,6 @@ export const useTraitAnalysis = () => {
       
       localStorage.setItem('hower-conversations', JSON.stringify(conversations));
       
-      // Forzar actualización de UI
       window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new CustomEvent('conversations-updated', { 
         detail: { senderId, matchPoints, metTraits, metTraitIndices }
@@ -305,7 +305,7 @@ export const useTraitAnalysis = () => {
   const analyzeAndUpdateProspect = useCallback(async (
     senderId: string,
     userName: string,
-    allMessagesText: string, // TODA la conversación
+    allMessagesText: string,
     idealTraits: Trait[]
   ): Promise<AnalysisResult> => {
     console.log("🔍 ANÁLISIS COMPLETO DE PROSPECTO INICIADO");

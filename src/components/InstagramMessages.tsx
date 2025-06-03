@@ -35,6 +35,14 @@ interface TraitWithPosition {
   position: number;
 }
 
+interface SavedAnalysis {
+  matchPoints: number;
+  metTraits: string[];
+  metTraitIndices: number[];
+  lastAnalyzedAt: string;
+  messageCount: number;
+}
+
 const InstagramMessages: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -96,10 +104,58 @@ const InstagramMessages: React.FC = () => {
     ];
   };
 
+  // 🔥 NUEVA FUNCIÓN: Cargar análisis previos de localStorage
+  const loadSavedAnalysis = (): Record<string, SavedAnalysis> => {
+    try {
+      const savedConversationsStr = localStorage.getItem('hower-conversations');
+      if (!savedConversationsStr) return {};
+      
+      const savedConversations = JSON.parse(savedConversationsStr);
+      const analysisMap: Record<string, SavedAnalysis> = {};
+      
+      savedConversations.forEach((conv: any) => {
+        const key = conv.id || conv.senderId;
+        if (key) {
+          analysisMap[key] = {
+            matchPoints: conv.matchPoints || 0,
+            metTraits: conv.metTraits || [],
+            metTraitIndices: conv.metTraitIndices || [],
+            lastAnalyzedAt: conv.lastAnalyzedAt || new Date().toISOString(),
+            messageCount: conv.messageCount || 0
+          };
+        }
+      });
+      
+      console.log("📦 ANÁLISIS PREVIOS CARGADOS:", Object.keys(analysisMap).length, "conversaciones");
+      return analysisMap;
+    } catch (error) {
+      console.error("Error cargando análisis previos:", error);
+      return {};
+    }
+  };
+
+  // 🔥 NUEVA FUNCIÓN: Verificar si necesita re-análisis
+  const needsAnalysis = (conversationId: string, messageCount: number, savedAnalysis: Record<string, SavedAnalysis>): boolean => {
+    const analysis = savedAnalysis[conversationId];
+    
+    if (!analysis) {
+      console.log(`🔍 [${conversationId.slice(-6)}] NECESITA ANÁLISIS: No hay análisis previo`);
+      return true;
+    }
+    
+    if (analysis.messageCount !== messageCount) {
+      console.log(`🔍 [${conversationId.slice(-6)}] NECESITA ANÁLISIS: Mensajes cambiaron ${analysis.messageCount} → ${messageCount}`);
+      return true;
+    }
+    
+    console.log(`✅ [${conversationId.slice(-6)}] USANDO ANÁLISIS GUARDADO: ${analysis.matchPoints}/4 características`);
+    return false;
+  };
+
   const loadConversations = async () => {
     try {
       setLoading(true);
-      console.log('🔄 CARGANDO CONVERSACIONES COMPLETAS...');
+      console.log('🔄 CARGANDO CONVERSACIONES OPTIMIZADO...');
 
       // Obtener TODOS los mensajes de Supabase
       const { data: messages, error } = await supabase
@@ -163,29 +219,14 @@ const InstagramMessages: React.FC = () => {
         });
       });
 
-      const conversationsArray: Conversation[] = [];
-      
-      // Cargar análisis previos desde localStorage
-      let savedAnalysis: any = {};
-      try {
-        const savedConversationsStr = localStorage.getItem('hower-conversations');
-        if (savedConversationsStr) {
-          const savedConversations = JSON.parse(savedConversationsStr);
-          savedConversations.forEach((conv: any) => {
-            savedAnalysis[conv.id || conv.senderId] = {
-              matchPoints: conv.matchPoints || 0,
-              metTraits: conv.metTraits || [],
-              metTraitIndices: conv.metTraitIndices || []
-            };
-          });
-        }
-      } catch (error) {
-        console.error("Error al cargar análisis guardado:", error);
-      }
-
-      // Procesar cada conversación y analizar COMPLETA
+      // 🔥 CARGAR ANÁLISIS PREVIOS
+      const savedAnalysis = loadSavedAnalysis();
       const traits = loadTraitsFromStorage();
-      
+      const conversationsArray: Conversation[] = [];
+
+      console.log("🎯 INICIANDO PROCESAMIENTO OPTIMIZADO DE CONVERSACIONES...");
+
+      // Procesar cada conversación 
       for (const [conversationId, messages] of Object.entries(conversationGroups)) {
         if (messages.length === 0) continue;
         
@@ -193,30 +234,28 @@ const InstagramMessages: React.FC = () => {
         const lastMessage = sortedMessages[sortedMessages.length - 1];
         const unreadCount = sortedMessages.filter(m => m.message_type === 'received').length;
 
-        console.log(`📋 PROCESANDO CONVERSACIÓN: ${conversationId.slice(-6)}`);
-        console.log(`   Total mensajes: ${sortedMessages.length}`);
-        
-        // ⭐ CAMBIO CRÍTICO: Obtener TODOS los mensajes del prospecto (no solo los recibidos)
-        const allProspectMessages = sortedMessages
-          .filter(msg => msg.message_type === 'received') // Solo mensajes del prospecto
-          .map(msg => msg.message_text)
-          .filter(text => text && text.trim()) // Filtrar textos vacíos
-          .join(' '); // Unir TODOS los mensajes
+        // Contar mensajes del prospecto para detectar cambios
+        const prospectMessages = sortedMessages.filter(msg => msg.message_type === 'received');
+        const prospectMessageCount = prospectMessages.length;
 
-        console.log(`📝 TEXTO COMPLETO DEL PROSPECTO (${allProspectMessages.length} chars):`, 
-                   allProspectMessages.substring(0, 200) + "...");
+        console.log(`📋 [${conversationId.slice(-6)}] Mensajes total: ${sortedMessages.length}, Prospecto: ${prospectMessageCount}`);
         
         let analysis = savedAnalysis[conversationId] || { matchPoints: 0, metTraits: [], metTraitIndices: [] };
         
-        // Analizar si hay mensajes del prospecto
-        if (allProspectMessages.trim()) {
+        // 🔥 SOLO ANALIZAR SI ES NECESARIO
+        if (prospectMessageCount > 0 && needsAnalysis(conversationId, prospectMessageCount, savedAnalysis)) {
           try {
-            console.log(`🔍 INICIANDO ANÁLISIS COMPLETO para ${conversationId.slice(-6)}...`);
+            const allProspectMessages = prospectMessages
+              .map(msg => msg.message_text)
+              .filter(text => text && text.trim())
+              .join(' ');
+
+            console.log(`🤖 ANALIZANDO [${conversationId.slice(-6)}] con OpenAI...`);
             
             const result = await analyzeAndUpdateProspect(
               conversationId,
               getUserDisplayName(conversationId),
-              allProspectMessages, // ⭐ TODA la conversación del prospecto
+              allProspectMessages,
               traits
             );
             
@@ -226,16 +265,10 @@ const InstagramMessages: React.FC = () => {
               metTraitIndices: result.metTraitIndices || []
             };
             
-            console.log(`✅ ANÁLISIS COMPLETADO [${conversationId.slice(-6)}]:`, {
-              matchPoints: result.matchPoints,
-              metTraits: result.metTraits.length,
-              características: result.metTraits
-            });
+            console.log(`✅ [${conversationId.slice(-6)}] ANÁLISIS COMPLETADO: ${result.matchPoints}/4 características`);
           } catch (error) {
-            console.error(`❌ Error analizando conversación ${conversationId}:`, error);
+            console.error(`❌ Error analizando [${conversationId.slice(-6)}]:`, error);
           }
-        } else {
-          console.log(`⚠️ [${conversationId.slice(-6)}] Sin mensajes del prospecto para analizar`);
         }
 
         conversationsArray.push({
@@ -254,7 +287,7 @@ const InstagramMessages: React.FC = () => {
         new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
       );
 
-      console.log(`✅ PROCESAMIENTO COMPLETO: ${conversationsArray.length} conversaciones con análisis completo`);
+      console.log(`✅ PROCESAMIENTO OPTIMIZADO COMPLETO: ${conversationsArray.length} conversaciones`);
       setConversations(conversationsArray);
       
     } catch (error) {
@@ -282,12 +315,12 @@ const InstagramMessages: React.FC = () => {
           .order('timestamp', { ascending: true });
 
         if (allMessages) {
-          // ⭐ CAMBIO: Filtrar TODOS los mensajes del prospecto y concatenar
+          // Filtrar TODOS los mensajes del prospecto y concatenar
           const allProspectMessages = allMessages
             .filter(msg => msg.sender_id === message.sender_id && msg.message_type === 'received')
             .map(msg => msg.message_text)
             .filter(text => text && text.trim())
-            .join(' '); // TODA la conversación histórica
+            .join(' ');
 
           console.log(`📊 ANALIZANDO CONVERSACIÓN COMPLETA ACTUALIZADA: "${allProspectMessages.substring(0, 150)}..."`);
           
@@ -297,7 +330,7 @@ const InstagramMessages: React.FC = () => {
             await analyzeAndUpdateProspect(
               message.sender_id,
               getUserDisplayName(message.sender_id),
-              allProspectMessages, // ⭐ TODA la conversación histórica + nueva
+              allProspectMessages,
               traits
             );
           } catch (error) {
@@ -334,12 +367,10 @@ const InstagramMessages: React.FC = () => {
               businessConfig
             );
             
-            // Handle the response properly with explicit null checks
             if (response !== null && response !== undefined) {
               if (typeof response === 'string' && response.trim()) {
                 await sendMessage(response, message.sender_id);
               } else if (typeof response === 'object') {
-                // Additional type guard to ensure response is not null before accessing properties
                 const responseObj = response as any;
                 if (responseObj && 'success' in responseObj && 'reply' in responseObj) {
                   const typedResponse = responseObj as { success: boolean; reply: string };
@@ -384,7 +415,7 @@ const InstagramMessages: React.FC = () => {
       
       const result = await sendInstagramMessage(text, targetRecipient);
       if (result.success) {
-        if (!recipientId) setNewMessage(''); // Solo limpiar si es mensaje manual
+        if (!recipientId) setNewMessage('');
         await loadConversations();
         toast({
           title: "Mensaje enviado",
@@ -702,7 +733,7 @@ const InstagramMessages: React.FC = () => {
                   {conversation.last_message.message_text}
                 </p>
                 
-                {/* Características cumplidas - MEJORADO */}
+                {/* Características cumplidas */}
                 {(() => {
                   const metTraitIndices = conversation.metTraitIndices || [];
                   if (metTraitIndices.length > 0) {
@@ -716,7 +747,6 @@ const InstagramMessages: React.FC = () => {
                             const trait = traits[idx];
                             if (!trait) return null;
                             
-                            // Crear versión abreviada del trait
                             const shortTrait = trait.trait.length > 25 
                               ? trait.trait.substring(0, 25) + "..." 
                               : trait.trait;
@@ -725,7 +755,7 @@ const InstagramMessages: React.FC = () => {
                               <span 
                                 key={i} 
                                 className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs border border-green-200"
-                                title={trait.trait} // Tooltip con texto completo
+                                title={trait.trait}
                               >
                                 {shortTrait}
                               </span>
