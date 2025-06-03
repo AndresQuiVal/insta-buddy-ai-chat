@@ -684,29 +684,55 @@ const InstagramMessages: React.FC = () => {
                         <p className="text-sm text-gray-500 truncate">
                           {conversation.last_message.message_text}
                         </p>
-                        {/* Criterios cumplidos */}
+                        {/* Características cumplidas - MEJORADO */}
                         {(() => {
-                          // Obtener los índices de las cumplidas para este prospecto
                           const metTraitIndices = conversation.metTraitIndices || [];
                           if (metTraitIndices.length > 0) {
                             return (
-                              <div className="mt-1 text-xs text-green-700 flex flex-wrap gap-1">
-                                {metTraitIndices.slice(0, 2).map((idx, i) => (
-                                  <span key={i} className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200 truncate">
-                                    ✅ {traits[idx]?.trait?.split(' ').slice(0, 3).join(' ')}...
-                                  </span>
-                                ))}
-                                {metTraitIndices.length > 2 && (
-                                  <span className="bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
-                                    +{metTraitIndices.length - 2} más
-                                  </span>
-                                )}
+                              <div className="mt-2 space-y-1">
+                                <div className="text-xs font-medium text-green-700">
+                                  ✅ Características cumplidas:
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {metTraitIndices.slice(0, 2).map((idx, i) => {
+                                    const trait = traits[idx];
+                                    if (!trait) return null;
+                                    
+                                    // Crear versión abreviada del trait
+                                    const shortTrait = trait.trait.length > 25 
+                                      ? trait.trait.substring(0, 25) + "..." 
+                                      : trait.trait;
+                                    
+                                    return (
+                                      <span 
+                                        key={i} 
+                                        className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs border border-green-200"
+                                        title={trait.trait} // Tooltip con texto completo
+                                      >
+                                        {shortTrait}
+                                      </span>
+                                    );
+                                  })}
+                                  {metTraitIndices.length > 2 && (
+                                    <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs border border-green-200">
+                                      +{metTraitIndices.length - 2} más
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          } else if ((conversation.matchPoints || 0) === 0) {
+                            return (
+                              <div className="mt-2">
+                                <div className="text-xs text-gray-500 italic">
+                                  📋 Sin características analizadas
+                                </div>
                               </div>
                             );
                           }
                           return null;
                         })()}
-                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
                           <Clock className="w-3 h-3" />
                           {new Date(conversation.last_message.timestamp).toLocaleTimeString()}
                         </p>
