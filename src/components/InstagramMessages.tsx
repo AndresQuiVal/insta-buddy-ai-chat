@@ -294,16 +294,35 @@ const InstagramMessages: React.FC = () => {
         const delay = parseInt(localStorage.getItem('hower-ai-delay') || '3');
         setTimeout(async () => {
           try {
+            // Build conversation history from all messages
+            const conversationHistory: ChatMessage[] = allMessages
+              ?.filter(msg => 
+                (msg.sender_id === message.sender_id || msg.recipient_id === message.sender_id) &&
+                !msg.sender_id.includes('webhook_') && 
+                !msg.sender_id.includes('debug')
+              )
+              .map(msg => ({
+                role: msg.message_type === 'sent' ? 'assistant' : 'user' as 'user' | 'assistant',
+                content: msg.message_text
+              })) || [];
+
+            const businessConfig = {
+              businessName: 'Hower',
+              businessDescription: 'Asistente de Instagram',
+              tone: localStorage.getItem('hower-system-prompt') || 'Amigable y profesional',
+              idealClientTraits: loadTraitsFromStorage().map(t => t.trait)
+            };
+
             const response = await handleAutomaticResponse(
               message.message_text, 
-              message.sender_id,
-              getUserDisplayName(message.sender_id)
+              conversationHistory,
+              businessConfig
             );
             
-            // Handle the response properly - it might be a string or an object
-            if (typeof response === 'string' && response.trim()) {
+            // Handle the response properly with null checks
+            if (response && typeof response === 'string' && response.trim()) {
               await sendMessage(response, message.sender_id);
-            } else if (response && typeof response === 'object' && response.success && response.reply) {
+            } else if (response && typeof response === 'object' && 'success' in response && 'reply' in response && response.success && response.reply) {
               await sendMessage(response.reply, message.sender_id);
             }
           } catch (error) {
