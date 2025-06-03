@@ -137,6 +137,12 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
+  // Helper function to safely check if raw_data has is_echo property
+  const isEchoMessage = (rawData: any): boolean => {
+    if (!rawData || typeof rawData !== 'object') return false;
+    return Boolean(rawData.is_echo);
+  };
+
   // 🔥 FUNCIÓN MEJORADA PARA DETERMINAR CONVERSATION ID UNIFICADO
   const getUnifiedConversationId = (message: any, myPageId: string | null) => {
     // Si tenemos PAGE_ID, usamos esa lógica
@@ -150,7 +156,7 @@ const InstagramMessages: React.FC = () => {
       }
     } else {
       // Sin PAGE_ID, usamos la lógica por defecto mejorada
-      if (message.raw_data?.is_echo || message.message_type === 'sent') {
+      if (isEchoMessage(message.raw_data) || message.message_type === 'sent') {
         // Mensaje enviado por nosotros
         return message.recipient_id;
       } else {
@@ -203,7 +209,7 @@ const InstagramMessages: React.FC = () => {
         if (myPageId) {
           messageType = message.sender_id === myPageId ? 'sent' : 'received';
         } else {
-          messageType = (message.raw_data?.is_echo || message.message_type === 'sent') ? 'sent' : 'received';
+          messageType = (isEchoMessage(message.raw_data) || message.message_type === 'sent') ? 'sent' : 'received';
         }
         
         if (!conversationGroups[conversationId]) {
@@ -321,7 +327,7 @@ const InstagramMessages: React.FC = () => {
             if (myPageId) {
               return msg.sender_id !== myPageId; // Mensajes que NO son nuestros
             } else {
-              return !msg.raw_data?.is_echo && msg.message_type !== 'sent'; // Mensajes recibidos
+              return !isEchoMessage(msg.raw_data) && msg.message_type !== 'sent'; // Mensajes recibidos
             }
           })
           .map(msg => msg.message_text)
