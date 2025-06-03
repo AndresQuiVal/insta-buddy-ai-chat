@@ -5,6 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import { MessageCircle, RefreshCw, Search, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { analyzeInstagramMessage } from '@/services/instagramTraitAnalysis';
 
 interface InstagramMessage {
   id: string;
@@ -22,6 +23,8 @@ interface Prospect {
   messages: InstagramMessage[];
   last_message: InstagramMessage;
   message_count: number;
+  matchPoints?: number;
+  metTraits?: string[];
 }
 
 const ProspectList: React.FC = () => {
@@ -36,6 +39,22 @@ const ProspectList: React.FC = () => {
       setPageId(storedPageId);
     }
     loadProspects();
+  }, []);
+
+  // Escuchar actualizaciones de conversaciones para refrescar la lista
+  useEffect(() => {
+    const handleConversationsUpdate = () => {
+      console.log("🔄 Actualizando lista de prospectos...");
+      loadProspectsFromStorage();
+    };
+
+    window.addEventListener('conversations-updated', handleConversationsUpdate);
+    window.addEventListener('storage', handleConversationsUpdate);
+    
+    return () => {
+      window.removeEventListener('conversations-updated', handleConversationsUpdate);
+      window.removeEventListener('storage', handleConversationsUpdate);
+    };
   }, []);
 
   const getUserDisplayName = (senderId: string) => {
@@ -59,16 +78,102 @@ const ProspectList: React.FC = () => {
     }
   };
 
-  const handleAISuggestion = (prospect: Prospect) => {
+  const handleAISuggestion = async (prospect: Prospect) => {
+    console.log("🤖 Generando sugerencia con IA para:", getUserDisplayName(prospect.sender_id));
+    
+    // Analizar mensajes del prospecto automáticamente
+    const userMessages = prospect.messages
+      .filter(msg => msg.message_type === 'received')
+      .map(msg => msg.message_text)
+      .join(' ');
+    
+    if (userMessages.trim()) {
+      try {
+        console.log("📊 Analizando mensajes del prospecto:", userMessages.substring(0, 100) + "...");
+        
+        await analyzeInstagramMessage(
+          prospect.sender_id,
+          userMessages,
+          getUserDisplayName(prospect.sender_id)
+        );
+        
+        toast({
+          title: "✅ Análisis completado",
+          description: `Características analizadas para ${getUserDisplayName(prospect.sender_id)}`
+        });
+        
+        // Refrescar la lista para mostrar los resultados
+        setTimeout(() => {
+          loadProspectsFromStorage();
+        }, 1000);
+        
+      } catch (error) {
+        console.error("❌ Error al analizar características:", error);
+        toast({
+          title: "Error en análisis",
+          description: "No se pudo completar el análisis con IA",
+          variant: "destructive"
+        });
+      }
+    }
+    
     toast({
       title: "Sugerencia con IA",
-      description: `Generando sugerencia para ${getUserDisplayName(prospect.sender_id)}...`
+      description: `Analizando perfil de ${getUserDisplayName(prospect.sender_id)}...`
     });
+  };
+
+  const loadProspectsFromStorage = () => {
+    try {
+      const savedConversations = localStorage.getItem('hower-conversations');
+      if (savedConversations) {
+        const conversations = JSON.parse(savedConversations);
+        console.log("💾 Cargando prospectos desde localStorage:", conversations.length);
+        
+        // Convertir conversaciones guardadas a formato de prospects
+        const prospectsFromStorage = conversations.map((conv: any) => ({
+          sender_id: conv.id || conv.senderId,
+          messages: conv.messages || [
+            {
+              id: '1',
+              instagram_message_id: '1',
+              sender_id: conv.id || conv.senderId,
+              recipient_id: pageId || 'me',
+              message_text: conv.lastMessage || '',
+              message_type: 'received' as const,
+              timestamp: new Date().toISOString(),
+              raw_data: {}
+            }
+          ],
+          last_message: {
+            id: '1',
+            instagram_message_id: '1',
+            sender_id: conv.id || conv.senderId,
+            recipient_id: pageId || 'me',
+            message_text: conv.lastMessage || '',
+            message_type: 'received' as const,
+            timestamp: new Date().toISOString(),
+            raw_data: {}
+          },
+          message_count: conv.messages?.length || 1,
+          matchPoints: conv.matchPoints || 0,
+          metTraits: conv.metTraits || []
+        }));
+        
+        setProspects(prospectsFromStorage);
+        console.log("✅ Prospectos cargados desde localStorage:", prospectsFromStorage.length);
+      }
+    } catch (error) {
+      console.error("❌ Error al cargar desde localStorage:", error);
+    }
   };
 
   const loadProspects = async () => {
     try {
       setLoading(true);
+      
+      // Primero intentar cargar desde localStorage
+      loadProspectsFromStorage();
       
       const { data, error } = await supabase
         .from('instagram_messages')
@@ -143,6 +248,25 @@ const ProspectList: React.FC = () => {
       prospectsArray.sort((a, b) => 
         new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
       );
+
+      // Combinar con datos de localStorage para obtener matchPoints y metTraits
+      try {
+        const savedConversations = localStorage.getItem('hower-conversations');
+        if (savedConversations) {
+          const conversations = JSON.parse(savedConversations);
+          prospectsArray.forEach(prospect => {
+            const saved = conversations.find((conv: any) => 
+              conv.id === prospect.sender_id || conv.senderId === prospect.sender_id
+            );
+            if (saved) {
+              prospect.matchPoints = saved.matchPoints || 0;
+              prospect.metTraits = saved.metTraits || [];
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error combinando datos:", error);
+      }
 
       setProspects(prospectsArray);
       
@@ -226,7 +350,14 @@ const ProspectList: React.FC = () => {
               {filteredProspects.map((prospect) => (
                 <TableRow key={prospect.sender_id}>
                   <TableCell className="font-medium">
-                    {getUserDisplayName(prospect.sender_id)}
+                    <div className="flex items-center gap-2">
+                      {getUserDisplayName(prospect.sender_id)}
+                      {prospect.matchPoints && prospect.matchPoints > 0 && (
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                          {prospect.matchPoints} ⭐
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
