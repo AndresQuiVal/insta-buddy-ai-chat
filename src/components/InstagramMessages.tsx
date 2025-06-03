@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain, Star, ArrowLeft } from 'lucide-react';
-import { handleAutomaticResponse } from '@/services/openaiService';
+import { handleAutomaticResponse, ChatMessage } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -322,8 +322,11 @@ const InstagramMessages: React.FC = () => {
             // Handle the response properly with null checks
             if (response && typeof response === 'string' && response.trim()) {
               await sendMessage(response, message.sender_id);
-            } else if (response && typeof response === 'object' && 'success' in response && 'reply' in response && response.success && response.reply) {
-              await sendMessage(response.reply, message.sender_id);
+            } else if (response && typeof response === 'object' && 'success' in response && 'reply' in response) {
+              const responseObj = response as { success: boolean; reply: string };
+              if (responseObj.success && responseObj.reply) {
+                await sendMessage(responseObj.reply, message.sender_id);
+              }
             }
           } catch (error) {
             console.error('Error en respuesta automática:', error);
