@@ -137,6 +137,29 @@ const InstagramMessages: React.FC = () => {
     }
   };
 
+  // 🔥 FUNCIÓN MEJORADA PARA DETERMINAR CONVERSATION ID UNIFICADO
+  const getUnifiedConversationId = (message: any, myPageId: string | null) => {
+    // Si tenemos PAGE_ID, usamos esa lógica
+    if (myPageId) {
+      if (message.sender_id === myPageId) {
+        // Mensaje enviado por nosotros - conversación con el recipient
+        return message.recipient_id;
+      } else {
+        // Mensaje recibido - conversación con el sender
+        return message.sender_id;
+      }
+    } else {
+      // Sin PAGE_ID, usamos la lógica por defecto mejorada
+      if (message.raw_data?.is_echo || message.message_type === 'sent') {
+        // Mensaje enviado por nosotros
+        return message.recipient_id;
+      } else {
+        // Mensaje recibido
+        return message.sender_id;
+      }
+    }
+  };
+
   // 🔥 FUNCIÓN SEPARADA PARA CARGAR SOLO MENSAJES (SIN ANÁLISIS)
   const loadConversationsOnly = async () => {
     try {
@@ -170,27 +193,17 @@ const InstagramMessages: React.FC = () => {
       const myPageId = pageId || localStorage.getItem('hower-page-id');
       const conversationGroups: { [key: string]: InstagramMessage[] } = {};
       
-      // Agrupar TODOS los mensajes por conversación
+      // 🔥 AGRUPAR MENSAJES CON LÓGICA UNIFICADA
       validMessages.forEach((message: any) => {
-        let conversationId = '';
-        let messageType: 'sent' | 'received' = 'received';
+        // Obtener ID unificado de conversación
+        const conversationId = getUnifiedConversationId(message, myPageId);
         
+        // Determinar tipo de mensaje
+        let messageType: 'sent' | 'received' = 'received';
         if (myPageId) {
-          if (message.sender_id === myPageId) {
-            conversationId = message.recipient_id;
-            messageType = 'sent';
-          } else {
-            conversationId = message.sender_id;
-            messageType = 'received';
-          }
+          messageType = message.sender_id === myPageId ? 'sent' : 'received';
         } else {
-          if (message.raw_data?.is_echo || message.message_type === 'sent') {
-            messageType = 'sent';
-            conversationId = message.recipient_id;
-          } else {
-            messageType = 'received';
-            conversationId = message.sender_id;
-          }
+          messageType = (message.raw_data?.is_echo || message.message_type === 'sent') ? 'sent' : 'received';
         }
         
         if (!conversationGroups[conversationId]) {
@@ -208,6 +221,7 @@ const InstagramMessages: React.FC = () => {
       const conversationsArray: Conversation[] = [];
 
       console.log("📋 PROCESANDO CONVERSACIONES CON ANÁLISIS GUARDADO...");
+      console.log("🗂️ CONVERSACIONES ENCONTRADAS:", Object.keys(conversationGroups).length);
 
       // Procesar cada conversación SIN ANÁLISIS
       for (const [conversationId, messages] of Object.entries(conversationGroups)) {
@@ -225,6 +239,7 @@ const InstagramMessages: React.FC = () => {
         };
 
         console.log(`📋 [${conversationId.slice(-6)}] USANDO ANÁLISIS GUARDADO: ${analysis.matchPoints}/4 características`);
+        console.log(`💬 [${conversationId.slice(-6)}] TOTAL MENSAJES: ${sortedMessages.length} (enviados: ${sortedMessages.filter(m => m.message_type === 'sent').length}, recibidos: ${sortedMessages.filter(m => m.message_type === 'received').length})`);
 
         conversationsArray.push({
           sender_id: conversationId,
@@ -242,7 +257,7 @@ const InstagramMessages: React.FC = () => {
         new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
       );
 
-      console.log(`✅ CONVERSACIONES CARGADAS: ${conversationsArray.length} (CON ANÁLISIS GUARDADO)`);
+      console.log(`✅ CONVERSACIONES UNIFICADAS CARGADAS: ${conversationsArray.length}`);
       return conversationsArray;
       
     } catch (error) {
@@ -284,7 +299,9 @@ const InstagramMessages: React.FC = () => {
     try {
       console.log(`🤖 ANALIZANDO CONVERSACIÓN NUEVA: [${senderId.slice(-6)}]`);
       
-      // Obtener TODA la conversación para este sender
+      // Obtener TODA la conversación para este sender usando lógica unificada
+      const myPageId = pageId || localStorage.getItem('hower-page-id');
+      
       const { data: allMessages } = await supabase
         .from('instagram_messages')
         .select('*')
@@ -292,14 +309,27 @@ const InstagramMessages: React.FC = () => {
         .order('timestamp', { ascending: true });
 
       if (allMessages) {
-        // Filtrar TODOS los mensajes del prospecto
-        const allProspectMessages = allMessages
-          .filter(msg => msg.sender_id === senderId && msg.message_type === 'received')
+        // 🔥 FILTRAR TODOS LOS MENSAJES DE ESTA CONVERSACIÓN UNIFICADA
+        const conversationMessages = allMessages.filter(msg => {
+          const msgConversationId = getUnifiedConversationId(msg, myPageId);
+          return msgConversationId === senderId;
+        });
+
+        // Obtener solo los mensajes del prospecto (recibidos)
+        const allProspectMessages = conversationMessages
+          .filter(msg => {
+            if (myPageId) {
+              return msg.sender_id !== myPageId; // Mensajes que NO son nuestros
+            } else {
+              return !msg.raw_data?.is_echo && msg.message_type !== 'sent'; // Mensajes recibidos
+            }
+          })
           .map(msg => msg.message_text)
           .filter(text => text && text.trim())
           .join(' ');
 
-        console.log(`📊 ANALIZANDO CONVERSACIÓN COMPLETA: "${allProspectMessages.substring(0, 150)}..."`);
+        console.log(`📊 ANALIZANDO CONVERSACIÓN UNIFICADA: "${allProspectMessages.substring(0, 150)}..."`);
+        console.log(`💬 TOTAL MENSAJES EN CONVERSACIÓN: ${conversationMessages.length}`);
         
         // Analizar características SOLO para esta conversación
         const traits = loadTraitsFromStorage();
