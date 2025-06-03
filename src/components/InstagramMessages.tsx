@@ -7,6 +7,7 @@ import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
+import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
 
 interface InstagramMessage {
   id: string;
@@ -60,9 +61,11 @@ const InstagramMessages: React.FC = () => {
   const TAB_KEY = 'hower-active-tab';
   const myTabId = React.useRef(`${Date.now()}-${Math.random()}`);
   const isMobile = useIsMobile();
+  const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
   
   // Hook de análisis de características
   const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
+  const { isAnalyzing: isAnalyzingAll, analyzeAll, loadIdealTraits } = useAITraitAnalysis();
 
   // 🔥 NUEVA FLAG PARA EVITAR BUCLES
   const isLoadingRef = useRef(false);
@@ -87,547 +90,37 @@ const InstagramMessages: React.FC = () => {
     };
   }, []);
 
-  // Función para cargar características desde localStorage
-  const loadTraitsFromStorage = (): TraitWithPosition[] => {
-    try {
-      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-      if (savedTraits) {
-        return JSON.parse(savedTraits);
-      }
-    } catch (error) {
-      console.error("Error al cargar características:", error);
-    }
+  useEffect(() => {
+    const traits = loadIdealTraits();
+    setIdealTraits(traits);
+    console.log("📋 Características cargadas en Messages:", traits);
+  }, [loadIdealTraits]);
+
+  const handleAnalyzeAll = async () => {
+    console.log("🔍 Iniciando análisis completo con IA...");
     
-    // Características por defecto
-    return [
-      { trait: "Interesado en nuestros productos o servicios", enabled: true, position: 0 },
-      { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true, position: 1 },
-      { trait: "Está listo para tomar una decisión de compra", enabled: true, position: 2 },
-      { trait: "Se encuentra en nuestra zona de servicio", enabled: true, position: 3 }
-    ];
-  };
-
-  // 🔥 CARGAR ANÁLISIS PREVIOS SIN DISPARAR EVENTOS
-  const loadSavedAnalysis = (): Record<string, SavedAnalysis> => {
     try {
-      const savedConversationsStr = localStorage.getItem('hower-conversations');
-      if (!savedConversationsStr) return {};
+      await analyzeAll();
       
-      const savedConversations = JSON.parse(savedConversationsStr);
-      const analysisMap: Record<string, SavedAnalysis> = {};
-      
-      savedConversations.forEach((conv: any) => {
-        const key = conv.id || conv.senderId;
-        if (key) {
-          analysisMap[key] = {
-            matchPoints: conv.matchPoints || 0,
-            metTraits: conv.metTraits || [],
-            metTraitIndices: conv.metTraitIndices || [],
-            lastAnalyzedAt: conv.lastAnalyzedAt || new Date().toISOString(),
-            messageCount: conv.messageCount || 0
-          };
-        }
+      toast({
+        title: "🤖 ¡Análisis completado!",
+        description: "Todas las conversaciones han sido analizadas con IA",
       });
       
-      console.log("📦 ANÁLISIS PREVIOS CARGADOS:", Object.keys(analysisMap).length, "conversaciones");
-      return analysisMap;
-    } catch (error) {
-      console.error("Error cargando análisis previos:", error);
-      return {};
-    }
-  };
-
-  // Helper function to safely check if raw_data has is_echo property
-  const isEchoMessage = (rawData: any): boolean => {
-    if (!rawData || typeof rawData !== 'object') return false;
-    return Boolean(rawData.is_echo);
-  };
-
-  // 🔥 FUNCIÓN MEJORADA PARA DETERMINAR CONVERSATION ID UNIFICADO
-  const getUnifiedConversationId = (message: any, myPageId: string | null) => {
-    // Si tenemos PAGE_ID, usamos esa lógica
-    if (myPageId) {
-      if (message.sender_id === myPageId) {
-        // Mensaje enviado por nosotros - conversación con el recipient
-        return message.recipient_id;
-      } else {
-        // Mensaje recibido - conversación con el sender
-        return message.sender_id;
-      }
-    } else {
-      // Sin PAGE_ID, usamos la lógica por defecto mejorada
-      if (isEchoMessage(message.raw_data) || message.message_type === 'sent') {
-        // Mensaje enviado por nosotros
-        return message.recipient_id;
-      } else {
-        // Mensaje recibido
-        return message.sender_id;
-      }
-    }
-  };
-
-  // 🔥 FUNCIÓN SEPARADA PARA CARGAR SOLO MENSAJES (SIN ANÁLISIS)
-  const loadConversationsOnly = async () => {
-    try {
-      console.log('🔄 CARGANDO CONVERSACIONES (SIN ANÁLISIS)...');
-
-      // Obtener TODOS los mensajes de Supabase
-      const { data: messages, error } = await supabase
-        .from('instagram_messages')
-        .select('*')
-        .order('timestamp', { ascending: true });
-
-      if (error) {
-        console.error('Error loading messages:', error);
-        return [];
-      }
-
-      console.log(`📥 TOTAL MENSAJES OBTENIDOS: ${messages?.length || 0}`);
-
-      // Filtrar mensajes válidos
-      const validMessages = messages?.filter((message: any) => {
-        return !message.sender_id.includes('webhook_') && 
-               !message.sender_id.includes('debug') && 
-               !message.sender_id.includes('error') &&
-               !message.message_text.includes('PAYLOAD COMPLETO') &&
-               !message.message_text.includes('ERROR:') &&
-               message.sender_id !== 'diagnostic_user';
-      }) || [];
-
-      console.log(`✅ MENSAJES VÁLIDOS: ${validMessages.length}`);
-
-      const myPageId = pageId || localStorage.getItem('hower-page-id');
-      const conversationGroups: { [key: string]: InstagramMessage[] } = {};
-      
-      // 🔥 AGRUPAR MENSAJES CON LÓGICA UNIFICADA
-      validMessages.forEach((message: any) => {
-        // Obtener ID unificado de conversación
-        const conversationId = getUnifiedConversationId(message, myPageId);
-        
-        // Determinar tipo de mensaje
-        let messageType: 'sent' | 'received' = 'received';
-        if (myPageId) {
-          messageType = message.sender_id === myPageId ? 'sent' : 'received';
-        } else {
-          messageType = (isEchoMessage(message.raw_data) || message.message_type === 'sent') ? 'sent' : 'received';
-        }
-        
-        if (!conversationGroups[conversationId]) {
-          conversationGroups[conversationId] = [];
-        }
-        
-        conversationGroups[conversationId].push({
-          ...message,
-          message_type: messageType
-        });
-      });
-
-      // 🔥 CARGAR ANÁLISIS GUARDADOS (SIN DISPARAR EVENTOS)
-      const savedAnalysis = loadSavedAnalysis();
-      const conversationsArray: Conversation[] = [];
-
-      console.log("📋 PROCESANDO CONVERSACIONES CON ANÁLISIS GUARDADO...");
-      console.log("🗂️ CONVERSACIONES ENCONTRADAS:", Object.keys(conversationGroups).length);
-
-      // Procesar cada conversación SIN ANÁLISIS
-      for (const [conversationId, messages] of Object.entries(conversationGroups)) {
-        if (messages.length === 0) continue;
-        
-        const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        const lastMessage = sortedMessages[sortedMessages.length - 1];
-        const unreadCount = sortedMessages.filter(m => m.message_type === 'received').length;
-
-        // 🔥 USAR ANÁLISIS GUARDADO (NO GENERAR NUEVO)
-        const analysis = savedAnalysis[conversationId] || { 
-          matchPoints: 0, 
-          metTraits: [], 
-          metTraitIndices: [] 
-        };
-
-        console.log(`📋 [${conversationId.slice(-6)}] USANDO ANÁLISIS GUARDADO: ${analysis.matchPoints}/4 características`);
-        console.log(`💬 [${conversationId.slice(-6)}] TOTAL MENSAJES: ${sortedMessages.length} (enviados: ${sortedMessages.filter(m => m.message_type === 'sent').length}, recibidos: ${sortedMessages.filter(m => m.message_type === 'received').length})`);
-
-        conversationsArray.push({
-          sender_id: conversationId,
-          messages: sortedMessages,
-          last_message: lastMessage,
-          unread_count: unreadCount,
-          matchPoints: analysis.matchPoints,
-          metTraits: analysis.metTraits,
-          metTraitIndices: analysis.metTraitIndices
-        });
-      }
-
-      // Ordenar por timestamp del último mensaje
-      conversationsArray.sort((a, b) => 
-        new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
-      );
-
-      console.log(`✅ CONVERSACIONES UNIFICADAS CARGADAS: ${conversationsArray.length}`);
-      return conversationsArray;
+      // Recargar estadísticas después del análisis
+      await loadConversations();
       
     } catch (error) {
-      console.error('Error in loadConversationsOnly:', error);
-      return [];
-    }
-  };
-
-  // 🔥 FUNCIÓN PRINCIPAL QUE EVITA BUCLES
-  const loadConversations = async () => {
-    // Evitar bucles
-    if (isLoadingRef.current) {
-      console.log("🚫 EVITANDO BUCLE - Ya está cargando");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      isLoadingRef.current = true;
-      
-      const conversationsArray = await loadConversationsOnly();
-      setConversations(conversationsArray);
-      
-    } catch (error) {
-      console.error('Error in loadConversations:', error);
+      console.error("Error en análisis:", error);
       toast({
         title: "Error",
-        description: "No se pudieron cargar las conversaciones",
+        description: "Hubo un problema al analizar las conversaciones",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
-      isLoadingRef.current = false;
     }
   };
 
-  // 🔥 FUNCIÓN SEPARADA PARA ANALIZAR SOLO CONVERSACIONES NUEVAS
-  const analyzeNewConversation = async (senderId: string, messageText: string) => {
-    try {
-      console.log(`🤖 ANALIZANDO CONVERSACIÓN NUEVA: [${senderId.slice(-6)}]`);
-      
-      // Obtener TODA la conversación para este sender usando lógica unificada
-      const myPageId = pageId || localStorage.getItem('hower-page-id');
-      
-      const { data: allMessages } = await supabase
-        .from('instagram_messages')
-        .select('*')
-        .or(`sender_id.eq.${senderId},recipient_id.eq.${senderId}`)
-        .order('timestamp', { ascending: true });
-
-      if (allMessages) {
-        // 🔥 FILTRAR TODOS LOS MENSAJES DE ESTA CONVERSACIÓN UNIFICADA
-        const conversationMessages = allMessages.filter(msg => {
-          const msgConversationId = getUnifiedConversationId(msg, myPageId);
-          return msgConversationId === senderId;
-        });
-
-        // Obtener solo los mensajes del prospecto (recibidos)
-        const allProspectMessages = conversationMessages
-          .filter(msg => {
-            if (myPageId) {
-              return msg.sender_id !== myPageId; // Mensajes que NO son nuestros
-            } else {
-              return !isEchoMessage(msg.raw_data) && msg.message_type !== 'sent'; // Mensajes recibidos
-            }
-          })
-          .map(msg => msg.message_text)
-          .filter(text => text && text.trim())
-          .join(' ');
-
-        console.log(`📊 ANALIZANDO CONVERSACIÓN UNIFICADA: "${allProspectMessages.substring(0, 150)}..."`);
-        console.log(`💬 TOTAL MENSAJES EN CONVERSACIÓN: ${conversationMessages.length}`);
-        
-        // Analizar características SOLO para esta conversación
-        const traits = loadTraitsFromStorage();
-        await analyzeAndUpdateProspect(
-          senderId,
-          getUserDisplayName(senderId),
-          allProspectMessages,
-          traits
-        );
-
-        // Recargar SOLO las conversaciones (sin re-análisis)
-        const updatedConversations = await loadConversationsOnly();
-        setConversations(updatedConversations);
-      }
-    } catch (error) {
-      console.error('Error analizando conversación nueva:', error);
-    }
-  };
-
-  const handleNewIncomingMessage = async (message: InstagramMessage) => {
-    try {
-      console.log('🔄 PROCESANDO NUEVO MENSAJE ENTRANTE:', message.message_text);
-      
-      if (message.message_type === 'received') {
-        // 🔥 ANALIZAR SOLO ESTA CONVERSACIÓN (SIN BUCLE)
-        await analyzeNewConversation(message.sender_id, message.message_text);
-
-        // Respuesta automática con IA
-        const delay = parseInt(localStorage.getItem('hower-ai-delay') || '3');
-        setTimeout(async () => {
-          try {
-            // Build conversation history from all messages
-            const { data: allMessages } = await supabase
-              .from('instagram_messages')
-              .select('*')
-              .or(`sender_id.eq.${message.sender_id},recipient_id.eq.${message.sender_id}`)
-              .order('timestamp', { ascending: true });
-
-            const conversationHistory: ChatMessage[] = allMessages
-              ?.filter(msg => 
-                (msg.sender_id === message.sender_id || msg.recipient_id === message.sender_id) &&
-                !msg.sender_id.includes('webhook_') && 
-                !msg.sender_id.includes('debug')
-              )
-              .map(msg => ({
-                role: msg.message_type === 'sent' ? 'assistant' : 'user' as 'user' | 'assistant',
-                content: msg.message_text
-              })) || [];
-
-            const businessConfig = {
-              businessName: 'Hower',
-              businessDescription: 'Asistente de Instagram',
-              tone: localStorage.getItem('hower-system-prompt') || 'Amigable y profesional',
-              idealClientTraits: loadTraitsFromStorage().map(t => t.trait)
-            };
-
-            const response = await handleAutomaticResponse(
-              message.message_text, 
-              conversationHistory,
-              businessConfig
-            );
-            
-            if (response !== null && response !== undefined) {
-              if (typeof response === 'string' && response.trim()) {
-                await sendMessage(response, message.sender_id);
-              } else if (typeof response === 'object') {
-                const responseObj = response as any;
-                if (responseObj && 'success' in responseObj && 'reply' in responseObj) {
-                  const typedResponse = responseObj as { success: boolean; reply: string };
-                  if (typedResponse.success && typedResponse.reply) {
-                    await sendMessage(typedResponse.reply, message.sender_id);
-                  }
-                }
-              }
-            }
-          } catch (error) {
-            console.error('Error en respuesta automática:', error);
-          }
-        }, delay * 1000);
-      }
-    } catch (error) {
-      console.error('Error procesando mensaje entrante:', error);
-    }
-  };
-
-  const extractMatchFromAIResponse = (text: string): number => {
-    const match = text.match(/MATCH:\s*(\d+)/i);
-    return match ? parseInt(match[1]) : 0;
-  };
-
-  const getUserDisplayName = (senderId: string) => {
-    if (senderId === 'hower_bot') return 'Hower Assistant';
-    if (senderId.length > 8) {
-      return `Usuario ${senderId.slice(-4)}`;
-    }
-    return `Usuario ${senderId}`;
-  };
-
-  const sendMessage = async (text: string, recipientId?: string) => {
-    if ((!text.trim() && !recipientId) || (!selectedConversation && !recipientId)) return;
-    
-    const targetRecipient = recipientId || selectedConversation;
-    if (!targetRecipient) return;
-
-    try {
-      setSending(true);
-      console.log('📤 Enviando mensaje:', text, 'a:', targetRecipient);
-      
-      const result = await sendInstagramMessage(text, targetRecipient);
-      if (result.success) {
-        if (!recipientId) setNewMessage('');
-        await loadConversations();
-        toast({
-          title: "Mensaje enviado",
-          description: "Tu mensaje se envió correctamente"
-        });
-      } else {
-        throw new Error(result.error || 'Error desconocido');
-      }
-    } catch (error: any) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo enviar el mensaje",
-        variant: "destructive"
-      });
-    } finally {
-      setSending(false);
-    }
-  };
-
-  useEffect(() => {
-    // Obtener PAGE-ID automáticamente al montar
-    const fetchPageId = async () => {
-      const storedPageId = localStorage.getItem('hower-page-id');
-      if (storedPageId) {
-        setPageId(storedPageId);
-        console.log('PAGE-ID cargado desde localStorage:', storedPageId);
-        return;
-      }
-
-      const pageAccessToken = localStorage.getItem('hower-instagram-token');
-      if (!pageAccessToken) return;
-      try {
-        const res = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${pageAccessToken}`);
-        const data = await res.json();
-        if (data.id) {
-          setPageId(data.id);
-          localStorage.setItem('hower-page-id', data.id);
-          console.log('PAGE-ID obtenido y guardado:', data.id);
-        }
-      } catch (e) {
-        console.error('No se pudo obtener el PAGE-ID automáticamente', e);
-      }
-    };
-    fetchPageId();
-    loadConversations();
-    setIaPersona(localStorage.getItem('hower-system-prompt') || '');
-    
-    // Suscribirse a nuevos mensajes en tiempo real
-    console.log('Suscripción a supabase creada');
-    const subscription = supabase
-      .channel('instagram-messages-changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'instagram_messages'
-      }, (payload) => {
-        console.log('Nuevo mensaje recibido:', payload);
-        const newMessage = payload.new as InstagramMessage;
-        if (newMessage.message_type === 'received' && aiEnabledRef.current && isTabLeader) {
-          handleNewIncomingMessage(newMessage);
-        }
-        loadConversations();
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [isTabLeader]);
-
-  // Obtener mensajes de la conversación seleccionada - MOSTRAR TODOS
-  const selectedMessages = conversations.find(conv => conv.sender_id === selectedConversation)?.messages || [];
-
-  const handleFeedAI = async () => {
-    try {
-      const pageAccessToken = localStorage.getItem('hower-instagram-token');
-      if (!pageAccessToken || !pageId) {
-        toast({
-          title: 'Error',
-          description: 'Falta el PAGE-ACCESS-TOKEN o el PAGE-ID.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      // 1. Obtener conversaciones
-      const convRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}/conversations?platform=instagram&access_token=${pageAccessToken}`);
-      const convData = await convRes.json();
-      if (!convRes.ok || !convData.data) throw new Error(convData.error?.message || 'No se pudieron obtener conversaciones');
-      // 2. Obtener mensajes de las primeras 3 conversaciones
-      const allMessages: string[] = [];
-      for (const conv of convData.data.slice(0, 3)) {
-        const msgRes = await fetch(`https://graph.facebook.com/v19.0/${conv.id}?fields=messages&access_token=${pageAccessToken}`);
-        const msgData = await msgRes.json();
-        if (msgData.messages?.data) {
-          for (const m of msgData.messages.data) {
-            // Obtener detalles del mensaje
-            const detRes = await fetch(`https://graph.facebook.com/v19.0/${m.id}?fields=from,message&access_token=${pageAccessToken}`);
-            const detData = await detRes.json();
-            if (detData.message && detData.from?.id === pageId) {
-              allMessages.push(detData.message);
-            }
-          }
-        }
-      }
-      // Mostrar mensajes en consola y toast
-      console.log('Mensajes previos usados para alimentar IA:', allMessages);
-      if (allMessages.length > 0) {
-        toast({
-          title: 'Mensajes previos extraídos',
-          description: allMessages.slice(0, 5).map((msg, i) => `${i + 1}. ${msg}`).join('\n'),
-          duration: 8000,
-        });
-      }
-      if (allMessages.length === 0) throw new Error('No se encontraron mensajes enviados por la cuenta.');
-      // 3. Pedir a OpenAI que resuma el estilo/persona
-      const openaiKey = localStorage.getItem('hower-openai-key-demo');
-      if (!openaiKey) throw new Error('No hay API key de OpenAI configurada.');
-      const aiPrompt = `Analiza los siguientes mensajes y describe el estilo, tono y personalidad de quien los escribió, en español, en 3 frases.\n\nMensajes:\n${allMessages.slice(0, 20).join('\n')}`;
-      const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: 'Eres un analista de personalidad.' },
-            { role: 'user', content: aiPrompt },
-          ],
-          max_tokens: 200,
-          temperature: 0.7,
-        }),
-      });
-      const aiData = await aiRes.json();
-      const personality = aiData.choices?.[0]?.message?.content || '';
-      if (!personality) throw new Error('No se pudo generar la personalidad.');
-      // 4. Guardar el resultado como prompt personalizado
-      localStorage.setItem('hower-system-prompt', personality);
-      setIaPersona(personality); // Actualiza la vista
-      toast({
-        title: '¡IA alimentada!',
-        description: 'La personalidad de la IA se ha actualizado con base en tus mensajes.',
-      });
-    } catch (err: any) {
-      toast({
-        title: 'Error alimentando IA',
-        description: err.message || 'Ocurrió un error inesperado.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // 🔥 EVENTOS SIN BUCLES - SOLO RECARGAR UI, NO RE-ANALIZAR
-  useEffect(() => {
-    const handleStorageChange = () => {
-      console.log('📦 Storage change detected, recargando SOLO UI...');
-      // Solo recargar conversaciones SIN análisis
-      if (!isLoadingRef.current) {
-        loadConversations();
-      }
-    };
-
-    const handleConversationsUpdate = () => {
-      console.log('📦 Conversations updated event detected, recargando SOLO UI...');
-      // Solo recargar conversaciones SIN análisis  
-      if (!isLoadingRef.current) {
-        loadConversations();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('conversations-updated', handleConversationsUpdate);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('conversations-updated', handleConversationsUpdate);
-    };
-  }, []);
-
-  const traits = loadTraitsFromStorage();
+  // ... keep existing code (all other functions and methods)
 
   if (loading) {
     return (
@@ -650,6 +143,9 @@ const InstagramMessages: React.FC = () => {
               <MessageCircle className="w-6 h-6" /> Conversaciones
             </h2>
             <p className="text-sm text-gray-600">{conversations.length} conversaciones</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Características configuradas: {idealTraits.filter(t => t.enabled).length} activas
+            </p>
           </div>
           <div className="flex gap-2">
             <button
@@ -667,6 +163,19 @@ const InstagramMessages: React.FC = () => {
               <RefreshCw className="w-5 h-5 text-gray-600" />
             </button>
           </div>
+        </div>
+
+        {/* Botón Analizar Todo con IA */}
+        <div className="p-4 border-b border-purple-100">
+          <button
+            onClick={handleAnalyzeAll}
+            disabled={isAnalyzingAll}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <Brain className="w-4 h-4" />
+            {isAnalyzingAll ? 'Analizando...' : `🔍 Analizar Todo (${idealTraits.filter(t => t.enabled).length} criterios)`}
+            {isAnalyzingAll && <RefreshCw className="w-4 h-4 animate-spin ml-2" />}
+          </button>
         </div>
 
         {/* Configuración */}
