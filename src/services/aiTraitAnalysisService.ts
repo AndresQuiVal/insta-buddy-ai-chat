@@ -63,7 +63,7 @@ INSTRUCCIONES:
 - Sé estricto pero razonable en la evaluación
 
 RESPUESTA REQUERIDA:
-Responde SOLO con JSON válido en este formato exacto:
+Responde SOLO con JSON válido en este formato exacto (sin markdown, sin \`\`\`json):
 {"characteristics": [números de características que SÍ cumple], "confidence": 0.8}
 
 Ejemplo: Si cumple las características 1 y 3: {"characteristics": [1, 3], "confidence": 0.9}
@@ -85,7 +85,7 @@ Si NO cumple ninguna: {"characteristics": [], "confidence": 0}`;
         messages: [
           {
             role: 'system',
-            content: 'Eres un experto analizador de prospectos de ventas. Tu trabajo es identificar si un mensaje cumple características específicas del cliente ideal. Responde solo con JSON válido.'
+            content: 'Eres un experto analizador de prospectos de ventas. Tu trabajo es identificar si un mensaje cumple características específicas del cliente ideal. Responde ÚNICAMENTE con JSON válido, sin markdown ni bloques de código.'
           },
           {
             role: 'user',
@@ -107,8 +107,19 @@ Si NO cumple ninguna: {"characteristics": [], "confidence": 0}`;
     const data = await response.json();
     console.log("📋 DEBUG: Datos completos de OpenAI:", data);
     
-    const content = data.choices?.[0]?.message?.content || '';
+    let content = data.choices?.[0]?.message?.content || '';
     console.log("🤖 DEBUG: Contenido de respuesta de OpenAI:", content);
+
+    // LIMPIAR EL CONTENIDO DE MARKDOWN SI EXISTE
+    content = content.trim();
+    if (content.startsWith('```json')) {
+      content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    }
+    if (content.startsWith('```')) {
+      content = content.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    console.log("🧹 DEBUG: Contenido limpio para parseo:", content);
 
     // Parsear respuesta JSON
     const parsed = JSON.parse(content);

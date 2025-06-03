@@ -608,7 +608,7 @@ const InstagramMessages: React.FC = () => {
           className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm font-semibold flex items-center gap-2 ${isAnalyzingAI ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <Brain className="w-4 h-4" />
-          {isAnalyzingAI ? '⏳ Analizando...' : '🔍 Analizar Todo'}
+          {isAnalyzingAI ? '⏳ Analizando...' : '🔍 Analizar Todo con IA'}
         </button>
       </div>
 
