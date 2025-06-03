@@ -8,7 +8,7 @@ import HistoricalSyncButton from './HistoricalSyncButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { analyzeMessage } from '@/services/traitAnalysisService';
 import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
-import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
+import { analyzeAllConversations } from '@/services/aiTraitAnalysisService';
 
 interface InstagramMessage {
   id: string;
@@ -57,7 +57,7 @@ const InstagramMessages: React.FC = () => {
   
   // Hook de análisis de características
   const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
-  const { isAnalyzing: isAnalyzingAI, analyzeAll } = useAITraitAnalysis();
+  const { isAnalyzing: isAnalyzingAI } = useAITraitAnalysis();
 
   useEffect(() => { aiEnabledRef.current = aiEnabled; }, [aiEnabled]);
 
@@ -149,12 +149,33 @@ const InstagramMessages: React.FC = () => {
     };
   }, [isTabLeader]);
 
-  // Función para analizar automáticamente TODOS los mensajes existentes usando el hook correcto
+  // Función para analizar automáticamente TODAS las conversaciones usando el servicio correcto
   const analyzeExistingMessages = async () => {
     console.log("🔍 DEBUG: InstagramMessages - Iniciando análisis completo con IA...");
     
     try {
-      await analyzeAll();
+      setIsAnalyzing(true);
+      
+      // Cargar características del cliente ideal desde localStorage
+      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+      let idealTraits = [];
+      
+      if (savedTraits) {
+        idealTraits = JSON.parse(savedTraits);
+      } else {
+        // Características por defecto si no hay guardadas
+        idealTraits = [
+          { trait: "Interesado en nuestros productos o servicios", enabled: true },
+          { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true },
+          { trait: "Está listo para tomar una decisión de compra", enabled: true },
+          { trait: "Se encuentra en nuestra zona de servicio", enabled: true }
+        ];
+      }
+      
+      console.log("🎯 DEBUG: Características del cliente ideal cargadas:", idealTraits);
+      
+      // Llamar al servicio de análisis con IA
+      await analyzeAllConversations(idealTraits);
       
       toast({
         title: "🤖 ¡Análisis completado!",
@@ -173,6 +194,8 @@ const InstagramMessages: React.FC = () => {
         description: "Hubo un problema al analizar las conversaciones",
         variant: "destructive"
       });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -581,10 +604,11 @@ const InstagramMessages: React.FC = () => {
         </h2>
         <button
           onClick={analyzeExistingMessages}
-          disabled={isAnalyzingAI}
-          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm font-semibold ${isAnalyzingAI ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isAnalyzing}
+          className={`px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm font-semibold flex items-center gap-2 ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          {isAnalyzingAI ? '⏳ Analizando...' : '🔍 Analizar Todo'}
+          <Brain className="w-4 h-4" />
+          {isAnalyzing ? '⏳ Analizando...' : '🔍 Analizar Todo'}
         </button>
       </div>
 

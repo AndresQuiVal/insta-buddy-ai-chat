@@ -47,29 +47,29 @@ export const analyzeConversationWithAI = async (
 
   console.log("📝 DEBUG: Texto del usuario para IA:", conversationText);
 
-  // MEJORAR EL PROMPT - MÁS ESPECÍFICO Y DIRECTO
-  const prompt = `Analiza este mensaje del prospecto y determina qué características cumple:
+  // PROMPT MEJORADO Y MÁS ESPECÍFICO
+  const prompt = `Analiza este mensaje del prospecto y determina qué características cumple de la lista proporcionada.
 
 MENSAJE DEL PROSPECTO:
 "${conversationText}"
 
-CARACTERÍSTICAS A EVALUAR:
+CARACTERÍSTICAS DEL CLIENTE IDEAL A EVALUAR:
 ${enabledTraits.map((trait, i) => `${i + 1}. ${trait.trait}`).join('\n')}
 
-INSTRUCCIONES ESPECÍFICAS:
+INSTRUCCIONES:
 - Analiza ÚNICAMENTE el contenido del mensaje del prospecto
-- Si menciona palabras relacionadas con cruceros, viajes, vacaciones → cumple característica sobre cruceros
-- Si menciona presupuesto, dinero, precios, "puedo pagar" → cumple característica sobre presupuesto  
-- Si dice "quiero", "necesito", "me interesa", "comprar" → cumple característica sobre interés
-- Si menciona ubicación, ciudad, país → cumple característica sobre zona de servicio
+- Determina si el mensaje indica que el prospecto cumple con alguna de las características listadas
+- Busca indicadores directos o indirectos de cada característica
+- Sé estricto pero razonable en la evaluación
 
-RESPUESTA:
+RESPUESTA REQUERIDA:
 Responde SOLO con JSON válido en este formato exacto:
 {"characteristics": [números de características que SÍ cumple], "confidence": 0.8}
 
-Si NO cumple ninguna característica: {"characteristics": [], "confidence": 0}`;
+Ejemplo: Si cumple las características 1 y 3: {"characteristics": [1, 3], "confidence": 0.9}
+Si NO cumple ninguna: {"characteristics": [], "confidence": 0}`;
 
-  console.log("🎯 DEBUG: Prompt mejorado para OpenAI:", prompt);
+  console.log("🎯 DEBUG: Prompt para OpenAI:", prompt);
 
   try {
     console.log("📡 DEBUG: Enviando consulta a OpenAI...");
@@ -141,9 +141,9 @@ Si NO cumple ninguna característica: {"characteristics": [], "confidence": 0}`;
   }
 };
 
-// ANÁLISIS MEJORADO CON PALABRAS CLAVE
+// ANÁLISIS CON PALABRAS CLAVE COMO FALLBACK
 const analyzeWithKeywords = (messages: ConversationMessage[], idealTraits: Trait[]): AnalysisResult => {
-  console.log("🔤 DEBUG: === ANÁLISIS CON PALABRAS CLAVE MEJORADO ===");
+  console.log("🔤 DEBUG: === ANÁLISIS CON PALABRAS CLAVE ===");
   
   const enabledTraits = idealTraits.filter(t => t.enabled);
   const userMessages = messages.filter(msg => msg.sender === 'user');
@@ -153,57 +153,14 @@ const analyzeWithKeywords = (messages: ConversationMessage[], idealTraits: Trait
 
   console.log("📝 DEBUG: Texto normalizado para análisis:", conversationText);
 
-  // MAPA DE PALABRAS CLAVE MÁS ESPECÍFICO
-  const keywordMap: Record<string, string[]> = {
-    // Interés en productos/servicios
-    "interesado en nuestros productos o servicios": [
-      "crucero", "cruceros", "viaje", "viajes", "vacaciones", "turismo",
-      "tour", "tours", "excursion", "excursiones", "destino", "destinos",
-      "interesa", "intereso", "me gusta", "me gustan", "quiero", "quisiera",
-      "necesito", "busco", "producto", "servicio", "oferta", "informacion"
-    ],
-    "le gustan los cruceros": [
-      "crucero", "cruceros", "barco", "navegar", "mar", "oceano", 
-      "navegacion", "cruise", "viaje en barco", "vacation", "vacaciones"
-    ],
-    "tiene presupuesto adecuado": [
-      "presupuesto", "dinero", "pago", "pagar", "precio", "costo",
-      "puedo pagar", "tengo dinero", "dispongo", "cuento con",
-      "tarjeta", "efectivo", "financiamiento", "cuanto cuesta"
-    ],
-    "listo para decidir": [
-      "decidido", "decidida", "listo", "lista", "preparado", "preparada",
-      "comprar", "reservar", "apartar", "confirmar", "ahora", "ya", "hoy"
-    ],
-    "zona de servicio": [
-      "vivo", "estoy", "ubicado", "direccion", "ciudad", "mexico", "españa"
-    ]
-  };
-
   const metTraits: string[] = [];
   
   enabledTraits.forEach(trait => {
     const traitLower = trait.trait.toLowerCase();
     console.log(`🔍 DEBUG: Analizando característica: "${trait.trait}"`);
     
-    // Buscar coincidencias directas primero
-    let keywords: string[] = [];
-    
-    // Mapear características a palabras clave
-    if (traitLower.includes('crucero') || traitLower.includes('viaje')) {
-      keywords = keywordMap["le gustan los cruceros"];
-    } else if (traitLower.includes('interesado') || traitLower.includes('producto') || traitLower.includes('servicio')) {
-      keywords = keywordMap["interesado en nuestros productos o servicios"];
-    } else if (traitLower.includes('presupuesto') || traitLower.includes('dinero')) {
-      keywords = keywordMap["tiene presupuesto adecuado"];
-    } else if (traitLower.includes('decision') || traitLower.includes('compra')) {
-      keywords = keywordMap["listo para decidir"];
-    } else if (traitLower.includes('zona') || traitLower.includes('servicio') || traitLower.includes('ubicac')) {
-      keywords = keywordMap["zona de servicio"];
-    } else {
-      // Usar palabras de la característica misma
-      keywords = traitLower.split(' ').filter(word => word.length > 3);
-    }
+    // Extraer palabras clave de la característica misma
+    const keywords = traitLower.split(' ').filter(word => word.length > 2);
     
     console.log(`   Palabras clave a buscar:`, keywords);
     
@@ -235,6 +192,7 @@ const analyzeWithKeywords = (messages: ConversationMessage[], idealTraits: Trait
 
 export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<void> => {
   console.log("🔍 DEBUG: === ANALIZANDO TODAS LAS CONVERSACIONES ===");
+  console.log("🎯 DEBUG: Características del cliente ideal:", idealTraits);
   
   try {
     const conversationsStr = localStorage.getItem('hower-conversations');
@@ -249,14 +207,19 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
     console.log("📊 DEBUG: Número de conversaciones a analizar:", conversations.length);
     
     for (const conv of conversations) {
-      console.log(`🔍 DEBUG: Analizando conversación: ${conv.userName}`);
+      console.log(`🔍 DEBUG: Analizando conversación: ${conv.userName || conv.id}`);
       console.log(`📝 DEBUG: lastMessage: "${conv.lastMessage}"`);
       
       let messagesToAnalyze: ConversationMessage[] = [];
       
       // Si hay mensajes estructurados, usarlos
       if (conv.messages && conv.messages.length > 0) {
-        messagesToAnalyze = conv.messages;
+        messagesToAnalyze = conv.messages.map((msg: any) => ({
+          id: msg.id || '1',
+          text: msg.message_text || msg.text || '',
+          sender: msg.message_type === 'received' ? 'user' as const : 'ai' as const,
+          timestamp: new Date(msg.timestamp || Date.now())
+        }));
         console.log(`✅ DEBUG: Usando ${messagesToAnalyze.length} mensajes estructurados`);
       } 
       // Si no hay mensajes estructurados pero hay lastMessage, crear un mensaje artificial
@@ -269,11 +232,11 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
         }];
         console.log(`🔄 DEBUG: Creando mensaje artificial desde lastMessage: "${conv.lastMessage}"`);
       } else {
-        console.log(`⚠️ DEBUG: Conversación ${conv.userName} sin contenido para analizar`);
+        console.log(`⚠️ DEBUG: Conversación ${conv.userName || conv.id} sin contenido para analizar`);
         continue;
       }
       
-      console.log(`🤖 DEBUG: Analizando ${messagesToAnalyze.length} mensajes para ${conv.userName}`);
+      console.log(`🤖 DEBUG: Analizando ${messagesToAnalyze.length} mensajes para ${conv.userName || conv.id}`);
       
       const result = await analyzeConversationWithAI(messagesToAnalyze, idealTraits);
       
@@ -281,7 +244,7 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
       conv.matchPoints = result.matchPoints;
       conv.metTraits = result.metTraits;
       
-      console.log(`✅ DEBUG: ${conv.userName}: ${result.matchPoints} características detectadas:`, result.metTraits);
+      console.log(`✅ DEBUG: ${conv.userName || conv.id}: ${result.matchPoints} características detectadas:`, result.metTraits);
     }
 
     // Guardar conversaciones actualizadas
@@ -293,13 +256,13 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
     const totalTraits = conversations.reduce((sum: number, conv: any) => sum + (conv.metTraits?.length || 0), 0);
     
     console.log("🎯 DEBUG: RESUMEN FINAL:");
-    console.log(`📊 Conversaciones finales con matches: ${conversations.length}`);
+    console.log(`📊 Conversaciones analizadas: ${conversations.length}`);
     console.log(`⭐ Total match points: ${totalMatches}`);
     console.log(`🏷️ Total met traits: ${totalTraits}`);
     
     conversations.forEach((conv: any) => {
       if (conv.matchPoints > 0) {
-        console.log(`✅ ${conv.userName}: ${conv.matchPoints} puntos, características: ${conv.metTraits?.join(', ') || 'ninguna'}`);
+        console.log(`✅ ${conv.userName || conv.id}: ${conv.matchPoints} puntos, características: ${conv.metTraits?.join(', ') || 'ninguna'}`);
       }
     });
     
