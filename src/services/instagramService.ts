@@ -214,7 +214,7 @@ export const handleInstagramCallback = async (code: string) => {
     const accountData = await accountResponse.json();
     console.log("Respuesta de la cuenta:", accountData);
 
-    if (!accountData.data) {
+    if (!accountData) {
       throw new Error("No se encontraron datos de la cuenta");
     }
     const instagramAccount = accountData;
