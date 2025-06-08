@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -283,14 +284,14 @@ const InstagramMessages: React.FC = () => {
         return;
       }
 
-      // Obtener configuraciones de usuario usando el tipo any temporalmente
-      const { data: userData } = await supabase
-        .from('user_settings' as any)
+      // Obtener configuraciones de usuario
+      const { data: userData, error: userError } = await supabase
+        .from('user_settings')
         .select('*')
         .single();
 
-      if (userData) {
-        setPageId(userData.instagram_page_id);
+      if (!userError && userData) {
+        setPageId(userData.instagram_page_id || null);
         setIaPersona(userData.ia_persona || '');
       }
 
@@ -349,13 +350,13 @@ const InstagramMessages: React.FC = () => {
         }
       });
 
-      // Cargar análisis guardados usando tipo any temporalmente
-      const { data: analysisData } = await supabase
-        .from('prospect_analysis' as any)
+      // Cargar análisis guardados
+      const { data: analysisData, error: analysisError } = await supabase
+        .from('prospect_analysis')
         .select('*');
 
-      if (analysisData) {
-        analysisData.forEach((analysis: ProspectAnalysis) => {
+      if (!analysisError && analysisData) {
+        analysisData.forEach((analysis: any) => {
           const conversation = conversationMap.get(analysis.sender_id);
           if (conversation) {
             conversation.matchPoints = analysis.match_points || 0;
