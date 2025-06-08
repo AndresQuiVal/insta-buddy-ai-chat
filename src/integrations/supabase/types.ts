@@ -48,6 +48,7 @@ export type Database = {
           is_inscription: boolean | null
           is_invitation: boolean | null
           is_presentation: boolean | null
+          is_read: boolean | null
           message_text: string
           message_type: string
           raw_data: Json | null
@@ -65,6 +66,7 @@ export type Database = {
           is_inscription?: boolean | null
           is_invitation?: boolean | null
           is_presentation?: boolean | null
+          is_read?: boolean | null
           message_text?: string
           message_type: string
           raw_data?: Json | null
@@ -82,6 +84,7 @@ export type Database = {
           is_inscription?: boolean | null
           is_invitation?: boolean | null
           is_presentation?: boolean | null
+          is_read?: boolean | null
           message_text?: string
           message_type?: string
           raw_data?: Json | null
@@ -90,6 +93,81 @@ export type Database = {
           sender_id?: string
           timestamp?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      prospect_analysis: {
+        Row: {
+          analysis_data: Json | null
+          created_at: string
+          id: string
+          last_analyzed_at: string | null
+          match_points: number | null
+          message_count: number | null
+          met_trait_indices: number[] | null
+          met_traits: string[] | null
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          analysis_data?: Json | null
+          created_at?: string
+          id?: string
+          last_analyzed_at?: string | null
+          match_points?: number | null
+          message_count?: number | null
+          met_trait_indices?: number[] | null
+          met_traits?: string[] | null
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          analysis_data?: Json | null
+          created_at?: string
+          id?: string
+          last_analyzed_at?: string | null
+          match_points?: number | null
+          message_count?: number | null
+          met_trait_indices?: number[] | null
+          met_traits?: string[] | null
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          ai_delay: number | null
+          ai_enabled: boolean | null
+          created_at: string
+          ia_persona: string | null
+          id: string
+          instagram_access_token: string | null
+          instagram_page_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          ai_delay?: number | null
+          ai_enabled?: boolean | null
+          created_at?: string
+          ia_persona?: string | null
+          id?: string
+          instagram_access_token?: string | null
+          instagram_page_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          ai_delay?: number | null
+          ai_enabled?: boolean | null
+          created_at?: string
+          ia_persona?: string | null
+          id?: string
+          instagram_access_token?: string | null
+          instagram_page_id?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

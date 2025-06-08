@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -18,7 +17,9 @@ interface InstagramMessage {
   message_text: string;
   message_type: 'received' | 'sent';
   timestamp: string;
+  created_at: string;
   raw_data: any;
+  is_read?: boolean;
 }
 
 interface Conversation {
@@ -43,6 +44,24 @@ interface SavedAnalysis {
   metTraitIndices: number[];
   lastAnalyzedAt: string;
   messageCount: number;
+}
+
+interface UserSettings {
+  id: string;
+  instagram_page_id?: string;
+  ia_persona?: string;
+  ai_enabled?: boolean;
+  ai_delay?: number;
+}
+
+interface ProspectAnalysis {
+  id: string;
+  sender_id: string;
+  match_points?: number;
+  met_traits?: string[];
+  met_trait_indices?: number[];
+  last_analyzed_at?: string;
+  message_count?: number;
 }
 
 const InstagramMessages: React.FC = () => {
@@ -99,7 +118,129 @@ const InstagramMessages: React.FC = () => {
 
   useEffect(() => {
     loadConversations();
+    
+    // Configurar suscripción a nuevos mensajes
+    const channel = supabase
+      .channel('instagram-messages-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'instagram_messages'
+        },
+        (payload) => {
+          console.log('🔔 Nuevo mensaje recibido:', payload.new);
+          handleNewMessage(payload.new as any);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
+
+  const handleNewMessage = async (newMessage: any) => {
+    console.log('📨 Procesando nuevo mensaje:', newMessage);
+    
+    // Solo analizar mensajes recibidos (no enviados)
+    if (newMessage.message_type === 'received') {
+      console.log('🔍 Analizando mensaje recibido de:', newMessage.sender_id);
+      
+      try {
+        // Obtener todas las características ideales
+        const { data: traitsData } = await supabase
+          .from('ideal_client_traits')
+          .select('*')
+          .eq('enabled', true)
+          .order('position');
+
+        if (traitsData && traitsData.length > 0) {
+          const traits = traitsData.map(t => ({
+            trait: t.trait,
+            enabled: t.enabled,
+            position: t.position
+          }));
+
+          // Obtener todo el historial de mensajes de este remitente
+          const { data: allMessages } = await supabase
+            .from('instagram_messages')
+            .select('*')
+            .eq('sender_id', newMessage.sender_id)
+            .order('created_at', { ascending: true });
+
+          if (allMessages && allMessages.length > 0) {
+            // Crear texto completo de la conversación (solo mensajes del usuario)
+            const userMessages = allMessages
+              .filter(msg => msg.message_type === 'received')
+              .map(msg => msg.message_text)
+              .join(' ');
+
+            console.log('📝 Texto completo para análisis:', userMessages.substring(0, 200) + '...');
+
+            // Analizar con AI
+            const result = await analyzeAndUpdateProspect(
+              newMessage.sender_id,
+              `Usuario ${newMessage.sender_id.slice(-4)}`,
+              userMessages,
+              traits
+            );
+
+            console.log('✅ Resultado del análisis:', result);
+
+            // Guardar análisis en Supabase
+            if (result.matchPoints > 0) {
+              await saveAnalysisToSupabase(newMessage.sender_id, result, allMessages.length);
+            }
+
+            // Recargar conversaciones para mostrar el análisis actualizado
+            await loadConversations();
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error analizando nuevo mensaje:', error);
+      }
+    }
+    
+    // Recargar conversaciones para mostrar el nuevo mensaje
+    await loadConversations();
+  };
+
+  const saveAnalysisToSupabase = async (senderId: string, analysis: any, messageCount: number) => {
+    try {
+      console.log('💾 Guardando análisis en Supabase:', { senderId, analysis, messageCount });
+      
+      const analysisData = {
+        sender_id: senderId,
+        match_points: analysis.matchPoints || 0,
+        met_traits: analysis.metTraits || [],
+        met_trait_indices: analysis.metTraitIndices || [],
+        last_analyzed_at: new Date().toISOString(),
+        message_count: messageCount,
+        analysis_data: {
+          timestamp: new Date().toISOString(),
+          traits_analyzed: idealTraits.length,
+          full_analysis: analysis
+        }
+      };
+
+      const { data, error } = await supabase
+        .from('prospect_analysis')
+        .upsert(analysisData, { 
+          onConflict: 'sender_id',
+          ignoreDuplicates: false 
+        });
+
+      if (error) {
+        console.error('❌ Error guardando análisis:', error);
+      } else {
+        console.log('✅ Análisis guardado correctamente:', data);
+      }
+    } catch (error) {
+      console.error('❌ Error en saveAnalysisToSupabase:', error);
+    }
+  };
 
   const handleAnalyzeAll = async () => {
     console.log("🔍 Iniciando análisis completo con IA...");
@@ -142,9 +283,9 @@ const InstagramMessages: React.FC = () => {
         return;
       }
 
-      // Obtener configuraciones de usuario
+      // Obtener configuraciones de usuario usando el tipo any temporalmente
       const { data: userData } = await supabase
-        .from('user_settings')
+        .from('user_settings' as any)
         .select('*')
         .single();
 
@@ -163,7 +304,17 @@ const InstagramMessages: React.FC = () => {
           conversationMap.set(conversationId, {
             sender_id: conversationId,
             messages: [],
-            last_message: message,
+            last_message: {
+              id: message.id,
+              instagram_message_id: message.instagram_message_id,
+              sender_id: message.sender_id,
+              recipient_id: message.recipient_id,
+              message_text: message.message_text,
+              message_type: message.message_type as 'received' | 'sent',
+              timestamp: message.timestamp,
+              created_at: message.created_at,
+              raw_data: message.raw_data
+            },
             unread_count: 0,
             matchPoints: 0,
             metTraits: [],
@@ -172,11 +323,24 @@ const InstagramMessages: React.FC = () => {
         }
 
         const conversation = conversationMap.get(conversationId)!;
-        conversation.messages.push(message);
+        const messageObj: InstagramMessage = {
+          id: message.id,
+          instagram_message_id: message.instagram_message_id,
+          sender_id: message.sender_id,
+          recipient_id: message.recipient_id,
+          message_text: message.message_text,
+          message_type: message.message_type as 'received' | 'sent',
+          timestamp: message.timestamp,
+          created_at: message.created_at,
+          raw_data: message.raw_data,
+          is_read: message.is_read
+        };
+        
+        conversation.messages.push(messageObj);
         
         // Actualizar último mensaje (el más reciente)
         if (new Date(message.created_at) > new Date(conversation.last_message.created_at)) {
-          conversation.last_message = message;
+          conversation.last_message = messageObj;
         }
 
         // Contar mensajes no leídos
@@ -185,13 +349,13 @@ const InstagramMessages: React.FC = () => {
         }
       });
 
-      // Cargar análisis guardados
+      // Cargar análisis guardados usando tipo any temporalmente
       const { data: analysisData } = await supabase
-        .from('prospect_analysis')
+        .from('prospect_analysis' as any)
         .select('*');
 
       if (analysisData) {
-        analysisData.forEach(analysis => {
+        analysisData.forEach((analysis: ProspectAnalysis) => {
           const conversation = conversationMap.get(analysis.sender_id);
           if (conversation) {
             conversation.matchPoints = analysis.match_points || 0;
