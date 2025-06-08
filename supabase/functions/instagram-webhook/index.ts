@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -214,7 +213,9 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 }
 
 async function analyzeFullConversationAndRespond(supabase: any, senderId: string, currentMessage: string) {
-  console.log('📚 OBTENIENDO HISTORIAL COMPLETO DE CONVERSACIÓN...')
+  console.log('📚 =============================================')
+  console.log('📚 OBTENIENDO HISTORIAL COMPLETO DE CONVERSACIÓN')
+  console.log('📚 =============================================')
   
   try {
     // Obtener TODA la conversación con esta persona
@@ -233,15 +234,25 @@ async function analyzeFullConversationAndRespond(supabase: any, senderId: string
     const messages = conversationHistory || []
     console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
 
-    // IMPRIMIR HISTORIAL COMPLETO
-    console.log('📖 ========== HISTORIAL COMPLETO ==========')
-    messages.forEach((msg, index) => {
-      const isFromUser = msg.sender_id === senderId
-      const sender = isFromUser ? '👤 Usuario' : '🤖 María'
-      const time = new Date(msg.timestamp).toLocaleString()
-      console.log(`${index + 1}. [${time}] ${sender}: "${msg.message_text}"`)
-    })
-    console.log('📖 =======================================')
+    // 🔥 IMPRIMIR HISTORIAL COMPLETO DE LA CONVERSACIÓN 🔥
+    console.log('📖 ========== CONVERSACIÓN COMPLETA ==========')
+    console.log(`👤 USUARIO: ${senderId}`)
+    console.log(`📝 TOTAL DE MENSAJES: ${messages.length}`)
+    console.log('📋 HISTORIAL DETALLADO:')
+    
+    if (messages.length === 0) {
+      console.log('⚠️ NO HAY MENSAJES PREVIOS - PRIMERA CONVERSACIÓN')
+    } else {
+      messages.forEach((msg, index) => {
+        const isFromUser = msg.sender_id === senderId
+        const sender = isFromUser ? '👤 Usuario' : '🤖 María'
+        const time = new Date(msg.timestamp).toLocaleString('es-ES')
+        const messageType = msg.message_type === 'received' ? '[RECIBIDO]' : '[ENVIADO]'
+        
+        console.log(`${index + 1}. ${messageType} [${time}] ${sender}: "${msg.message_text}"`)
+      })
+    }
+    console.log('📖 ========================================')
 
     // Obtener características configuradas
     console.log('🎯 OBTENIENDO CARACTERÍSTICAS CONFIGURADAS...')
@@ -258,9 +269,9 @@ async function analyzeFullConversationAndRespond(supabase: any, senderId: string
     }
 
     const traits = traitsData || []
-    console.log('🎯 CARACTERÍSTICAS CONFIGURADAS:')
+    console.log('🎯 CARACTERÍSTICAS CONFIGURADAS PARA DESCUBRIR:')
     traits.forEach((trait, index) => {
-      console.log(`${index + 1}. ${trait.trait}`)
+      console.log(`${index + 1}. "${trait.trait}"`)
     })
 
     // PASO 3: GENERAR RESPUESTA CON IA
