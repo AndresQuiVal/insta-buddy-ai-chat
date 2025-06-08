@@ -203,14 +203,6 @@ async function handleIntelligentConversationAnalysis(supabase: any, senderId: st
     const conversationHistory = allMessages || []
     console.log(`📝 HISTORIAL ENCONTRADO: ${conversationHistory.length} mensajes`)
 
-    // Construir historial de conversación para análisis
-    const fullConversation = conversationHistory
-      .map(msg => `${msg.message_type === 'received' ? 'Usuario' : 'IA'}: ${msg.message_text}`)
-      .join('\n')
-
-    console.log('💭 CONVERSACIÓN COMPLETA:')
-    console.log(fullConversation)
-
     // 2. OBTENER CARACTERÍSTICAS IDEALES
     console.log('🎯 Obteniendo características ideales...')
     const { data: idealTraitsData, error: traitsError } = await supabase
@@ -227,16 +219,24 @@ async function handleIntelligentConversationAnalysis(supabase: any, senderId: st
 
     console.log('✅ Características cargadas:', idealTraitsData.map(t => t.trait))
 
-    // 3. ANÁLISIS ESTRATÉGICO BASADO EN TODA LA CONVERSACIÓN
+    // 3. CONSTRUIR HISTORIAL PARA ANÁLISIS
+    const fullConversation = conversationHistory
+      .map(msg => `${msg.message_type === 'received' ? 'Usuario' : 'IA'}: ${msg.message_text}`)
+      .join('\n')
+
+    console.log('💭 CONVERSACIÓN COMPLETA:')
+    console.log(fullConversation)
+
+    // 4. ANÁLISIS ESTRATÉGICO BASADO EN TODA LA CONVERSACIÓN
     const analysis = await analyzeFullConversation(fullConversation, idealTraitsData)
     console.log('📊 ANÁLISIS COMPLETADO:', analysis)
 
-    // 4. GUARDAR ANÁLISIS
+    // 5. GUARDAR ANÁLISIS
     if (analysis.matchPoints > 0) {
       await saveProspectAnalysis(supabase, senderId, analysis, conversationHistory.length)
     }
 
-    // 5. GENERAR RESPUESTA INTELIGENTE BASADA EN CONTEXTO COMPLETO
+    // 6. GENERAR RESPUESTA INTELIGENTE BASADA EN CONTEXTO COMPLETO
     const intelligentResponse = await generateContextualResponse(
       currentMessage,
       fullConversation,
@@ -247,7 +247,7 @@ async function handleIntelligentConversationAnalysis(supabase: any, senderId: st
 
     console.log('🤖 RESPUESTA GENERADA:', intelligentResponse)
 
-    // 6. ENVIAR RESPUESTA
+    // 7. ENVIAR RESPUESTA
     await sendResponseWithDelay(supabase, senderId, intelligentResponse)
 
   } catch (error) {
@@ -328,54 +328,78 @@ async function generateContextualResponse(
   const lowerCurrentMessage = currentMessage.toLowerCase()
   
   console.log(`🤖 Generando respuesta contextual para ${matchPoints}/${totalTraits} características`)
-  
-  // Analizar si ya se ha hecho esta pregunta antes
-  const previousMessages = conversationHistory
-    .filter(msg => msg.message_type === 'sent')
-    .map(msg => msg.message_text.toLowerCase())
+  console.log(`📩 Mensaje actual: "${currentMessage}"`)
   
   // RESPONDER ESPECÍFICAMENTE AL MENSAJE ACTUAL
   
+  // Si pregunta sobre conversación anterior
+  if (lowerCurrentMessage.includes('leíste mi conversación') || 
+      lowerCurrentMessage.includes('leiste mi conversacion') ||
+      lowerCurrentMessage.includes('de lo que hemos hablado') || 
+      lowerCurrentMessage.includes('conversación anterior')) {
+    
+    if (matchPoints === 0) {
+      return "Claro, he visto que nos estamos conociendo. Me contabas sobre ti. ¿Qué tipo de actividades te emocionan más?"
+    } else if (matchPoints === 1) {
+      return "Sí, claro que la he leído. Veo que tienes interés en ciertas cosas. ¿Has estado ahorrando para algo especial últimamente?"
+    } else if (matchPoints === 2) {
+      return "Por supuesto, he revisado nuestra conversación. Me parece que tienes buen criterio. ¿Eres de las personas que cuando algo les convence actúan rápido?"
+    } else if (matchPoints >= 3) {
+      return "Claro que sí, he leído todo lo que me has contado. Me da mucha confianza platicar contigo. ¿Te gustaría que habláramos por teléfono?"
+    }
+  }
+
   // Si pregunta nombre
   if (lowerCurrentMessage.includes('como te llamas') || 
+      lowerCurrentMessage.includes('cómo te llamas') ||
       lowerCurrentMessage.includes('cuál es tu nombre') ||
-      lowerCurrentMessage.includes('quien eres')) {
+      lowerCurrentMessage.includes('cual es tu nombre') ||
+      lowerCurrentMessage.includes('quien eres') ||
+      lowerCurrentMessage.includes('quién eres')) {
     
     if (matchPoints === 0) {
       return "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más cuando piensas en viajar?"
-    } else if (matchPoints < totalTraits) {
-      // Buscar siguiente característica pendiente
+    } else if (matchPoints === 1) {
       const pendingTrait = idealTraits.find(trait => !metTraits.includes(trait.trait))
       if (pendingTrait?.trait.includes('presupuesto')) {
         return "Soy María, encantada. ¿Has estado ahorrando para algo especial últimamente?"
       } else if (pendingTrait?.trait.includes('decisión')) {
         return "Soy María. ¿Eres de las personas que cuando algo les convence actúan rápido?"
-      } else if (pendingTrait?.trait.includes('zona')) {
-        return "Soy María, mucho gusto. ¿De qué ciudad me escribes?"
       } else {
-        return "Soy María. ¿Qué tipo de planes tienes para los próximos meses?"
+        return "Soy María. ¿De qué ciudad me escribes?"
       }
-    } else {
+    } else if (matchPoints >= 2) {
       return "Soy María. Me da la impresión de que tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?"
     }
   }
   
   // Si saluda
-  if (lowerCurrentMessage.includes('hola') || lowerCurrentMessage.includes('buenos')) {
-    if (previousMessages.some(msg => msg.includes('hola') || msg.includes('buenos'))) {
-      return "¡Qué gusto verte de nuevo! ¿En qué te puedo ayudar hoy?"
-    }
-    return "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de aventuras te emocionan más?"
-  }
-  
-  // Si pregunta sobre conversaciones previas
-  if (lowerCurrentMessage.includes('de lo que hemos hablado') || 
-      lowerCurrentMessage.includes('conversación anterior')) {
-    if (matchPoints === 0) {
-      return "Claro, estábamos conociendonos. ¿Qué tipo de cosas disfrutas hacer en tu tiempo libre?"
+  if (lowerCurrentMessage.includes('hola') || 
+      lowerCurrentMessage.includes('buenos') ||
+      lowerCurrentMessage.includes('buenas')) {
+    
+    // Verificar si ya saludó antes
+    const previousGreetings = conversationHistory.filter(msg => 
+      msg.message_type === 'received' && 
+      (msg.message_text.toLowerCase().includes('hola') || msg.message_text.toLowerCase().includes('buenos'))
+    )
+    
+    if (previousGreetings.length > 1) {
+      if (matchPoints === 0) {
+        return "¡Qué gusto verte de nuevo! ¿Qué tipo de experiencias te hacen sentir más emocionado?"
+      } else if (matchPoints < totalTraits) {
+        return "¡Hola otra vez! ¿En qué más te puedo ayudar?"
+      } else {
+        return "¡Hola! Me encanta que sigas aquí. ¿Cuándo podríamos hablar por teléfono?"
+      }
     } else {
-      return "Sí, me contabas sobre tus intereses. ¿Hay algo más que te gustaría que supiéramos?"
+      return "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de aventuras te emocionan más?"
     }
+  }
+
+  // Si dice "How" (inglés)
+  if (lowerCurrentMessage.trim() === 'how') {
+    return "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
   }
   
   // ESTRATEGIA BASADA EN PROGRESO
@@ -488,10 +512,12 @@ async function sendFallbackResponse(supabase: any, senderId: string, currentMess
   
   let response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
   
-  if (lowerMessage.includes('como te llamas')) {
+  if (lowerMessage.includes('como te llamas') || lowerMessage.includes('cómo te llamas')) {
     response = "Soy María, asesora de viajes. ¿Qué tipo de aventuras disfrutas?"
   } else if (lowerMessage.includes('hola')) {
     response = "¡Hola! Soy María. ¿Qué actividades te hacen sentir más emocionado?"
+  } else if (lowerMessage.includes('leíste mi conversación') || lowerMessage.includes('leiste mi conversacion')) {
+    response = "Claro, he visto que nos estamos conociendo. ¿Qué tipo de experiencias te emocionan?"
   }
   
   await sendResponseWithDelay(supabase, senderId, response)
