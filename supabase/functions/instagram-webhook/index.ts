@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -196,7 +197,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     await supabase.from('instagram_messages').insert(messageData)
     console.log('✅ PASO 1 COMPLETADO: Mensaje guardado')
 
-    // PASO 2: OBTENER Y ANALIZAR CONVERSACIÓN COMPLETA
+    // PASO 2: OBTENER CONVERSACIÓN COMPLETA Y GENERAR RESPUESTA INTELIGENTE
     console.log('📚 ========== PASO 2: ANALIZAR CONVERSACIÓN ==========')
     
     // Obtener TODA la conversación
@@ -208,35 +209,29 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     if (historyError) {
       console.error('❌ ERROR OBTENIENDO HISTORIAL:', historyError)
-      await sendSimpleResponse(supabase, event.sender.id, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+      await sendSimpleResponse(supabase, event.sender.id, "¡Hola! ¿Cómo estás?")
       return
     }
 
     const messages = conversationHistory || []
     console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
 
-    // IMPRIMIR CONVERSACIÓN COMPLETA
-    console.log('📖 =============== CONVERSACIÓN COMPLETA ===============')
-    console.log(`👤 USUARIO: ${event.sender.id}`)
-    console.log(`📝 HISTORIAL DETALLADO:`)
-    
-    if (messages.length === 0) {
-      console.log('⚠️ NO HAY MENSAJES PREVIOS')
-    } else {
-      messages.forEach((msg, index) => {
+    // Crear contexto para el AI con TODA la conversación
+    const conversationContext = messages
+      .map(msg => {
         const isFromUser = msg.sender_id === event.sender.id
-        const sender = isFromUser ? '👤 Usuario' : '🤖 María'
-        const time = new Date(msg.timestamp).toLocaleString('es-ES')
-        const messageType = msg.message_type === 'received' ? '[RECIBIDO]' : '[ENVIADO]'
-        
-        console.log(`${index + 1}. ${messageType} [${time}] ${sender}: "${msg.message_text}"`)
+        const sender = isFromUser ? 'Usuario' : 'María'
+        return `${sender}: ${msg.message_text}`
       })
-    }
+      .join('\n')
+
+    console.log('📖 =============== CONTEXTO COMPLETO ===============')
+    console.log(conversationContext)
     console.log('📖 ===============================================')
 
-    // PASO 3: GENERAR RESPUESTA CON IA
-    console.log('🤖 ========== PASO 3: GENERAR RESPUESTA CON IA ==========')
-    const aiResponse = await generateAIResponse(messages, event.sender.id, event.message.text)
+    // PASO 3: GENERAR RESPUESTA INTELIGENTE
+    console.log('🤖 ========== PASO 3: GENERAR RESPUESTA INTELIGENTE ==========')
+    const aiResponse = await generateIntelligentResponse(conversationContext, event.message.text)
     
     // ENVIAR RESPUESTA
     console.log('📤 ========== ENVIANDO RESPUESTA ==========')
@@ -251,54 +246,47 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   }
 }
 
-async function generateAIResponse(messages: any[], senderId: string, currentMessage: string): Promise<string> {
-  console.log('🧠 GENERANDO RESPUESTA CON IA...')
-  console.log('🔥 MENSAJE ACTUAL DEL USUARIO:', currentMessage)
+async function generateIntelligentResponse(conversationContext: string, currentMessage: string): Promise<string> {
+  console.log('🧠 GENERANDO RESPUESTA INTELIGENTE...')
+  console.log('🔥 MENSAJE ACTUAL:', currentMessage)
+  console.log('📚 CONTEXTO COMPLETO:', conversationContext)
   
   try {
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     
     if (!openaiKey) {
-      console.log('⚠️ NO HAY API KEY DE OPENAI')
-      return "¡Hola! Soy María, asesora de viajes. ¿En qué te puedo ayudar?"
+      console.log('⚠️ NO HAY API KEY DE OPENAI - respuesta simple')
+      return getSimpleContextualResponse(conversationContext, currentMessage)
     }
 
-    // Crear contexto de conversación simple
-    const lastMessages = messages
-      .filter(msg => msg.message_text && msg.message_text.trim() !== '')
-      .slice(-5) // Solo últimos 5 mensajes
-      .map(msg => {
-        const isFromUser = msg.sender_id === senderId
-        return `${isFromUser ? 'Usuario' : 'María'}: ${msg.message_text}`
-      })
-      .join('\n')
+    // PROMPT COMPLETAMENTE REDISEÑADO PARA LEER EL CONTEXTO
+    const prompt = `Eres María, una persona real que trabaja como asesora de viajes.
 
-    console.log('📝 CONTEXTO PARA IA:')
-    console.log('=====================================')
-    console.log(lastMessages)
-    console.log('=====================================')
+CONVERSACIÓN COMPLETA HASTA AHORA:
+${conversationContext}
 
-    // NUEVO PROMPT ULTRA ESPECÍFICO
-    const prompt = `El usuario te escribió exactamente esto: "${currentMessage}"
+ÚLTIMO MENSAJE DEL USUARIO:
+"${currentMessage}"
 
-${lastMessages ? `Contexto previo:\n${lastMessages}\n` : ''}
+INSTRUCCIONES CRÍTICAS:
+1. LEE TODA LA CONVERSACIÓN ANTERIOR para entender el contexto
+2. Responde ESPECÍFICAMENTE al último mensaje del usuario
+3. Si ya te has presentado antes, NO te vuelvas a presentar
+4. Si el usuario dice "Hola" y ya han hablado antes, di algo como "¡Hola de nuevo!" o "¿Qué tal?"
+5. Si pregunta algo específico, responde esa pregunta exacta
+6. Si dice "Bien que tal tu?", responde como una persona normal
+7. Sé NATURAL y HUMANA, nunca robótica
+8. NUNCA uses frases genéricas como "¿En qué te puedo ayudar?"
 
-Eres María, una asesora de viajes normal. Responde DIRECTAMENTE a lo que el usuario te escribió. 
+EJEMPLOS DE RESPUESTAS NATURALES:
+- Si dice "Hola" por primera vez → "¡Hola! Soy María, asesora de viajes ¿Cómo estás?"
+- Si dice "Hola" y ya hablaron → "¡Hola de nuevo! ¿Qué tal todo?"
+- Si dice "Bien que tal tu?" → "¡Todo bien por aquí! ¿Cómo va tu día?"
+- Si pregunta algo específico → Responde esa pregunta específica
 
-REGLAS CRÍTICAS:
-- Si dice "Hola" → responde "¡Hola! ¿Cómo estás?"
-- Si pregunta tu nombre → responde "Soy María"
-- Si pregunta qué haces → responde "Soy asesora de viajes"  
-- Si pregunta sobre viajes → responde sobre viajes
-- Si dice "Gracias" → responde "¡De nada!"
-- Si dice algo random → responde de forma natural a eso específico
+Responde de forma natural y específica al último mensaje:`
 
-NUNCA respondas con frases genéricas como "¿En qué te puedo ayudar?". 
-
-Responde SOLO al mensaje "${currentMessage}" de forma natural:`
-
-    console.log('📤 ENVIANDO PROMPT ESPECÍFICO A OPENAI...')
-    console.log('🎯 PROMPT:', prompt)
+    console.log('📤 ENVIANDO PROMPT MEJORADO A OPENAI...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -311,15 +299,15 @@ Responde SOLO al mensaje "${currentMessage}" de forma natural:`
         messages: [
           {
             role: 'system',
-            content: 'Eres María, una persona real. Respondes de forma natural y específica a cada mensaje. NUNCA uses frases genéricas.'
+            content: 'Eres María, una persona real que responde de forma natural. Lees TODO el contexto de la conversación y respondes específicamente al último mensaje.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 80,
-        temperature: 0.8,
+        max_tokens: 100,
+        temperature: 0.9,
       }),
     })
 
@@ -328,7 +316,7 @@ Responde SOLO al mensaje "${currentMessage}" de forma natural:`
     if (!response.ok) {
       const errorText = await response.text()
       console.error('❌ ERROR DETALLADO DE OPENAI:', errorText)
-      throw new Error(`Error OpenAI: ${response.status} - ${errorText}`)
+      return getSimpleContextualResponse(conversationContext, currentMessage)
     }
 
     const data = await response.json()
@@ -338,9 +326,37 @@ Responde SOLO al mensaje "${currentMessage}" de forma natural:`
     return aiMessage.trim()
 
   } catch (error) {
-    console.error('❌ ERROR DETALLADO EN generateAIResponse:', error)
-    return "¡Hola! ¿Cómo estás?"
+    console.error('❌ ERROR DETALLADO EN generateIntelligentResponse:', error)
+    return getSimpleContextualResponse(conversationContext, currentMessage)
   }
+}
+
+function getSimpleContextualResponse(conversationContext: string, currentMessage: string): string {
+  console.log('🤖 GENERANDO RESPUESTA SIMPLE CONTEXTUAL')
+  
+  const lowerMessage = currentMessage.toLowerCase()
+  const hasContext = conversationContext.includes('Usuario:')
+  
+  // Si ya han hablado antes
+  if (hasContext) {
+    if (lowerMessage.includes('hola')) {
+      return "¡Hola de nuevo! ¿Qué tal todo?"
+    }
+    if (lowerMessage.includes('bien') && lowerMessage.includes('tu')) {
+      return "¡Todo bien por aquí! ¿En qué más te puedo ayudar?"
+    }
+    if (lowerMessage.includes('como estas')) {
+      return "¡Muy bien, gracias! ¿Y tú cómo estás?"
+    }
+  } else {
+    // Primera vez que hablan
+    if (lowerMessage.includes('hola')) {
+      return "¡Hola! Soy María, asesora de viajes. ¿Cómo estás?"
+    }
+  }
+  
+  // Respuesta por defecto contextual
+  return hasContext ? "Interesante, cuéntame más sobre eso." : "¡Hola! Soy María. ¿Cómo estás?"
 }
 
 async function sendResponse(supabase: any, senderId: string, messageText: string) {
