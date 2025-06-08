@@ -127,17 +127,15 @@ export const handleInstagramCallback = async (code: string) => {
       "https://api.instagram.com/oauth/access_token",
       {
         method: "POST",
-        body: new URLSearchParams({
+        body: JSON.stringify({
           client_id: FACEBOOK_APP_ID,
-          client_secret:
-            process.env.INSTAGRAM_CLIENT_SECRET ??
-            "e3d7940c6737b867ca388eb9927fd5d2",
+          client_secret: "e3d7940c6737b867ca388eb9927fd5d2",
           grant_type: "authorization_code",
           redirect_uri: INSTAGRAM_REDIRECT_URI,
           code: code,
         }),
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
         },
       }
     );
