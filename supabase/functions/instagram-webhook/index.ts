@@ -171,8 +171,8 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     console.log('✅ Message saved successfully:', data)
 
-    // 🔥 ANÁLISIS Y RESPUESTA ESTRATÉGICA MEJORADA
-    await handleStrategicAnalysisAndResponse(supabase, event.sender.id, event.message.text)
+    // 🔥 ANÁLISIS COMPLETO Y RESPUESTA ESTRATÉGICA
+    await handleIntelligentConversationAnalysis(supabase, event.sender.id, event.message.text)
 
   } catch (error) {
     console.error('❌ Error processing messaging event:', error)
@@ -180,103 +180,96 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   }
 }
 
-async function handleStrategicAnalysisAndResponse(supabase: any, senderId: string, currentMessage: string) {
+async function handleIntelligentConversationAnalysis(supabase: any, senderId: string, currentMessage: string) {
   try {
-    console.log('🎯 INICIANDO ANÁLISIS ESTRATÉGICO MEJORADO')
+    console.log('🧠 INICIANDO ANÁLISIS COMPLETO DE CONVERSACIÓN')
     console.log(`👤 Sender ID: ${senderId}`)
     console.log(`💬 Mensaje actual: "${currentMessage}"`)
 
-    // 1. OBTENER CARACTERÍSTICAS IDEALES DESDE LA BASE DE DATOS
-    console.log('🔍 Obteniendo características ideales...')
+    // 1. OBTENER HISTORIAL COMPLETO DE CONVERSACIÓN ORDENADO
+    console.log('📚 Obteniendo HISTORIAL COMPLETO...')
+    const { data: allMessages, error: messagesError } = await supabase
+      .from('instagram_messages')
+      .select('*')
+      .or(`sender_id.eq.${senderId},recipient_id.eq.${senderId}`)
+      .order('timestamp', { ascending: true })
+
+    if (messagesError) {
+      console.error('❌ Error obteniendo mensajes:', messagesError)
+      await sendFallbackResponse(supabase, senderId, currentMessage)
+      return
+    }
+
+    const conversationHistory = allMessages || []
+    console.log(`📝 HISTORIAL ENCONTRADO: ${conversationHistory.length} mensajes`)
+
+    // Construir historial de conversación para análisis
+    const fullConversation = conversationHistory
+      .map(msg => `${msg.message_type === 'received' ? 'Usuario' : 'IA'}: ${msg.message_text}`)
+      .join('\n')
+
+    console.log('💭 CONVERSACIÓN COMPLETA:')
+    console.log(fullConversation)
+
+    // 2. OBTENER CARACTERÍSTICAS IDEALES
+    console.log('🎯 Obteniendo características ideales...')
     const { data: idealTraitsData, error: traitsError } = await supabase
       .from('ideal_client_traits')
       .select('*')
       .eq('enabled', true)
       .order('position')
 
-    if (traitsError) {
-      console.error('❌ Error obteniendo características:', traitsError)
-      await sendGenericResponse(supabase, senderId)
+    if (traitsError || !idealTraitsData || idealTraitsData.length === 0) {
+      console.log('⚠️ No hay características configuradas')
+      await sendFallbackResponse(supabase, senderId, currentMessage)
       return
     }
 
-    if (!idealTraitsData || idealTraitsData.length === 0) {
-      console.log('⚠️ No hay características ideales configuradas')
-      await sendGenericResponse(supabase, senderId)
-      return
-    }
+    console.log('✅ Características cargadas:', idealTraitsData.map(t => t.trait))
 
-    console.log('✅ Características ideales cargadas:', idealTraitsData.map(t => t.trait))
+    // 3. ANÁLISIS ESTRATÉGICO BASADO EN TODA LA CONVERSACIÓN
+    const analysis = await analyzeFullConversation(fullConversation, idealTraitsData)
+    console.log('📊 ANÁLISIS COMPLETADO:', analysis)
 
-    // 2. OBTENER TODO EL HISTORIAL DE CONVERSACIÓN COMPLETO
-    console.log('📚 Obteniendo historial COMPLETO de conversación...')
-    const { data: allMessages, error: messagesError } = await supabase
-      .from('instagram_messages')
-      .select('*')
-      .or(`sender_id.eq.${senderId},recipient_id.eq.${senderId}`)
-      .order('created_at', { ascending: true })
-
-    if (messagesError) {
-      console.error('❌ Error obteniendo mensajes:', messagesError)
-      await sendGenericResponse(supabase, senderId)
-      return
-    }
-
-    // 3. CONSTRUIR HISTORIAL COMPLETO DE CONVERSACIÓN
-    const conversationHistory = allMessages || []
-    const fullConversationText = conversationHistory
-      .map(msg => `${msg.message_type === 'received' ? 'Usuario' : 'IA'}: ${msg.message_text}`)
-      .join('\n')
-
-    console.log(`📝 Historial completo (${conversationHistory.length} mensajes):`)
-    console.log(fullConversationText.substring(0, 500) + '...')
-
-    // 4. ANÁLISIS ESTRATÉGICO MEJORADO
-    console.log('🧠 Realizando análisis estratégico completo...')
-    const analysis = await analyzeConversationStrategically(fullConversationText, idealTraitsData)
-    console.log('📊 Resultado del análisis:', analysis)
-
-    // 5. GUARDAR ANÁLISIS EN LA BASE DE DATOS
+    // 4. GUARDAR ANÁLISIS
     if (analysis.matchPoints > 0) {
-      console.log('💾 Guardando análisis...')
-      await saveAnalysisToDatabase(supabase, senderId, analysis, conversationHistory.length)
+      await saveProspectAnalysis(supabase, senderId, analysis, conversationHistory.length)
     }
 
-    // 6. GENERAR RESPUESTA ESTRATÉGICA INTELIGENTE
-    console.log('🤖 Generando respuesta estratégica basada en contexto...')
-    const strategicResponse = await generateContextualStrategicResponse(
-      supabase,
-      senderId,
+    // 5. GENERAR RESPUESTA INTELIGENTE BASADA EN CONTEXTO COMPLETO
+    const intelligentResponse = await generateContextualResponse(
       currentMessage,
-      fullConversationText,
+      fullConversation,
       analysis,
-      idealTraitsData
+      idealTraitsData,
+      conversationHistory
     )
 
-    console.log('📤 Respuesta estratégica generada:', strategicResponse)
+    console.log('🤖 RESPUESTA GENERADA:', intelligentResponse)
 
-    // 7. ENVIAR RESPUESTA AUTOMÁTICA
-    await sendResponseWithDelay(supabase, senderId, strategicResponse)
+    // 6. ENVIAR RESPUESTA
+    await sendResponseWithDelay(supabase, senderId, intelligentResponse)
 
   } catch (error) {
-    console.error('❌ Error en análisis estratégico:', error)
-    await sendGenericResponse(supabase, senderId)
+    console.error('❌ Error en análisis completo:', error)
+    await sendFallbackResponse(supabase, senderId, currentMessage)
   }
 }
 
-async function analyzeConversationStrategically(conversationText: string, idealTraits: any[]): Promise<any> {
-  console.log('🔍 ANÁLISIS ESTRATÉGICO DE CONVERSACIÓN COMPLETA')
+async function analyzeFullConversation(conversationText: string, idealTraits: any[]): Promise<any> {
+  console.log('🔍 ANALIZANDO CONVERSACIÓN COMPLETA')
   
   const text = conversationText.toLowerCase()
   
-  // Mapa de palabras clave específico y detallado
+  // Mapa expandido de palabras clave
   const keywordMap: Record<string, string[]> = {
     "Interesado en nuestros productos o servicios": [
       "me interesa", "me interesan", "interesado", "interesada", "quiero saber",
       "información", "detalles", "precio", "costo", "cotización", "cuánto cuesta",
       "me gusta", "me encanta", "necesito", "busco", "requiero", "quiero",
       "producto", "servicio", "oferta", "promoción", "paquete", "plan",
-      "crucero", "cruceros", "viaje", "viajes", "tour", "excursión", "vacaciones"
+      "crucero", "cruceros", "viaje", "viajes", "tour", "excursión", "vacaciones",
+      "disfrutar", "conocer", "explorar", "destino", "aventura"
     ],
     "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
       "presupuesto", "dinero", "pago", "pagar", "precio", "costo", "inversión",
@@ -297,240 +290,155 @@ async function analyzeConversationStrategically(conversationText: string, idealT
   }
   
   const metTraits: string[] = []
-  const metTraitIndices: number[] = []
   
-  idealTraits.forEach((trait, idx) => {
+  idealTraits.forEach((trait) => {
     const keywords = keywordMap[trait.trait] || []
     
-    console.log(`🎯 Analizando: "${trait.trait}"`)
-    
     let matchFound = false
-    const foundKeywords: string[] = []
-    
     for (const keyword of keywords) {
       if (text.includes(keyword)) {
         matchFound = true
-        foundKeywords.push(keyword)
+        break
       }
     }
     
-    console.log(`   Palabras encontradas: ${foundKeywords.join(', ')}`)
-    console.log(`   ¿Match?: ${matchFound ? '✅ SÍ' : '❌ NO'}`)
+    console.log(`   🎯 "${trait.trait}": ${matchFound ? '✅ SÍ' : '❌ NO'}`)
     
     if (matchFound) {
       metTraits.push(trait.trait)
-      metTraitIndices.push(idx)
     }
   })
   
   return {
     matchPoints: metTraits.length,
-    metTraits,
-    metTraitIndices
+    metTraits
   }
 }
 
-async function generateContextualStrategicResponse(
-  supabase: any,
-  senderId: string,
+async function generateContextualResponse(
   currentMessage: string,
-  fullConversationText: string,
+  fullConversation: string,
   analysis: any,
-  idealTraits: any[]
+  idealTraits: any[],
+  conversationHistory: any[]
 ): Promise<string> {
-  try {
-    const openaiKey = Deno.env.get('OPENAI_API_KEY')
-    
-    if (!openaiKey) {
-      console.log('⚠️ No hay API key de OpenAI, usando respuesta estratégica predefinida')
-      return getContextualFallbackResponse(currentMessage, analysis, idealTraits)
-    }
-
-    // Crear prompt ULTRA estratégico con contexto completo
-    const strategicPrompt = createAdvancedContextualPrompt(
-      currentMessage,
-      fullConversationText,
-      analysis,
-      idealTraits
-    )
-
-    console.log('🧠 Enviando prompt contextual a OpenAI...')
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: strategicPrompt
-          },
-          {
-            role: 'user',
-            content: currentMessage
-          }
-        ],
-        max_tokens: 200,
-        temperature: 0.8
-      })
-    })
-
-    if (!response.ok) {
-      console.error('❌ Error en OpenAI API:', await response.text())
-      return getContextualFallbackResponse(currentMessage, analysis, idealTraits)
-    }
-
-    const data = await response.json()
-    const aiResponse = data.choices[0].message.content
-
-    console.log('✅ Respuesta contextual de OpenAI:', aiResponse)
-    return aiResponse
-
-  } catch (error) {
-    console.error('❌ Error generando respuesta contextual:', error)
-    return getContextualFallbackResponse(currentMessage, analysis, idealTraits)
-  }
-}
-
-function createAdvancedContextualPrompt(
-  currentMessage: string,
-  fullConversationText: string,
-  analysis: any,
-  idealTraits: any[]
-): string {
+  
   const { matchPoints, metTraits } = analysis
   const totalTraits = idealTraits.length
-  const pendingTraits = idealTraits.filter((trait: any) => !metTraits.includes(trait.trait))
-  const nextTrait = pendingTraits[0]?.trait
-
-  return `
-Eres un VENDEDOR EXPERTO de Instagram que mantiene conversaciones NATURALES mientras descubre estratégicamente si el prospecto cumple características del cliente ideal.
-
-🎯 CARACTERÍSTICAS DEL CLIENTE IDEAL:
-${idealTraits.map((trait: any, i: number) => `${i+1}. ${trait.trait}`).join('\n')}
-
-📊 PROGRESO ACTUAL DEL PROSPECTO:
-- ✅ CARACTERÍSTICAS CONFIRMADAS: ${matchPoints}/${totalTraits}
-- ✅ CUMPLE: ${metTraits.join(' | ') || 'NINGUNA AÚN'}
-- 🎯 PRÓXIMO OBJETIVO: ${nextTrait || 'TODAS CONFIRMADAS - BUSCAR CONTACTO'}
-
-📝 HISTORIAL COMPLETO DE CONVERSACIÓN:
-${fullConversationText}
-
-💬 MENSAJE ACTUAL DEL PROSPECTO:
-"${currentMessage}"
-
-🗣️ TU ESTRATEGIA ESPECÍFICA:
-${matchPoints === 0 ? `
-🌟 INICIO - Responde al mensaje actual + descubrir primera característica
-- Responde ESPECÍFICAMENTE a lo que acaba de preguntar
-- Si pregunta tu nombre, díselo: "Soy María, asesora de viajes"
-- Después conecta naturalmente y haz UNA pregunta para descubrir: "${nextTrait}"
-- EJEMPLO: "Soy María, mucho gusto. Me dedico a ayudar personas a encontrar sus viajes ideales. ¿Qué tipo de experiencias te emocionan más?"
-` : matchPoints < totalTraits ? `
-💬 FILTRADO ACTIVO - Progreso ${matchPoints}/${totalTraits}
-- Responde DIRECTAMENTE a su mensaje actual
-- ENFÓCATE en descubrir: "${nextTrait}"
-- Haz una pregunta estratégica NATURAL para revelar esta característica
-- Conecta la pregunta con lo que ya han hablado
-` : `
-🏆 CLIENTE IDEAL CONFIRMADO - Conseguir llamada/WhatsApp
-- ¡PERFECTO! Este prospecto cumple TODAS las ${totalTraits} características
-- Responde a su mensaje y luego busca conseguir contacto
-- Sé DIRECTO: "Me parece que tenemos mucho en común, ¿te gustaría que platicáramos por teléfono?"
-`}
-
-🎭 REGLAS FUNDAMENTALES:
-1. **SIEMPRE responde al mensaje actual PRIMERO**
-2. **Conversación NATURAL** - Nunca suenes como bot
-3. **UNA pregunta estratégica por mensaje**
-4. **Conecta emocionalmente** - Muestra interés genuino
-5. **Máximo 150 caracteres** para Instagram
-6. **NUNCA ignores lo que te pregunta**
-
-RESPONDE SOLO con tu siguiente mensaje natural y contextual de máximo 150 caracteres.
-  `.trim()
-}
-
-function getContextualFallbackResponse(currentMessage: string, analysis: any, idealTraits: any[]): string {
-  const { matchPoints } = analysis
-  const totalTraits = idealTraits.length
-  const lowerMessage = currentMessage.toLowerCase()
-
-  // Respuestas específicas según el contexto del mensaje
-  if (lowerMessage.includes('como te llamas') || lowerMessage.includes('cuál es tu nombre')) {
+  const lowerCurrentMessage = currentMessage.toLowerCase()
+  
+  console.log(`🤖 Generando respuesta contextual para ${matchPoints}/${totalTraits} características`)
+  
+  // Analizar si ya se ha hecho esta pregunta antes
+  const previousMessages = conversationHistory
+    .filter(msg => msg.message_type === 'sent')
+    .map(msg => msg.message_text.toLowerCase())
+  
+  // RESPONDER ESPECÍFICAMENTE AL MENSAJE ACTUAL
+  
+  // Si pregunta nombre
+  if (lowerCurrentMessage.includes('como te llamas') || 
+      lowerCurrentMessage.includes('cuál es tu nombre') ||
+      lowerCurrentMessage.includes('quien eres')) {
+    
     if (matchPoints === 0) {
-      return "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más cuando viajas?"
+      return "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más cuando piensas en viajar?"
     } else if (matchPoints < totalTraits) {
-      return "Soy María. Me da curiosidad, ¿has pensado en hacer algún viaje especial últimamente?"
+      // Buscar siguiente característica pendiente
+      const pendingTrait = idealTraits.find(trait => !metTraits.includes(trait.trait))
+      if (pendingTrait?.trait.includes('presupuesto')) {
+        return "Soy María, encantada. ¿Has estado ahorrando para algo especial últimamente?"
+      } else if (pendingTrait?.trait.includes('decisión')) {
+        return "Soy María. ¿Eres de las personas que cuando algo les convence actúan rápido?"
+      } else if (pendingTrait?.trait.includes('zona')) {
+        return "Soy María, mucho gusto. ¿De qué ciudad me escribes?"
+      } else {
+        return "Soy María. ¿Qué tipo de planes tienes para los próximos meses?"
+      }
     } else {
-      return "Soy María. Me parece que tenemos mucho en común, ¿te gustaría que platicáramos por teléfono?"
+      return "Soy María. Me da la impresión de que tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?"
     }
   }
-
-  if (lowerMessage.includes('hola') || lowerMessage.includes('buenos')) {
-    return "¡Hola! Soy María. ¿Qué tipo de aventuras o experiencias te emocionan más?"
+  
+  // Si saluda
+  if (lowerCurrentMessage.includes('hola') || lowerCurrentMessage.includes('buenos')) {
+    if (previousMessages.some(msg => msg.includes('hola') || msg.includes('buenos'))) {
+      return "¡Qué gusto verte de nuevo! ¿En qué te puedo ayudar hoy?"
+    }
+    return "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de aventuras te emocionan más?"
   }
-
-  // Respuestas generales estratégicas
+  
+  // Si pregunta sobre conversaciones previas
+  if (lowerCurrentMessage.includes('de lo que hemos hablado') || 
+      lowerCurrentMessage.includes('conversación anterior')) {
+    if (matchPoints === 0) {
+      return "Claro, estábamos conociendonos. ¿Qué tipo de cosas disfrutas hacer en tu tiempo libre?"
+    } else {
+      return "Sí, me contabas sobre tus intereses. ¿Hay algo más que te gustaría que supiéramos?"
+    }
+  }
+  
+  // ESTRATEGIA BASADA EN PROGRESO
   if (matchPoints === 0) {
+    // Primer contacto - descubrir primera característica
     const responses = [
-      "Interesante. ¿Qué tipo de cosas te apasionan o te hacen sentir emocionado?",
-      "Perfecto. ¿Cuáles son tus actividades favoritas en tu tiempo libre?",
-      "Genial. ¿Hay algo específico que te guste hacer para relajarte o divertirte?"
+      "¿Qué tipo de experiencias te hacen sentir más emocionado?",
+      "¿Cuáles son tus actividades favoritas para relajarte?",
+      "¿Hay algo que hayas estado queriendo hacer hace tiempo?"
     ]
     return responses[Math.floor(Math.random() * responses.length)]
-  } else if (matchPoints < totalTraits) {
-    const responses = [
-      "Me parece muy bien. ¿Hay algo más que te guste hacer en tu tiempo libre?",
-      "Excelente. ¿Qué otras cosas disfrutas cuando tienes tiempo para ti?",
-      "Perfecto. ¿Tienes algún otro hobby o pasión que te emocione?"
-    ]
-    return responses[Math.floor(Math.random() * responses.length)]
-  } else {
-    const responses = [
-      "¡Increíble! Tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?",
-      "¡Perfecto! Creo que podríamos conectar muy bien. ¿Cuándo podríamos hablar?",
-      "¡Genial! Tengo ideas que creo te van a encantar. ¿Hablamos por teléfono?"
-    ]
-    return responses[Math.floor(Math.random() * responses.length)]
-  }
+  } 
+  
+  if (matchPoints < totalTraits) {
+    // Filtrado activo - buscar siguiente característica
+    const pendingTrait = idealTraits.find(trait => !metTraits.includes(trait.trait))
+    
+    if (pendingTrait?.trait.includes('presupuesto')) {
+      return "Me parece muy bien. ¿Has estado ahorrando para algo especial?"
+    } else if (pendingTrait?.trait.includes('decisión')) {
+      return "Perfecto. ¿Eres de los que cuando algo les convence no dudan en actuar?"
+    } else if (pendingTrait?.trait.includes('zona')) {
+      return "Excelente. ¿De qué parte del país me escribes?"
+    } else {
+      return "Genial. ¿Qué otros planes tienes para este año?"
+    }
+  } 
+  
+  // Cliente ideal - buscar contacto
+  const contactResponses = [
+    "¡Increíble! Tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?",
+    "¡Perfecto! Creo que tengo ideas que te van a encantar. ¿Cuándo podríamos hablar?",
+    "¡Genial! Me parece que podríamos hacer algo increíble juntos. ¿Hablamos por WhatsApp?"
+  ]
+  
+  return contactResponses[Math.floor(Math.random() * contactResponses.length)]
 }
 
-async function saveAnalysisToDatabase(supabase: any, senderId: string, analysis: any, messageCount: number) {
+async function saveProspectAnalysis(supabase: any, senderId: string, analysis: any, messageCount: number) {
   try {
     const analysisData = {
       sender_id: senderId,
       match_points: analysis.matchPoints,
       met_traits: analysis.metTraits,
-      met_trait_indices: analysis.metTraitIndices,
       last_analyzed_at: new Date().toISOString(),
       message_count: messageCount,
       analysis_data: {
         timestamp: new Date().toISOString(),
-        contextual_analysis: true,
-        source: 'webhook_contextual'
+        intelligent_analysis: true,
+        source: 'webhook_intelligent'
       }
     }
 
-    const { data, error } = await supabase
+    await supabase
       .from('prospect_analysis')
       .upsert(analysisData, { 
         onConflict: 'sender_id',
         ignoreDuplicates: false 
       })
 
-    if (error) {
-      console.error('❌ Error guardando análisis:', error)
-    } else {
-      console.log('✅ Análisis guardado exitosamente')
-    }
+    console.log('✅ Análisis guardado exitosamente')
   } catch (error) {
-    console.error('❌ Error en saveAnalysisToDatabase:', error)
+    console.error('❌ Error guardando análisis:', error)
   }
 }
 
@@ -550,26 +458,24 @@ async function sendResponseWithDelay(supabase: any, senderId: string, messageTex
     const success = await sendInstagramMessage(senderId, messageText)
     
     if (success) {
-      // Guardar mensaje enviado en la base de datos
+      // Guardar mensaje enviado
       await supabase
         .from('instagram_messages')
         .insert({
-          instagram_message_id: `contextual_${Date.now()}_${Math.random()}`,
-          sender_id: 'ai_contextual_assistant',
+          instagram_message_id: `intelligent_${Date.now()}_${Math.random()}`,
+          sender_id: 'ai_intelligent_assistant',
           recipient_id: senderId,
           message_text: messageText,
           message_type: 'sent',
           timestamp: new Date().toISOString(),
           raw_data: {
             ai_generated: true,
-            contextual_response: true,
-            source: 'webhook_contextual_response'
+            intelligent_response: true,
+            source: 'webhook_intelligent_response'
           }
         })
 
-      console.log('✅ Respuesta contextual enviada y guardada exitosamente')
-    } else {
-      console.error('❌ Error enviando respuesta contextual')
+      console.log('✅ Respuesta inteligente enviada y guardada exitosamente')
     }
 
   } catch (error) {
@@ -577,14 +483,17 @@ async function sendResponseWithDelay(supabase: any, senderId: string, messageTex
   }
 }
 
-async function sendGenericResponse(supabase: any, senderId: string) {
-  const responses = [
-    "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?",
-    "¡Hola! Soy María. ¿Qué actividades disfrutas hacer en tu tiempo libre?",
-    "Mucho gusto, soy María. ¿Hay algo específico que te apasione o te emocione?"
-  ]
+async function sendFallbackResponse(supabase: any, senderId: string, currentMessage: string) {
+  const lowerMessage = currentMessage.toLowerCase()
   
-  const response = responses[Math.floor(Math.random() * responses.length)]
+  let response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
+  
+  if (lowerMessage.includes('como te llamas')) {
+    response = "Soy María, asesora de viajes. ¿Qué tipo de aventuras disfrutas?"
+  } else if (lowerMessage.includes('hola')) {
+    response = "¡Hola! Soy María. ¿Qué actividades te hacen sentir más emocionado?"
+  }
+  
   await sendResponseWithDelay(supabase, senderId, response)
 }
 
