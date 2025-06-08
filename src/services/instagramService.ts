@@ -123,20 +123,18 @@ export const handleInstagramCallback = async (code: string) => {
     //     },
     //   }
     // );
+    const formData = new FormData();
+    formData.append("client_id", FACEBOOK_APP_ID);
+    formData.append("client_secret", "e3d7940c6737b867ca388eb9927fd5d2");
+    formData.append("grant_type", "authorization_code");
+    formData.append("redirect_uri", INSTAGRAM_REDIRECT_URI);
+    formData.append("code", code);
+
     const response = await fetch(
       "https://api.instagram.com/oauth/access_token",
       {
         method: "POST",
-        body: JSON.stringify({
-          client_id: FACEBOOK_APP_ID,
-          client_secret: "e3d7940c6737b867ca388eb9927fd5d2",
-          grant_type: "authorization_code",
-          redirect_uri: INSTAGRAM_REDIRECT_URI,
-          code: code,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: formData,
       }
     );
 
