@@ -130,6 +130,8 @@ export const handleInstagramCallback = async (code: string) => {
     formData.append("redirect_uri", INSTAGRAM_REDIRECT_URI);
     formData.append("code", code);
 
+    console.log("FormData:", formData);
+
     const response = await fetch(
       "https://api.instagram.com/oauth/access_token",
       {
@@ -139,6 +141,8 @@ export const handleInstagramCallback = async (code: string) => {
     );
 
     const data = await response.json();
+
+    console.log("Respuesta de Graph API:", data);
 
     // if (error) {
     //   console.error("Error llamando edge function:", error);
@@ -168,37 +172,39 @@ export const handleInstagramCallback = async (code: string) => {
     //   throw new Error(error.message || "Error del servidor");
     // }
 
-    if (data.error) {
-      console.error("Error de Graph API:", data.error);
+    // if (data.error) {
+    //   console.error("Error de Graph API:", data.error);
 
-      // Manejo específico de errores de Graph API
-      let errorMessage = data.error_description || data.error;
+    //   // Manejo específico de errores de Graph API
+    //   let errorMessage = data.error_description || data.error;
 
-      if (data.error === "invalid_client") {
-        errorMessage =
-          "App no válida. Verifica que la app esté configurada correctamente en Facebook Developers.";
-      } else if (data.error.includes("redirect_uri")) {
-        errorMessage = `URL de redirección no coincide. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`;
-      } else if (data.error === "access_denied") {
-        errorMessage = "Acceso denegado por el usuario.";
-      }
+    //   if (data.error === "invalid_client") {
+    //     errorMessage =
+    //       "App no válida. Verifica que la app esté configurada correctamente en Facebook Developers.";
+    //   } else if (data.error.includes("redirect_uri")) {
+    //     errorMessage = `URL de redirección no coincide. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`;
+    //   } else if (data.error === "access_denied") {
+    //     errorMessage = "Acceso denegado por el usuario.";
+    //   }
 
-      toast({
-        title: "Error de autenticación",
-        description: errorMessage,
-        variant: "destructive",
-      });
+    //   toast({
+    //     title: "Error de autenticación",
+    //     description: errorMessage,
+    //     variant: "destructive",
+    //   });
 
-      throw new Error(errorMessage);
-    }
+    //   throw new Error(errorMessage);
+    // }
 
     const token = data.access_token;
+
+    console.log("Token de acceso obtenido:", token);
 
     // Guardar token y datos del usuario
     localStorage.setItem("hower-instagram-token", token);
 
     const accountResponse = await fetch(
-      `https://graph.instagram.com/v23.0/me?fields=id,user_id,username,name,account_type,profile_picture_url,followers_count,follows_count,media_count&access_token=${token}`
+      `https://graph.instagram.com/v23.0/me?fields=user_id,username,name&access_token=${token}`
     );
 
     if (!accountResponse.ok) {
@@ -206,6 +212,8 @@ export const handleInstagramCallback = async (code: string) => {
     }
 
     const accountData = await accountResponse.json();
+    console.log("Respuesta de la cuenta:", accountData);
+
     if (!accountData.data) {
       throw new Error("No se encontraron datos de la cuenta");
     }
