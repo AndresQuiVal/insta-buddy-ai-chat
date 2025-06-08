@@ -171,8 +171,8 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     console.log('✅ Message saved successfully:', data)
 
-    // 🔥 ANÁLISIS MEJORADO Y RESPUESTA INTELIGENTE
-    await handleIntelligentConversationAnalysis(supabase, event.sender.id, event.message.text)
+    // RESPUESTA AUTOMÁTICA SIMPLE
+    await handleSimpleResponse(supabase, event.sender.id, event.message.text)
 
   } catch (error) {
     console.error('❌ Error processing messaging event:', error)
@@ -180,462 +180,41 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   }
 }
 
-async function handleIntelligentConversationAnalysis(supabase: any, senderId: string, currentMessage: string) {
+async function handleSimpleResponse(supabase: any, senderId: string, messageText: string) {
   try {
-    console.log('🧠 INICIANDO ANÁLISIS CONTEXTUAL MEJORADO')
-    console.log(`👤 Sender ID: ${senderId}`)
-    console.log(`💬 Mensaje actual: "${currentMessage}"`)
-
-    // 1. OBTENER HISTORIAL COMPLETO ORDENADO
-    const { data: allMessages, error: messagesError } = await supabase
-      .from('instagram_messages')
-      .select('*')
-      .or(`sender_id.eq.${senderId},recipient_id.eq.${senderId}`)
-      .order('timestamp', { ascending: true })
-
-    if (messagesError) {
-      console.error('❌ Error obteniendo mensajes:', messagesError)
-      await sendFallbackResponse(supabase, senderId, currentMessage)
-      return
-    }
-
-    const conversationHistory = allMessages || []
-    console.log(`📝 HISTORIAL: ${conversationHistory.length} mensajes`)
-
-    // 2. OBTENER CARACTERÍSTICAS IDEALES
-    const { data: idealTraitsData, error: traitsError } = await supabase
-      .from('ideal_client_traits')
-      .select('*')
-      .eq('enabled', true)
-      .order('position')
-
-    if (traitsError || !idealTraitsData || idealTraitsData.length === 0) {
-      console.log('⚠️ No hay características configuradas, usando análisis básico')
-      await sendContextualResponse(supabase, senderId, currentMessage, conversationHistory, [], 0)
-      return
-    }
-
-    // 3. CONSTRUIR HISTORIAL PARA ANÁLISIS
-    const fullConversation = conversationHistory
-      .map(msg => `${msg.message_type === 'received' ? 'Usuario' : 'María'}: ${msg.message_text}`)
-      .join('\n')
-
-    console.log('💭 CONVERSACIÓN COMPLETA:')
-    console.log(fullConversation)
-
-    // 4. ANÁLISIS CONTEXTUAL MEJORADO
-    const analysis = await analyzeConversationContextually(fullConversation, currentMessage, idealTraitsData)
-    console.log('📊 ANÁLISIS COMPLETADO:', analysis)
-
-    // 5. GUARDAR ANÁLISIS SI HAY MATCHES
-    if (analysis.matchPoints > 0) {
-      await saveProspectAnalysis(supabase, senderId, analysis, conversationHistory.length)
-    }
-
-    // 6. GENERAR RESPUESTA CONTEXTUAL INTELIGENTE
-    await sendContextualResponse(supabase, senderId, currentMessage, conversationHistory, idealTraitsData, analysis.matchPoints, analysis.metTraits)
-
-  } catch (error) {
-    console.error('❌ Error en análisis contextual:', error)
-    await sendFallbackResponse(supabase, senderId, currentMessage)
-  }
-}
-
-async function analyzeConversationContextually(conversationText: string, currentMessage: string, idealTraits: any[]): Promise<any> {
-  console.log('🔍 ANÁLISIS CONTEXTUAL MEJORADO')
-  
-  const text = conversationText.toLowerCase()
-  const currentLower = currentMessage.toLowerCase()
-  
-  // Mapa mejorado que incluye contexto conversacional
-  const contextualKeywordMap: Record<string, string[]> = {
-    "Interesado en nuestros productos o servicios": [
-      // Interés directo
-      "me interesa", "me interesan", "interesado", "interesada", 
-      "quiero saber", "información", "detalles", "precio", "costo",
-      "me gusta", "me encanta", "necesito", "busco", "requiero",
-      // Productos específicos  
-      "crucero", "cruceros", "viaje", "viajes", "tour", "excursión", 
-      "vacaciones", "aventura", "destino", "conocer", "explorar",
-      // Frases de interés
-      "cuéntame más", "qué incluye", "cómo funciona", "opciones"
-    ],
-    "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
-      "presupuesto", "dinero", "pago", "pagar", "precio", "costo",
-      "puedo pagar", "tengo dinero", "dispongo", "cuento con", 
-      "tarjeta", "efectivo", "financiamiento", "crédito",
-      "mil", "miles", "pesos", "dólares", "vale la pena", "invertir",
-      "cuánto cuesta", "cuánto vale", "económico", "meses", "cuotas"
-    ],
-    "Está listo para tomar una decisión de compra": [
-      "decidido", "listo", "preparado", "comprar", "reservar", 
-      "confirmar", "ahora", "hoy", "ya", "pronto", "inmediato",
-      "perfecto", "de acuerdo", "acepto", "sí", "claro", "adelante",
-      "cuándo", "fecha", "programar", "siguiente paso"
-    ],
-    "Se encuentra en nuestra zona de servicio": [
-      "vivo", "estoy", "ubicado", "dirección", "ciudad", "zona",
-      "méxico", "guadalajara", "monterrey", "cdmx", "madrid", 
-      "barcelona", "envío", "entrega", "cerca", "lejos", "local"
-    ]
-  }
-  
-  const metTraits: string[] = []
-  
-  idealTraits.forEach((trait) => {
-    const keywords = contextualKeywordMap[trait.trait] || []
+    console.log('🤖 Generando respuesta simple para:', messageText)
     
-    let matchFound = false
-    for (const keyword of keywords) {
-      if (text.includes(keyword) || currentLower.includes(keyword)) {
-        matchFound = true
-        break
-      }
-    }
-    
-    console.log(`🎯 "${trait.trait}": ${matchFound ? '✅ SÍ' : '❌ NO'}`)
-    
-    if (matchFound) {
-      metTraits.push(trait.trait)
-    }
-  })
-  
-  return {
-    matchPoints: metTraits.length,
-    metTraits
-  }
-}
-
-async function sendContextualResponse(
-  supabase: any, 
-  senderId: string, 
-  currentMessage: string, 
-  conversationHistory: any[], 
-  idealTraits: any[], 
-  matchPoints: number = 0,
-  metTraits: string[] = []
-) {
-  try {
-    const lowerCurrentMessage = currentMessage.toLowerCase()
-    const messageCount = conversationHistory.length
-    
-    console.log(`🤖 Generando respuesta contextual para "${currentMessage}"`)
-    console.log(`📊 Match points: ${matchPoints}, Mensajes: ${messageCount}`)
-    
+    const lowerMessage = messageText.toLowerCase().trim()
     let response = ""
     
-    // RESPUESTAS ESPECÍFICAS SEGÚN EL MENSAJE ACTUAL
-    
-    // 1. Pregunta sobre conversación anterior
-    if (lowerCurrentMessage.includes('leíste mi conversación') || 
-        lowerCurrentMessage.includes('leiste mi conversacion') ||
-        lowerCurrentMessage.includes('de lo que hemos hablado') || 
-        lowerCurrentMessage.includes('conversación anterior')) {
-      
-      if (messageCount <= 2) {
-        response = "Claro, he visto que nos estamos conociendo. Me contabas sobre ti. ¿Qué tipo de actividades te emocionan más?"
-      } else if (matchPoints === 0) {
-        response = "Sí, claro que he leído nuestra conversación. Veo que tienes interés en ciertas cosas. ¿Has estado ahorrando para algo especial últimamente?"
-      } else if (matchPoints < 3) {
-        response = "Por supuesto, he revisado todo lo que me has contado. Me parece que tienes buen criterio. ¿Eres de las personas que cuando algo les convence actúan rápido?"
-      } else {
-        response = "Claro que sí, he leído toda nuestra plática. Me da mucha confianza hablar contigo. ¿Te gustaría que habláramos por teléfono?"
-      }
+    // Respuestas específicas y simples
+    if (lowerMessage.includes('como te llamas') || lowerMessage.includes('cómo te llamas') || lowerMessage.includes('cual es tu nombre') || lowerMessage.includes('cuál es tu nombre')) {
+      response = "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
     }
-    
-    // 2. Pregunta sobre nombre/identidad
-    else if (lowerCurrentMessage.includes('como te llamas') || 
-             lowerCurrentMessage.includes('cómo te llamas') ||
-             lowerCurrentMessage.includes('cuál es tu nombre') ||
-             lowerCurrentMessage.includes('quien eres') ||
-             lowerCurrentMessage.includes('quién eres')) {
-      
-      if (messageCount <= 2) {
-        response = "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más cuando piensas en viajar?"
-      } else if (matchPoints < 2) {
-        response = "Soy María, encantada. Veo que tienes intereses específicos. ¿Has estado ahorrando para algo especial?"
-      } else {
-        response = "Soy María. Me da la impresión de que tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?"
-      }
+    else if (lowerMessage.includes('leíste mi conversación') || lowerMessage.includes('leiste mi conversacion') || lowerMessage.includes('conversación anterior')) {
+      response = "Claro, he visto nuestra conversación. ¿Qué más te gustaría saber?"
     }
-    
-    // 3. Saludos
-    else if (lowerCurrentMessage.includes('hola') || 
-             lowerCurrentMessage.includes('buenos') ||
-             lowerCurrentMessage.includes('buenas')) {
-      
-      // Verificar si ya saludó antes
-      const previousGreetings = conversationHistory.filter(msg => 
-        msg.message_type === 'received' && 
-        (msg.message_text.toLowerCase().includes('hola') || 
-         msg.message_text.toLowerCase().includes('buenos'))
-      )
-      
-      if (previousGreetings.length > 1) {
-        response = "¡Qué gusto verte de nuevo! ¿En qué más te puedo ayudar?"
-      } else if (messageCount === 1) {
-        response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de aventuras te emocionan más?"
-      } else {
-        response = "¡Hola otra vez! ¿Qué más te gustaría saber?"
-      }
+    else if (lowerMessage.includes('hola') || lowerMessage.includes('buenos') || lowerMessage.includes('buenas')) {
+      response = "¡Hola! Soy María. ¿Qué tipo de aventuras te emocionan más?"
     }
-    
-    // 4. Mensajes en inglés
-    else if (lowerCurrentMessage.trim() === 'how' || lowerCurrentMessage.includes('hello')) {
+    else if (lowerMessage === 'how' || lowerMessage.includes('hello')) {
       response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
     }
-    
-    // 5. Respuestas según progreso de características
     else {
-      if (matchPoints === 0) {
-        const responses = [
-          "¿Qué tipo de experiencias te hacen sentir más emocionado?",
-          "¿Cuáles son tus actividades favoritas para relajarte?",
-          "¿Hay algo que hayas estado queriendo hacer hace tiempo?"
-        ]
-        response = responses[Math.floor(Math.random() * responses.length)]
-      } 
-      else if (matchPoints < idealTraits.length) {
-        // Buscar siguiente característica faltante
-        const pendingTrait = idealTraits.find(trait => !metTraits.includes(trait.trait))
-        
-        if (pendingTrait?.trait.includes('presupuesto')) {
-          response = "Me parece muy bien. ¿Has estado ahorrando para algo especial?"
-        } else if (pendingTrait?.trait.includes('decisión')) {
-          response = "Perfecto. ¿Eres de los que cuando algo les convence no dudan en actuar?"
-        } else if (pendingTrait?.trait.includes('zona')) {
-          response = "Excelente. ¿De qué parte del país me escribes?"
-        } else {
-          response = "Genial. ¿Qué otros planes tienes para este año?"
-        }
-      } 
-      else {
-        // Cliente ideal - buscar contacto
-        const contactResponses = [
-          "¡Increíble! Tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?",
-          "¡Perfecto! Creo que tengo ideas que te van a encantar. ¿Cuándo podríamos hablar?",
-          "¡Genial! Me parece que podríamos hacer algo increíble juntos. ¿Hablamos por WhatsApp?"
-        ]
-        response = contactResponses[Math.floor(Math.random() * contactResponses.length)]
-      }
+      // Respuesta por defecto
+      const defaultResponses = [
+        "¿Qué tipo de experiencias te hacen sentir más emocionado?",
+        "¿Cuáles son tus actividades favoritas para relajarte?",
+        "¿Hay algo que hayas estado queriendo hacer hace tiempo?"
+      ]
+      response = defaultResponses[Math.floor(Math.random() * defaultResponses.length)]
     }
 
     console.log('🤖 RESPUESTA GENERADA:', response)
     await sendResponseWithDelay(supabase, senderId, response)
 
   } catch (error) {
-    console.error('❌ Error en sendContextualResponse:', error)
-    await sendFallbackResponse(supabase, senderId, currentMessage)
-  }
-}
-
-async function analyzeFullConversation(conversationText: string, idealTraits: any[]): Promise<any> {
-  console.log('🔍 ANALIZANDO CONVERSACIÓN COMPLETA')
-  
-  const text = conversationText.toLowerCase()
-  
-  // Mapa expandido de palabras clave
-  const keywordMap: Record<string, string[]> = {
-    "Interesado en nuestros productos o servicios": [
-      "me interesa", "me interesan", "interesado", "interesada", "quiero saber",
-      "información", "detalles", "precio", "costo", "cotización", "cuánto cuesta",
-      "me gusta", "me encanta", "necesito", "busco", "requiero", "quiero",
-      "producto", "servicio", "oferta", "promoción", "paquete", "plan",
-      "crucero", "cruceros", "viaje", "viajes", "tour", "excursión", "vacaciones",
-      "disfrutar", "conocer", "explorar", "destino", "aventura"
-    ],
-    "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
-      "presupuesto", "dinero", "pago", "pagar", "precio", "costo", "inversión",
-      "puedo pagar", "tengo dinero", "dispongo", "cuento con", "tarjeta",
-      "efectivo", "financiamiento", "crédito", "mil", "miles", "pesos", "dólares",
-      "vale la pena", "invertir", "gastar", "económico", "caro", "barato"
-    ],
-    "Está listo para tomar una decisión de compra": [
-      "decidido", "listo", "preparado", "comprar", "reservar", "confirmar",
-      "ahora", "hoy", "ya", "pronto", "inmediato", "urgente", "cuando",
-      "perfecto", "de acuerdo", "acepto", "sí", "claro", "adelante", "vamos"
-    ],
-    "Se encuentra en nuestra zona de servicio": [
-      "vivo", "estoy", "ubicado", "dirección", "ciudad", "zona", "región",
-      "méxico", "guadalajara", "monterrey", "cdmx", "envío", "entrega",
-      "cerca", "lejos", "local", "nacional"
-    ]
-  }
-  
-  const metTraits: string[] = []
-  
-  idealTraits.forEach((trait) => {
-    const keywords = keywordMap[trait.trait] || []
-    
-    let matchFound = false
-    for (const keyword of keywords) {
-      if (text.includes(keyword)) {
-        matchFound = true
-        break
-      }
-    }
-    
-    console.log(`   🎯 "${trait.trait}": ${matchFound ? '✅ SÍ' : '❌ NO'}`)
-    
-    if (matchFound) {
-      metTraits.push(trait.trait)
-    }
-  })
-  
-  return {
-    matchPoints: metTraits.length,
-    metTraits
-  }
-}
-
-async function generateContextualResponse(
-  currentMessage: string,
-  fullConversation: string,
-  analysis: any,
-  idealTraits: any[],
-  conversationHistory: any[]
-): Promise<string> {
-  
-  const { matchPoints, metTraits } = analysis
-  const totalTraits = idealTraits.length
-  const lowerCurrentMessage = currentMessage.toLowerCase()
-  
-  console.log(`🤖 Generando respuesta contextual para ${matchPoints}/${totalTraits} características`)
-  console.log(`📩 Mensaje actual: "${currentMessage}"`)
-  
-  // RESPONDER ESPECÍFICAMENTE AL MENSAJE ACTUAL
-  
-  // Si pregunta sobre conversación anterior
-  if (lowerCurrentMessage.includes('leíste mi conversación') || 
-      lowerCurrentMessage.includes('leiste mi conversacion') ||
-      lowerCurrentMessage.includes('de lo que hemos hablado') || 
-      lowerCurrentMessage.includes('conversación anterior')) {
-    
-    if (matchPoints === 0) {
-      return "Claro, he visto que nos estamos conociendo. Me contabas sobre ti. ¿Qué tipo de actividades te emocionan más?"
-    } else if (matchPoints === 1) {
-      return "Sí, claro que la he leído. Veo que tienes interés en ciertas cosas. ¿Has estado ahorrando para algo especial últimamente?"
-    } else if (matchPoints === 2) {
-      return "Por supuesto, he revisado nuestra conversación. Me parece que tienes buen criterio. ¿Eres de las personas que cuando algo les convence actúan rápido?"
-    } else if (matchPoints >= 3) {
-      return "Claro que sí, he leído todo lo que me has contado. Me da mucha confianza platicar contigo. ¿Te gustaría que habláramos por teléfono?"
-    }
-  }
-
-  // Si pregunta nombre
-  if (lowerCurrentMessage.includes('como te llamas') || 
-      lowerCurrentMessage.includes('cómo te llamas') ||
-      lowerCurrentMessage.includes('cuál es tu nombre') ||
-      lowerCurrentMessage.includes('cual es tu nombre') ||
-      lowerCurrentMessage.includes('quien eres') ||
-      lowerCurrentMessage.includes('quién eres')) {
-    
-    if (matchPoints === 0) {
-      return "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más cuando piensas en viajar?"
-    } else if (matchPoints === 1) {
-      const pendingTrait = idealTraits.find(trait => !metTraits.includes(trait.trait))
-      if (pendingTrait?.trait.includes('presupuesto')) {
-        return "Soy María, encantada. ¿Has estado ahorrando para algo especial últimamente?"
-      } else if (pendingTrait?.trait.includes('decisión')) {
-        return "Soy María. ¿Eres de las personas que cuando algo les convence actúan rápido?"
-      } else {
-        return "Soy María. ¿De qué ciudad me escribes?"
-      }
-    } else if (matchPoints >= 2) {
-      return "Soy María. Me da la impresión de que tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?"
-    }
-  }
-  
-  // Si saluda
-  if (lowerCurrentMessage.includes('hola') || 
-      lowerCurrentMessage.includes('buenos') ||
-      lowerCurrentMessage.includes('buenas')) {
-    
-    // Verificar si ya saludó antes
-    const previousGreetings = conversationHistory.filter(msg => 
-      msg.message_type === 'received' && 
-      (msg.message_text.toLowerCase().includes('hola') || msg.message_text.toLowerCase().includes('buenos'))
-    )
-    
-    if (previousGreetings.length > 1) {
-      if (matchPoints === 0) {
-        return "¡Qué gusto verte de nuevo! ¿Qué tipo de experiencias te hacen sentir más emocionado?"
-      } else if (matchPoints < totalTraits) {
-        return "¡Hola otra vez! ¿En qué más te puedo ayudar?"
-      } else {
-        return "¡Hola! Me encanta que sigas aquí. ¿Cuándo podríamos hablar por teléfono?"
-      }
-    } else {
-      return "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de aventuras te emocionan más?"
-    }
-  }
-
-  // Si dice "How" (inglés)
-  if (lowerCurrentMessage.trim() === 'how') {
-    return "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
-  }
-  
-  // ESTRATEGIA BASADA EN PROGRESO
-  if (matchPoints === 0) {
-    // Primer contacto - descubrir primera característica
-    const responses = [
-      "¿Qué tipo de experiencias te hacen sentir más emocionado?",
-      "¿Cuáles son tus actividades favoritas para relajarte?",
-      "¿Hay algo que hayas estado queriendo hacer hace tiempo?"
-    ]
-    return responses[Math.floor(Math.random() * responses.length)]
-  } 
-  
-  if (matchPoints < totalTraits) {
-    // Filtrado activo - buscar siguiente característica
-    const pendingTrait = idealTraits.find(trait => !metTraits.includes(trait.trait))
-    
-    if (pendingTrait?.trait.includes('presupuesto')) {
-      return "Me parece muy bien. ¿Has estado ahorrando para algo especial?"
-    } else if (pendingTrait?.trait.includes('decisión')) {
-      return "Perfecto. ¿Eres de los que cuando algo les convence no dudan en actuar?"
-    } else if (pendingTrait?.trait.includes('zona')) {
-      return "Excelente. ¿De qué parte del país me escribes?"
-    } else {
-      return "Genial. ¿Qué otros planes tienes para este año?"
-    }
-  } 
-  
-  // Cliente ideal - buscar contacto
-  const contactResponses = [
-    "¡Increíble! Tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?",
-    "¡Perfecto! Creo que tengo ideas que te van a encantar. ¿Cuándo podríamos hablar?",
-    "¡Genial! Me parece que podríamos hacer algo increíble juntos. ¿Hablamos por WhatsApp?"
-  ]
-  
-  return contactResponses[Math.floor(Math.random() * contactResponses.length)]
-}
-
-async function saveProspectAnalysis(supabase: any, senderId: string, analysis: any, messageCount: number) {
-  try {
-    const analysisData = {
-      sender_id: senderId,
-      match_points: analysis.matchPoints,
-      met_traits: analysis.metTraits,
-      last_analyzed_at: new Date().toISOString(),
-      message_count: messageCount,
-      analysis_data: {
-        timestamp: new Date().toISOString(),
-        intelligent_analysis: true,
-        source: 'webhook_contextual'
-      }
-    }
-
-    await supabase
-      .from('prospect_analysis')
-      .upsert(analysisData, { 
-        onConflict: 'sender_id',
-        ignoreDuplicates: false 
-      })
-
-    console.log('✅ Análisis guardado exitosamente')
-  } catch (error) {
-    console.error('❌ Error guardando análisis:', error)
+    console.error('❌ Error en handleSimpleResponse:', error)
   }
 }
 
@@ -659,41 +238,25 @@ async function sendResponseWithDelay(supabase: any, senderId: string, messageTex
       await supabase
         .from('instagram_messages')
         .insert({
-          instagram_message_id: `contextual_${Date.now()}_${Math.random()}`,
-          sender_id: 'ai_contextual_assistant',
+          instagram_message_id: `simple_${Date.now()}_${Math.random()}`,
+          sender_id: 'ai_assistant',
           recipient_id: senderId,
           message_text: messageText,
           message_type: 'sent',
           timestamp: new Date().toISOString(),
           raw_data: {
             ai_generated: true,
-            contextual_response: true,
-            source: 'webhook_contextual_response'
+            simple_response: true,
+            source: 'webhook_simple_response'
           }
         })
 
-      console.log('✅ Respuesta contextual enviada y guardada exitosamente')
+      console.log('✅ Respuesta simple enviada y guardada exitosamente')
     }
 
   } catch (error) {
     console.error('❌ Error en sendResponseWithDelay:', error)
   }
-}
-
-async function sendFallbackResponse(supabase: any, senderId: string, currentMessage: string) {
-  const lowerMessage = currentMessage.toLowerCase()
-  
-  let response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
-  
-  if (lowerMessage.includes('como te llamas') || lowerMessage.includes('cómo te llamas')) {
-    response = "Soy María, asesora de viajes. ¿Qué tipo de aventuras disfrutas?"
-  } else if (lowerMessage.includes('hola')) {
-    response = "¡Hola! Soy María. ¿Qué actividades te hacen sentir más emocionado?"
-  } else if (lowerMessage.includes('leíste mi conversación') || lowerMessage.includes('leiste mi conversacion')) {
-    response = "Claro, he visto que nos estamos conociendo. ¿Qué tipo de experiencias te emocionan?"
-  }
-  
-  await sendResponseWithDelay(supabase, senderId, response)
 }
 
 async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
