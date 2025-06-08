@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -199,7 +200,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     await supabase.from('instagram_messages').insert(messageData)
     console.log('✅ PASO 1 COMPLETADO: Mensaje guardado exitosamente')
 
-    // PASO 2: ANALIZAR CONVERSACIÓN COMPLETA
+    // PASO 2: ANALIZAR CONVERSACIÓN COMPLETA - SIEMPRE EJECUTAR
     console.log('🔍 ===============================================')
     console.log('🔍 PASO 2: ANALIZANDO CONVERSACIÓN COMPLETA')
     console.log('🔍 ===============================================')
@@ -214,7 +215,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
 async function analyzeFullConversationAndRespond(supabase: any, senderId: string, currentMessage: string) {
   console.log('📚 =============================================')
-  console.log('📚 OBTENIENDO HISTORIAL COMPLETO DE CONVERSACIÓN')
+  console.log('📚 PASO 2A: OBTENIENDO HISTORIAL COMPLETO')
   console.log('📚 =============================================')
   
   try {
@@ -234,7 +235,7 @@ async function analyzeFullConversationAndRespond(supabase: any, senderId: string
     const messages = conversationHistory || []
     console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
 
-    // 🔥 IMPRIMIR HISTORIAL COMPLETO DE LA CONVERSACIÓN 🔥
+    // 🔥 IMPRIMIR HISTORIAL COMPLETO DE LA CONVERSACIÓN - OBLIGATORIO 🔥
     console.log('📖 ========== CONVERSACIÓN COMPLETA ==========')
     console.log(`👤 USUARIO: ${senderId}`)
     console.log(`📝 TOTAL DE MENSAJES: ${messages.length}`)
@@ -254,8 +255,11 @@ async function analyzeFullConversationAndRespond(supabase: any, senderId: string
     }
     console.log('📖 ========================================')
 
-    // Obtener características configuradas
-    console.log('🎯 OBTENIENDO CARACTERÍSTICAS CONFIGURADAS...')
+    // PASO 2B: Obtener características configuradas
+    console.log('🎯 ===============================================')
+    console.log('🎯 PASO 2B: OBTENIENDO CARACTERÍSTICAS CONFIGURADAS')
+    console.log('🎯 ===============================================')
+    
     const { data: traitsData, error: traitsError } = await supabase
       .from('ideal_client_traits')
       .select('*')
@@ -300,7 +304,9 @@ async function analyzeFullConversationAndRespond(supabase: any, senderId: string
 }
 
 async function generateAIResponse(messages: any[], traits: any[], senderId: string, currentMessage: string): Promise<string> {
-  console.log('🧠 INICIANDO GENERACIÓN DE RESPUESTA CON IA...')
+  console.log('🧠 ===============================================')
+  console.log('🧠 PASO 3A: INICIANDO GENERACIÓN CON IA')
+  console.log('🧠 ===============================================')
   
   try {
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
@@ -320,13 +326,17 @@ async function generateAIResponse(messages: any[], traits: any[], senderId: stri
       .join('\n')
 
     console.log('📝 CONTEXTO DE CONVERSACIÓN PARA IA:')
+    console.log('=====================================')
     console.log(conversationContext)
+    console.log('=====================================')
 
     // Crear lista de características para el prompt
     const traitsList = traits.map((trait, index) => `${index + 1}. ${trait.trait}`).join('\n')
     
     console.log('🎯 CARACTERÍSTICAS PARA IA:')
+    console.log('============================')
     console.log(traitsList)
+    console.log('============================')
 
     const prompt = `Eres María, una asesora de viajes experta. Tu trabajo es continuar la conversación de manera natural y hacer preguntas estratégicas para identificar si el prospecto cumple con las características del cliente ideal.
 
@@ -348,7 +358,10 @@ INSTRUCCIONES:
 Responde SOLO con el mensaje que María debe enviar (máximo 2-3 oraciones):`
 
     console.log('📤 ENVIANDO PROMPT A OPENAI...')
-    console.log('PROMPT COMPLETO:', prompt)
+    console.log('PROMPT COMPLETO:')
+    console.log('===============')
+    console.log(prompt)
+    console.log('===============')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
