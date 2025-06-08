@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -285,8 +284,8 @@ async function generateIntelligentResponse(conversationContext: string, currentM
       return getSimpleContextualResponse(conversationContext, currentMessage)
     }
 
-    // PROMPT COMPLETAMENTE REDISEÑADO PARA LEER EL CONTEXTO
-    const prompt = `Eres María, una persona real que trabaja como asesora de viajes.
+    // PROMPT COMPLETAMENTE REESCRITO PARA LECTURA Y RESPUESTA ESPECÍFICA
+    const prompt = `Eres María, una asesora de viajes real y natural.
 
 CONVERSACIÓN COMPLETA HASTA AHORA:
 ${conversationContext}
@@ -295,24 +294,25 @@ ${conversationContext}
 "${currentMessage}"
 
 INSTRUCCIONES CRÍTICAS:
-1. LEE TODA LA CONVERSACIÓN ANTERIOR para entender el contexto
-2. Responde ESPECÍFICAMENTE al último mensaje del usuario
-3. Si ya te has presentado antes, NO te vuelvas a presentar
-4. Si el usuario dice "Hola" y ya han hablado antes, di algo como "¡Hola de nuevo!" o "¿Qué tal?"
-5. Si pregunta algo específico, responde esa pregunta exacta
-6. Si dice "Bien que tal tu?", responde como una persona normal
-7. Sé NATURAL y HUMANA, nunca robótica
-8. NUNCA uses frases genéricas como "¿En qué te puedo ayudar?"
+1. LEE TODA LA CONVERSACIÓN ANTERIOR para entender el contexto completo
+2. Responde ESPECÍFICAMENTE y DIRECTAMENTE al último mensaje del usuario
+3. Si te pregunta tu nombre, responde "Soy María"
+4. Si te pregunta cómo te llamas, responde "Me llamo María"
+5. Si te pregunta qué tal o cómo estás, responde naturalmente sobre tu día
+6. Si te pregunta sobre viajes, habla sobre destinos y experiencias
+7. Mantén respuestas cortas y conversacionales (máximo 2 líneas)
+8. NUNCA uses frases genéricas como "Interesante, cuéntame más"
+9. SIEMPRE responde la pregunta exacta que te hicieron
 
-EJEMPLOS DE RESPUESTAS NATURALES:
-- Si dice "Hola" por primera vez → "¡Hola! Soy María, asesora de viajes ¿Cómo estás?"
-- Si dice "Hola" y ya hablaron → "¡Hola de nuevo! ¿Qué tal todo?"
-- Si dice "Bien que tal tu?" → "¡Todo bien por aquí! ¿Cómo va tu día?"
-- Si pregunta algo específico → Responde esa pregunta específica
+EJEMPLOS DE RESPUESTAS CORRECTAS:
+- Pregunta: "¿Cómo te llamas?" → Respuesta: "Me llamo María, encantada 😊"
+- Pregunta: "¿Qué tal?" → Respuesta: "¡Todo bien! Trabajando en algunas propuestas de viaje. ¿Y tú qué tal?"
+- Pregunta: "¿A qué te dedicas?" → Respuesta: "Soy asesora de viajes, ayudo a las personas a planear sus vacaciones perfectas"
+- Pregunta: "¿Dónde recomiendas viajar?" → Respuesta: "Depende de qué tipo de experiencia busques. ¿Prefieres playa, montaña o ciudades?"
 
-Responde de forma natural y específica al último mensaje:`
+Responde SOLO el mensaje que enviarías, sin explicaciones adicionales:`
 
-    console.log('📤 ENVIANDO PROMPT MEJORADO A OPENAI...')
+    console.log('📤 ENVIANDO PROMPT ESPECÍFICO A OPENAI...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -325,15 +325,15 @@ Responde de forma natural y específica al último mensaje:`
         messages: [
           {
             role: 'system',
-            content: 'Eres María, una persona real que responde de forma natural. Lees TODO el contexto de la conversación y respondes específicamente al último mensaje.'
+            content: 'Eres María, una asesora de viajes que responde específicamente a lo que te preguntan. NUNCA das respuestas genéricas.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 100,
-        temperature: 0.9,
+        max_tokens: 80,
+        temperature: 0.7,
       }),
     })
 
@@ -348,7 +348,7 @@ Responde de forma natural y específica al último mensaje:`
     const data = await response.json()
     const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! ¿Cómo estás?"
     
-    console.log('🤖 RESPUESTA FINAL GENERADA:', aiMessage)
+    console.log('🤖 RESPUESTA ESPECÍFICA GENERADA:', aiMessage)
     return aiMessage.trim()
 
   } catch (error) {
@@ -358,31 +358,34 @@ Responde de forma natural y específica al último mensaje:`
 }
 
 function getSimpleContextualResponse(conversationContext: string, currentMessage: string): string {
-  console.log('🤖 GENERANDO RESPUESTA SIMPLE CONTEXTUAL')
+  console.log('🤖 GENERANDO RESPUESTA ESPECÍFICA SIMPLE')
   
   const lowerMessage = currentMessage.toLowerCase()
   const hasContext = conversationContext.includes('Usuario:')
   
-  // Si ya han hablado antes
-  if (hasContext) {
-    if (lowerMessage.includes('hola')) {
-      return "¡Hola de nuevo! ¿Qué tal todo?"
-    }
-    if (lowerMessage.includes('bien') && lowerMessage.includes('tu')) {
-      return "¡Todo bien por aquí! ¿En qué más te puedo ayudar?"
-    }
-    if (lowerMessage.includes('como estas')) {
-      return "¡Muy bien, gracias! ¿Y tú cómo estás?"
-    }
-  } else {
-    // Primera vez que hablan
-    if (lowerMessage.includes('hola')) {
-      return "¡Hola! Soy María, asesora de viajes. ¿Cómo estás?"
-    }
+  // Respuestas específicas a preguntas comunes
+  if (lowerMessage.includes('llamas') || lowerMessage.includes('nombre')) {
+    return "Me llamo María, encantada 😊"
   }
   
-  // Respuesta por defecto contextual
-  return hasContext ? "Interesante, cuéntame más sobre eso." : "¡Hola! Soy María. ¿Cómo estás?"
+  if (lowerMessage.includes('qué tal') || lowerMessage.includes('como estas')) {
+    return hasContext ? "¡Todo bien! ¿Y tú qué tal?" : "¡Hola! Todo bien por aquí. ¿Y tú cómo estás?"
+  }
+  
+  if (lowerMessage.includes('dedicas') || lowerMessage.includes('trabajas')) {
+    return "Soy asesora de viajes, ayudo a planear vacaciones increíbles"
+  }
+  
+  if (lowerMessage.includes('viajar') || lowerMessage.includes('viaje')) {
+    return "¿Qué tipo de experiencia buscas? ¿Playa, montaña o ciudades?"
+  }
+  
+  if (lowerMessage.includes('hola')) {
+    return hasContext ? "¡Hola de nuevo!" : "¡Hola! Soy María, asesora de viajes. ¿Cómo estás?"
+  }
+  
+  // Respuesta por defecto que NO sea genérica
+  return hasContext ? "¿Podrías ser más específico? Me gustaría ayudarte mejor" : "¡Hola! Soy María. ¿En qué puedo ayudarte hoy?"
 }
 
 async function sendResponse(supabase: any, senderId: string, messageText: string) {
