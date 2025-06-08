@@ -17,6 +17,7 @@ interface MessagingEvent {
     mid: string;
     text: string;
     attachments?: any[];
+    is_echo?: boolean;
   };
 }
 
@@ -85,6 +86,7 @@ serve(async (req) => {
           // Procesar mensajes directos
           if (entry.messaging) {
             for (const event of entry.messaging) {
+              console.log('📝 Processing messaging event:', JSON.stringify(event, null, 2))
               await processMessagingEvent(supabase, event)
             }
           }
@@ -94,6 +96,7 @@ serve(async (req) => {
             for (const change of entry.changes) {
               if (change.field === 'messages' && change.value.messaging) {
                 for (const event of change.value.messaging) {
+                  console.log('📝 Processing change event:', JSON.stringify(event, null, 2))
                   await processMessagingEvent(supabase, event)
                 }
               }
@@ -123,12 +126,45 @@ serve(async (req) => {
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   try {
-    console.log('📝 Processing messaging event:', event)
+    console.log('🚀 INICIANDO PROCESAMIENTO DE EVENTO')
+    console.log('📋 EVENTO COMPLETO:', JSON.stringify(event, null, 2))
 
-    if (!event.message || !event.message.text) {
-      console.log('⏭️ Skipping event without text message')
+    // Verificar si es un echo (mensaje enviado por nosotros)
+    if (event.message?.is_echo) {
+      console.log('🔄 DETECTADO ECHO - mensaje enviado por nosotros, guardando pero no respondiendo')
+      
+      if (event.message.text) {
+        const messageData = {
+          instagram_message_id: event.message.mid,
+          sender_id: event.sender.id,
+          recipient_id: event.recipient.id,
+          message_text: event.message.text,
+          message_type: 'received',
+          timestamp: new Date(event.timestamp).toISOString(),
+          is_read: false,
+          raw_data: {
+            webhook_data: event,
+            received_at: new Date().toISOString(),
+            source: 'instagram_webhook',
+            is_echo: true
+          }
+        }
+
+        console.log('💾 Guardando mensaje echo:', messageData)
+        await supabase.from('instagram_messages').insert(messageData)
+      }
       return
     }
+
+    // Verificar si tiene mensaje de texto real del usuario
+    if (!event.message || !event.message.text) {
+      console.log('⏭️ NO HAY MENSAJE DE TEXTO - saltando evento')
+      return
+    }
+
+    console.log('✅ MENSAJE REAL DEL USUARIO DETECTADO')
+    console.log('👤 SENDER ID:', event.sender.id)
+    console.log('💬 TEXTO DEL MENSAJE:', event.message.text)
 
     const messageData = {
       instagram_message_id: event.message.mid,
@@ -145,7 +181,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       }
     }
 
-    console.log('💾 Saving message to database:', messageData)
+    console.log('💾 GUARDANDO MENSAJE DEL USUARIO:', messageData)
 
     // Verificar si el mensaje ya existe
     const { data: existingMessage } = await supabase
@@ -155,7 +191,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       .single()
 
     if (existingMessage) {
-      console.log('⏭️ Message already exists, skipping')
+      console.log('⏭️ MENSAJE YA EXISTE EN BD - saltando')
       return
     }
 
@@ -165,63 +201,64 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       .insert(messageData)
 
     if (error) {
-      console.error('❌ Error saving message:', error)
+      console.error('❌ ERROR GUARDANDO MENSAJE:', error)
       throw error
     }
 
-    console.log('✅ Message saved successfully:', data)
+    console.log('✅ MENSAJE GUARDADO EXITOSAMENTE')
 
-    // 🔥 ANÁLISIS Y RESPUESTA CON LOGS DETALLADOS
-    await handleIntelligentResponse(supabase, event.sender.id, event.message.text)
+    // 🔥 AHORA GENERAR RESPUESTA INTELIGENTE
+    await generateIntelligentResponse(supabase, event.sender.id, event.message.text)
 
   } catch (error) {
-    console.error('❌ Error processing messaging event:', error)
+    console.error('❌ ERROR EN processMessagingEvent:', error)
     throw error
   }
 }
 
-async function handleIntelligentResponse(supabase: any, senderId: string, currentMessage: string) {
-  try {
-    console.log('🤖 ===============================================')
-    console.log('🤖 INICIANDO ANÁLISIS DE RESPUESTA INTELIGENTE')
-    console.log('🤖 ===============================================')
-    console.log(`👤 Usuario ID: ${senderId}`)
-    console.log(`💬 Mensaje recibido: "${currentMessage}"`)
+async function generateIntelligentResponse(supabase: any, senderId: string, currentMessage: string) {
+  console.log('🤖 ===============================================')
+  console.log('🤖 INICIANDO GENERACIÓN DE RESPUESTA INTELIGENTE')
+  console.log('🤖 ===============================================')
+  console.log('👤 USUARIO ID:', senderId)
+  console.log('💬 MENSAJE ACTUAL:', currentMessage)
 
-    // 1. OBTENER HISTORIAL COMPLETO
-    console.log('📚 Obteniendo historial completo de la conversación...')
-    const { data: allMessages, error: messagesError } = await supabase
+  try {
+    // 1. OBTENER HISTORIAL COMPLETO DE LA CONVERSACIÓN
+    console.log('📚 OBTENIENDO HISTORIAL DE CONVERSACIÓN...')
+    const { data: conversationHistory, error: historyError } = await supabase
       .from('instagram_messages')
       .select('*')
       .or(`sender_id.eq.${senderId},recipient_id.eq.${senderId}`)
       .order('timestamp', { ascending: true })
 
-    if (messagesError) {
-      console.error('❌ Error obteniendo mensajes:', messagesError)
-      await sendSimpleResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+    if (historyError) {
+      console.error('❌ ERROR OBTENIENDO HISTORIAL:', historyError)
+      await sendResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
       return
     }
 
-    const conversationHistory = allMessages || []
-    console.log(`📝 TOTAL DE MENSAJES EN CONVERSACIÓN: ${conversationHistory.length}`)
-    
-    // 2. IMPRIMIR TODOS LOS MENSAJES DE LA CONVERSACIÓN
+    const messages = conversationHistory || []
+    console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
+
+    // 2. IMPRIMIR HISTORIAL COMPLETO
     console.log('📖 ========== HISTORIAL COMPLETO ==========')
-    conversationHistory.forEach((msg, index) => {
-      const sender = msg.message_type === 'received' ? '👤 Usuario' : '🤖 María'
+    messages.forEach((msg, index) => {
+      const isFromUser = msg.sender_id === senderId
+      const sender = isFromUser ? '👤 Usuario' : '🤖 María'
       const time = new Date(msg.timestamp).toLocaleString()
       console.log(`${index + 1}. [${time}] ${sender}: "${msg.message_text}"`)
     })
-    console.log('📖 ======================================')
+    console.log('📖 =======================================')
 
-    // 3. ANÁLISIS DEL MENSAJE ACTUAL
+    // 3. ANALIZAR MENSAJE ACTUAL
     const lowerMessage = currentMessage.toLowerCase().trim()
-    console.log(`🔍 Analizando mensaje: "${lowerMessage}"`)
-    
+    console.log('🔍 MENSAJE EN MINÚSCULAS:', lowerMessage)
+
     let response = ""
     let reasoning = ""
 
-    // 4. LÓGICA DE RESPUESTA CON EXPLICACIONES
+    // 4. LÓGICA DE RESPUESTA
     if (lowerMessage.includes('como te llamas') || 
         lowerMessage.includes('cómo te llamas') ||
         lowerMessage.includes('cuál es tu nombre') ||
@@ -229,11 +266,7 @@ async function handleIntelligentResponse(supabase: any, senderId: string, curren
         lowerMessage.includes('quién eres')) {
       
       reasoning = "Usuario pregunta por mi nombre/identidad"
-      if (conversationHistory.length <= 3) {
-        response = "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más cuando piensas en viajar?"
-      } else {
-        response = "Soy María, encantada. ¿Has estado ahorrando para algo especial últimamente?"
-      }
+      response = "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más cuando piensas en viajar?"
     }
     else if (lowerMessage.includes('leíste mi conversación') || 
              lowerMessage.includes('leiste mi conversacion') ||
@@ -241,29 +274,23 @@ async function handleIntelligentResponse(supabase: any, senderId: string, curren
              lowerMessage.includes('conversación anterior')) {
       
       reasoning = "Usuario pregunta si he leído la conversación anterior"
-      if (conversationHistory.length <= 3) {
-        response = "Claro, he visto que nos estamos conociendo. Me contabas sobre ti. ¿Qué tipo de actividades te emocionan más?"
-      } else {
-        response = "Sí, claro que he leído nuestra conversación. Veo que tienes intereses específicos. ¿Has estado ahorrando para algo especial?"
-      }
+      response = "Sí, claro que he leído nuestra conversación. Veo que tienes intereses específicos. ¿Has estado ahorrando para algo especial?"
     }
     else if (lowerMessage.includes('hola') || 
              lowerMessage.includes('buenos') ||
              lowerMessage.includes('buenas')) {
       
       reasoning = "Usuario está saludando"
-      const previousGreetings = conversationHistory.filter(msg => 
-        msg.message_type === 'received' && 
+      const previousGreetings = messages.filter(msg => 
+        msg.sender_id === senderId && 
         (msg.message_text.toLowerCase().includes('hola') || 
          msg.message_text.toLowerCase().includes('buenos'))
       )
       
       if (previousGreetings.length > 1) {
         response = "¡Qué gusto verte de nuevo! ¿En qué más te puedo ayudar?"
-      } else if (conversationHistory.length === 1) {
-        response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de aventuras te emocionan más?"
       } else {
-        response = "¡Hola otra vez! ¿Qué más te gustaría saber?"
+        response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de aventuras te emocionan más?"
       }
     }
     else if (lowerMessage.trim() === 'how' || lowerMessage.includes('hello')) {
@@ -271,47 +298,41 @@ async function handleIntelligentResponse(supabase: any, senderId: string, curren
       response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
     }
     else {
-      reasoning = "Mensaje general, usando respuesta estándar basada en número de mensajes"
-      const totalMessages = conversationHistory.length
-      
-      if (totalMessages < 5) {
-        const responses = [
-          "¿Qué tipo de experiencias te hacen sentir más emocionado?",
-          "¿Cuáles son tus actividades favoritas para relajarte?",
-          "¿Hay algo que hayas estado queriendo hacer hace tiempo?"
-        ]
-        response = responses[Math.floor(Math.random() * responses.length)]
-      } else if (totalMessages < 10) {
-        response = "Me parece muy bien. ¿Has estado ahorrando para algo especial?"
-      } else {
-        response = "¡Perfecto! Creo que tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?"
-      }
+      reasoning = "Mensaje general, usando respuesta estándar"
+      const responses = [
+        "¿Qué tipo de experiencias te hacen sentir más emocionado?",
+        "¿Cuáles son tus actividades favoritas para relajarte?",
+        "¿Hay algo que hayas estado queriendo hacer hace tiempo?"
+      ]
+      response = responses[Math.floor(Math.random() * responses.length)]
     }
 
     // 5. LOGS DE DECISIÓN
-    console.log(`🧠 RAZONAMIENTO: ${reasoning}`)
-    console.log(`💭 RESPUESTA SELECCIONADA: "${response}"`)
-    console.log(`📊 CONTEXTO: ${conversationHistory.length} mensajes en historial`)
+    console.log('🧠 RAZONAMIENTO:', reasoning)
+    console.log('💭 RESPUESTA SELECCIONADA:', response)
+    console.log('📊 TOTAL MENSAJES EN HISTORIAL:', messages.length)
 
     // 6. ENVIAR RESPUESTA
-    console.log('📤 Enviando respuesta...')
-    await sendSimpleResponse(supabase, senderId, response)
+    console.log('📤 ENVIANDO RESPUESTA...')
+    await sendResponse(supabase, senderId, response)
 
     console.log('✅ ===============================================')
-    console.log('✅ ANÁLISIS COMPLETADO EXITOSAMENTE')
+    console.log('✅ RESPUESTA ENVIADA EXITOSAMENTE')
     console.log('✅ ===============================================')
 
   } catch (error) {
-    console.error('❌ Error en handleIntelligentResponse:', error)
-    await sendSimpleResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+    console.error('❌ ERROR EN generateIntelligentResponse:', error)
+    await sendResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
   }
 }
 
-async function sendSimpleResponse(supabase: any, senderId: string, messageText: string) {
+async function sendResponse(supabase: any, senderId: string, messageText: string) {
   try {
-    console.log(`📨 PREPARANDO ENVÍO DE MENSAJE:`)
-    console.log(`   👤 Para usuario: ${senderId}`)
-    console.log(`   💬 Mensaje: "${messageText}"`)
+    console.log('📨 ===============================================')
+    console.log('📨 PREPARANDO ENVÍO DE RESPUESTA')
+    console.log('📨 ===============================================')
+    console.log('👤 PARA USUARIO:', senderId)
+    console.log('💬 MENSAJE A ENVIAR:', messageText)
 
     // Obtener configuración de delay
     const { data: settings } = await supabase
@@ -320,39 +341,44 @@ async function sendSimpleResponse(supabase: any, senderId: string, messageText: 
       .limit(1)
 
     const delay = (settings && settings.length > 0 ? settings[0].ai_delay : 3) * 1000
-    console.log(`⏰ Esperando ${delay}ms antes de enviar respuesta...`)
+    console.log(`⏰ ESPERANDO ${delay}ms ANTES DE ENVIAR...`)
     
     await new Promise(resolve => setTimeout(resolve, delay))
 
     const success = await sendInstagramMessage(senderId, messageText)
     
     if (success) {
-      console.log('✅ Mensaje enviado exitosamente a Instagram')
+      console.log('✅ MENSAJE ENVIADO A INSTAGRAM EXITOSAMENTE')
       
       // Guardar mensaje enviado
+      const sentMessageData = {
+        instagram_message_id: `ai_response_${Date.now()}_${Math.random()}`,
+        sender_id: 'ai_assistant_maria',
+        recipient_id: senderId,
+        message_text: messageText,
+        message_type: 'sent',
+        timestamp: new Date().toISOString(),
+        raw_data: {
+          ai_generated: true,
+          source: 'webhook_intelligent_response'
+        }
+      }
+
+      console.log('💾 GUARDANDO RESPUESTA EN BD:', sentMessageData)
+      
       await supabase
         .from('instagram_messages')
-        .insert({
-          instagram_message_id: `ai_response_${Date.now()}_${Math.random()}`,
-          sender_id: 'ai_assistant_maria',
-          recipient_id: senderId,
-          message_text: messageText,
-          message_type: 'sent',
-          timestamp: new Date().toISOString(),
-          raw_data: {
-            ai_generated: true,
-            simple_response: true,
-            source: 'webhook_simple_response'
-          }
-        })
+        .insert(sentMessageData)
 
-      console.log('✅ Respuesta guardada en base de datos')
+      console.log('✅ RESPUESTA GUARDADA EN BD EXITOSAMENTE')
     } else {
-      console.error('❌ Error enviando mensaje a Instagram')
+      console.error('❌ ERROR ENVIANDO MENSAJE A INSTAGRAM')
     }
 
+    console.log('📨 ===============================================')
+
   } catch (error) {
-    console.error('❌ Error en sendSimpleResponse:', error)
+    console.error('❌ ERROR EN sendResponse:', error)
   }
 }
 
@@ -361,7 +387,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
     
     if (!accessToken) {
-      console.error('❌ No hay token de acceso de Instagram configurado')
+      console.error('❌ NO HAY TOKEN DE ACCESO DE INSTAGRAM')
       return false
     }
 
@@ -374,7 +400,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       }
     }
 
-    console.log('📤 Enviando mensaje a Instagram API:', messagePayload)
+    console.log('📤 ENVIANDO A INSTAGRAM API:', JSON.stringify(messagePayload, null, 2))
 
     const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
       method: 'POST',
@@ -387,15 +413,15 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     const responseData = await response.json()
     
     if (!response.ok) {
-      console.error('❌ Error respuesta Instagram API:', responseData)
+      console.error('❌ ERROR EN RESPUESTA DE INSTAGRAM API:', JSON.stringify(responseData, null, 2))
       return false
     }
 
-    console.log('✅ Respuesta exitosa de Instagram API:', responseData)
+    console.log('✅ RESPUESTA EXITOSA DE INSTAGRAM API:', JSON.stringify(responseData, null, 2))
     return true
 
   } catch (error) {
-    console.error('❌ Error en sendInstagramMessage:', error)
+    console.error('❌ ERROR EN sendInstagramMessage:', error)
     return false
   }
 }
