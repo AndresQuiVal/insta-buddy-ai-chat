@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -282,46 +281,79 @@ async function generateAIResponse(messages: any[], traits: any[], senderId: stri
       return "¡Hola! Soy María, asesora de viajes. ¿En qué te puedo ayudar?"
     }
 
-    // Crear contexto de conversación
-    const conversationContext = messages
+    // Filtrar y ordenar mensajes por timestamp
+    const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    
+    // Crear contexto de conversación COMPLETO y DETALLADO
+    const conversationContext = sortedMessages
       .filter(msg => msg.message_text && msg.message_text.trim() !== '')
-      .map(msg => {
+      .map((msg, index) => {
         const isFromUser = msg.sender_id === senderId
-        return `${isFromUser ? 'Usuario' : 'María'}: ${msg.message_text}`
+        const sender = isFromUser ? 'Usuario' : 'María'
+        const time = new Date(msg.timestamp).toLocaleString('es-ES', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit'
+        })
+        return `[${time}] ${sender}: ${msg.message_text}`
       })
       .join('\n')
 
-    console.log('📝 CONTEXTO PARA IA:')
+    console.log('📝 CONTEXTO COMPLETO PARA IA:')
     console.log('=====================================')
     console.log(conversationContext)
     console.log('=====================================')
 
-    // Crear lista de características
+    // Crear lista de características para evaluar
     const traitsList = traits.map((trait, index) => `${index + 1}. ${trait.trait}`).join('\n')
     
-    console.log('🎯 CARACTERÍSTICAS PARA IA:')
+    console.log('🎯 CARACTERÍSTICAS PARA EVALUAR:')
     console.log(traitsList)
 
-    const prompt = `Eres María, una asesora de viajes experta. Tu trabajo es continuar la conversación de manera natural y hacer preguntas estratégicas para identificar si el prospecto cumple con las características del cliente ideal.
+    // Analizar qué características ya cumple según el historial
+    const userMessages = sortedMessages
+      .filter(msg => msg.sender_id === senderId && msg.message_text)
+      .map(msg => msg.message_text)
+      .join(' ')
 
-HISTORIAL DE CONVERSACIÓN:
+    console.log('📋 MENSAJES DEL USUARIO PARA ANÁLISIS:', userMessages)
+
+    const prompt = `Eres María, una asesora de viajes experta y estratégica. Tu trabajo es analizar la conversación COMPLETA y responder de manera inteligente y contextual.
+
+HISTORIAL COMPLETO DE CONVERSACIÓN:
 ${conversationContext}
 
-CARACTERÍSTICAS DEL CLIENTE IDEAL A DESCUBRIR:
+MENSAJE ACTUAL: "${currentMessage}"
+
+CARACTERÍSTICAS DEL CLIENTE IDEAL A EVALUAR:
 ${traitsList}
 
-MENSAJE ACTUAL DEL USUARIO: "${currentMessage}"
+CONTEXTO IMPORTANTE:
+- Esta es una conversación CONTINUA, no es el primer contacto
+- Debes responder en base al HISTORIAL COMPLETO
+- El usuario acaba de escribir: "${currentMessage}"
+- Analiza TODO el contexto antes de responder
 
-INSTRUCCIONES:
-1. Responde de manera natural y amigable como María
-2. Continúa la conversación basándote en el historial completo
-3. Incluye preguntas estratégicas para descubrir si cumple con las características del cliente ideal
-4. Mantén un tono conversacional y profesional
-5. No seas demasiado directa con las preguntas comerciales
+INSTRUCCIONES ESPECÍFICAS:
+1. Lee y analiza TODA la conversación completa
+2. Responde de manera coherente al mensaje actual considerando el historial
+3. Si el usuario pregunta algo específico, responde directamente
+4. Si es una conversación casual, mantén el tono amigable pero profesional
+5. Incluye preguntas estratégicas para identificar características del cliente ideal
+6. NO ignores el contexto previo
+7. NO des respuestas genéricas
 
-Responde SOLO con el mensaje que María debe enviar (máximo 2-3 oraciones):`
+REGLAS DE RESPUESTA:
+- Máximo 2-3 oraciones
+- Respuesta directa y contextual
+- Tono amigable pero profesional
+- Incluir una pregunta si es apropiado
 
-    console.log('📤 ENVIANDO A OPENAI...')
+Responde SOLO con el mensaje que María debe enviar:`
+
+    console.log('📤 ENVIANDO PROMPT MEJORADO A OPENAI...')
+    console.log('🎯 PROMPT COMPLETO:', prompt)
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -330,38 +362,39 @@ Responde SOLO con el mensaje que María debe enviar (máximo 2-3 oraciones):`
         'Authorization': `Bearer ${openaiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: 'Eres María, asesora de viajes profesional y amigable. Respondes de manera natural y haces preguntas estratégicas.'
+            content: 'Eres María, asesora de viajes profesional. Analiza SIEMPRE el historial completo antes de responder. Responde de manera contextual e inteligente.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 150,
-        temperature: 0.7,
+        max_tokens: 200,
+        temperature: 0.8,
       }),
     })
 
-    console.log('📨 RESPUESTA DE OPENAI:', response.status)
+    console.log('📨 RESPUESTA DE OPENAI STATUS:', response.status)
 
     if (!response.ok) {
-      console.error('❌ ERROR HTTP DE OPENAI:', response.status)
-      throw new Error(`Error OpenAI: ${response.status}`)
+      const errorText = await response.text()
+      console.error('❌ ERROR DETALLADO DE OPENAI:', errorText)
+      throw new Error(`Error OpenAI: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
-    const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! Soy María. ¿En qué te puedo ayudar?"
+    const aiMessage = data.choices?.[0]?.message?.content || "Entiendo, ¿en qué específicamente te puedo ayudar?"
     
-    console.log('🤖 RESPUESTA GENERADA:', aiMessage)
+    console.log('🤖 RESPUESTA FINAL GENERADA:', aiMessage)
     return aiMessage.trim()
 
   } catch (error) {
-    console.error('❌ ERROR EN generateAIResponse:', error)
-    return "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
+    console.error('❌ ERROR DETALLADO EN generateAIResponse:', error)
+    return `Entiendo tu mensaje "${currentMessage}". ¿Qué tipo de experiencias de viaje te interesan más?`
   }
 }
 
