@@ -272,7 +272,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 }
 
 async function generateIntelligentResponse(conversationContext: string, currentMessage: string): Promise<string> {
-  console.log('🧠 GENERANDO RESPUESTA INTELIGENTE...')
+  console.log('🧠 GENERANDO RESPUESTA CONVERSACIONAL...')
   console.log('🔥 MENSAJE ACTUAL:', currentMessage)
   console.log('📚 CONTEXTO COMPLETO:', conversationContext)
   
@@ -281,38 +281,25 @@ async function generateIntelligentResponse(conversationContext: string, currentM
     
     if (!openaiKey) {
       console.log('⚠️ NO HAY API KEY DE OPENAI - respuesta simple')
-      return getSimpleContextualResponse(conversationContext, currentMessage)
+      return getSimpleResponse(currentMessage)
     }
 
-    // PROMPT COMPLETAMENTE REESCRITO PARA LECTURA Y RESPUESTA ESPECÍFICA
-    const prompt = `Eres María, una asesora de viajes real y natural.
+    // PROMPT SIMPLE Y CONVERSACIONAL
+    const prompt = `Eres María, una asesora de viajes amigable y natural.
 
-CONVERSACIÓN COMPLETA HASTA AHORA:
+CONVERSACIÓN ANTERIOR:
 ${conversationContext}
 
-ÚLTIMO MENSAJE DEL USUARIO:
+ÚLTIMO MENSAJE:
 "${currentMessage}"
 
-INSTRUCCIONES CRÍTICAS:
-1. LEE TODA LA CONVERSACIÓN ANTERIOR para entender el contexto completo
-2. Responde ESPECÍFICAMENTE y DIRECTAMENTE al último mensaje del usuario
-3. Si te pregunta tu nombre, responde "Soy María"
-4. Si te pregunta cómo te llamas, responde "Me llamo María"
-5. Si te pregunta qué tal o cómo estás, responde naturalmente sobre tu día
-6. Si te pregunta sobre viajes, habla sobre destinos y experiencias
-7. Mantén respuestas cortas y conversacionales (máximo 2 líneas)
-8. NUNCA uses frases genéricas como "Interesante, cuéntame más"
-9. SIEMPRE responde la pregunta exacta que te hicieron
+Responde de manera natural y conversacional como María. Sé auténtica, amigable y mantén la conversación fluida. Si te preguntan algo específico, responde directamente. Si es un saludo o comentario general, responde como lo haría una persona real en una conversación normal.
 
-EJEMPLOS DE RESPUESTAS CORRECTAS:
-- Pregunta: "¿Cómo te llamas?" → Respuesta: "Me llamo María, encantada 😊"
-- Pregunta: "¿Qué tal?" → Respuesta: "¡Todo bien! Trabajando en algunas propuestas de viaje. ¿Y tú qué tal?"
-- Pregunta: "¿A qué te dedicas?" → Respuesta: "Soy asesora de viajes, ayudo a las personas a planear sus vacaciones perfectas"
-- Pregunta: "¿Dónde recomiendas viajar?" → Respuesta: "Depende de qué tipo de experiencia busques. ¿Prefieres playa, montaña o ciudades?"
+Mantén las respuestas cortas (1-2 líneas máximo) y naturales.
 
-Responde SOLO el mensaje que enviarías, sin explicaciones adicionales:`
+Responde SOLO el mensaje que enviarías:`
 
-    console.log('📤 ENVIANDO PROMPT ESPECÍFICO A OPENAI...')
+    console.log('📤 ENVIANDO PROMPT CONVERSACIONAL A OPENAI...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -325,15 +312,15 @@ Responde SOLO el mensaje que enviarías, sin explicaciones adicionales:`
         messages: [
           {
             role: 'system',
-            content: 'Eres María, una asesora de viajes que responde específicamente a lo que te preguntan. NUNCA das respuestas genéricas.'
+            content: 'Eres María, una asesora de viajes que mantiene conversaciones naturales y auténticas.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 80,
-        temperature: 0.7,
+        max_tokens: 100,
+        temperature: 0.8,
       }),
     })
 
@@ -342,50 +329,49 @@ Responde SOLO el mensaje que enviarías, sin explicaciones adicionales:`
     if (!response.ok) {
       const errorText = await response.text()
       console.error('❌ ERROR DETALLADO DE OPENAI:', errorText)
-      return getSimpleContextualResponse(conversationContext, currentMessage)
+      return getSimpleResponse(currentMessage)
     }
 
     const data = await response.json()
     const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! ¿Cómo estás?"
     
-    console.log('🤖 RESPUESTA ESPECÍFICA GENERADA:', aiMessage)
+    console.log('🤖 RESPUESTA CONVERSACIONAL GENERADA:', aiMessage)
     return aiMessage.trim()
 
   } catch (error) {
     console.error('❌ ERROR DETALLADO EN generateIntelligentResponse:', error)
-    return getSimpleContextualResponse(conversationContext, currentMessage)
+    return getSimpleResponse(currentMessage)
   }
 }
 
-function getSimpleContextualResponse(conversationContext: string, currentMessage: string): string {
-  console.log('🤖 GENERANDO RESPUESTA ESPECÍFICA SIMPLE')
+function getSimpleResponse(currentMessage: string): string {
+  console.log('🤖 GENERANDO RESPUESTA SIMPLE CONVERSACIONAL')
   
   const lowerMessage = currentMessage.toLowerCase()
-  const hasContext = conversationContext.includes('Usuario:')
   
-  // Respuestas específicas a preguntas comunes
+  // Respuestas simples y naturales
+  if (lowerMessage.includes('hola') || lowerMessage.includes('buenas')) {
+    return "¡Hola! ¿Cómo estás? 😊"
+  }
+  
   if (lowerMessage.includes('llamas') || lowerMessage.includes('nombre')) {
-    return "Me llamo María, encantada 😊"
+    return "Soy María, mucho gusto 😊"
   }
   
   if (lowerMessage.includes('qué tal') || lowerMessage.includes('como estas')) {
-    return hasContext ? "¡Todo bien! ¿Y tú qué tal?" : "¡Hola! Todo bien por aquí. ¿Y tú cómo estás?"
+    return "¡Todo bien! ¿Y tú cómo estás?"
   }
   
-  if (lowerMessage.includes('dedicas') || lowerMessage.includes('trabajas')) {
-    return "Soy asesora de viajes, ayudo a planear vacaciones increíbles"
+  if (lowerMessage.includes('bien') || lowerMessage.includes('excelente')) {
+    return "¡Qué bueno! Me alegra saber eso 😊"
   }
   
-  if (lowerMessage.includes('viajar') || lowerMessage.includes('viaje')) {
-    return "¿Qué tipo de experiencia buscas? ¿Playa, montaña o ciudades?"
+  if (lowerMessage.includes('gracias')) {
+    return "¡De nada! ¿En qué más puedo ayudarte?"
   }
   
-  if (lowerMessage.includes('hola')) {
-    return hasContext ? "¡Hola de nuevo!" : "¡Hola! Soy María, asesora de viajes. ¿Cómo estás?"
-  }
-  
-  // Respuesta por defecto que NO sea genérica
-  return hasContext ? "¿Podrías ser más específico? Me gustaría ayudarte mejor" : "¡Hola! Soy María. ¿En qué puedo ayudarte hoy?"
+  // Respuesta conversacional por defecto
+  return "Interesante, cuéntame más sobre eso 😊"
 }
 
 async function sendResponse(supabase: any, senderId: string, messageText: string) {
