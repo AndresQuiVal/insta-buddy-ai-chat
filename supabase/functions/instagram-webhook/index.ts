@@ -126,8 +126,9 @@ serve(async (req) => {
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   try {
-    console.log('🚀 INICIANDO PROCESAMIENTO DE EVENTO')
-    console.log('📋 EVENTO COMPLETO:', JSON.stringify(event, null, 2))
+    console.log('🚀 ===============================================')
+    console.log('🚀 INICIANDO PROCESAMIENTO DE EVENTO DE MENSAJE')
+    console.log('🚀 ===============================================')
 
     // Verificar si es un echo (mensaje enviado por nosotros)
     if (event.message?.is_echo) {
@@ -139,7 +140,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
           sender_id: event.sender.id,
           recipient_id: event.recipient.id,
           message_text: event.message.text,
-          message_type: 'received',
+          message_type: 'sent',
           timestamp: new Date(event.timestamp).toISOString(),
           is_read: false,
           raw_data: {
@@ -150,8 +151,8 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
           }
         }
 
-        console.log('💾 Guardando mensaje echo:', messageData)
         await supabase.from('instagram_messages').insert(messageData)
+        console.log('💾 Mensaje echo guardado exitosamente')
       }
       return
     }
@@ -166,6 +167,8 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     console.log('👤 SENDER ID:', event.sender.id)
     console.log('💬 TEXTO DEL MENSAJE:', event.message.text)
 
+    // PASO 1: GUARDAR EL MENSAJE RECIBIDO
+    console.log('📝 PASO 1: GUARDANDO MENSAJE RECIBIDO...')
     const messageData = {
       instagram_message_id: event.message.mid,
       sender_id: event.sender.id,
@@ -181,8 +184,6 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       }
     }
 
-    console.log('💾 GUARDANDO MENSAJE DEL USUARIO:', messageData)
-
     // Verificar si el mensaje ya existe
     const { data: existingMessage } = await supabase
       .from('instagram_messages')
@@ -196,19 +197,15 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     }
 
     // Guardar el mensaje
-    const { data, error } = await supabase
-      .from('instagram_messages')
-      .insert(messageData)
+    await supabase.from('instagram_messages').insert(messageData)
+    console.log('✅ PASO 1 COMPLETADO: Mensaje guardado exitosamente')
 
-    if (error) {
-      console.error('❌ ERROR GUARDANDO MENSAJE:', error)
-      throw error
-    }
-
-    console.log('✅ MENSAJE GUARDADO EXITOSAMENTE')
-
-    // 🔥 AHORA GENERAR RESPUESTA INTELIGENTE
-    await generateIntelligentResponse(supabase, event.sender.id, event.message.text)
+    // PASO 2: ANALIZAR CONVERSACIÓN COMPLETA
+    console.log('🔍 ===============================================')
+    console.log('🔍 PASO 2: ANALIZANDO CONVERSACIÓN COMPLETA')
+    console.log('🔍 ===============================================')
+    
+    await analyzeFullConversationAndRespond(supabase, event.sender.id, event.message.text)
 
   } catch (error) {
     console.error('❌ ERROR EN processMessagingEvent:', error)
@@ -216,16 +213,11 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   }
 }
 
-async function generateIntelligentResponse(supabase: any, senderId: string, currentMessage: string) {
-  console.log('🤖 ===============================================')
-  console.log('🤖 INICIANDO GENERACIÓN DE RESPUESTA INTELIGENTE')
-  console.log('🤖 ===============================================')
-  console.log('👤 USUARIO ID:', senderId)
-  console.log('💬 MENSAJE ACTUAL:', currentMessage)
-
+async function analyzeFullConversationAndRespond(supabase: any, senderId: string, currentMessage: string) {
+  console.log('📚 OBTENIENDO HISTORIAL COMPLETO DE CONVERSACIÓN...')
+  
   try {
-    // 1. OBTENER HISTORIAL COMPLETO DE LA CONVERSACIÓN
-    console.log('📚 OBTENIENDO HISTORIAL DE CONVERSACIÓN...')
+    // Obtener TODA la conversación con esta persona
     const { data: conversationHistory, error: historyError } = await supabase
       .from('instagram_messages')
       .select('*')
@@ -234,14 +226,14 @@ async function generateIntelligentResponse(supabase: any, senderId: string, curr
 
     if (historyError) {
       console.error('❌ ERROR OBTENIENDO HISTORIAL:', historyError)
-      await sendResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+      await sendSimpleResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
       return
     }
 
     const messages = conversationHistory || []
     console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
 
-    // 2. IMPRIMIR HISTORIAL COMPLETO
+    // IMPRIMIR HISTORIAL COMPLETO
     console.log('📖 ========== HISTORIAL COMPLETO ==========')
     messages.forEach((msg, index) => {
       const isFromUser = msg.sender_id === senderId
@@ -251,86 +243,149 @@ async function generateIntelligentResponse(supabase: any, senderId: string, curr
     })
     console.log('📖 =======================================')
 
-    // 3. ANALIZAR MENSAJE ACTUAL
-    const lowerMessage = currentMessage.toLowerCase().trim()
-    console.log('🔍 MENSAJE EN MINÚSCULAS:', lowerMessage)
+    // Obtener características configuradas
+    console.log('🎯 OBTENIENDO CARACTERÍSTICAS CONFIGURADAS...')
+    const { data: traitsData, error: traitsError } = await supabase
+      .from('ideal_client_traits')
+      .select('*')
+      .eq('enabled', true)
+      .order('position')
 
-    let response = ""
-    let reasoning = ""
-
-    // 4. LÓGICA DE RESPUESTA
-    if (lowerMessage.includes('como te llamas') || 
-        lowerMessage.includes('cómo te llamas') ||
-        lowerMessage.includes('cuál es tu nombre') ||
-        lowerMessage.includes('quien eres') ||
-        lowerMessage.includes('quién eres')) {
-      
-      reasoning = "Usuario pregunta por mi nombre/identidad"
-      response = "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más cuando piensas en viajar?"
-    }
-    else if (lowerMessage.includes('leíste mi conversación') || 
-             lowerMessage.includes('leiste mi conversacion') ||
-             lowerMessage.includes('de lo que hemos hablado') || 
-             lowerMessage.includes('conversación anterior')) {
-      
-      reasoning = "Usuario pregunta si he leído la conversación anterior"
-      response = "Sí, claro que he leído nuestra conversación. Veo que tienes intereses específicos. ¿Has estado ahorrando para algo especial?"
-    }
-    else if (lowerMessage.includes('hola') || 
-             lowerMessage.includes('buenos') ||
-             lowerMessage.includes('buenas')) {
-      
-      reasoning = "Usuario está saludando"
-      const previousGreetings = messages.filter(msg => 
-        msg.sender_id === senderId && 
-        (msg.message_text.toLowerCase().includes('hola') || 
-         msg.message_text.toLowerCase().includes('buenos'))
-      )
-      
-      if (previousGreetings.length > 1) {
-        response = "¡Qué gusto verte de nuevo! ¿En qué más te puedo ayudar?"
-      } else {
-        response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de aventuras te emocionan más?"
-      }
-    }
-    else if (lowerMessage.trim() === 'how' || lowerMessage.includes('hello')) {
-      reasoning = "Usuario escribió en inglés"
-      response = "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
-    }
-    else {
-      reasoning = "Mensaje general, usando respuesta estándar"
-      const responses = [
-        "¿Qué tipo de experiencias te hacen sentir más emocionado?",
-        "¿Cuáles son tus actividades favoritas para relajarte?",
-        "¿Hay algo que hayas estado queriendo hacer hace tiempo?"
-      ]
-      response = responses[Math.floor(Math.random() * responses.length)]
+    if (traitsError) {
+      console.error('❌ ERROR OBTENIENDO CARACTERÍSTICAS:', traitsError)
+      await sendSimpleResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+      return
     }
 
-    // 5. LOGS DE DECISIÓN
-    console.log('🧠 RAZONAMIENTO:', reasoning)
-    console.log('💭 RESPUESTA SELECCIONADA:', response)
-    console.log('📊 TOTAL MENSAJES EN HISTORIAL:', messages.length)
+    const traits = traitsData || []
+    console.log('🎯 CARACTERÍSTICAS CONFIGURADAS:')
+    traits.forEach((trait, index) => {
+      console.log(`${index + 1}. ${trait.trait}`)
+    })
 
-    // 6. ENVIAR RESPUESTA
-    console.log('📤 ENVIANDO RESPUESTA...')
-    await sendResponse(supabase, senderId, response)
+    // PASO 3: GENERAR RESPUESTA CON IA
+    console.log('🤖 ===============================================')
+    console.log('🤖 PASO 3: GENERANDO RESPUESTA CON IA')
+    console.log('🤖 ===============================================')
+
+    const aiResponse = await generateAIResponse(messages, traits, senderId, currentMessage)
+    
+    // PASO 4: ENVIAR RESPUESTA
+    console.log('📤 ===============================================')
+    console.log('📤 PASO 4: ENVIANDO RESPUESTA GENERADA')
+    console.log('📤 ===============================================')
+    console.log('💬 RESPUESTA A ENVIAR:', aiResponse)
+
+    await sendResponse(supabase, senderId, aiResponse)
 
     console.log('✅ ===============================================')
-    console.log('✅ RESPUESTA ENVIADA EXITOSAMENTE')
+    console.log('✅ PROCESO COMPLETO FINALIZADO EXITOSAMENTE')
     console.log('✅ ===============================================')
 
   } catch (error) {
-    console.error('❌ ERROR EN generateIntelligentResponse:', error)
-    await sendResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+    console.error('❌ ERROR EN analyzeFullConversationAndRespond:', error)
+    await sendSimpleResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+  }
+}
+
+async function generateAIResponse(messages: any[], traits: any[], senderId: string, currentMessage: string): Promise<string> {
+  console.log('🧠 INICIANDO GENERACIÓN DE RESPUESTA CON IA...')
+  
+  try {
+    const openaiKey = Deno.env.get('OPENAI_API_KEY')
+    
+    if (!openaiKey) {
+      console.log('⚠️ NO HAY API KEY DE OPENAI - usando respuesta básica')
+      return "¡Hola! Soy María, asesora de viajes. ¿En qué te puedo ayudar?"
+    }
+
+    // Crear contexto de conversación para la IA
+    const conversationContext = messages
+      .filter(msg => msg.message_text && msg.message_text.trim() !== '')
+      .map(msg => {
+        const isFromUser = msg.sender_id === senderId
+        return `${isFromUser ? 'Usuario' : 'María'}: ${msg.message_text}`
+      })
+      .join('\n')
+
+    console.log('📝 CONTEXTO DE CONVERSACIÓN PARA IA:')
+    console.log(conversationContext)
+
+    // Crear lista de características para el prompt
+    const traitsList = traits.map((trait, index) => `${index + 1}. ${trait.trait}`).join('\n')
+    
+    console.log('🎯 CARACTERÍSTICAS PARA IA:')
+    console.log(traitsList)
+
+    const prompt = `Eres María, una asesora de viajes experta. Tu trabajo es continuar la conversación de manera natural y hacer preguntas estratégicas para identificar si el prospecto cumple con las características del cliente ideal.
+
+HISTORIAL DE CONVERSACIÓN:
+${conversationContext}
+
+CARACTERÍSTICAS DEL CLIENTE IDEAL A DESCUBRIR:
+${traitsList}
+
+MENSAJE ACTUAL DEL USUARIO: "${currentMessage}"
+
+INSTRUCCIONES:
+1. Responde de manera natural y amigable como María
+2. Continúa la conversación basándote en el historial completo
+3. Incluye preguntas estratégicas para descubrir si cumple con las características del cliente ideal
+4. Mantén un tono conversacional y profesional
+5. No seas demasiado directa con las preguntas comerciales
+
+Responde SOLO con el mensaje que María debe enviar (máximo 2-3 oraciones):`
+
+    console.log('📤 ENVIANDO PROMPT A OPENAI...')
+    console.log('PROMPT COMPLETO:', prompt)
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'Eres María, asesora de viajes profesional y amigable. Respondes de manera natural y haces preguntas estratégicas.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 150,
+        temperature: 0.7,
+      }),
+    })
+
+    console.log('📨 RESPUESTA HTTP DE OPENAI:', response.status, response.statusText)
+
+    if (!response.ok) {
+      console.error('❌ ERROR HTTP DE OPENAI:', response.status)
+      throw new Error(`Error OpenAI: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log('📋 DATOS COMPLETOS DE OPENAI:', JSON.stringify(data, null, 2))
+    
+    const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! Soy María. ¿En qué te puedo ayudar?"
+    
+    console.log('🤖 RESPUESTA GENERADA POR IA:', aiMessage)
+    return aiMessage.trim()
+
+  } catch (error) {
+    console.error('❌ ERROR EN generateAIResponse:', error)
+    return "¡Hola! Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?"
   }
 }
 
 async function sendResponse(supabase: any, senderId: string, messageText: string) {
   try {
-    console.log('📨 ===============================================')
     console.log('📨 PREPARANDO ENVÍO DE RESPUESTA')
-    console.log('📨 ===============================================')
     console.log('👤 PARA USUARIO:', senderId)
     console.log('💬 MENSAJE A ENVIAR:', messageText)
 
@@ -360,25 +415,45 @@ async function sendResponse(supabase: any, senderId: string, messageText: string
         timestamp: new Date().toISOString(),
         raw_data: {
           ai_generated: true,
-          source: 'webhook_intelligent_response'
+          source: 'webhook_ai_response'
         }
       }
 
-      console.log('💾 GUARDANDO RESPUESTA EN BD:', sentMessageData)
-      
-      await supabase
-        .from('instagram_messages')
-        .insert(sentMessageData)
-
+      await supabase.from('instagram_messages').insert(sentMessageData)
       console.log('✅ RESPUESTA GUARDADA EN BD EXITOSAMENTE')
     } else {
       console.error('❌ ERROR ENVIANDO MENSAJE A INSTAGRAM')
     }
 
-    console.log('📨 ===============================================')
-
   } catch (error) {
     console.error('❌ ERROR EN sendResponse:', error)
+  }
+}
+
+async function sendSimpleResponse(supabase: any, senderId: string, messageText: string) {
+  try {
+    console.log('📨 ENVIANDO RESPUESTA SIMPLE:', messageText)
+    
+    const success = await sendInstagramMessage(senderId, messageText)
+    
+    if (success) {
+      const sentMessageData = {
+        instagram_message_id: `simple_response_${Date.now()}_${Math.random()}`,
+        sender_id: 'ai_assistant_maria',
+        recipient_id: senderId,
+        message_text: messageText,
+        message_type: 'sent',
+        timestamp: new Date().toISOString(),
+        raw_data: {
+          ai_generated: false,
+          source: 'webhook_simple_response'
+        }
+      }
+
+      await supabase.from('instagram_messages').insert(sentMessageData)
+    }
+  } catch (error) {
+    console.error('❌ ERROR EN sendSimpleResponse:', error)
   }
 }
 
