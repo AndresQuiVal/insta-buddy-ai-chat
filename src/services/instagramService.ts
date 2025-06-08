@@ -192,7 +192,7 @@ export const handleInstagramCallback = async (code: string) => {
       throw new Error(errorMessage);
     }
 
-    const token = data.data[0].access_token;
+    const token = data.access_token;
 
     // Guardar token y datos del usuario
     localStorage.setItem("hower-instagram-token", token);
