@@ -311,49 +311,29 @@ async function generateAIResponse(messages: any[], traits: any[], senderId: stri
     console.log('🎯 CARACTERÍSTICAS PARA EVALUAR:')
     console.log(traitsList)
 
-    // Analizar qué características ya cumple según el historial
-    const userMessages = sortedMessages
-      .filter(msg => msg.sender_id === senderId && msg.message_text)
-      .map(msg => msg.message_text)
-      .join(' ')
+    const prompt = `Eres María, una asesora de viajes muy amigable y natural. Tienes una conversación REAL con un cliente potencial por Instagram.
 
-    console.log('📋 MENSAJES DEL USUARIO PARA ANÁLISIS:', userMessages)
-
-    const prompt = `Eres María, una asesora de viajes experta y estratégica. Tu trabajo es analizar la conversación COMPLETA y responder de manera inteligente y contextual.
-
-HISTORIAL COMPLETO DE CONVERSACIÓN:
+HISTORIAL COMPLETO DE LA CONVERSACIÓN:
 ${conversationContext}
 
-MENSAJE ACTUAL: "${currentMessage}"
+EL USUARIO ACABA DE ESCRIBIR: "${currentMessage}"
 
-CARACTERÍSTICAS DEL CLIENTE IDEAL A EVALUAR:
+CARACTERÍSTICAS DEL CLIENTE IDEAL QUE EVALÚAS (SIN MENCIONAR):
 ${traitsList}
 
-CONTEXTO IMPORTANTE:
-- Esta es una conversación CONTINUA, no es el primer contacto
-- Debes responder en base al HISTORIAL COMPLETO
-- El usuario acaba de escribir: "${currentMessage}"
-- Analiza TODO el contexto antes de responder
+INSTRUCCIONES IMPORTANTES:
+1. Responde de manera NATURAL y HUMANA al mensaje específico del usuario
+2. Si te pregunta algo específico, responde directamente a esa pregunta
+3. Si dice "¿Quién eres?", preséntate como María, asesora de viajes
+4. Si pregunta si leíste la conversación, responde que sí y haz referencia a algo que conversaron antes
+5. Mantén un tono amigable, cercano y profesional
+6. NO ignores lo que te dice el usuario
+7. NO uses frases robóticas como "Entiendo tu mensaje..."
+8. Responde como si fueras una persona real teniendo una conversación por chat
 
-INSTRUCCIONES ESPECÍFICAS:
-1. Lee y analiza TODA la conversación completa
-2. Responde de manera coherente al mensaje actual considerando el historial
-3. Si el usuario pregunta algo específico, responde directamente
-4. Si es una conversación casual, mantén el tono amigable pero profesional
-5. Incluye preguntas estratégicas para identificar características del cliente ideal
-6. NO ignores el contexto previo
-7. NO des respuestas genéricas
-
-REGLAS DE RESPUESTA:
-- Máximo 2-3 oraciones
-- Respuesta directa y contextual
-- Tono amigable pero profesional
-- Incluir una pregunta si es apropiado
-
-Responde SOLO con el mensaje que María debe enviar:`
+RESPUESTA DIRECTA (máximo 2 oraciones, natural y contextual):`
 
     console.log('📤 ENVIANDO PROMPT MEJORADO A OPENAI...')
-    console.log('🎯 PROMPT COMPLETO:', prompt)
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -366,15 +346,15 @@ Responde SOLO con el mensaje que María debe enviar:`
         messages: [
           {
             role: 'system',
-            content: 'Eres María, asesora de viajes profesional. Analiza SIEMPRE el historial completo antes de responder. Responde de manera contextual e inteligente.'
+            content: 'Eres María, asesora de viajes. Responde de manera natural y humana, como si fueras una persona real conversando por Instagram. NUNCA uses frases robóticas.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 200,
-        temperature: 0.8,
+        max_tokens: 150,
+        temperature: 0.9,
       }),
     })
 
@@ -387,14 +367,14 @@ Responde SOLO con el mensaje que María debe enviar:`
     }
 
     const data = await response.json()
-    const aiMessage = data.choices?.[0]?.message?.content || "Entiendo, ¿en qué específicamente te puedo ayudar?"
+    const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! ¿En qué te puedo ayudar?"
     
     console.log('🤖 RESPUESTA FINAL GENERADA:', aiMessage)
     return aiMessage.trim()
 
   } catch (error) {
     console.error('❌ ERROR DETALLADO EN generateAIResponse:', error)
-    return `Entiendo tu mensaje "${currentMessage}". ¿Qué tipo de experiencias de viaje te interesan más?`
+    return "¡Hola! Soy María, asesora de viajes. ¿En qué te puedo ayudar?"
   }
 }
 
