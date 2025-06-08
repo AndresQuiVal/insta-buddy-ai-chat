@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -170,7 +171,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     console.log('✅ Message saved successfully:', data)
 
-    // 🔥 ANÁLISIS Y RESPUESTA ESTRATÉGICA COMPLETA
+    // 🔥 ANÁLISIS Y RESPUESTA ESTRATÉGICA MEJORADA
     await handleStrategicAnalysisAndResponse(supabase, event.sender.id, event.message.text)
 
   } catch (error) {
@@ -179,14 +180,14 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   }
 }
 
-async function handleStrategicAnalysisAndResponse(supabase: any, senderId: string, userMessage: string) {
+async function handleStrategicAnalysisAndResponse(supabase: any, senderId: string, currentMessage: string) {
   try {
-    console.log('🎯 INICIANDO ANÁLISIS Y RESPUESTA ESTRATÉGICA COMPLETA')
+    console.log('🎯 INICIANDO ANÁLISIS ESTRATÉGICO MEJORADO')
     console.log(`👤 Sender ID: ${senderId}`)
-    console.log(`💬 Mensaje: "${userMessage}"`)
+    console.log(`💬 Mensaje actual: "${currentMessage}"`)
 
     // 1. OBTENER CARACTERÍSTICAS IDEALES DESDE LA BASE DE DATOS
-    console.log('🔍 Obteniendo características ideales desde la base de datos...')
+    console.log('🔍 Obteniendo características ideales...')
     const { data: idealTraitsData, error: traitsError } = await supabase
       .from('ideal_client_traits')
       .select('*')
@@ -200,21 +201,19 @@ async function handleStrategicAnalysisAndResponse(supabase: any, senderId: strin
     }
 
     if (!idealTraitsData || idealTraitsData.length === 0) {
-      console.log('⚠️ No se encontraron características ideales en la base de datos')
+      console.log('⚠️ No hay características ideales configuradas')
       await sendGenericResponse(supabase, senderId)
       return
     }
 
-    const idealTraits = idealTraitsData.map(t => t.trait)
-    console.log('✅ Características ideales cargadas:', idealTraits)
+    console.log('✅ Características ideales cargadas:', idealTraitsData.map(t => t.trait))
 
-    // 2. OBTENER HISTORIAL COMPLETO DE CONVERSACIÓN
-    console.log('📚 Obteniendo historial completo de conversación...')
+    // 2. OBTENER TODO EL HISTORIAL DE CONVERSACIÓN COMPLETO
+    console.log('📚 Obteniendo historial COMPLETO de conversación...')
     const { data: allMessages, error: messagesError } = await supabase
       .from('instagram_messages')
       .select('*')
-      .eq('sender_id', senderId)
-      .eq('message_type', 'received')
+      .or(`sender_id.eq.${senderId},recipient_id.eq.${senderId}`)
       .order('created_at', { ascending: true })
 
     if (messagesError) {
@@ -223,95 +222,104 @@ async function handleStrategicAnalysisAndResponse(supabase: any, senderId: strin
       return
     }
 
-    const conversationText = allMessages ? allMessages.map(msg => msg.message_text).join(' ') : userMessage
-    console.log(`📝 Texto completo de conversación (${conversationText.length} chars):`, conversationText.substring(0, 300) + '...')
+    // 3. CONSTRUIR HISTORIAL COMPLETO DE CONVERSACIÓN
+    const conversationHistory = allMessages || []
+    const fullConversationText = conversationHistory
+      .map(msg => `${msg.message_type === 'received' ? 'Usuario' : 'IA'}: ${msg.message_text}`)
+      .join('\n')
 
-    // 3. ANÁLISIS ESTRATÉGICO CON PALABRAS CLAVE MEJORADAS
-    console.log('🧠 Realizando análisis estratégico...')
-    const analysis = analyzeWithAdvancedKeywords(conversationText, idealTraits)
+    console.log(`📝 Historial completo (${conversationHistory.length} mensajes):`)
+    console.log(fullConversationText.substring(0, 500) + '...')
+
+    // 4. ANÁLISIS ESTRATÉGICO MEJORADO
+    console.log('🧠 Realizando análisis estratégico completo...')
+    const analysis = await analyzeConversationStrategically(fullConversationText, idealTraitsData)
     console.log('📊 Resultado del análisis:', analysis)
 
-    // 4. GUARDAR ANÁLISIS EN LA BASE DE DATOS
+    // 5. GUARDAR ANÁLISIS EN LA BASE DE DATOS
     if (analysis.matchPoints > 0) {
-      console.log('💾 Guardando análisis en la base de datos...')
-      await saveAnalysisToDatabase(supabase, senderId, analysis, allMessages?.length || 1)
+      console.log('💾 Guardando análisis...')
+      await saveAnalysisToDatabase(supabase, senderId, analysis, conversationHistory.length)
     }
 
-    // 5. GENERAR RESPUESTA ESTRATÉGICA CON OPENAI
-    console.log('🤖 Generando respuesta estratégica...')
-    const strategicResponse = await generateStrategicResponse(
-      supabase, 
-      senderId, 
-      userMessage, 
-      conversationText,
-      analysis, 
-      idealTraits
+    // 6. GENERAR RESPUESTA ESTRATÉGICA INTELIGENTE
+    console.log('🤖 Generando respuesta estratégica basada en contexto...')
+    const strategicResponse = await generateContextualStrategicResponse(
+      supabase,
+      senderId,
+      currentMessage,
+      fullConversationText,
+      analysis,
+      idealTraitsData
     )
 
     console.log('📤 Respuesta estratégica generada:', strategicResponse)
 
-    // 6. ENVIAR RESPUESTA AUTOMÁTICA
+    // 7. ENVIAR RESPUESTA AUTOMÁTICA
     await sendResponseWithDelay(supabase, senderId, strategicResponse)
 
   } catch (error) {
-    console.error('❌ Error en análisis y respuesta estratégica:', error)
+    console.error('❌ Error en análisis estratégico:', error)
     await sendGenericResponse(supabase, senderId)
   }
 }
 
-function analyzeWithAdvancedKeywords(conversationText: string, idealTraits: string[]): any {
-  console.log('🔍 ANÁLISIS CON PALABRAS CLAVE AVANZADAS')
+async function analyzeConversationStrategically(conversationText: string, idealTraits: any[]): Promise<any> {
+  console.log('🔍 ANÁLISIS ESTRATÉGICO DE CONVERSACIÓN COMPLETA')
   
   const text = conversationText.toLowerCase()
   
-  // Mapa de palabras clave MUY específico por característica
+  // Mapa de palabras clave específico y detallado
   const keywordMap: Record<string, string[]> = {
-    "le gustan los cruceros": [
-      "crucero", "cruceros", "barco", "navegar", "travesia", "mar", "oceano",
-      "caribe", "mediterraneo", "viaje en barco", "me gusta navegar", "amo el mar",
-      "me encantan los cruceros", "he estado en cruceros", "quiero ir en crucero"
+    "Interesado en nuestros productos o servicios": [
+      "me interesa", "me interesan", "interesado", "interesada", "quiero saber",
+      "información", "detalles", "precio", "costo", "cotización", "cuánto cuesta",
+      "me gusta", "me encanta", "necesito", "busco", "requiero", "quiero",
+      "producto", "servicio", "oferta", "promoción", "paquete", "plan",
+      "crucero", "cruceros", "viaje", "viajes", "tour", "excursión", "vacaciones"
     ],
-    "tiene 2 perros": [
-      "perro", "perros", "mascota", "mascotas", "can", "canes", "cachorro", "cachorros",
-      "tengo perros", "mis perros", "dos perros", "2 perros", "un par de perros",
-      "me gustan los perros", "amo los perros", "pastor", "labrador", "golden"
+    "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
+      "presupuesto", "dinero", "pago", "pagar", "precio", "costo", "inversión",
+      "puedo pagar", "tengo dinero", "dispongo", "cuento con", "tarjeta",
+      "efectivo", "financiamiento", "crédito", "mil", "miles", "pesos", "dólares",
+      "vale la pena", "invertir", "gastar", "económico", "caro", "barato"
     ],
-    "es de españa": [
-      "españa", "español", "española", "madrid", "barcelona", "valencia", "sevilla",
-      "andalucia", "cataluña", "galicia", "pais vasco", "soy español", "soy española",
-      "vivo en españa", "desde españa", "aqui en españa", "peninsula iberica"
+    "Está listo para tomar una decisión de compra": [
+      "decidido", "listo", "preparado", "comprar", "reservar", "confirmar",
+      "ahora", "hoy", "ya", "pronto", "inmediato", "urgente", "cuando",
+      "perfecto", "de acuerdo", "acepto", "sí", "claro", "adelante", "vamos"
     ],
-    "le gustan las hamburguesas": [
-      "hamburguesa", "hamburguesas", "burger", "burgers", "carne", "comida rapida",
-      "me gustan las hamburguesas", "amo las hamburguesas", "como hamburguesas",
-      "mcdonalds", "burger king", "fast food", "sandwich de carne"
+    "Se encuentra en nuestra zona de servicio": [
+      "vivo", "estoy", "ubicado", "dirección", "ciudad", "zona", "región",
+      "méxico", "guadalajara", "monterrey", "cdmx", "envío", "entrega",
+      "cerca", "lejos", "local", "nacional"
     ]
   }
   
   const metTraits: string[] = []
   const metTraitIndices: number[] = []
   
-  idealTraits.forEach((trait, index) => {
-    const keywords = keywordMap[trait.toLowerCase()] || []
-    console.log(`🎯 Analizando: "${trait}"`)
-    console.log(`   Palabras clave: ${keywords.slice(0, 5).join(', ')}...`)
+  idealTraits.forEach((trait, idx) => {
+    const keywords = keywordMap[trait.trait] || []
+    
+    console.log(`🎯 Analizando: "${trait.trait}"`)
     
     let matchFound = false
     const foundKeywords: string[] = []
     
     for (const keyword of keywords) {
-      if (text.includes(keyword.toLowerCase())) {
+      if (text.includes(keyword)) {
         matchFound = true
         foundKeywords.push(keyword)
       }
     }
     
-    console.log(`   Encontradas: ${foundKeywords.join(', ')}`)
+    console.log(`   Palabras encontradas: ${foundKeywords.join(', ')}`)
     console.log(`   ¿Match?: ${matchFound ? '✅ SÍ' : '❌ NO'}`)
     
     if (matchFound) {
-      metTraits.push(trait)
-      metTraitIndices.push(index)
+      metTraits.push(trait.trait)
+      metTraitIndices.push(idx)
     }
   })
   
@@ -319,6 +327,177 @@ function analyzeWithAdvancedKeywords(conversationText: string, idealTraits: stri
     matchPoints: metTraits.length,
     metTraits,
     metTraitIndices
+  }
+}
+
+async function generateContextualStrategicResponse(
+  supabase: any,
+  senderId: string,
+  currentMessage: string,
+  fullConversationText: string,
+  analysis: any,
+  idealTraits: any[]
+): Promise<string> {
+  try {
+    const openaiKey = Deno.env.get('OPENAI_API_KEY')
+    
+    if (!openaiKey) {
+      console.log('⚠️ No hay API key de OpenAI, usando respuesta estratégica predefinida')
+      return getContextualFallbackResponse(currentMessage, analysis, idealTraits)
+    }
+
+    // Crear prompt ULTRA estratégico con contexto completo
+    const strategicPrompt = createAdvancedContextualPrompt(
+      currentMessage,
+      fullConversationText,
+      analysis,
+      idealTraits
+    )
+
+    console.log('🧠 Enviando prompt contextual a OpenAI...')
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: strategicPrompt
+          },
+          {
+            role: 'user',
+            content: currentMessage
+          }
+        ],
+        max_tokens: 200,
+        temperature: 0.8
+      })
+    })
+
+    if (!response.ok) {
+      console.error('❌ Error en OpenAI API:', await response.text())
+      return getContextualFallbackResponse(currentMessage, analysis, idealTraits)
+    }
+
+    const data = await response.json()
+    const aiResponse = data.choices[0].message.content
+
+    console.log('✅ Respuesta contextual de OpenAI:', aiResponse)
+    return aiResponse
+
+  } catch (error) {
+    console.error('❌ Error generando respuesta contextual:', error)
+    return getContextualFallbackResponse(currentMessage, analysis, idealTraits)
+  }
+}
+
+function createAdvancedContextualPrompt(
+  currentMessage: string,
+  fullConversationText: string,
+  analysis: any,
+  idealTraits: any[]
+): string {
+  const { matchPoints, metTraits } = analysis
+  const totalTraits = idealTraits.length
+  const pendingTraits = idealTraits.filter((trait: any) => !metTraits.includes(trait.trait))
+  const nextTrait = pendingTraits[0]?.trait
+
+  return `
+Eres un VENDEDOR EXPERTO de Instagram que mantiene conversaciones NATURALES mientras descubre estratégicamente si el prospecto cumple características del cliente ideal.
+
+🎯 CARACTERÍSTICAS DEL CLIENTE IDEAL:
+${idealTraits.map((trait: any, i: number) => `${i+1}. ${trait.trait}`).join('\n')}
+
+📊 PROGRESO ACTUAL DEL PROSPECTO:
+- ✅ CARACTERÍSTICAS CONFIRMADAS: ${matchPoints}/${totalTraits}
+- ✅ CUMPLE: ${metTraits.join(' | ') || 'NINGUNA AÚN'}
+- 🎯 PRÓXIMO OBJETIVO: ${nextTrait || 'TODAS CONFIRMADAS - BUSCAR CONTACTO'}
+
+📝 HISTORIAL COMPLETO DE CONVERSACIÓN:
+${fullConversationText}
+
+💬 MENSAJE ACTUAL DEL PROSPECTO:
+"${currentMessage}"
+
+🗣️ TU ESTRATEGIA ESPECÍFICA:
+${matchPoints === 0 ? `
+🌟 INICIO - Responde al mensaje actual + descubrir primera característica
+- Responde ESPECÍFICAMENTE a lo que acaba de preguntar
+- Si pregunta tu nombre, díselo: "Soy María, asesora de viajes"
+- Después conecta naturalmente y haz UNA pregunta para descubrir: "${nextTrait}"
+- EJEMPLO: "Soy María, mucho gusto. Me dedico a ayudar personas a encontrar sus viajes ideales. ¿Qué tipo de experiencias te emocionan más?"
+` : matchPoints < totalTraits ? `
+💬 FILTRADO ACTIVO - Progreso ${matchPoints}/${totalTraits}
+- Responde DIRECTAMENTE a su mensaje actual
+- ENFÓCATE en descubrir: "${nextTrait}"
+- Haz una pregunta estratégica NATURAL para revelar esta característica
+- Conecta la pregunta con lo que ya han hablado
+` : `
+🏆 CLIENTE IDEAL CONFIRMADO - Conseguir llamada/WhatsApp
+- ¡PERFECTO! Este prospecto cumple TODAS las ${totalTraits} características
+- Responde a su mensaje y luego busca conseguir contacto
+- Sé DIRECTO: "Me parece que tenemos mucho en común, ¿te gustaría que platicáramos por teléfono?"
+`}
+
+🎭 REGLAS FUNDAMENTALES:
+1. **SIEMPRE responde al mensaje actual PRIMERO**
+2. **Conversación NATURAL** - Nunca suenes como bot
+3. **UNA pregunta estratégica por mensaje**
+4. **Conecta emocionalmente** - Muestra interés genuino
+5. **Máximo 150 caracteres** para Instagram
+6. **NUNCA ignores lo que te pregunta**
+
+RESPONDE SOLO con tu siguiente mensaje natural y contextual de máximo 150 caracteres.
+  `.trim()
+}
+
+function getContextualFallbackResponse(currentMessage: string, analysis: any, idealTraits: any[]): string {
+  const { matchPoints } = analysis
+  const totalTraits = idealTraits.length
+  const lowerMessage = currentMessage.toLowerCase()
+
+  // Respuestas específicas según el contexto del mensaje
+  if (lowerMessage.includes('como te llamas') || lowerMessage.includes('cuál es tu nombre')) {
+    if (matchPoints === 0) {
+      return "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más cuando viajas?"
+    } else if (matchPoints < totalTraits) {
+      return "Soy María. Me da curiosidad, ¿has pensado en hacer algún viaje especial últimamente?"
+    } else {
+      return "Soy María. Me parece que tenemos mucho en común, ¿te gustaría que platicáramos por teléfono?"
+    }
+  }
+
+  if (lowerMessage.includes('hola') || lowerMessage.includes('buenos')) {
+    return "¡Hola! Soy María. ¿Qué tipo de aventuras o experiencias te emocionan más?"
+  }
+
+  // Respuestas generales estratégicas
+  if (matchPoints === 0) {
+    const responses = [
+      "Interesante. ¿Qué tipo de cosas te apasionan o te hacen sentir emocionado?",
+      "Perfecto. ¿Cuáles son tus actividades favoritas en tu tiempo libre?",
+      "Genial. ¿Hay algo específico que te guste hacer para relajarte o divertirte?"
+    ]
+    return responses[Math.floor(Math.random() * responses.length)]
+  } else if (matchPoints < totalTraits) {
+    const responses = [
+      "Me parece muy bien. ¿Hay algo más que te guste hacer en tu tiempo libre?",
+      "Excelente. ¿Qué otras cosas disfrutas cuando tienes tiempo para ti?",
+      "Perfecto. ¿Tienes algún otro hobby o pasión que te emocione?"
+    ]
+    return responses[Math.floor(Math.random() * responses.length)]
+  } else {
+    const responses = [
+      "¡Increíble! Tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?",
+      "¡Perfecto! Creo que podríamos conectar muy bien. ¿Cuándo podríamos hablar?",
+      "¡Genial! Tengo ideas que creo te van a encantar. ¿Hablamos por teléfono?"
+    ]
+    return responses[Math.floor(Math.random() * responses.length)]
   }
 }
 
@@ -333,8 +512,8 @@ async function saveAnalysisToDatabase(supabase: any, senderId: string, analysis:
       message_count: messageCount,
       analysis_data: {
         timestamp: new Date().toISOString(),
-        strategic_analysis: true,
-        source: 'webhook_strategic'
+        contextual_analysis: true,
+        source: 'webhook_contextual'
       }
     }
 
@@ -352,166 +531,6 @@ async function saveAnalysisToDatabase(supabase: any, senderId: string, analysis:
     }
   } catch (error) {
     console.error('❌ Error en saveAnalysisToDatabase:', error)
-  }
-}
-
-async function generateStrategicResponse(
-  supabase: any,
-  senderId: string, 
-  userMessage: string,
-  conversationText: string,
-  analysis: any,
-  idealTraits: string[]
-): Promise<string> {
-  try {
-    const openaiKey = Deno.env.get('OPENAI_API_KEY')
-    
-    if (!openaiKey) {
-      console.log('⚠️ No hay API key de OpenAI, usando respuesta estratégica predefinida')
-      return getStrategicFallbackResponse(analysis, idealTraits)
-    }
-
-    // Crear prompt ULTRA estratégico basado en el progreso
-    const strategicPrompt = createAdvancedStrategicPrompt(analysis, idealTraits, conversationText)
-
-    console.log('🧠 Enviando prompt estratégico a OpenAI...')
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: strategicPrompt
-          },
-          {
-            role: 'user',
-            content: userMessage
-          }
-        ],
-        max_tokens: 200,
-        temperature: 0.8
-      })
-    })
-
-    if (!response.ok) {
-      console.error('❌ Error en OpenAI API:', await response.text())
-      return getStrategicFallbackResponse(analysis, idealTraits)
-    }
-
-    const data = await response.json()
-    const aiResponse = data.choices[0].message.content
-
-    console.log('✅ Respuesta estratégica de OpenAI:', aiResponse)
-    return aiResponse
-
-  } catch (error) {
-    console.error('❌ Error generando respuesta estratégica:', error)
-    return getStrategicFallbackResponse(analysis, idealTraits)
-  }
-}
-
-function createAdvancedStrategicPrompt(analysis: any, idealTraits: string[], conversationText: string): string {
-  const { matchPoints, metTraits } = analysis
-  const totalTraits = idealTraits.length
-  const pendingTraits = idealTraits.filter(trait => !metTraits.includes(trait))
-  const nextTrait = pendingTraits[0]
-
-  return `
-Eres un VENDEDOR EXPERTO que mantiene conversaciones NATURALES mientras descubre estratégicamente si el prospecto cumple características específicas del cliente ideal.
-
-🎯 CARACTERÍSTICAS DEL CLIENTE IDEAL:
-${idealTraits.map((trait, i) => `${i+1}. ${trait}`).join('\n')}
-
-📊 PROGRESO ACTUAL DEL PROSPECTO:
-- ✅ CARACTERÍSTICAS CONFIRMADAS: ${matchPoints}/${totalTraits}
-- ✅ CUMPLE: ${metTraits.join(' | ') || 'NINGUNA AÚN'}
-- 🎯 PRÓXIMO OBJETIVO: ${nextTrait || 'TODAS CONFIRMADAS - BUSCAR CONTACTO'}
-
-📝 CONTEXTO DE CONVERSACIÓN:
-"${conversationText.substring(0, 500)}..."
-
-🗣️ TU ESTRATEGIA ESPECÍFICA:
-${matchPoints === 0 ? `
-🌟 INICIO - Conexión + Primer filtrado
-- Saluda de forma auténtica y natural
-- Crea rapport inicial con 1-2 comentarios empáticos
-- Haz UNA pregunta estratégica INDIRECTA para descubrir: "${nextTrait}"
-- EJEMPLO para "${nextTrait}": 
-  * Si es sobre cruceros: "¿Qué tipo de viajes o experiencias te emocionan más?"
-  * Si es sobre perros: "¿Tienes alguna mascota o animal favorito?"
-  * Si es sobre España: "¿De qué parte del mundo me escribes?"
-  * Si es sobre hamburguesas: "¿Cuál es tu tipo de comida favorita?"
-` : matchPoints < totalTraits ? `
-💬 FILTRADO ACTIVO - Progreso ${matchPoints}/${totalTraits}
-- Reconoce y conecta con lo que ya sabes sobre él
-- ENFÓCATE específicamente en descubrir: "${nextTrait}"
-- Haz una pregunta estratégica NATURAL para revelar esta característica
-- Conecta la pregunta con algo que ya dijeron
-- EJEMPLO para "${nextTrait}":
-  * Si es sobre cruceros: "Suena genial! ¿Has pensado en hacer algún viaje especial, como un crucero?"
-  * Si es sobre perros: "Me da curiosidad, ¿tienes alguna mascota en casa?"
-  * Si es sobre España: "Perfecto! ¿Eres de España o de otro país?"
-  * Si es sobre hamburguesas: "¡Excelente! ¿Eres de los que disfruta una buena hamburguesa?"
-` : `
-🏆 CLIENTE IDEAL CONFIRMADO - Conseguir llamada/WhatsApp
-- ¡PERFECTO! Este prospecto cumple TODAS las ${totalTraits} características
-- AHORA tu objetivo es conseguir una llamada o WhatsApp
-- Sé DIRECTO: "Me parece que tenemos mucho en común, ¿te gustaría que platicáramos por teléfono?"
-- Ofrece valor: "Tengo algunas ideas que creo te van a encantar"
-- Crea urgencia suave: "¿Te parece si coordinamos una llamada esta semana?"
-`}
-
-🎭 REGLAS FUNDAMENTALES:
-1. **Conversación NATURAL** - Nunca suenes como un bot o vendedor agresivo
-2. **UNA pregunta por mensaje** - No bombardees con preguntas
-3. **Conecta emocionalmente** - Muestra interés genuino
-4. **NUNCA reveles** que estás evaluando características específicas
-5. **Máximo 150 caracteres** para Instagram
-
-💡 EJEMPLOS DE PREGUNTAS ESTRATÉGICAS NATURALES:
-- "¿Qué tipo de cosas te emocionan o te apasionan?"
-- "¿Tienes algún hobby o pasatiempo favorito?"
-- "¿De dónde me escribes? Me gusta conocer gente de diferentes lugares"
-- "¿Cuál dirías que es tu tipo de comida o experiencia favorita?"
-
-RESPONDE SOLO con tu siguiente mensaje estratégico, natural y conversacional de máximo 150 caracteres.
-  `.trim()
-}
-
-function getStrategicFallbackResponse(analysis: any, idealTraits: string[]): string {
-  const { matchPoints } = analysis
-  const totalTraits = idealTraits.length
-
-  if (matchPoints === 0) {
-    const responses = [
-      "¡Hola! Me da mucho gusto conectar contigo. ¿Qué tipo de cosas te emocionan más en la vida?",
-      "¡Perfecto! Gracias por escribir. ¿Cuáles son tus pasatiempos o actividades favoritas?",
-      "¡Excelente! ¿De qué parte del mundo me escribes? Me encanta conocer gente nueva.",
-      "¡Hola! ¿Hay algo específico que te apasione o te haga sentir emocionado?"
-    ]
-    return responses[Math.floor(Math.random() * responses.length)]
-  } else if (matchPoints < totalTraits) {
-    const responses = [
-      "Interesante lo que me comentas. ¿Hay algo más que te guste hacer en tu tiempo libre?",
-      "Me parece genial. ¿Tienes algún otro hobby o pasión que te emocione?",
-      "Perfecto. ¿Qué otras cosas disfrutas hacer cuando tienes tiempo?",
-      "Excelente. ¿Hay algo más que te defina o caracterice?"
-    ]
-    return responses[Math.floor(Math.random() * responses.length)]
-  } else {
-    const responses = [
-      "¡Increíble! Tenemos mucho en común. ¿Te gustaría que platicáramos por teléfono?",
-      "¡Perfecto! Creo que podríamos conectar muy bien. ¿Cuándo podríamos hablar?",
-      "¡Excelente! Me encantaría conocerte mejor. ¿Te parece si coordinamos una llamada?",
-      "¡Genial! Tengo algunas ideas que creo te van a fascinar. ¿Hablamos por teléfono?"
-    ]
-    return responses[Math.floor(Math.random() * responses.length)]
   }
 }
 
@@ -535,22 +554,22 @@ async function sendResponseWithDelay(supabase: any, senderId: string, messageTex
       await supabase
         .from('instagram_messages')
         .insert({
-          instagram_message_id: `strategic_${Date.now()}_${Math.random()}`,
-          sender_id: 'ai_strategic_assistant',
+          instagram_message_id: `contextual_${Date.now()}_${Math.random()}`,
+          sender_id: 'ai_contextual_assistant',
           recipient_id: senderId,
           message_text: messageText,
           message_type: 'sent',
           timestamp: new Date().toISOString(),
           raw_data: {
             ai_generated: true,
-            strategic_response: true,
-            source: 'webhook_strategic_response'
+            contextual_response: true,
+            source: 'webhook_contextual_response'
           }
         })
 
-      console.log('✅ Respuesta estratégica enviada y guardada exitosamente')
+      console.log('✅ Respuesta contextual enviada y guardada exitosamente')
     } else {
-      console.error('❌ Error enviando respuesta estratégica')
+      console.error('❌ Error enviando respuesta contextual')
     }
 
   } catch (error) {
@@ -560,10 +579,9 @@ async function sendResponseWithDelay(supabase: any, senderId: string, messageTex
 
 async function sendGenericResponse(supabase: any, senderId: string) {
   const responses = [
-    "¡Hola! Gracias por escribir. ¿En qué puedo ayudarte?",
-    "Me alegra que te hayas comunicado. ¿Qué necesitas saber?",
-    "¡Perfecto! Estoy aquí para ayudarte.",
-    "Gracias por tu mensaje. ¿Cómo puedo asistirte?"
+    "Soy María, asesora de viajes. ¿Qué tipo de experiencias te emocionan más?",
+    "¡Hola! Soy María. ¿Qué actividades disfrutas hacer en tu tiempo libre?",
+    "Mucho gusto, soy María. ¿Hay algo específico que te apasione o te emocione?"
   ]
   
   const response = responses[Math.floor(Math.random() * responses.length)]
@@ -611,139 +629,5 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
   } catch (error) {
     console.error('❌ Error en sendInstagramMessage:', error)
     return false
-  }
-}
-
-async function analyzeMessage(supabase: any, senderId: string, messageText: string) {
-  try {
-    console.log('🔍 Starting automatic analysis for sender:', senderId)
-
-    // Obtener características ideales habilitadas
-    const { data: traits } = await supabase
-      .from('ideal_client_traits')
-      .select('*')
-      .eq('enabled', true)
-      .order('position')
-
-    if (!traits || traits.length === 0) {
-      console.log('⚠️ No ideal traits configured, skipping analysis')
-      return
-    }
-
-    console.log('🎯 Found', traits.length, 'ideal traits for analysis')
-
-    // Obtener todo el historial de mensajes del usuario
-    const { data: allMessages } = await supabase
-      .from('instagram_messages')
-      .select('*')
-      .eq('sender_id', senderId)
-      .eq('message_type', 'received')
-      .order('created_at', { ascending: true })
-
-    if (!allMessages || allMessages.length === 0) {
-      console.log('⚠️ No messages found for sender:', senderId)
-      return
-    }
-
-    // Crear texto completo de la conversación
-    const conversationText = allMessages
-      .map(msg => msg.message_text)
-      .join(' ')
-      .toLowerCase()
-
-    console.log('📝 Analyzing conversation text:', conversationText.substring(0, 200) + '...')
-
-    // Análisis básico por palabras clave
-    const analysis = analyzeWithKeywords(conversationText, traits)
-
-    console.log('📊 Analysis result:', analysis)
-
-    // Guardar análisis si hay coincidencias
-    if (analysis.matchPoints > 0) {
-      await saveAnalysis(supabase, senderId, analysis, allMessages.length)
-    }
-
-  } catch (error) {
-    console.error('❌ Error in automatic analysis:', error)
-  }
-}
-
-function analyzeWithKeywords(conversationText: string, traits: any[]): any {
-  const keywordMap: Record<string, string[]> = {
-    "Interesado en nuestros productos o servicios": [
-      "interesa", "interesan", "producto", "servicio", "necesito", "busco", "quiero", 
-      "comprar", "información", "precio", "cotización", "cruceros", "viajes", "tours"
-    ],
-    "Tiene presupuesto adecuado para adquirir nuestras soluciones": [
-      "presupuesto", "dinero", "pago", "precio", "costo", "puedo pagar", "tengo dinero",
-      "cuanto cuesta", "inversión", "financiar"
-    ],
-    "Está listo para tomar una decisión de compra": [
-      "decidido", "listo", "comprar", "reservar", "confirmar", "ahora", "ya", "pronto",
-      "cuando", "programar", "de acuerdo"
-    ],
-    "Se encuentra en nuestra zona de servicio": [
-      "vivo", "estoy", "ubicado", "ciudad", "zona", "mexico", "guadalajara", "monterrey",
-      "envio", "entrega", "cerca"
-    ]
-  };
-
-  const metTraits: string[] = []
-  const metTraitIndices: number[] = []
-
-  traits.forEach((trait, index) => {
-    const keywords = keywordMap[trait.trait] || []
-    const hasMatch = keywords.some(keyword => 
-      conversationText.includes(keyword.toLowerCase())
-    )
-
-    if (hasMatch) {
-      metTraits.push(trait.trait)
-      metTraitIndices.push(index)
-      console.log('✅ Trait detected:', trait.trait)
-    }
-  })
-
-  return {
-    matchPoints: metTraits.length,
-    metTraits,
-    metTraitIndices
-  }
-}
-
-async function saveAnalysis(supabase: any, senderId: string, analysis: any, messageCount: number) {
-  try {
-    console.log('💾 Saving analysis to database:', { senderId, analysis, messageCount })
-
-    const analysisData = {
-      sender_id: senderId,
-      match_points: analysis.matchPoints,
-      met_traits: analysis.metTraits,
-      met_trait_indices: analysis.metTraitIndices,
-      last_analyzed_at: new Date().toISOString(),
-      message_count: messageCount,
-      analysis_data: {
-        timestamp: new Date().toISOString(),
-        automatic_analysis: true,
-        source: 'webhook'
-      }
-    }
-
-    const { data, error } = await supabase
-      .from('prospect_analysis')
-      .upsert(analysisData, { 
-        onConflict: 'sender_id',
-        ignoreDuplicates: false 
-      })
-
-    if (error) {
-      console.error('❌ Error saving analysis:', error)
-      throw error
-    }
-
-    console.log('✅ Analysis saved successfully:', data)
-  } catch (error) {
-    console.error('❌ Error in saveAnalysis:', error)
-    throw error
   }
 }
