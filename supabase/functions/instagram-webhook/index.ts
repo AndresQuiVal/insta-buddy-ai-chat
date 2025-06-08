@@ -197,8 +197,8 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     await supabase.from('instagram_messages').insert(messageData)
     console.log('✅ PASO 1 COMPLETADO: Mensaje guardado')
 
-    // PASO 2: OBTENER CONVERSACIÓN COMPLETA Y GENERAR RESPUESTA INTELIGENTE
-    console.log('📚 ========== PASO 2: ANALIZAR CONVERSACIÓN ==========')
+    // PASO 2: OBTENER CONVERSACIÓN COMPLETA - CON LOGS DETALLADOS
+    console.log('📚 ========== PASO 2: OBTENER CONVERSACIÓN COMPLETA ==========')
     
     // Obtener TODA la conversación
     const { data: conversationHistory, error: historyError } = await supabase
@@ -215,6 +215,32 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     const messages = conversationHistory || []
     console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
+    
+    // ========== AQUÍ ESTÁ EL LOG DETALLADO QUE PEDISTE ==========
+    console.log('🔍 =============== CONVERSACIÓN COMPLETA - ANÁLISIS DETALLADO ===============')
+    console.log('🔍 NÚMERO TOTAL DE MENSAJES:', messages.length)
+    console.log('🔍 ===============================================================')
+    
+    if (messages.length === 0) {
+      console.log('⚠️ NO HAY MENSAJES EN LA CONVERSACIÓN!')
+    } else {
+      messages.forEach((msg, index) => {
+        const isFromUser = msg.sender_id === event.sender.id
+        const sender = isFromUser ? 'USUARIO' : 'MARÍA'
+        const direction = isFromUser ? '👤➡️' : '🤖⬅️'
+        
+        console.log(`🔍 [${index + 1}/${messages.length}] ${direction} ${sender}: "${msg.message_text}"`)
+        console.log(`    📅 Timestamp: ${msg.timestamp}`)
+        console.log(`    📝 Message Type: ${msg.message_type}`)
+        console.log(`    🆔 Sender ID: ${msg.sender_id}`)
+        console.log(`    🎯 Recipient ID: ${msg.recipient_id}`)
+        console.log('    ─────────────────────────────────────────')
+      })
+    }
+    
+    console.log('🔍 ===============================================================')
+    console.log(`🔍 ÚLTIMO MENSAJE DEL USUARIO: "${event.message.text}"`)
+    console.log('🔍 ===============================================================')
 
     // Crear contexto para el AI con TODA la conversación
     const conversationContext = messages
@@ -225,9 +251,9 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       })
       .join('\n')
 
-    console.log('📖 =============== CONTEXTO COMPLETO ===============')
+    console.log('📖 =============== CONTEXTO PARA EL AI ===============')
     console.log(conversationContext)
-    console.log('📖 ===============================================')
+    console.log('📖 =====================================================')
 
     // PASO 3: GENERAR RESPUESTA INTELIGENTE
     console.log('🤖 ========== PASO 3: GENERAR RESPUESTA INTELIGENTE ==========')
