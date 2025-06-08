@@ -125,15 +125,14 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  try {
-    console.log('🚀 ===============================================')
-    console.log('🚀 INICIANDO PROCESAMIENTO DE EVENTO DE MENSAJE')
-    console.log('🚀 ===============================================')
+  console.log('🚀 ==========================================')
+  console.log('🚀 PROCESANDO MENSAJE DE INSTAGRAM')
+  console.log('🚀 ==========================================')
 
-    // Verificar si es un echo (mensaje enviado por nosotros)
+  try {
+    // Si es echo, solo guardar
     if (event.message?.is_echo) {
-      console.log('🔄 DETECTADO ECHO - mensaje enviado por nosotros, guardando pero no respondiendo')
-      
+      console.log('🔄 ECHO detectado - solo guardando mensaje enviado')
       if (event.message.text) {
         const messageData = {
           instagram_message_id: event.message.mid,
@@ -150,25 +149,24 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
             is_echo: true
           }
         }
-
         await supabase.from('instagram_messages').insert(messageData)
-        console.log('💾 Mensaje echo guardado exitosamente')
+        console.log('💾 Echo guardado exitosamente')
       }
       return
     }
 
-    // Verificar si tiene mensaje de texto real del usuario
+    // Verificar que hay mensaje real del usuario
     if (!event.message || !event.message.text) {
-      console.log('⏭️ NO HAY MENSAJE DE TEXTO - saltando evento')
+      console.log('⏭️ NO HAY MENSAJE DE TEXTO - saltando')
       return
     }
 
     console.log('✅ MENSAJE REAL DEL USUARIO DETECTADO')
     console.log('👤 SENDER ID:', event.sender.id)
-    console.log('💬 TEXTO DEL MENSAJE:', event.message.text)
+    console.log('💬 MENSAJE:', event.message.text)
 
-    // PASO 1: GUARDAR EL MENSAJE RECIBIDO
-    console.log('📝 PASO 1: GUARDANDO MENSAJE RECIBIDO...')
+    // PASO 1: GUARDAR MENSAJE
+    console.log('📝 ========== PASO 1: GUARDAR MENSAJE ==========')
     const messageData = {
       instagram_message_id: event.message.mid,
       sender_id: event.sender.id,
@@ -184,7 +182,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       }
     }
 
-    // Verificar si el mensaje ya existe
+    // Verificar si ya existe
     const { data: existingMessage } = await supabase
       .from('instagram_messages')
       .select('id')
@@ -192,60 +190,42 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       .single()
 
     if (existingMessage) {
-      console.log('⏭️ MENSAJE YA EXISTE EN BD - saltando')
+      console.log('⏭️ MENSAJE YA EXISTE - saltando')
       return
     }
 
-    // Guardar el mensaje
     await supabase.from('instagram_messages').insert(messageData)
-    console.log('✅ PASO 1 COMPLETADO: Mensaje guardado exitosamente')
+    console.log('✅ PASO 1 COMPLETADO: Mensaje guardado')
 
-    // PASO 2: ANALIZAR CONVERSACIÓN COMPLETA - SIEMPRE EJECUTAR
-    console.log('🔍 ===============================================')
-    console.log('🔍 PASO 2: ANALIZANDO CONVERSACIÓN COMPLETA')
-    console.log('🔍 ===============================================')
+    // PASO 2: OBTENER Y ANALIZAR CONVERSACIÓN COMPLETA
+    console.log('📚 ========== PASO 2: ANALIZAR CONVERSACIÓN ==========')
     
-    await analyzeFullConversationAndRespond(supabase, event.sender.id, event.message.text)
-
-  } catch (error) {
-    console.error('❌ ERROR EN processMessagingEvent:', error)
-    throw error
-  }
-}
-
-async function analyzeFullConversationAndRespond(supabase: any, senderId: string, currentMessage: string) {
-  console.log('📚 =============================================')
-  console.log('📚 PASO 2A: OBTENIENDO HISTORIAL COMPLETO')
-  console.log('📚 =============================================')
-  
-  try {
-    // Obtener TODA la conversación con esta persona
+    // Obtener TODA la conversación
     const { data: conversationHistory, error: historyError } = await supabase
       .from('instagram_messages')
       .select('*')
-      .or(`sender_id.eq.${senderId},recipient_id.eq.${senderId}`)
+      .or(`sender_id.eq.${event.sender.id},recipient_id.eq.${event.sender.id}`)
       .order('timestamp', { ascending: true })
 
     if (historyError) {
       console.error('❌ ERROR OBTENIENDO HISTORIAL:', historyError)
-      await sendSimpleResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+      await sendSimpleResponse(supabase, event.sender.id, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
       return
     }
 
     const messages = conversationHistory || []
     console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
 
-    // 🔥 IMPRIMIR HISTORIAL COMPLETO DE LA CONVERSACIÓN - OBLIGATORIO 🔥
-    console.log('📖 ========== CONVERSACIÓN COMPLETA ==========')
-    console.log(`👤 USUARIO: ${senderId}`)
-    console.log(`📝 TOTAL DE MENSAJES: ${messages.length}`)
-    console.log('📋 HISTORIAL DETALLADO:')
+    // IMPRIMIR CONVERSACIÓN COMPLETA
+    console.log('📖 =============== CONVERSACIÓN COMPLETA ===============')
+    console.log(`👤 USUARIO: ${event.sender.id}`)
+    console.log(`📝 HISTORIAL DETALLADO:`)
     
     if (messages.length === 0) {
-      console.log('⚠️ NO HAY MENSAJES PREVIOS - PRIMERA CONVERSACIÓN')
+      console.log('⚠️ NO HAY MENSAJES PREVIOS')
     } else {
       messages.forEach((msg, index) => {
-        const isFromUser = msg.sender_id === senderId
+        const isFromUser = msg.sender_id === event.sender.id
         const sender = isFromUser ? '👤 Usuario' : '🤖 María'
         const time = new Date(msg.timestamp).toLocaleString('es-ES')
         const messageType = msg.message_type === 'received' ? '[RECIBIDO]' : '[ENVIADO]'
@@ -253,13 +233,9 @@ async function analyzeFullConversationAndRespond(supabase: any, senderId: string
         console.log(`${index + 1}. ${messageType} [${time}] ${sender}: "${msg.message_text}"`)
       })
     }
-    console.log('📖 ========================================')
+    console.log('📖 ===============================================')
 
-    // PASO 2B: Obtener características configuradas
-    console.log('🎯 ===============================================')
-    console.log('🎯 PASO 2B: OBTENIENDO CARACTERÍSTICAS CONFIGURADAS')
-    console.log('🎯 ===============================================')
-    
+    // Obtener características configuradas
     const { data: traitsData, error: traitsError } = await supabase
       .from('ideal_client_traits')
       .select('*')
@@ -268,55 +244,45 @@ async function analyzeFullConversationAndRespond(supabase: any, senderId: string
 
     if (traitsError) {
       console.error('❌ ERROR OBTENIENDO CARACTERÍSTICAS:', traitsError)
-      await sendSimpleResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+      await sendSimpleResponse(supabase, event.sender.id, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
       return
     }
 
     const traits = traitsData || []
-    console.log('🎯 CARACTERÍSTICAS CONFIGURADAS PARA DESCUBRIR:')
+    console.log('🎯 CARACTERÍSTICAS CONFIGURADAS:')
     traits.forEach((trait, index) => {
       console.log(`${index + 1}. "${trait.trait}"`)
     })
 
     // PASO 3: GENERAR RESPUESTA CON IA
-    console.log('🤖 ===============================================')
-    console.log('🤖 PASO 3: GENERANDO RESPUESTA CON IA')
-    console.log('🤖 ===============================================')
-
-    const aiResponse = await generateAIResponse(messages, traits, senderId, currentMessage)
+    console.log('🤖 ========== PASO 3: GENERAR RESPUESTA CON IA ==========')
+    const aiResponse = await generateAIResponse(messages, traits, event.sender.id, event.message.text)
     
-    // PASO 4: ENVIAR RESPUESTA
-    console.log('📤 ===============================================')
-    console.log('📤 PASO 4: ENVIANDO RESPUESTA GENERADA')
-    console.log('📤 ===============================================')
-    console.log('💬 RESPUESTA A ENVIAR:', aiResponse)
+    // ENVIAR RESPUESTA
+    console.log('📤 ========== ENVIANDO RESPUESTA ==========')
+    console.log('💬 RESPUESTA GENERADA:', aiResponse)
+    await sendResponse(supabase, event.sender.id, aiResponse)
 
-    await sendResponse(supabase, senderId, aiResponse)
-
-    console.log('✅ ===============================================')
-    console.log('✅ PROCESO COMPLETO FINALIZADO EXITOSAMENTE')
-    console.log('✅ ===============================================')
+    console.log('✅ ========== PROCESO COMPLETADO ==========')
 
   } catch (error) {
-    console.error('❌ ERROR EN analyzeFullConversationAndRespond:', error)
-    await sendSimpleResponse(supabase, senderId, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
+    console.error('❌ ERROR EN processMessagingEvent:', error)
+    throw error
   }
 }
 
 async function generateAIResponse(messages: any[], traits: any[], senderId: string, currentMessage: string): Promise<string> {
-  console.log('🧠 ===============================================')
-  console.log('🧠 PASO 3A: INICIANDO GENERACIÓN CON IA')
-  console.log('🧠 ===============================================')
+  console.log('🧠 GENERANDO RESPUESTA CON IA...')
   
   try {
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     
     if (!openaiKey) {
-      console.log('⚠️ NO HAY API KEY DE OPENAI - usando respuesta básica')
+      console.log('⚠️ NO HAY API KEY DE OPENAI')
       return "¡Hola! Soy María, asesora de viajes. ¿En qué te puedo ayudar?"
     }
 
-    // Crear contexto de conversación para la IA
+    // Crear contexto de conversación
     const conversationContext = messages
       .filter(msg => msg.message_text && msg.message_text.trim() !== '')
       .map(msg => {
@@ -325,18 +291,16 @@ async function generateAIResponse(messages: any[], traits: any[], senderId: stri
       })
       .join('\n')
 
-    console.log('📝 CONTEXTO DE CONVERSACIÓN PARA IA:')
+    console.log('📝 CONTEXTO PARA IA:')
     console.log('=====================================')
     console.log(conversationContext)
     console.log('=====================================')
 
-    // Crear lista de características para el prompt
+    // Crear lista de características
     const traitsList = traits.map((trait, index) => `${index + 1}. ${trait.trait}`).join('\n')
     
     console.log('🎯 CARACTERÍSTICAS PARA IA:')
-    console.log('============================')
     console.log(traitsList)
-    console.log('============================')
 
     const prompt = `Eres María, una asesora de viajes experta. Tu trabajo es continuar la conversación de manera natural y hacer preguntas estratégicas para identificar si el prospecto cumple con las características del cliente ideal.
 
@@ -357,11 +321,7 @@ INSTRUCCIONES:
 
 Responde SOLO con el mensaje que María debe enviar (máximo 2-3 oraciones):`
 
-    console.log('📤 ENVIANDO PROMPT A OPENAI...')
-    console.log('PROMPT COMPLETO:')
-    console.log('===============')
-    console.log(prompt)
-    console.log('===============')
+    console.log('📤 ENVIANDO A OPENAI...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -386,7 +346,7 @@ Responde SOLO con el mensaje que María debe enviar (máximo 2-3 oraciones):`
       }),
     })
 
-    console.log('📨 RESPUESTA HTTP DE OPENAI:', response.status, response.statusText)
+    console.log('📨 RESPUESTA DE OPENAI:', response.status)
 
     if (!response.ok) {
       console.error('❌ ERROR HTTP DE OPENAI:', response.status)
@@ -394,11 +354,9 @@ Responde SOLO con el mensaje que María debe enviar (máximo 2-3 oraciones):`
     }
 
     const data = await response.json()
-    console.log('📋 DATOS COMPLETOS DE OPENAI:', JSON.stringify(data, null, 2))
-    
     const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! Soy María. ¿En qué te puedo ayudar?"
     
-    console.log('🤖 RESPUESTA GENERADA POR IA:', aiMessage)
+    console.log('🤖 RESPUESTA GENERADA:', aiMessage)
     return aiMessage.trim()
 
   } catch (error) {
@@ -409,25 +367,23 @@ Responde SOLO con el mensaje que María debe enviar (máximo 2-3 oraciones):`
 
 async function sendResponse(supabase: any, senderId: string, messageText: string) {
   try {
-    console.log('📨 PREPARANDO ENVÍO DE RESPUESTA')
-    console.log('👤 PARA USUARIO:', senderId)
-    console.log('💬 MENSAJE A ENVIAR:', messageText)
-
-    // Obtener configuración de delay
+    console.log('📨 PREPARANDO ENVÍO...')
+    
+    // Obtener delay
     const { data: settings } = await supabase
       .from('user_settings')
       .select('ai_delay')
       .limit(1)
 
     const delay = (settings && settings.length > 0 ? settings[0].ai_delay : 3) * 1000
-    console.log(`⏰ ESPERANDO ${delay}ms ANTES DE ENVIAR...`)
+    console.log(`⏰ ESPERANDO ${delay}ms...`)
     
     await new Promise(resolve => setTimeout(resolve, delay))
 
     const success = await sendInstagramMessage(senderId, messageText)
     
     if (success) {
-      console.log('✅ MENSAJE ENVIADO A INSTAGRAM EXITOSAMENTE')
+      console.log('✅ MENSAJE ENVIADO A INSTAGRAM')
       
       // Guardar mensaje enviado
       const sentMessageData = {
@@ -444,9 +400,9 @@ async function sendResponse(supabase: any, senderId: string, messageText: string
       }
 
       await supabase.from('instagram_messages').insert(sentMessageData)
-      console.log('✅ RESPUESTA GUARDADA EN BD EXITOSAMENTE')
+      console.log('✅ RESPUESTA GUARDADA EN BD')
     } else {
-      console.error('❌ ERROR ENVIANDO MENSAJE A INSTAGRAM')
+      console.error('❌ ERROR ENVIANDO A INSTAGRAM')
     }
 
   } catch (error) {
@@ -486,7 +442,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
     
     if (!accessToken) {
-      console.error('❌ NO HAY TOKEN DE ACCESO DE INSTAGRAM')
+      console.error('❌ NO HAY TOKEN DE INSTAGRAM')
       return false
     }
 
@@ -512,11 +468,11 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     const responseData = await response.json()
     
     if (!response.ok) {
-      console.error('❌ ERROR EN RESPUESTA DE INSTAGRAM API:', JSON.stringify(responseData, null, 2))
+      console.error('❌ ERROR EN INSTAGRAM API:', JSON.stringify(responseData, null, 2))
       return false
     }
 
-    console.log('✅ RESPUESTA EXITOSA DE INSTAGRAM API:', JSON.stringify(responseData, null, 2))
+    console.log('✅ RESPUESTA EXITOSA DE INSTAGRAM:', JSON.stringify(responseData, null, 2))
     return true
 
   } catch (error) {
