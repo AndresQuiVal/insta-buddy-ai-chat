@@ -209,7 +209,7 @@ export const handleInstagramCallback = async (code: string) => {
     if (!accountData.data) {
       throw new Error("No se encontraron datos de la cuenta");
     }
-    const instagramAccount = accountData.data[0];
+    const instagramAccount = accountData;
     // Guardar datos del usuario (Facebook + Instagram si está disponible)
     // const userData = {
     //   facebook: data.user,
