@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 // Configuración de Instagram Graph API (nueva API oficial)
 const FACEBOOK_APP_ID = "1059372749433300"; // Facebook App ID principal
 const INSTAGRAM_REDIRECT_URI =
-  "https://insta-buddy-ai-chat.lovable.app/" + "/auth/instagram/callback";
+  window.location.origin + "/auth/instagram/callback";
 const INSTAGRAM_SCOPE =
   "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish"; // Nuevos permisos para Graph API
 
