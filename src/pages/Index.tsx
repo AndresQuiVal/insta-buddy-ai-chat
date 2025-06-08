@@ -63,6 +63,22 @@ const Index = () => {
   }, []);
   */
 
+  useEffect(() => {
+    // Check if Instagram is connected from localStorage
+    const checkConnection = () => {
+      const isConnected =
+        localStorage.getItem("hower-instagram-token").length > 0;
+      setIsInstagramConnected(isConnected);
+      setIsCheckingConnection(false);
+    };
+
+    checkConnection();
+
+    // Check connection status periodically
+    const interval = setInterval(checkConnection, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Si está verificando la conexión, mostrar loading
   if (isCheckingConnection) {
     return (
