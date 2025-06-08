@@ -196,13 +196,31 @@ export const handleInstagramCallback = async (code: string) => {
       throw new Error(errorMessage);
     }
 
-    // Guardar token y datos del usuario
-    localStorage.setItem("hower-instagram-token", data.access_token);
+    const token = data.data[0].access_token;
 
+    // Guardar token y datos del usuario
+    localStorage.setItem("hower-instagram-token", token);
+
+    const accountResponse = await fetch(
+      `https://graph.instagram.com/v23.0/me?fields=id,user_id,username,name,account_type,profile_picture_url,followers_count,follows_count,media_count&access_token=${token}`
+    );
+
+    if (!accountResponse.ok) {
+      throw new Error("Error obteniendo datos de la cuenta");
+    }
+
+    const accountData = await accountResponse.json();
+    if (!accountData.data) {
+      throw new Error("No se encontraron datos de la cuenta");
+    }
+    const instagramAccount = accountData.data[0];
     // Guardar datos del usuario (Facebook + Instagram si está disponible)
+    // const userData = {
+    //   facebook: data.user,
+    //   instagram: data.instagram_account,
+    // };
     const userData = {
-      facebook: data.user,
-      instagram: data.instagram_account,
+      instagram: instagramAccount,
     };
     localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
 
@@ -210,9 +228,9 @@ export const handleInstagramCallback = async (code: string) => {
     console.log("Usuario conectado:", userData);
 
     // Determinar qué nombre mostrar
-    const displayName = data.instagram_account?.username
-      ? `@${data.instagram_account.username}`
-      : data.user?.name || "Usuario";
+    const displayName = instagramAccount?.username
+      ? `@${instagramAccount.username}`
+      : instagramAccount?.name || "Usuario";
 
     toast({
       title: "¡Conexión exitosa!",
