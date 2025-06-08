@@ -311,29 +311,32 @@ async function generateAIResponse(messages: any[], traits: any[], senderId: stri
     console.log('🎯 CARACTERÍSTICAS PARA EVALUAR:')
     console.log(traitsList)
 
-    const prompt = `Eres María, una asesora de viajes muy amigable y natural. Tienes una conversación REAL con un cliente potencial por Instagram.
+    // PROMPT TOTALMENTE NUEVO Y ESPECÍFICO
+    const prompt = `Eres María, una asesora de viajes REAL hablando por Instagram.
 
-HISTORIAL COMPLETO DE LA CONVERSACIÓN:
+CONVERSACIÓN HASTA AHORA:
 ${conversationContext}
 
 EL USUARIO ACABA DE ESCRIBIR: "${currentMessage}"
 
-CARACTERÍSTICAS DEL CLIENTE IDEAL QUE EVALÚAS (SIN MENCIONAR):
-${traitsList}
+INSTRUCCIONES CRÍTICAS:
+1. Responde EXACTAMENTE como respondería una persona real a ese mensaje específico
+2. Si dice "Hola" → saluda de vuelta naturalmente
+3. Si pregunta algo → responde esa pregunta directamente
+4. Si dice "¿Quién eres?" → "Soy María, asesora de viajes"
+5. Si pregunta si leíste algo → "Sí, vi que..." y menciona algo de la conversación
+6. NUNCA digas "Entiendo tu mensaje" o frases robóticas
+7. Habla como en WhatsApp, natural y directo
 
-INSTRUCCIONES IMPORTANTES:
-1. Responde de manera NATURAL y HUMANA al mensaje específico del usuario
-2. Si te pregunta algo específico, responde directamente a esa pregunta
-3. Si dice "¿Quién eres?", preséntate como María, asesora de viajes
-4. Si pregunta si leíste la conversación, responde que sí y haz referencia a algo que conversaron antes
-5. Mantén un tono amigable, cercano y profesional
-6. NO ignores lo que te dice el usuario
-7. NO uses frases robóticas como "Entiendo tu mensaje..."
-8. Responde como si fueras una persona real teniendo una conversación por chat
+EJEMPLOS DE RESPUESTAS NATURALES:
+- Si dice "Hola" → "¡Hola! ¿Cómo estás?"
+- Si dice "¿Qué tal?" → "¡Todo bien! ¿Y tú qué tal?"
+- Si pregunta sobre viajes → "Me encanta ayudar con viajes, ¿tienes algo en mente?"
+- Si dice "Gracias" → "¡De nada! ¿En qué más te ayudo?"
 
-RESPUESTA DIRECTA (máximo 2 oraciones, natural y contextual):`
+Responde SOLO con el mensaje natural, como si fueras una persona real:`
 
-    console.log('📤 ENVIANDO PROMPT MEJORADO A OPENAI...')
+    console.log('📤 ENVIANDO PROMPT COMPLETAMENTE NATURAL A OPENAI...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -346,15 +349,15 @@ RESPUESTA DIRECTA (máximo 2 oraciones, natural y contextual):`
         messages: [
           {
             role: 'system',
-            content: 'Eres María, asesora de viajes. Responde de manera natural y humana, como si fueras una persona real conversando por Instagram. NUNCA uses frases robóticas.'
+            content: 'Eres María, una persona REAL que asesora viajes. Respondes por Instagram como cualquier persona normal. SIN frases robóticas, SIN "entiendo tu mensaje". Solo respuestas humanas y naturales.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 150,
-        temperature: 0.9,
+        max_tokens: 100,
+        temperature: 1.0,
       }),
     })
 
