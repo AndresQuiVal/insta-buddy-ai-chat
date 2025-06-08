@@ -162,7 +162,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     console.log('✅ MENSAJE REAL DEL USUARIO DETECTADO')
     console.log('👤 SENDER ID:', event.sender.id)
-    console.log('💬 MENSAJE:', event.message.text)
+    console.log('💬 MENSAJE DEL USUARIO:', event.message.text)
 
     // PASO 1: GUARDAR MENSAJE
     console.log('📝 ========== PASO 1: GUARDAR MENSAJE ==========')
@@ -234,28 +234,9 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     }
     console.log('📖 ===============================================')
 
-    // Obtener características configuradas
-    const { data: traitsData, error: traitsError } = await supabase
-      .from('ideal_client_traits')
-      .select('*')
-      .eq('enabled', true)
-      .order('position')
-
-    if (traitsError) {
-      console.error('❌ ERROR OBTENIENDO CARACTERÍSTICAS:', traitsError)
-      await sendSimpleResponse(supabase, event.sender.id, "¡Hola! Soy María. ¿En qué te puedo ayudar?")
-      return
-    }
-
-    const traits = traitsData || []
-    console.log('🎯 CARACTERÍSTICAS CONFIGURADAS:')
-    traits.forEach((trait, index) => {
-      console.log(`${index + 1}. "${trait.trait}"`)
-    })
-
     // PASO 3: GENERAR RESPUESTA CON IA
     console.log('🤖 ========== PASO 3: GENERAR RESPUESTA CON IA ==========')
-    const aiResponse = await generateAIResponse(messages, traits, event.sender.id, event.message.text)
+    const aiResponse = await generateAIResponse(messages, event.sender.id, event.message.text)
     
     // ENVIAR RESPUESTA
     console.log('📤 ========== ENVIANDO RESPUESTA ==========')
@@ -270,8 +251,9 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   }
 }
 
-async function generateAIResponse(messages: any[], traits: any[], senderId: string, currentMessage: string): Promise<string> {
+async function generateAIResponse(messages: any[], senderId: string, currentMessage: string): Promise<string> {
   console.log('🧠 GENERANDO RESPUESTA CON IA...')
+  console.log('🔥 MENSAJE ACTUAL DEL USUARIO:', currentMessage)
   
   try {
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
@@ -281,62 +263,42 @@ async function generateAIResponse(messages: any[], traits: any[], senderId: stri
       return "¡Hola! Soy María, asesora de viajes. ¿En qué te puedo ayudar?"
     }
 
-    // Filtrar y ordenar mensajes por timestamp
-    const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-    
-    // Crear contexto de conversación COMPLETO y DETALLADO
-    const conversationContext = sortedMessages
+    // Crear contexto de conversación simple
+    const lastMessages = messages
       .filter(msg => msg.message_text && msg.message_text.trim() !== '')
-      .map((msg, index) => {
+      .slice(-5) // Solo últimos 5 mensajes
+      .map(msg => {
         const isFromUser = msg.sender_id === senderId
-        const sender = isFromUser ? 'Usuario' : 'María'
-        const time = new Date(msg.timestamp).toLocaleString('es-ES', { 
-          hour: '2-digit', 
-          minute: '2-digit',
-          day: '2-digit',
-          month: '2-digit'
-        })
-        return `[${time}] ${sender}: ${msg.message_text}`
+        return `${isFromUser ? 'Usuario' : 'María'}: ${msg.message_text}`
       })
       .join('\n')
 
-    console.log('📝 CONTEXTO COMPLETO PARA IA:')
+    console.log('📝 CONTEXTO PARA IA:')
     console.log('=====================================')
-    console.log(conversationContext)
+    console.log(lastMessages)
     console.log('=====================================')
 
-    // Crear lista de características para evaluar
-    const traitsList = traits.map((trait, index) => `${index + 1}. ${trait.trait}`).join('\n')
-    
-    console.log('🎯 CARACTERÍSTICAS PARA EVALUAR:')
-    console.log(traitsList)
+    // NUEVO PROMPT ULTRA ESPECÍFICO
+    const prompt = `El usuario te escribió exactamente esto: "${currentMessage}"
 
-    // PROMPT TOTALMENTE NUEVO Y ESPECÍFICO
-    const prompt = `Eres María, una asesora de viajes REAL hablando por Instagram.
+${lastMessages ? `Contexto previo:\n${lastMessages}\n` : ''}
 
-CONVERSACIÓN HASTA AHORA:
-${conversationContext}
+Eres María, una asesora de viajes normal. Responde DIRECTAMENTE a lo que el usuario te escribió. 
 
-EL USUARIO ACABA DE ESCRIBIR: "${currentMessage}"
+REGLAS CRÍTICAS:
+- Si dice "Hola" → responde "¡Hola! ¿Cómo estás?"
+- Si pregunta tu nombre → responde "Soy María"
+- Si pregunta qué haces → responde "Soy asesora de viajes"  
+- Si pregunta sobre viajes → responde sobre viajes
+- Si dice "Gracias" → responde "¡De nada!"
+- Si dice algo random → responde de forma natural a eso específico
 
-INSTRUCCIONES CRÍTICAS:
-1. Responde EXACTAMENTE como respondería una persona real a ese mensaje específico
-2. Si dice "Hola" → saluda de vuelta naturalmente
-3. Si pregunta algo → responde esa pregunta directamente
-4. Si dice "¿Quién eres?" → "Soy María, asesora de viajes"
-5. Si pregunta si leíste algo → "Sí, vi que..." y menciona algo de la conversación
-6. NUNCA digas "Entiendo tu mensaje" o frases robóticas
-7. Habla como en WhatsApp, natural y directo
+NUNCA respondas con frases genéricas como "¿En qué te puedo ayudar?". 
 
-EJEMPLOS DE RESPUESTAS NATURALES:
-- Si dice "Hola" → "¡Hola! ¿Cómo estás?"
-- Si dice "¿Qué tal?" → "¡Todo bien! ¿Y tú qué tal?"
-- Si pregunta sobre viajes → "Me encanta ayudar con viajes, ¿tienes algo en mente?"
-- Si dice "Gracias" → "¡De nada! ¿En qué más te ayudo?"
+Responde SOLO al mensaje "${currentMessage}" de forma natural:`
 
-Responde SOLO con el mensaje natural, como si fueras una persona real:`
-
-    console.log('📤 ENVIANDO PROMPT COMPLETAMENTE NATURAL A OPENAI...')
+    console.log('📤 ENVIANDO PROMPT ESPECÍFICO A OPENAI...')
+    console.log('🎯 PROMPT:', prompt)
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -349,15 +311,15 @@ Responde SOLO con el mensaje natural, como si fueras una persona real:`
         messages: [
           {
             role: 'system',
-            content: 'Eres María, una persona REAL que asesora viajes. Respondes por Instagram como cualquier persona normal. SIN frases robóticas, SIN "entiendo tu mensaje". Solo respuestas humanas y naturales.'
+            content: 'Eres María, una persona real. Respondes de forma natural y específica a cada mensaje. NUNCA uses frases genéricas.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 100,
-        temperature: 1.0,
+        max_tokens: 80,
+        temperature: 0.8,
       }),
     })
 
@@ -370,14 +332,14 @@ Responde SOLO con el mensaje natural, como si fueras una persona real:`
     }
 
     const data = await response.json()
-    const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! ¿En qué te puedo ayudar?"
+    const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! ¿Cómo estás?"
     
     console.log('🤖 RESPUESTA FINAL GENERADA:', aiMessage)
     return aiMessage.trim()
 
   } catch (error) {
     console.error('❌ ERROR DETALLADO EN generateAIResponse:', error)
-    return "¡Hola! Soy María, asesora de viajes. ¿En qué te puedo ayudar?"
+    return "¡Hola! ¿Cómo estás?"
   }
 }
 
