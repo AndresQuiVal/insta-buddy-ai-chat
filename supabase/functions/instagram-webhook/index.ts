@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -174,9 +173,197 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     // Analizar automáticamente el mensaje
     await analyzeMessage(supabase, event.sender.id, event.message.text)
 
+    // 🔥 RESPUESTA AUTOMÁTICA DE IA
+    await sendAutoResponse(supabase, event.sender.id, event.message.text)
+
   } catch (error) {
     console.error('❌ Error processing messaging event:', error)
     throw error
+  }
+}
+
+async function sendAutoResponse(supabase: any, senderId: string, userMessage: string) {
+  try {
+    console.log('🤖 Iniciando respuesta automática para:', senderId)
+
+    // Verificar si la IA está habilitada
+    const { data: settings } = await supabase
+      .from('user_settings')
+      .select('ai_enabled, ai_delay, ia_persona')
+      .single()
+
+    if (!settings || !settings.ai_enabled) {
+      console.log('⚠️ IA no está habilitada, saltando respuesta automática')
+      return
+    }
+
+    // Obtener configuraciones de IA
+    const aiDelay = (settings.ai_delay || 3) * 1000 // Convertir a milisegundos
+    const persona = settings.ia_persona || 'Eres un asistente amigable y útil.'
+
+    console.log(`⏰ Esperando ${aiDelay}ms antes de responder...`)
+    
+    // Esperar el delay configurado
+    await new Promise(resolve => setTimeout(resolve, aiDelay))
+
+    // Obtener historial de conversación
+    const { data: conversationHistory } = await supabase
+      .from('instagram_messages')
+      .select('*')
+      .eq('sender_id', senderId)
+      .order('created_at', { ascending: true })
+      .limit(10)
+
+    // Generar respuesta con IA
+    const aiResponse = await generateAIResponse(userMessage, conversationHistory, persona)
+
+    if (aiResponse) {
+      // Enviar mensaje de respuesta
+      const success = await sendInstagramMessage(senderId, aiResponse)
+      
+      if (success) {
+        // Guardar el mensaje enviado en la base de datos
+        await supabase
+          .from('instagram_messages')
+          .insert({
+            instagram_message_id: `sent_${Date.now()}_${Math.random()}`,
+            sender_id: 'ai_assistant',
+            recipient_id: senderId,
+            message_text: aiResponse,
+            message_type: 'sent',
+            timestamp: new Date().toISOString(),
+            raw_data: {
+              ai_generated: true,
+              source: 'instagram_webhook_auto_response'
+            }
+          })
+
+        console.log('✅ Respuesta automática enviada y guardada')
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ Error en respuesta automática:', error)
+  }
+}
+
+async function generateAIResponse(userMessage: string, conversationHistory: any[], persona: string): Promise<string> {
+  try {
+    const openaiKey = Deno.env.get('OPENAI_API_KEY')
+    
+    if (!openaiKey) {
+      console.log('⚠️ No hay API key de OpenAI configurada')
+      return getSimpleResponse(userMessage)
+    }
+
+    // Crear contexto de conversación
+    const messages = [
+      {
+        role: 'system',
+        content: `${persona}\n\nResponde de manera amigable y útil. Mantén las respuestas concisas (máximo 200 caracteres para Instagram). Eres un asistente que ayuda a calificar prospectos potenciales.`
+      }
+    ]
+
+    // Agregar historial reciente
+    if (conversationHistory && conversationHistory.length > 0) {
+      conversationHistory.slice(-5).forEach(msg => {
+        if (msg.message_type === 'received') {
+          messages.push({ role: 'user', content: msg.message_text })
+        } else if (msg.message_type === 'sent') {
+          messages.push({ role: 'assistant', content: msg.message_text })
+        }
+      })
+    }
+
+    // Agregar mensaje actual
+    messages.push({ role: 'user', content: userMessage })
+
+    console.log('🧠 Generando respuesta con OpenAI...')
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: messages,
+        max_tokens: 150,
+        temperature: 0.7
+      })
+    })
+
+    if (!response.ok) {
+      console.error('❌ Error en OpenAI API:', await response.text())
+      return getSimpleResponse(userMessage)
+    }
+
+    const data = await response.json()
+    const aiResponse = data.choices[0].message.content
+
+    console.log('✅ Respuesta generada con IA:', aiResponse)
+    return aiResponse
+
+  } catch (error) {
+    console.error('❌ Error generando respuesta con IA:', error)
+    return getSimpleResponse(userMessage)
+  }
+}
+
+function getSimpleResponse(userMessage: string): string {
+  const responses = [
+    "¡Hola! Gracias por escribir. ¿En qué puedo ayudarte?",
+    "Me alegra que te hayas comunicado. ¿Qué necesitas saber?",
+    "¡Perfecto! Estoy aquí para ayudarte.",
+    "Gracias por tu mensaje. ¿Cómo puedo asistirte?",
+    "¡Excelente! ¿En qué puedo ser de utilidad?"
+  ]
+  
+  return responses[Math.floor(Math.random() * responses.length)]
+}
+
+async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
+  try {
+    const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
+    
+    if (!accessToken) {
+      console.error('❌ No hay token de acceso de Instagram configurado')
+      return false
+    }
+
+    const messagePayload = {
+      recipient: {
+        id: recipientId
+      },
+      message: {
+        text: messageText
+      }
+    }
+
+    console.log('📤 Enviando mensaje a Instagram:', messagePayload)
+
+    const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(messagePayload)
+    })
+
+    const responseData = await response.json()
+    
+    if (!response.ok) {
+      console.error('❌ Error enviando mensaje a Instagram:', responseData)
+      return false
+    }
+
+    console.log('✅ Mensaje enviado exitosamente a Instagram')
+    return true
+
+  } catch (error) {
+    console.error('❌ Error en sendInstagramMessage:', error)
+    return false
   }
 }
 
