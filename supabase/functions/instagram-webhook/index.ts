@@ -173,7 +173,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     // Analizar automáticamente el mensaje
     await analyzeMessage(supabase, event.sender.id, event.message.text)
 
-    // 🔥 RESPUESTA AUTOMÁTICA DE IA
+    // 🔥 RESPUESTA AUTOMÁTICA DE IA - CORREGIDA
     await sendAutoResponse(supabase, event.sender.id, event.message.text)
 
   } catch (error) {
@@ -186,20 +186,49 @@ async function sendAutoResponse(supabase: any, senderId: string, userMessage: st
   try {
     console.log('🤖 Iniciando respuesta automática para:', senderId)
 
-    // Verificar si la IA está habilitada
-    const { data: settings } = await supabase
+    // Verificar si la IA está habilitada - CORREGIDO
+    const { data: settings, error: settingsError } = await supabase
       .from('user_settings')
       .select('ai_enabled, ai_delay, ia_persona')
-      .single()
+      .limit(1)
 
-    if (!settings || !settings.ai_enabled) {
+    console.log('🔍 Configuración obtenida:', { settings, settingsError })
+
+    // Si no hay configuración, crear una por defecto con IA habilitada
+    let aiConfig = {
+      ai_enabled: true,
+      ai_delay: 3,
+      ia_persona: 'Eres un asistente amigable y útil.'
+    }
+
+    if (settings && settings.length > 0) {
+      aiConfig = {
+        ai_enabled: settings[0].ai_enabled !== false, // Por defecto true si es null
+        ai_delay: settings[0].ai_delay || 3,
+        ia_persona: settings[0].ia_persona || 'Eres un asistente amigable y útil.'
+      }
+    } else {
+      console.log('📝 No hay configuración, usando valores por defecto')
+      // Crear configuración por defecto
+      await supabase
+        .from('user_settings')
+        .insert({
+          ai_enabled: true,
+          ai_delay: 3,
+          ia_persona: 'Eres un asistente amigable y útil.'
+        })
+    }
+
+    console.log('⚙️ Configuración de IA:', aiConfig)
+
+    if (!aiConfig.ai_enabled) {
       console.log('⚠️ IA no está habilitada, saltando respuesta automática')
       return
     }
 
     // Obtener configuraciones de IA
-    const aiDelay = (settings.ai_delay || 3) * 1000 // Convertir a milisegundos
-    const persona = settings.ia_persona || 'Eres un asistente amigable y útil.'
+    const aiDelay = (aiConfig.ai_delay || 3) * 1000 // Convertir a milisegundos
+    const persona = aiConfig.ia_persona || 'Eres un asistente amigable y útil.'
 
     console.log(`⏰ Esperando ${aiDelay}ms antes de responder...`)
     
@@ -218,6 +247,8 @@ async function sendAutoResponse(supabase: any, senderId: string, userMessage: st
     const aiResponse = await generateAIResponse(userMessage, conversationHistory, persona)
 
     if (aiResponse) {
+      console.log('📤 Enviando respuesta de IA:', aiResponse)
+      
       // Enviar mensaje de respuesta
       const success = await sendInstagramMessage(senderId, aiResponse)
       
@@ -239,7 +270,11 @@ async function sendAutoResponse(supabase: any, senderId: string, userMessage: st
           })
 
         console.log('✅ Respuesta automática enviada y guardada')
+      } else {
+        console.error('❌ Error enviando mensaje a Instagram')
       }
+    } else {
+      console.log('⚠️ No se pudo generar respuesta de IA')
     }
 
   } catch (error) {
