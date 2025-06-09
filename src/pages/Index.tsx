@@ -69,7 +69,9 @@ const Index = () => {
       const instagramToken = localStorage.getItem("hower-instagram-token");
       setInstagramToken(instagramToken);
       const isConnected =
-        instagramToken !== "undefined" || instagramToken !== undefined;
+        instagramToken !== undefined &&
+        instagramToken.length > 0 &&
+        instagramToken !== "undefined";
       setIsInstagramConnected(isConnected);
       setIsCheckingConnection(false);
     };
