@@ -66,17 +66,16 @@ const Index = () => {
   useEffect(() => {
     // Check if Instagram is connected from localStorage
     const checkConnection = () => {
+      const instagramToken = localStorage.getItem("hower-instagram-token");
+      setInstagramToken(instagramToken);
       const isConnected =
-        localStorage.getItem("hower-instagram-token").length > 0;
+        instagramToken !== "undefined" || instagramToken !== undefined;
       setIsInstagramConnected(isConnected);
       setIsCheckingConnection(false);
     };
 
+    setIsCheckingConnection(true);
     checkConnection();
-
-    // Check connection status periodically
-    const interval = setInterval(checkConnection, 2000);
-    return () => clearInterval(interval);
   }, []);
 
   // Si está verificando la conexión, mostrar loading
