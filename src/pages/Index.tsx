@@ -67,11 +67,11 @@ const Index = () => {
     // Check if Instagram is connected from localStorage
     const checkConnection = () => {
       const instagramToken = localStorage.getItem("hower-instagram-token");
-      setInstagramToken(instagramToken);
       const isConnected =
-        instagramToken !== undefined &&
+        !!instagramToken &&
         instagramToken.length > 0 &&
         instagramToken !== "undefined";
+      if (isConnected) setInstagramToken(instagramToken);
       setIsInstagramConnected(isConnected);
       setIsCheckingConnection(false);
     };
