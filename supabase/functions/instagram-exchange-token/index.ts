@@ -52,16 +52,16 @@ serve(async (req) => {
     console.log("Código recibido:", code.substring(0, 20) + "...");
     // Intercambiar código por token de acceso usando Graph API
     const tokenUrl = "https://api.instagram.com/oauth/access_token";
-    const params = new URLSearchParams({
-      client_id: INSTAGRAM_APP_ID,
-      client_secret: CLIENT_SECRET,
-      grant_type: "authorization_code",
-      redirect_uri: redirect_uri,
-      code: code,
-    });
+    const formData = new FormData();
+    formData.append("client_id", INSTAGRAM_APP_ID);
+    formData.append("client_secret", CLIENT_SECRET);
+    formData.append("grant_type", "authorization_code");
+    formData.append("redirect_uri", redirect_uri);
+    formData.append("code", code);
     console.log("Enviando solicitud a Facebook Graph API...");
-    const tokenResponse = await fetch(`${tokenUrl}?${params.toString()}`, {
-      method: "GET",
+    const tokenResponse = await fetch(tokenUrl, {
+      method: "POST",
+      body: formData,
     });
     const tokenData = await tokenResponse.json();
     console.log("Respuesta de Graph API:", {
