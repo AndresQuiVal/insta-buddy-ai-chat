@@ -2,7 +2,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 // Configuración de Instagram Graph API (nueva API oficial)
-const FACEBOOK_APP_ID = "1059372749433300"; // Facebook App ID principal
+const INSTAGRAM_APP_ID = "1059372749433300"; // Instagram App ID principal
 const INSTAGRAM_REDIRECT_URI =
   window.location.origin + "/auth/instagram/callback";
 const INSTAGRAM_SCOPE =
@@ -19,15 +19,14 @@ export interface InstagramAuthConfig {
  */
 export const initiateInstagramAuth = (
   config: InstagramAuthConfig = {
-    clientId: FACEBOOK_APP_ID,
+    clientId: INSTAGRAM_APP_ID,
     redirectUri: INSTAGRAM_REDIRECT_URI,
     scope: INSTAGRAM_SCOPE,
   }
 ) => {
-  //www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=1059372749433300&redirect_uri=https://insta-buddy-ai-chat.lovable.app/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights
   try {
     console.log("Iniciando autenticación con Instagram Graph API...");
-    console.log("Facebook App ID:", config.clientId);
+    console.log("Instagram App ID:", config.clientId);
     console.log("Redirect URI:", config.redirectUri);
     console.log("Scope:", config.scope);
     console.log("Current domain:", window.location.origin);
@@ -110,91 +109,71 @@ export const disconnectInstagram = () => {
 export const handleInstagramCallback = async (code: string) => {
   try {
     console.log("Procesando código de autorización:", code);
-    console.log("Usando Facebook App ID:", FACEBOOK_APP_ID);
+    console.log("Usando Facebook App ID:", INSTAGRAM_APP_ID);
     console.log("Redirect URI utilizada:", INSTAGRAM_REDIRECT_URI);
 
     // Llamar a Supabase Edge Function para intercambiar el código por token
-    // const { data, error } = await supabase.functions.invoke(
-    //   "instagram-exchange-token",
-    //   {
-    //     body: {
-    //       code: code,
-    //       redirect_uri: INSTAGRAM_REDIRECT_URI,
-    //     },
-    //   }
-    // );
-    const formData = new FormData();
-    formData.append("client_id", FACEBOOK_APP_ID);
-    formData.append("client_secret", "e3d7940c6737b867ca388eb9927fd5d2");
-    formData.append("grant_type", "authorization_code");
-    formData.append("redirect_uri", INSTAGRAM_REDIRECT_URI);
-    formData.append("code", code);
-
-    console.log("FormData:", formData);
-
-    const response = await fetch(
-      "https://api.instagram.com/oauth/access_token",
+    const { data, error } = await supabase.functions.invoke(
+      "instagram-exchange-token",
       {
-        method: "POST",
-        body: formData,
+        body: {
+          code: code,
+          redirect_uri: INSTAGRAM_REDIRECT_URI,
+        },
       }
     );
 
-    const data = await response.json();
+    if (error) {
+      console.error("Error llamando edge function:", error);
 
-    console.log("Respuesta de Graph API:", data);
+      // Manejo específico de errores comunes
+      if (error.message.includes("invalid_client")) {
+        toast({
+          title: "Error de configuración",
+          description:
+            "App ID o Client Secret incorrectos. Verifica la configuración en Facebook Developers.",
+          variant: "destructive",
+        });
+      } else if (error.message.includes("redirect_uri")) {
+        toast({
+          title: "Error de URL",
+          description: `URL de redirección no válida. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error del servidor",
+          description: error.message || "Error procesando la autenticación",
+          variant: "destructive",
+        });
+      }
 
-    // if (error) {
-    //   console.error("Error llamando edge function:", error);
+      throw new Error(error.message || "Error del servidor");
+    }
 
-    //   // Manejo específico de errores comunes
-    //   if (error.message.includes("invalid_client")) {
-    //     toast({
-    //       title: "Error de configuración",
-    //       description:
-    //         "App ID o Client Secret incorrectos. Verifica la configuración en Facebook Developers.",
-    //       variant: "destructive",
-    //     });
-    //   } else if (error.message.includes("redirect_uri")) {
-    //     toast({
-    //       title: "Error de URL",
-    //       description: `URL de redirección no válida. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`,
-    //       variant: "destructive",
-    //     });
-    //   } else {
-    //     toast({
-    //       title: "Error del servidor",
-    //       description: error.message || "Error procesando la autenticación",
-    //       variant: "destructive",
-    //     });
-    //   }
+    if (data.error) {
+      console.error("Error de Graph API:", data.error);
 
-    //   throw new Error(error.message || "Error del servidor");
-    // }
+      // Manejo específico de errores de Graph API
+      let errorMessage = data.error_description || data.error;
 
-    // if (data.error) {
-    //   console.error("Error de Graph API:", data.error);
+      if (data.error === "invalid_client") {
+        errorMessage =
+          "App no válida. Verifica que la app esté configurada correctamente en Facebook Developers.";
+      } else if (data.error.includes("redirect_uri")) {
+        errorMessage = `URL de redirección no coincide. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`;
+      } else if (data.error === "access_denied") {
+        errorMessage = "Acceso denegado por el usuario.";
+      }
 
-    //   // Manejo específico de errores de Graph API
-    //   let errorMessage = data.error_description || data.error;
+      toast({
+        title: "Error de autenticación",
+        description: errorMessage,
+        variant: "destructive",
+      });
 
-    //   if (data.error === "invalid_client") {
-    //     errorMessage =
-    //       "App no válida. Verifica que la app esté configurada correctamente en Facebook Developers.";
-    //   } else if (data.error.includes("redirect_uri")) {
-    //     errorMessage = `URL de redirección no coincide. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`;
-    //   } else if (data.error === "access_denied") {
-    //     errorMessage = "Acceso denegado por el usuario.";
-    //   }
-
-    //   toast({
-    //     title: "Error de autenticación",
-    //     description: errorMessage,
-    //     variant: "destructive",
-    //   });
-
-    //   throw new Error(errorMessage);
-    // }
+      throw new Error(errorMessage);
+    }
 
     const token = data.access_token;
 
@@ -203,28 +182,11 @@ export const handleInstagramCallback = async (code: string) => {
     // Guardar token y datos del usuario
     localStorage.setItem("hower-instagram-token", token);
 
-    const accountResponse = await fetch(
-      `https://graph.instagram.com/v23.0/me?fields=user_id,username,name&access_token=${token}`
-    );
-
-    if (!accountResponse.ok) {
-      throw new Error("Error obteniendo datos de la cuenta");
-    }
-
-    const accountData = await accountResponse.json();
-    console.log("Respuesta de la cuenta:", accountData);
-
-    if (!accountData) {
-      throw new Error("No se encontraron datos de la cuenta");
-    }
-    const instagramAccount = accountData;
+    const instagramAccount = data.instagram_account;
     // Guardar datos del usuario (Facebook + Instagram si está disponible)
-    // const userData = {
-    //   facebook: data.user,
-    //   instagram: data.instagram_account,
-    // };
     const userData = {
-      instagram: instagramAccount,
+      facebook: data.user,
+      instagram: data.instagram_account,
     };
     localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
 
