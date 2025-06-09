@@ -6,6 +6,10 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
+          "value": "https://insta-buddy-ai-chat.vercel.app"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
           "value": "https://api.instagram.com"
         },
         {
