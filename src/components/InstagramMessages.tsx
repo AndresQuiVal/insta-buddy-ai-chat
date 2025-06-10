@@ -968,5 +968,3 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
-
-</edits_to_apply>
