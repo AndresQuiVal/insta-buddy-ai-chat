@@ -123,58 +123,6 @@ serve(async (req) => {
   }
 })
 
-async function getSystemPrompt(supabase: any) {
-  try {
-    // Obtener personalidad configurada
-    const { data: personalityData } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'personality')
-      .single()
-
-    // Obtener nombre del asistente
-    const { data: pageData } = await supabase
-      .from('instagram_pages')
-      .select('page_name')
-      .single()
-
-    // Obtener características del cliente ideal
-    const { data: traitsData } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'ideal_client_traits')
-      .single()
-
-    let systemPrompt = ''
-    const pageName = pageData?.page_name || 'la cuenta'
-    const traits = traitsData?.value || []
-
-    if (personalityData?.value) {
-      systemPrompt = personalityData.value
-      console.log('✅ Usando personalidad configurada')
-    } else {
-      systemPrompt = `Eres el asistente de ${pageName}. Tu objetivo es mantener una conversación natural mientras identificas si el usuario cumple con las características del cliente ideal.`
-      console.log('⚠️ No hay personalidad configurada, usando genérica')
-    }
-
-    // Agregar instrucciones sobre características del cliente ideal
-    if (traits.length > 0) {
-      systemPrompt += `\n\nDurante la conversación, debes identificar si el usuario cumple con alguna de estas características:\n`
-      traits.forEach((trait: any, index: number) => {
-        if (trait.enabled) {
-          systemPrompt += `${index + 1}. ${trait.trait}\n`
-        }
-      })
-      systemPrompt += `\nDebes hacer preguntas naturales y estratégicas que te ayuden a identificar estas características. NO preguntes directamente por ellas, sino que debes llevar la conversación de manera natural para descubrirlas.`
-    }
-
-    return systemPrompt
-  } catch (error) {
-    console.error('❌ Error al obtener personalidad:', error)
-    return 'Eres un asistente profesional y amable. Tu objetivo es mantener una conversación natural mientras identificas si el usuario cumple con las características del cliente ideal.'
-  }
-}
-
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   console.log('🚀 PROCESANDO MENSAJE DE INSTAGRAM')
   console.log('👤 SENDER ID:', event.sender.id)
@@ -197,38 +145,99 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       is_read: false,
       raw_data: {
         webhook_data: event,
+        received_at: new Date().toISOString(),
+        source: 'instagram_webhook'
       }
     }
 
-    const { error: saveError } = await supabase
+    // Verificar duplicados
+    const { data: existingMessage } = await supabase
       .from('instagram_messages')
-      .insert(messageData)
+      .select('id')
+      .eq('instagram_message_id', event.message.mid)
+      .single()
 
-    if (saveError) {
-      throw saveError
+    if (existingMessage) {
+      console.log('⏭️ Mensaje duplicado - saltando')
+      return
     }
 
-    // PASO 2: Obtener historial de conversación
+    await supabase.from('instagram_messages').insert(messageData)
+    
+    // PASO 2: Obtener TODA la conversación anterior
     const { data: conversationHistory } = await supabase
       .from('instagram_messages')
       .select('*')
-      .eq('sender_id', event.sender.id)
+      .or(`sender_id.eq.${event.sender.id},recipient_id.eq.${event.sender.id}`)
       .order('timestamp', { ascending: true })
 
-    // PASO 3: Procesar conversación para OpenAI
-    const processedConversation = conversationHistory.map((msg: any) => ({
-      role: msg.message_type === 'received' ? 'user' : 'assistant',
-      content: msg.message_text
-    }))
+    if (!conversationHistory || conversationHistory.length === 0) {
+      console.log('⚠️ No hay historial de conversación')
+      return await sendFirstResponse(supabase, event.sender.id)
+    }
 
-    // PASO 4: Obtener system prompt
-    const systemPrompt = await getSystemPrompt(supabase)
+    // PASO 3: Procesar la conversación para OpenAI
+    const processedConversation = conversationHistory.map(msg => {
+      const role = msg.sender_id === event.sender.id ? 'user' : 'assistant'
+      return {
+        role,
+        content: msg.message_text,
+        timestamp: new Date(msg.timestamp).toLocaleString()
+      }
+    })
 
-    // PASO 5: Generar respuesta con OpenAI
+    console.log('📚 HISTORIAL PROCESADO:', processedConversation)
+
+    // PASO 4: Generar respuesta con contexto completo
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiKey) {
-      throw new Error('OpenAI API key no configurada')
+      console.log('⚠️ No hay API key de OpenAI')
+      return await sendSimpleResponse(supabase, event.sender.id)
     }
+
+    const systemPrompt = `Eres María, una asesora de viajes experta. INSTRUCCIONES CRÍTICAS:
+
+1. CONTEXTO ACTUAL:
+- El usuario te está preguntando: "${event.message.text}"
+- Tienes un historial de ${processedConversation.length} mensajes con este usuario
+- DEBES usar este contexto para responder apropiadamente
+
+2. REGLAS ESTRICTAS:
+❌ NUNCA RESPONDER:
+- "Interesante, cuéntame más"
+- "Qué bueno/interesante"
+- Cualquier variación genérica
+- NO IGNORAR el contexto previo
+
+✅ SIEMPRE:
+- LEER y ENTENDER el mensaje actual
+- REVISAR la conversación anterior
+- RESPONDER específicamente a lo preguntado
+- Si mencionan algo previo, DEMOSTRAR que lo recuerdas
+- Si preguntan por una conversación anterior, BUSCAR en el historial
+- Si no encuentras la conversación mencionada, ADMITIRLO honestamente
+
+3. EJEMPLOS DE RESPUESTAS CORRECTAS:
+Usuario: "¿recuerdas nuestra conversación?"
+❌ MAL: "Interesante, cuéntame más"
+✅ BIEN: "He revisado nuestras conversaciones anteriores. [Mencionar específicamente el tema del que hablaron]"
+
+Usuario: "hola"
+❌ MAL: "Hola, ¿cómo estás?"
+✅ BIEN: "¡Hola! Veo que hemos hablado antes sobre [tema específico]. ¿Te gustaría continuar con ese tema o prefieres explorar otras opciones de viaje?"
+
+4. FORMATO DE RESPUESTA:
+1) Reconocer el mensaje actual
+2) Referenciar contexto relevante si existe
+3) Responder específicamente
+4) Hacer preguntas concretas si es necesario
+
+CONVERSACIÓN ANTERIOR (en orden cronológico):
+${processedConversation.map(msg => 
+  `[${msg.timestamp}] ${msg.role === 'user' ? 'Usuario' : 'María'}: ${msg.content}`
+).join('\n')}
+
+RESPONDE de manera específica y útil, demostrando que entiendes el contexto completo.`
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -240,278 +249,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
         model: 'gpt-4',
         messages: [
           { role: 'system', content: systemPrompt },
-          ...processedConversation
-        ],
-        temperature: 0.7,
-        max_tokens: 300,
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Error de OpenAI: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    let aiResponse = data.choices[0].message.content.trim()
-
-    // PASO 6: Verificación final de respuesta genérica
-    const genericResponses = [
-      'interesante',
-      'cuéntame más',
-      'qué bueno',
-      'me gustaría saber',
-      'qué bien',
-      'dime más',
-      'que interesante',
-      'que bueno',
-      'cuentame mas',
-      'me gustaria saber',
-      'que bien',
-      'dime mas',
-      'que tal',
-      'como estas',
-      'entiendo',
-      'comprendo',
-      'ya veo'
-    ]
-
-    const isGenericResponse = (text: string) => {
-      const normalizedText = text.toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-      
-      // Check for exact matches
-      if (genericResponses.some(phrase => normalizedText.includes(phrase))) {
-        return true
-      }
-
-      // Check for response length
-      if (text.length < 20) {
-        return true
-      }
-
-      // Check if it's just a question
-      if (text.trim().endsWith('?') && text.split(' ').length < 10) {
-        return true
-      }
-
-      return false
-    }
-
-    if (isGenericResponse(aiResponse)) {
-      console.log('⚠️ Respuesta genérica detectada, regenerando...')
-      
-      // Agregar instrucción específica
-      const newSystemPrompt = systemPrompt + '\n\nIMPORTANTE: Debes dar una respuesta específica y detallada, relacionada con el tema de la conversación. NO des respuestas genéricas como "interesante" o "cuéntame más".'
-      
-      const retryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [
-            { role: 'system', content: newSystemPrompt },
-            ...processedConversation
-          ],
-          temperature: 0.7,
-          max_tokens: 300,
-        }),
-      })
-
-      if (!retryResponse.ok) {
-        throw new Error(`Error de OpenAI en retry: ${retryResponse.status} ${retryResponse.statusText}`)
-      }
-
-      const retryData = await retryResponse.json()
-      aiResponse = retryData.choices[0].message.content.trim()
-    }
-
-    // PASO 7: Guardar respuesta de la IA
-    const responseData = {
-      instagram_message_id: `ai_${Date.now()}`,
-      sender_id: event.recipient.id,
-      recipient_id: event.sender.id,
-      message_text: aiResponse,
-      message_type: 'sent',
-      timestamp: new Date().toISOString(),
-      is_read: true,
-      raw_data: {
-        ai_generated: true,
-        original_message: event.message
-      }
-    }
-
-    const { error: responseSaveError } = await supabase
-      .from('instagram_messages')
-      .insert(responseData)
-
-    if (responseSaveError) {
-      throw responseSaveError
-    }
-
-    // PASO 8: Enviar respuesta a Instagram
-    const pageAccessToken = Deno.env.get('INSTAGRAM_PAGE_ACCESS_TOKEN')
-    if (!pageAccessToken) {
-      throw new Error('Token de acceso de página no configurado')
-    }
-
-    const sendMessageResponse = await fetch(
-      `https://graph.facebook.com/v18.0/me/messages?access_token=${pageAccessToken}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          recipient: {
-            id: event.sender.id,
-          },
-          message: {
-            text: aiResponse,
-          },
-        }),
-      }
-    )
-
-    if (!sendMessageResponse.ok) {
-      throw new Error(`Error al enviar mensaje: ${sendMessageResponse.status} ${sendMessageResponse.statusText}`)
-    }
-
-    // PASO 9: Analizar características del cliente ideal
-    const { data: traitsData } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'ideal_client_traits')
-      .single()
-
-    if (traitsData?.value) {
-      const traits = traitsData.value
-      const enabledTraits = traits.filter((t: any) => t.enabled)
-
-      if (enabledTraits.length > 0) {
-        // Analizar el mensaje actual
-        const analysisPrompt = `
-          Analiza el siguiente mensaje y determina si indica que el usuario cumple con alguna de estas características:
-          ${enabledTraits.map((t: any, i: number) => `${i + 1}. ${t.trait}`).join('\n')}
-
-          Mensaje: "${event.message.text}"
-
-          Responde SOLO con un array de números (índices) de las características que se cumplen. Por ejemplo: [1,3] si se cumplen la primera y tercera característica. Si no se cumple ninguna, responde [].
-        `
-
-        const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'gpt-4',
-            messages: [
-              { role: 'system', content: 'Eres un analizador de texto preciso. Responde exactamente lo que se te pide.' },
-              { role: 'user', content: analysisPrompt }
-            ],
-            temperature: 0,
-            max_tokens: 50,
-          }),
-        })
-
-        if (analysisResponse.ok) {
-          const analysisData = await analysisResponse.json()
-          const metTraitIndices = JSON.parse(analysisData.choices[0].message.content)
-          console.log('✅ Características detectadas:', metTraitIndices)
-
-          // Actualizar en Supabase
-          const metTraits = metTraitIndices.map((i: number) => enabledTraits[i - 1].trait)
-          await saveTraitsToSupabase(supabase, event.sender.id, metTraits, metTraitIndices.length)
-        }
-      }
-    }
-
-    console.log('✅ Mensaje procesado y respondido correctamente')
-  } catch (error) {
-    console.error('❌ Error al procesar mensaje:', error)
-    
-    // En caso de error, enviar una respuesta simple
-    try {
-      await sendSimpleResponse(supabase, event.sender.id)
-    } catch (sendError) {
-      console.error('❌ Error al enviar respuesta simple:', sendError)
-    }
-  }
-}
-
-async function sendFirstResponse(supabase: any, userId: string) {
-  // Obtener personalidad configurada
-  let systemPrompt = ''
-  try {
-    const savedPersonality = localStorage.getItem('hower-system-prompt')
-    if (savedPersonality) {
-      systemPrompt = savedPersonality
-      console.log('✅ Usando personalidad configurada para primer mensaje')
-    } else {
-      console.log('⚠️ No hay personalidad configurada, usando genérica')
-      systemPrompt = 'Eres un asistente profesional y amable. Tu objetivo es mantener una conversación natural mientras identificas si el usuario cumple con las características del cliente ideal.'
-    }
-  } catch (error) {
-    console.log('⚠️ Error al obtener personalidad:', error)
-    systemPrompt = 'Eres un asistente profesional y amable. Tu objetivo es mantener una conversación natural mientras identificas si el usuario cumple con las características del cliente ideal.'
-  }
-
-  // Obtener características del cliente ideal
-  let idealTraits = []
-  try {
-    const savedTraits = localStorage.getItem('hower-ideal-client-traits')
-    if (savedTraits) {
-      idealTraits = JSON.parse(savedTraits)
-        .filter((trait: any) => trait.enabled)
-        .map((trait: any) => trait.trait)
-      console.log('✅ Usando características configuradas para primer mensaje:', idealTraits)
-    }
-  } catch (error) {
-    console.log('⚠️ Error al obtener características:', error)
-  }
-
-  // Generar prompt para primer mensaje
-  const traitsPrompt = idealTraits.length > 0 
-    ? `\n\nCARACTERÍSTICAS DEL CLIENTE IDEAL A IDENTIFICAR:
-${idealTraits.map((trait, i) => `${i + 1}. ${trait}`).join('\n')}
-
-INSTRUCCIONES ADICIONALES:
-- Da un saludo amigable y profesional
-- Preséntate brevemente
-- Haz una pregunta abierta que pueda ayudar a identificar alguna de estas características
-- NO preguntes directamente sobre las características
-- La pregunta debe ser natural y relacionada con el contexto`
-    : '';
-
-  const fullPrompt = `${systemPrompt}${traitsPrompt}
-
-INSTRUCCIÓN:
-Genera un primer mensaje de saludo para iniciar la conversación. El mensaje debe ser amigable, profesional y terminar con una pregunta abierta.`
-
-  // Generar primer mensaje con OpenAI
-  const openaiKey = Deno.env.get('OPENAI_API_KEY')
-  if (!openaiKey) {
-    console.log('⚠️ No hay API key de OpenAI para primer mensaje')
-    return await sendSimpleResponse(supabase, userId)
-  }
-
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          { role: 'system', content: fullPrompt },
-          { role: 'user', content: 'Genera un mensaje de saludo inicial' }
+          { role: 'user', content: event.message.text }
         ],
         temperature: 0.7,
         max_tokens: 150,
@@ -519,36 +257,48 @@ Genera un primer mensaje de saludo para iniciar la conversación. El mensaje deb
     })
 
     if (!response.ok) {
-      throw new Error('Error al generar primer mensaje con OpenAI')
+      throw new Error(`Error de OpenAI: ${response.status}`)
     }
 
     const data = await response.json()
-    const firstMessage = data.choices[0].message.content.trim()
-    
-    await sendResponse(supabase, userId, firstMessage)
+    let aiResponse = data.choices[0].message.content.trim()
+
+    // PASO 5: Verificación final de respuesta genérica
+    const genericResponses = [
+      'interesante',
+      'cuéntame más',
+      'qué bueno',
+      'me gustaría saber',
+      'qué bien',
+      'dime más'
+    ]
+
+    if (genericResponses.some(phrase => aiResponse.toLowerCase().includes(phrase))) {
+      console.log('⚠️ Respuesta genérica detectada - usando respuesta de emergencia')
+      aiResponse = `He revisado nuestra conversación anterior. ${
+        processedConversation.length > 1 
+          ? `Veo que hemos estado hablando sobre ${processedConversation[processedConversation.length - 2].content}. ¿Te gustaría que profundicemos en ese tema?` 
+          : '¿Qué tipo de viaje te interesa explorar? Por ejemplo, ¿prefieres destinos de playa, ciudades culturales, o aventuras en la naturaleza?'
+      }`
+    }
+
+    // PASO 6: Enviar y guardar respuesta
+    await sendResponse(supabase, event.sender.id, aiResponse)
+    console.log('✅ Respuesta enviada exitosamente')
+
   } catch (error) {
-    console.error('❌ Error al generar primer mensaje:', error)
-    await sendSimpleResponse(supabase, userId)
+    console.error('❌ Error en processMessagingEvent:', error)
+    await sendSimpleResponse(supabase, event.sender.id)
   }
 }
 
-async function sendSimpleResponse(supabase: any, userId: string) {
-  // Obtener nombre del asistente de la personalidad
-  let assistantName = 'Asistente'
-  try {
-    const savedPersonality = localStorage.getItem('hower-system-prompt')
-    if (savedPersonality) {
-      // Intentar extraer el nombre del prompt
-      const nameMatch = savedPersonality.match(/soy\s+([^,.!?]+)/i)
-      if (nameMatch) {
-        assistantName = nameMatch[1].trim()
-      }
-    }
-  } catch (error) {
-    console.log('⚠️ Error al obtener nombre del asistente:', error)
-  }
+async function sendFirstResponse(supabase: any, userId: string) {
+  const response = "¡Hola! Soy María, tu asesora de viajes. ¿Qué tipo de experiencia de viaje estás buscando? Por ejemplo, ¿te interesan más las playas paradisíacas, las aventuras en la naturaleza, o explorar ciudades culturales?"
+  await sendResponse(supabase, userId, response)
+}
 
-  const response = `¡Hola! Soy ${assistantName}. ¿En qué puedo ayudarte hoy?`
+async function sendSimpleResponse(supabase: any, userId: string) {
+  const response = "¡Hola! ¿Qué tipo de viaje te gustaría explorar?"
   await sendResponse(supabase, userId, response)
 }
 
@@ -638,56 +388,5 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
   } catch (error) {
     console.error('❌ ERROR EN sendInstagramMessage:', error)
     return false
-  }
-}
-
-async function saveTraitsToSupabase(supabase: any, senderId: string, metTraits: string[], matchPoints: number) {
-  try {
-    // Primero, buscar si ya existe un registro para este usuario
-    const { data: existingData } = await supabase
-      .from('prospect_analysis')
-      .select('*')
-      .eq('sender_id', senderId)
-      .single()
-
-    const now = new Date().toISOString()
-
-    if (existingData) {
-      // Actualizar registro existente
-      const { error: updateError } = await supabase
-        .from('prospect_analysis')
-        .update({
-          met_traits: metTraits,
-          match_points: matchPoints,
-          updated_at: now,
-          last_analyzed_at: now
-        })
-        .eq('sender_id', senderId)
-
-      if (updateError) {
-        throw updateError
-      }
-      console.log('✅ Características actualizadas en Supabase')
-    } else {
-      // Crear nuevo registro
-      const { error: insertError } = await supabase
-        .from('prospect_analysis')
-        .insert({
-          sender_id: senderId,
-          met_traits: metTraits,
-          match_points: matchPoints,
-          created_at: now,
-          updated_at: now,
-          last_analyzed_at: now,
-          message_count: 1
-        })
-
-      if (insertError) {
-        throw insertError
-      }
-      console.log('✅ Características guardadas en Supabase')
-    }
-  } catch (error) {
-    console.error('❌ Error al guardar características en Supabase:', error)
   }
 }
