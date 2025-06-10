@@ -135,10 +135,38 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_last_activity: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string
+          prospect_id: string
+          traits_reset_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string
+          prospect_id: string
+          traits_reset_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string
+          prospect_id?: string
+          traits_reset_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           ai_delay: number | null
           ai_enabled: boolean | null
+          auto_reset_hours: number | null
           created_at: string
           ia_persona: string | null
           id: string
@@ -150,6 +178,7 @@ export type Database = {
         Insert: {
           ai_delay?: number | null
           ai_enabled?: boolean | null
+          auto_reset_hours?: number | null
           created_at?: string
           ia_persona?: string | null
           id?: string
@@ -161,6 +190,7 @@ export type Database = {
         Update: {
           ai_delay?: number | null
           ai_enabled?: boolean | null
+          auto_reset_hours?: number | null
           created_at?: string
           ia_persona?: string | null
           id?: string
@@ -196,6 +226,14 @@ export type Database = {
           avg_response_time_seconds: number
           last_message_date: string
         }[]
+      }
+      reset_inactive_prospect_traits: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      update_prospect_activity: {
+        Args: { p_prospect_id: string }
+        Returns: undefined
       }
     }
     Enums: {

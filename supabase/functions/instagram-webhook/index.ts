@@ -141,6 +141,21 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   console.log('💬 MENSAJE:', event.message?.text)
 
   try {
+    // PASO 0: Actualizar actividad del prospecto
+    try {
+      const { error: activityError } = await supabase.rpc('update_prospect_activity', {
+        p_prospect_id: event.sender.id
+      });
+      
+      if (activityError) {
+        console.error('⚠️ Error actualizando actividad:', activityError);
+      } else {
+        console.log('✅ Actividad del prospecto actualizada');
+      }
+    } catch (error) {
+      console.error('⚠️ Error en actualización de actividad:', error);
+    }
+
     // PASO 1: Guardar el mensaje recibido
     if (!event.message?.text || event.message?.is_echo) {
       console.log('⏭️ Mensaje no válido o es un echo - saltando')
@@ -529,5 +544,3 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     return false
   }
 }
-
-// ... keep existing code (rest of the functions) the same ...

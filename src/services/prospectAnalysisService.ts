@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { updateProspectActivity } from '@/services/autoResetService';
 
 interface Trait {
   trait: string;
@@ -25,6 +26,13 @@ export const analyzeAndUpdateProspect = async (
   idealTraits: Trait[]
 ) => {
   console.log("🔍 ANALIZANDO PROSPECTO:", userName, "Mensaje:", messageText);
+  
+  // Actualizar actividad del prospecto en base de datos
+  try {
+    await updateProspectActivity(conversationId);
+  } catch (error) {
+    console.error("Error actualizando actividad del prospecto:", error);
+  }
   
   if (!messageText || idealTraits.length === 0) {
     return { matchPoints: 0, metTraits: [] };
