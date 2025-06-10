@@ -334,7 +334,7 @@ async function generateStrategicAIResponse(
     const pendingTraits = enabledTraits.filter(trait => !currentAnalysis.metTraits.includes(trait.trait))
     const nextTrait = pendingTraits[0]
 
-    console.log('🎯 GENERANDO RESPUESTA ESTRATÉGICA NATURAL')
+    console.log('🎯 GENERANDO RESPUESTA ESTRATÉGICA CON PERSONALIDAD EN WEBHOOK')
     console.log(`📊 Progreso: ${currentAnalysis.matchPoints}/${enabledTraits.length}`)
     console.log(`🎯 Próximo objetivo: ${nextTrait?.trait || 'CONSEGUIR CONTACTO'}`)
 
@@ -383,7 +383,27 @@ async function generateStrategicAIResponse(
 
     const strategicQuestion = nextTrait ? createNaturalQuestion(nextTrait.trait) : null
 
-    const systemPrompt = `Eres María, asesora de viajes experta. Tu objetivo es tener conversaciones NATURALES pero con propósito estratégico.
+    // Obtener personalidad guardada desde la base de datos
+    const { data: settings } = await supabase
+      .from('user_settings')
+      .select('ia_persona')
+      .limit(1)
+
+    const savedPersonality = settings && settings.length > 0 ? settings[0].ia_persona : null
+    console.log(`🎭 Personalidad personalizada en webhook: ${savedPersonality ? 'SÍ' : 'NO'}`)
+
+    // Base del prompt con o sin personalidad personalizada
+    const personalitySection = savedPersonality 
+      ? `🎭 TU PERSONALIDAD Y ESTILO DE COMUNICACIÓN:
+${savedPersonality}
+
+IMPORTANTE: Debes responder usando EXACTAMENTE el estilo de comunicación descrito arriba. Usa las mismas expresiones, tono y manera de hablar que se describe en tu personalidad.`
+      : `🎭 TU PERSONALIDAD:
+Eres María, una asesora de viajes experta y vendedora NATURAL pero ESTRATÉGICA. Eres cálida, empática y genuinamente interesada en ayudar a las personas.`
+
+    const systemPrompt = `${personalitySection}
+
+Tu objetivo es tener conversaciones NATURALES pero con propósito estratégico.
 
 🎯 CARACTERÍSTICAS A DESCUBRIR:
 ${enabledTraits.map((trait, i) => `${i + 1}. ${trait.trait}`).join('\n')}
@@ -407,10 +427,11 @@ REGLAS CONVERSACIONALES:
 3. Incluye UNA pregunta estratégica que fluya naturalmente
 4. Justifica tu curiosidad profesionalmente
 5. Máximo 3 oraciones, tono cálido pero profesional
+6. USA TU PERSONALIDAD específica si está definida
 
 MENSAJE USUARIO: "${userMessage}"
 
-Responde de forma natural conectando con su mensaje pero incluyendo la pregunta estratégica.`
+Responde usando tu personalidad específica de forma natural conectando con su mensaje pero incluyendo la pregunta estratégica.`
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -436,7 +457,7 @@ Responde de forma natural conectando con su mensaje pero incluyendo la pregunta 
     const data = await response.json()
     const aiResponse = data.choices[0].message.content.trim()
 
-    console.log('✅ Respuesta estratégica natural generada:', aiResponse)
+    console.log('✅ Respuesta estratégica con personalidad generada:', aiResponse)
     return aiResponse
 
   } catch (error) {
@@ -543,4 +564,6 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     console.error('❌ ERROR EN sendInstagramMessage:', error)
     return false
   }
+}
+
 }
