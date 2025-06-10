@@ -37,11 +37,17 @@ export const generateAIResponse = async (
     const apiKey = getOpenAIKey();
     const finalConfig = {
       apiKey,
-      model: 'gpt-4o',
+      model: 'gpt-4',
       temperature: 0.7,
       maxTokens: 500,
       ...config
     };
+
+    // Verificar que el último mensaje no sea una respuesta genérica
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    if (lastUserMessage) {
+      console.log('📝 Último mensaje del usuario:', lastUserMessage.content);
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -51,7 +57,31 @@ export const generateAIResponse = async (
       },
       body: JSON.stringify({
         model: finalConfig.model,
-        messages: messages,
+        messages: [
+          {
+            role: 'system',
+            content: `Eres un asistente experto que NUNCA da respuestas genéricas o vagas.
+
+REGLAS ESTRICTAS:
+1. PROHIBIDO usar frases como:
+   - "Interesante, cuéntame más"
+   - "Me gustaría saber más"
+   - "Qué interesante"
+   - Cualquier variación de estas frases genéricas
+
+2. SIEMPRE debes:
+   - Responder específicamente al contenido del mensaje
+   - Hacer preguntas concretas sobre detalles específicos
+   - Si no entiendes algo, pedir aclaración sobre puntos específicos
+
+3. Si el mensaje es un saludo o muy corto:
+   - Preséntate y haz una pregunta específica sobre el tema principal
+   - NO respondas solo "hola" o "¿cómo estás?"
+
+RESPONDE de manera específica y útil, NUNCA con respuestas genéricas.`
+          },
+          ...messages
+        ],
         temperature: finalConfig.temperature,
         max_tokens: finalConfig.maxTokens
       })
@@ -63,7 +93,55 @@ export const generateAIResponse = async (
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    let aiResponse = data.choices[0].message.content;
+
+    // VERIFICACIÓN DE RESPUESTAS GENÉRICAS
+    const genericPhrases = [
+      'interesante',
+      'cuéntame más',
+      'qué bien',
+      'me gustaría saber más',
+      'qué interesante',
+      'dime más'
+    ];
+
+    const responseLower = aiResponse.toLowerCase();
+    if (genericPhrases.some(phrase => responseLower.includes(phrase))) {
+      console.log('⚠️ Respuesta genérica detectada, generando nueva respuesta...');
+      
+      // Intentar generar una respuesta más específica
+      const retryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${finalConfig.apiKey}`
+        },
+        body: JSON.stringify({
+          model: finalConfig.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'La última respuesta fue demasiado genérica. Genera una respuesta más específica y relevante, haciendo preguntas concretas sobre el tema.'
+            },
+            ...messages
+          ],
+          temperature: 0.8,
+          max_tokens: finalConfig.maxTokens
+        })
+      });
+
+      if (retryResponse.ok) {
+        const retryData = await retryResponse.json();
+        const retryContent = retryData.choices[0].message.content;
+        
+        // Verificar si la nueva respuesta también es genérica
+        if (!genericPhrases.some(phrase => retryContent.toLowerCase().includes(phrase))) {
+          aiResponse = retryContent;
+        }
+      }
+    }
+
+    return aiResponse;
   } catch (error) {
     console.error('Error al generar respuesta con ChatGPT:', error);
     if (error instanceof Error && error.message.includes('No hay API key')) {
@@ -260,6 +338,16 @@ export const handleAutomaticResponse = async (
   customPrompt?: string
 ): Promise<string> => {
   try {
+    console.log('🤖 Generando respuesta automática...');
+    console.log('📝 Mensaje actual:', message);
+    console.log('📚 Historial de conversación:', conversationHistory);
+
+    // Verificar si hay suficiente contexto
+    if (!conversationHistory || conversationHistory.length === 0) {
+      console.log('⚠️ No hay historial de conversación');
+      return "¡Hola! ¿En qué puedo ayudarte?";
+    }
+
     // Obtener datos de análisis previo desde localStorage
     const savedConversationsStr = localStorage.getItem('hower-conversations');
     let currentMatchPoints = 0;
@@ -267,7 +355,6 @@ export const handleAutomaticResponse = async (
     
     if (savedConversationsStr) {
       const conversations = JSON.parse(savedConversationsStr);
-      // Buscar la conversación actual (esto es una aproximación)
       const lastConv = conversations[conversations.length - 1];
       if (lastConv) {
         currentMatchPoints = lastConv.matchPoints || 0;
@@ -275,16 +362,82 @@ export const handleAutomaticResponse = async (
       }
     }
 
-    // Usar el nuevo sistema ULTRA estratégico
-    return await handleStrategicResponse(
-      conversationHistory,
-      currentMatchPoints,
-      metTraits,
-      businessConfig.idealClientTraits
-    );
+    // Crear un prompt más específico y contextual
+    const systemPrompt = `Eres un asistente de ventas profesional y empático. Tu objetivo es mantener conversaciones naturales y significativas.
+
+CONTEXTO IMPORTANTE:
+- Nombre de la empresa: ${businessConfig.businessName}
+- Descripción: ${businessConfig.businessDescription}
+- Tono de comunicación: ${businessConfig.tone}
+
+INSTRUCCIONES CRÍTICAS:
+1. SIEMPRE lee y analiza TODA la conversación anterior
+2. NO repitas respuestas genéricas como "Interesante, cuéntame más"
+3. Responde específicamente al contenido del mensaje del usuario
+4. Mantén el contexto de mensajes anteriores
+5. Si el usuario menciona algo previo, refiérete a ello específicamente
+6. Si no entiendes algo, pide clarificación específica
+7. NO generes respuestas vagas o genéricas
+
+ESTRUCTURA DE RESPUESTA:
+1. Reconoce el mensaje específico del usuario
+2. Relaciona con contexto previo si existe
+3. Proporciona una respuesta relevante y específica
+4. Haz preguntas concretas si necesitas más información
+
+EVITA ABSOLUTAMENTE:
+- Respuestas genéricas como "Interesante, cuéntame más"
+- Ignorar el contexto previo
+- Repetir la misma respuesta
+- Respuestas vagas o sin dirección
+
+Responde de manera natural y específica al contexto actual.`;
+
+    // Preparar el historial de conversación para OpenAI
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...conversationHistory.slice(-10), // Últimos 10 mensajes para mantener contexto relevante
+      { role: 'user', content: message }
+    ];
+
+    console.log('📤 Enviando a OpenAI con contexto completo...');
+    
+    const response = await generateAIResponse(messages, {
+      model: 'gpt-4',
+      temperature: 0.7,
+      maxTokens: 150
+    });
+
+    console.log('📥 Respuesta recibida:', response);
+
+    // Verificar si la respuesta es genérica
+    const genericResponses = [
+      'interesante, cuéntame más',
+      'cuéntame más sobre eso',
+      'qué interesante',
+      'me gustaría saber más'
+    ];
+
+    const normalizedResponse = response.toLowerCase().trim();
+    if (genericResponses.some(generic => normalizedResponse.includes(generic.toLowerCase()))) {
+      console.log('⚠️ Respuesta demasiado genérica detectada, generando nueva respuesta...');
+      return await generateAIResponse([
+        { 
+          role: 'system', 
+          content: 'La última respuesta fue demasiado genérica. Genera una respuesta más específica y relevante al contexto actual.' 
+        },
+        ...messages
+      ], {
+        model: 'gpt-4',
+        temperature: 0.8,
+        maxTokens: 150
+      });
+    }
+
+    return response;
     
   } catch (error) {
-    console.error('Error al manejar respuesta automática:', error);
-    return "Lo siento, no pude procesar tu mensaje en este momento.";
+    console.error('❌ Error al generar respuesta automática:', error);
+    return "Lo siento, tuve un problema al procesar tu mensaje. ¿Podrías reformularlo?";
   }
 };

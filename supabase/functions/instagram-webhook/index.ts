@@ -199,7 +199,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     // PASO 2: OBTENER CONVERSACIÓN COMPLETA - CON LOGS DETALLADOS
     console.log('📚 ========== PASO 2: OBTENER CONVERSACIÓN COMPLETA ==========')
     
-    // Obtener TODA la conversación
+    // Obtener TODA la conversación ordenada por timestamp
     const { data: conversationHistory, error: historyError } = await supabase
       .from('instagram_messages')
       .select('*')
@@ -215,7 +215,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     const messages = conversationHistory || []
     console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
     
-    // ========== AQUÍ ESTÁ EL LOG DETALLADO QUE PEDISTE ==========
+    // Log detallado de la conversación completa
     console.log('🔍 =============== CONVERSACIÓN COMPLETA - ANÁLISIS DETALLADO ===============')
     console.log('🔍 NÚMERO TOTAL DE MENSAJES:', messages.length)
     console.log('🔍 ===============================================================')
@@ -229,7 +229,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
         const direction = isFromUser ? '👤➡️' : '🤖⬅️'
         
         console.log(`🔍 [${index + 1}/${messages.length}] ${direction} ${sender}: "${msg.message_text}"`)
-        console.log(`    📅 Timestamp: ${msg.timestamp}`)
+        console.log(`    📅 Timestamp: ${new Date(msg.timestamp).toLocaleString()}`)
         console.log(`    📝 Message Type: ${msg.message_type}`)
         console.log(`    🆔 Sender ID: ${msg.sender_id}`)
         console.log(`    🎯 Recipient ID: ${msg.recipient_id}`)
@@ -243,20 +243,27 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     // Crear contexto para el AI con TODA la conversación
     const conversationContext = messages
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
       .map(msg => {
         const isFromUser = msg.sender_id === event.sender.id
         const sender = isFromUser ? 'Usuario' : 'María'
-        return `${sender}: ${msg.message_text}`
+        const timestamp = new Date(msg.timestamp).toLocaleString()
+        return `[${timestamp}] ${sender}: ${msg.message_text}`
       })
       .join('\n')
 
-    console.log('📖 =============== CONTEXTO PARA EL AI ===============')
+    console.log('📖 =============== CONTEXTO COMPLETO PARA EL AI ===============')
     console.log(conversationContext)
     console.log('📖 =====================================================')
 
-    // PASO 3: GENERAR RESPUESTA INTELIGENTE
+    // PASO 3: GENERAR RESPUESTA INTELIGENTE CON CONTEXTO COMPLETO
     console.log('🤖 ========== PASO 3: GENERAR RESPUESTA INTELIGENTE ==========')
     const aiResponse = await generateIntelligentResponse(conversationContext, event.message.text)
+    
+    // Agregar delay para simular tiempo de escritura
+    const delay = Math.max(aiResponse.length * 50, 2000) // mínimo 2 segundos
+    console.log(`⏳ Esperando ${delay}ms antes de enviar respuesta...`)
+    await new Promise(resolve => setTimeout(resolve, delay))
     
     // ENVIAR RESPUESTA
     console.log('📤 ========== ENVIANDO RESPUESTA ==========')
@@ -284,22 +291,45 @@ async function generateIntelligentResponse(conversationContext: string, currentM
       return getSimpleResponse(currentMessage)
     }
 
-    // PROMPT SIMPLE Y CONVERSACIONAL
-    const prompt = `Eres María, una asesora de viajes amigable y natural.
+    // PROMPT MEJORADO PARA EVITAR RESPUESTAS GENÉRICAS
+    const prompt = `Eres María, una asesora de viajes experta. Tu trabajo es mantener conversaciones significativas y útiles.
+
+REGLAS ESTRICTAS:
+1. PROHIBIDO usar frases como:
+   - "Interesante, cuéntame más"
+   - "Me gustaría saber más"
+   - "Qué interesante"
+   - Cualquier variación de estas frases genéricas
+
+2. SIEMPRE debes:
+   - Responder específicamente al contenido del mensaje
+   - Hacer preguntas concretas sobre detalles específicos
+   - Demostrar que entiendes el contexto de la conversación
+   - Si no entiendes algo, pedir aclaración sobre puntos específicos
+
+3. FORMATO DE RESPUESTA:
+   - Primero, reconoce específicamente lo que dijo el usuario
+   - Luego, haz una pregunta específica o da información relevante
+   - NO uses emojis ni respuestas vagas
 
 CONVERSACIÓN ANTERIOR:
 ${conversationContext}
 
-ÚLTIMO MENSAJE:
+ÚLTIMO MENSAJE DEL USUARIO:
 "${currentMessage}"
 
-Responde de manera natural y conversacional como María. Sé auténtica, amigable y mantén la conversación fluida. Si te preguntan algo específico, responde directamente. Si es un saludo o comentario general, responde como lo haría una persona real en una conversación normal.
+EJEMPLOS DE BUENAS RESPUESTAS:
+Usuario: "Me gustan los cruceros"
+❌ NO RESPONDER: "Interesante, cuéntame más sobre eso"
+✅ RESPONDER: "Los cruceros son una excelente opción. ¿Has realizado alguno antes? Me ayudaría saber tu experiencia previa para recomendarte las mejores rutas."
 
-Mantén las respuestas cortas (1-2 líneas máximo) y naturales.
+Usuario: "Hola"
+❌ NO RESPONDER: "Hola, ¿cómo estás?"
+✅ RESPONDER: "¡Bienvenido! Soy María, asesora de viajes. ¿Estás buscando información sobre algún destino o tipo de viaje en particular?"
 
-Responde SOLO el mensaje que enviarías:`
+RESPONDE AHORA con un mensaje específico y útil, evitando COMPLETAMENTE respuestas genéricas.`
 
-    console.log('📤 ENVIANDO PROMPT CONVERSACIONAL A OPENAI...')
+    console.log('📤 ENVIANDO PROMPT A OPENAI...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -308,19 +338,19 @@ Responde SOLO el mensaje que enviarías:`
         'Authorization': `Bearer ${openaiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
-            content: 'Eres María, una asesora de viajes que mantiene conversaciones naturales y auténticas.'
+            content: 'Eres María, una asesora de viajes experta que NUNCA da respuestas genéricas o vagas. Siempre respondes con información específica y preguntas concretas.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 100,
-        temperature: 0.8,
+        max_tokens: 150,
+        temperature: 0.5, // Reducido para respuestas más consistentes
       }),
     })
 
@@ -333,9 +363,25 @@ Responde SOLO el mensaje que enviarías:`
     }
 
     const data = await response.json()
-    const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! ¿Cómo estás?"
+    let aiMessage = data.choices?.[0]?.message?.content || "¡Hola! ¿Qué tipo de viaje te interesa realizar?"
     
-    console.log('🤖 RESPUESTA CONVERSACIONAL GENERADA:', aiMessage)
+    // VERIFICACIÓN ADICIONAL DE RESPUESTA GENÉRICA
+    const genericPhrases = [
+      'interesante',
+      'cuéntame más',
+      'qué bien',
+      'me gustaría saber más',
+      'qué interesante',
+      'dime más'
+    ]
+
+    const responseLower = aiMessage.toLowerCase()
+    if (genericPhrases.some(phrase => responseLower.includes(phrase))) {
+      console.log('⚠️ RESPUESTA GENÉRICA DETECTADA - GENERANDO NUEVA RESPUESTA')
+      return "¡Hola! Para ayudarte mejor, ¿podrías decirme qué tipo de viaje estás considerando? Por ejemplo, ¿te interesan los cruceros, viajes en tierra, o algún destino específico?"
+    }
+
+    console.log('🤖 RESPUESTA FINAL:', aiMessage)
     return aiMessage.trim()
 
   } catch (error) {
