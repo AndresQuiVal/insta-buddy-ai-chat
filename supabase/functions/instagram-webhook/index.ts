@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -217,6 +218,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     }
 
     const strategicResponse = await generateStrategicAIResponse(
+      supabase,
       event.message.text,
       conversationHistory,
       currentAnalysis,
@@ -323,6 +325,7 @@ async function analyzeWithAI(conversationText: string, idealTraits: Trait[]): Pr
 }
 
 async function generateStrategicAIResponse(
+  supabase: any,
   userMessage: string,
   conversationHistory: any[],
   currentAnalysis: AnalysisResult,
