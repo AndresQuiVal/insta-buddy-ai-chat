@@ -1,8 +1,7 @@
-
-interface Trait {
-  trait: string;
-  enabled: boolean;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { analyzeAndUpdateProspect, Trait } from '@/services/prospectAnalysisService';
+import { analyzeMessage } from '@/services/messageAnalyzer';
+import { IdealTrait } from '@/services/traitService';
 
 interface ConversationMessage {
   id: string;
@@ -14,7 +13,6 @@ interface ConversationMessage {
 interface AnalysisResult {
   matchPoints: number;
   metTraits: string[];
-  confidence: number;
 }
 
 export const analyzeConversationWithAI = async (
@@ -38,7 +36,7 @@ export const analyzeConversationWithAI = async (
   
   if (enabledTraits.length === 0) {
     console.log("⚠️ DEBUG: No hay características habilitadas");
-    return { matchPoints: 0, metTraits: [], confidence: 0 };
+    return { matchPoints: 0, metTraits: [] };
   }
 
   // Crear texto de conversación SOLO del usuario
@@ -201,7 +199,7 @@ const analyzeWithKeywords = (messages: ConversationMessage[], idealTraits: Trait
   return result;
 };
 
-export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<void> => {
+export const analyzeAllConversations = async (idealTraits: IdealTrait[]): Promise<void> => {
   console.log("🔍 DEBUG: === ANALIZANDO TODAS LAS CONVERSACIONES ===");
   console.log("🎯 DEBUG: Características del cliente ideal:", idealTraits);
   
@@ -217,73 +215,73 @@ export const analyzeAllConversations = async (idealTraits: Trait[]): Promise<voi
     const conversations = JSON.parse(conversationsStr);
     console.log("📊 DEBUG: Número de conversaciones a analizar:", conversations.length);
     
+    // Array para almacenar los resultados de análisis
+    const analysisResults = [];
+    
+    // Analizar cada conversación
     for (const conv of conversations) {
       console.log(`🔍 DEBUG: Analizando conversación: ${conv.userName || conv.id}`);
-      console.log(`📝 DEBUG: lastMessage: "${conv.lastMessage}"`);
       
-      let messagesToAnalyze: ConversationMessage[] = [];
-      
-      // Si hay mensajes estructurados, usarlos
-      if (conv.messages && conv.messages.length > 0) {
-        messagesToAnalyze = conv.messages.map((msg: any) => ({
-          id: msg.id || '1',
-          text: msg.message_text || msg.text || '',
-          sender: msg.message_type === 'received' ? 'user' as const : 'ai' as const,
-          timestamp: new Date(msg.timestamp || Date.now())
-        }));
-        console.log(`✅ DEBUG: Usando ${messagesToAnalyze.length} mensajes estructurados`);
-      } 
-      // Si no hay mensajes estructurados pero hay lastMessage, crear un mensaje artificial
-      else if (conv.lastMessage && conv.lastMessage.trim()) {
-        messagesToAnalyze = [{
-          id: '1',
-          text: conv.lastMessage,
-          sender: 'user' as const,
-          timestamp: new Date()
-        }];
-        console.log(`🔄 DEBUG: Creando mensaje artificial desde lastMessage: "${conv.lastMessage}"`);
-      } else {
-        console.log(`⚠️ DEBUG: Conversación ${conv.userName || conv.id} sin contenido para analizar`);
-        continue;
+      try {
+        // Obtener todos los mensajes de la conversación
+        const { data: messages } = await supabase
+          .from('instagram_messages')
+          .select('*')
+          .or(`sender_id.eq.${conv.id},recipient_id.eq.${conv.id}`)
+          .order('timestamp', { ascending: true });
+        
+        if (!messages || messages.length === 0) continue;
+        
+        // Filtrar solo mensajes recibidos y concatenar su texto
+        const conversationText = messages
+          .filter(msg => msg.message_type === 'received')
+          .map(msg => msg.message_text)
+          .join(' ');
+        
+        if (!conversationText.trim()) continue;
+        
+        // Analizar la conversación completa
+        const result = await analyzeAndUpdateProspect(
+          conv.id,
+          conv.userName,
+          conversationText,
+          idealTraits
+        );
+        
+        // Guardar resultado con información de la conversación
+        analysisResults.push({
+          id: conv.id,
+          userName: conv.userName,
+          matchPoints: result.matchPoints,
+          metTraits: result.metTraits,
+          lastMessage: conv.lastMessage,
+          timestamp: conv.timestamp
+        });
+        
+        console.log(`✅ DEBUG: Análisis completado para ${conv.userName}:`, {
+          matchPoints: result.matchPoints,
+          metTraits: result.metTraits
+        });
+        
+      } catch (error) {
+        console.error(`❌ ERROR analizando conversación ${conv.userName}:`, error);
       }
-      
-      console.log(`🤖 DEBUG: Analizando ${messagesToAnalyze.length} mensajes para ${conv.userName || conv.id}`);
-      
-      const result = await analyzeConversationWithAI(messagesToAnalyze, idealTraits);
-      
-      // Actualizar la conversación con los resultados
-      conv.matchPoints = result.matchPoints;
-      conv.metTraits = result.metTraits;
-      
-      console.log(`✅ DEBUG: ${conv.userName || conv.id}: ${result.matchPoints} características detectadas:`, result.metTraits);
     }
-
-    // Guardar conversaciones actualizadas
-    localStorage.setItem('hower-conversations', JSON.stringify(conversations));
-    console.log("💾 DEBUG: Conversaciones actualizadas guardadas");
     
-    // Mostrar resumen final
-    const totalMatches = conversations.reduce((sum: number, conv: any) => sum + (conv.matchPoints || 0), 0);
-    const totalTraits = conversations.reduce((sum: number, conv: any) => sum + (conv.metTraits?.length || 0), 0);
+    // Ordenar resultados por número de características cumplidas (descendente)
+    analysisResults.sort((a, b) => b.matchPoints - a.matchPoints);
     
-    console.log("🎯 DEBUG: RESUMEN FINAL:");
-    console.log(`📊 Conversaciones analizadas: ${conversations.length}`);
-    console.log(`⭐ Total match points: ${totalMatches}`);
-    console.log(`🏷️ Total met traits: ${totalTraits}`);
+    // Actualizar localStorage con los resultados ordenados
+    localStorage.setItem('hower-conversations', JSON.stringify(analysisResults));
     
-    conversations.forEach((conv: any) => {
-      if (conv.matchPoints > 0) {
-        console.log(`✅ ${conv.userName || conv.id}: ${conv.matchPoints} puntos, características: ${conv.metTraits?.join(', ') || 'ninguna'}`);
-      }
-    });
-    
-    // Disparar evento para actualizar UI
+    // Notificar a la UI que los datos han sido actualizados
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new CustomEvent('conversations-updated'));
     
-    console.log("✅ DEBUG: ANÁLISIS COMPLETO FINALIZADO");
+    console.log("✅ DEBUG: Análisis completo finalizado. Resultados:", analysisResults);
     
   } catch (error) {
-    console.error("❌ DEBUG: Error al analizar conversaciones:", error);
+    console.error("❌ ERROR en analyzeAllConversations:", error);
+    throw error;
   }
 };

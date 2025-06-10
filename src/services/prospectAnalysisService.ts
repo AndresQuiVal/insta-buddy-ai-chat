@@ -1,7 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import { IdealTrait } from './traitService';
 
-interface Trait {
+export interface Trait {
   trait: string;
   enabled: boolean;
   position: number;
@@ -18,12 +18,17 @@ interface ProspectData {
   avatar?: string;
 }
 
+interface AnalysisResult {
+  matchPoints: number;
+  metTraits: string[];
+}
+
 export const analyzeAndUpdateProspect = async (
   conversationId: string,
   userName: string,
   messageText: string,
-  idealTraits: Trait[]
-) => {
+  idealTraits: IdealTrait[]
+): Promise<AnalysisResult> => {
   console.log("🔍 ANALIZANDO PROSPECTO:", userName, "Mensaje:", messageText);
   
   if (!messageText || idealTraits.length === 0) {
