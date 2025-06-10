@@ -390,11 +390,12 @@ async function generateStrategicAIResponse(
     let savedPersonality = null
     
     try {
-      // Usar maybeSingle() para evitar errores por múltiples registros
+      // Usar limit 1 y single() para obtener solo un registro
       const { data: settings, error } = await supabase
         .from('user_settings')
         .select('ia_persona')
-        .maybeSingle()
+        .limit(1)
+        .single()
 
       console.log('📊 Respuesta de user_settings:', { 
         data: settings, 
@@ -511,7 +512,8 @@ async function sendResponse(supabase: any, senderId: string, messageText: string
     const { data: settings } = await supabase
       .from('user_settings')
       .select('ai_delay')
-      .maybeSingle()
+      .limit(1)
+      .single()
 
     const delay = (settings?.ai_delay || 3) * 1000
     console.log(`⏰ ESPERANDO ${delay}ms...`)

@@ -36,14 +36,26 @@ const getOpenAIKey = (): string => {
 const getSavedPersonality = async (): Promise<string | null> => {
   try {
     console.log('🎭 Cargando personalidad desde Supabase...');
-    const { data } = await supabase
+    
+    // Usar limit 1 y single() para obtener solo un registro
+    const { data, error } = await supabase
       .from('user_settings')
       .select('ia_persona')
-      .limit(1);
+      .limit(1)
+      .single();
 
-    if (data && data.length > 0 && data[0].ia_persona) {
+    console.log('📊 Respuesta de personalidad:', { data, error });
+
+    if (error) {
+      console.error('❌ Error en Supabase:', error);
+      const localPersonality = localStorage.getItem('hower-system-prompt');
+      if (localPersonality) {
+        console.log('✅ Fallback: personalidad encontrada en localStorage');
+        return localPersonality;
+      }
+    } else if (data?.ia_persona) {
       console.log('✅ Personalidad encontrada en Supabase');
-      return data[0].ia_persona;
+      return data.ia_persona;
     } else {
       console.log('⚠️ No hay personalidad en Supabase, intentando localStorage...');
       const localPersonality = localStorage.getItem('hower-system-prompt');
