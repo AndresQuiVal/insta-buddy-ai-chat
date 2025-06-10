@@ -1,14 +1,16 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain, Star, ArrowLeft } from 'lucide-react';
+import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain, Star, ArrowLeft, Bug, Terminal } from 'lucide-react';
 import { handleAutomaticResponse, ChatMessage } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
+import ConversationDebug from './ConversationDebug';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
 import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface InstagramMessage {
   id: string;
@@ -65,6 +67,12 @@ interface ProspectAnalysis {
   message_count?: number;
 }
 
+interface LogMessage {
+  timestamp: Date;
+  message: string;
+  type: 'info' | 'error' | 'success';
+}
+
 const InstagramMessages: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -83,6 +91,10 @@ const InstagramMessages: React.FC = () => {
   const myTabId = React.useRef(`${Date.now()}-${Math.random()}`);
   const isMobile = useIsMobile();
   const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
+  const [logs, setLogs] = useState<LogMessage[]>([]);
+  const logsRef = useRef<LogMessage[]>([]);
   
   // Hook de análisis de características
   const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
@@ -393,16 +405,38 @@ const InstagramMessages: React.FC = () => {
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) || []
     : [];
 
+  const addLog = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
+    const newLog = { timestamp: new Date(), message, type };
+    logsRef.current = [...logsRef.current, newLog];
+    setLogs(logsRef.current);
+  };
+
   const sendMessage = async (messageText: string) => {
     if (!selectedConversation || !messageText.trim() || !pageId) return;
     
     try {
       setSending(true);
       
+      // Obtener y mostrar la conversación completa antes de enviar
+      const currentConversation = conversations.find(c => c.sender_id === selectedConversation);
+      if (currentConversation) {
+        addLog('=== CONVERSACIÓN COMPLETA ANTES DE ENVIAR MENSAJE ===', 'info');
+        addLog(`ID de Conversación: ${selectedConversation}`, 'info');
+        addLog('Historial de mensajes:', 'info');
+        currentConversation.messages
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+          .forEach((msg, index) => {
+            addLog(`[${index + 1}] ${msg.message_type === 'received' ? 'USUARIO' : 'BOT'} (${new Date(msg.timestamp).toLocaleString()}): ${msg.message_text}`, 'info');
+          });
+        addLog('=== FIN DE LA CONVERSACIÓN ===', 'info');
+        addLog(`Nuevo mensaje a enviar: ${messageText}`, 'info');
+      }
+      
       const result = await sendInstagramMessage(selectedConversation, messageText);
       
       if (result.success) {
         setNewMessage('');
+        addLog('Mensaje enviado exitosamente', 'success');
         toast({
           title: "Mensaje enviado",
           description: "Tu mensaje se ha enviado correctamente",
@@ -411,6 +445,7 @@ const InstagramMessages: React.FC = () => {
         // Recargar conversaciones para mostrar el nuevo mensaje
         loadConversations();
       } else {
+        addLog(`Error al enviar mensaje: ${result.error}`, 'error');
         toast({
           title: "Error al enviar",
           description: result.error || "No se pudo enviar el mensaje",
@@ -418,6 +453,7 @@ const InstagramMessages: React.FC = () => {
         });
       }
     } catch (error) {
+      addLog(`Error en envío de mensaje: ${error.message}`, 'error');
       console.error('Error sending message:', error);
       toast({
         title: "Error",
@@ -479,34 +515,33 @@ const InstagramMessages: React.FC = () => {
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex">
+    <div className="flex-1 flex">
       {/* Lista de conversaciones */}
-      <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full ${!isMobile ? 'max-w-md' : ''} border-r border-purple-100`}>
-        <div className="flex items-center justify-between p-4 border-b border-purple-100">
-          <div>
-            <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
-              <MessageCircle className="w-6 h-6" /> Conversaciones
-            </h2>
-            <p className="text-sm text-gray-600">{conversations.length} conversaciones</p>
-            <p className="text-sm text-gray-600 mt-1">
-              Características configuradas: {idealTraits.filter(t => t.enabled).length} activas
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="Configuración"
-            >
-              <Settings className="w-5 h-5 text-gray-600" />
-            </button>
-            <button
-              onClick={loadConversations}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="Recargar"
-            >
-              <RefreshCw className="w-5 h-5 text-gray-600" />
-            </button>
+      <div className={`w-80 border-r border-gray-200 flex flex-col ${isMobile && selectedConversation ? 'hidden' : ''}`}>
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Mensajes</h2>
+          <div className="flex items-center gap-2">
+            <HistoricalSyncButton />
+            {selectedConversation && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowDebug(true)}
+                  title="Ver debug de conversación"
+                >
+                  <Bug className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowLogs(true)}
+                  title="Ver logs en vivo"
+                >
+                  <Terminal className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -770,6 +805,47 @@ const InstagramMessages: React.FC = () => {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Logs Modal */}
+      {showLogs && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Logs en Vivo</h2>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setLogs([])}>Limpiar</Button>
+                <Button variant="outline" onClick={() => setShowLogs(false)}>Cerrar</Button>
+              </div>
+            </div>
+            
+            <ScrollArea className="flex-1 bg-gray-900 rounded-lg p-4 font-mono text-sm">
+              <div className="space-y-1">
+                {logs.map((log, index) => (
+                  <div 
+                    key={index} 
+                    className={`${
+                      log.type === 'error' ? 'text-red-400' :
+                      log.type === 'success' ? 'text-green-400' :
+                      'text-gray-300'
+                    }`}
+                  >
+                    <span className="text-gray-500">[{log.timestamp.toLocaleTimeString()}]</span>{' '}
+                    {log.message}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      )}
+
+      {/* Debug Modal */}
+      {showDebug && selectedConversation && (
+        <ConversationDebug
+          messages={conversations.find(c => c.sender_id === selectedConversation)?.messages || []}
+          onClose={() => setShowDebug(false)}
+        />
       )}
     </div>
   );
