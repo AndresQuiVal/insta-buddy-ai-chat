@@ -136,7 +136,7 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  console.log('🚀 PROCESANDO MENSAJE DE INSTAGRAM CON IA ESTRATÉGICA')
+  console.log('🚀 PROCESANDO MENSAJE - SOLO AUTORESPONDER ACTIVO')
   console.log('👤 SENDER ID:', event.sender.id)
   console.log('💬 MENSAJE:', event.message?.text)
 
@@ -205,49 +205,17 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     if (previousMessages && previousMessages.length === 1) {
       console.log('🆕 PRIMERA VEZ QUE ESCRIBE - VERIFICANDO AUTORESPONDER')
       await handleAutoresponder(supabase, event.sender.id)
+    } else {
+      console.log('👥 Usuario ya escribió antes - NO se envía autoresponder')
     }
     
-    // PASO 3: Obtener TODA la conversación anterior
-    const { data: conversationHistory } = await supabase
-      .from('instagram_messages')
-      .select('*')
-      .or(`sender_id.eq.${event.sender.id},recipient_id.eq.${event.sender.id}`)
-      .order('timestamp', { ascending: true })
+    // ⚠️ RESPUESTAS AUTOMÁTICAS DE IA DESACTIVADAS TEMPORALMENTE
+    console.log('🤖 IA automática DESACTIVADA - Solo funciona autoresponder')
 
-    if (!conversationHistory || conversationHistory.length === 0) {
-      console.log('⚠️ No hay historial de conversación')
-      return await sendFirstStrategicResponse(supabase, event.sender.id, event.message.text)
-    }
-
-    // PASO 4: Cargar características ideales desde Supabase
-    const idealTraits = await loadIdealTraits(supabase)
-    
-    // PASO 5: Analizar conversación para determinar progreso actual
-    const currentAnalysis = await analyzeConversationProgress(supabase, event.sender.id, conversationHistory, idealTraits)
-    
-    // PASO 6: Generar respuesta estratégica
-    const openaiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openaiKey) {
-      console.log('⚠️ No hay API key de OpenAI')
-      return await sendSimpleResponse(supabase, event.sender.id)
-    }
-
-    const strategicResponse = await generateStrategicAIResponse(
-      supabase,
-      event.message.text,
-      conversationHistory,
-      currentAnalysis,
-      idealTraits,
-      openaiKey
-    )
-
-    // PASO 7: Enviar respuesta estratégica
-    await sendResponse(supabase, event.sender.id, strategicResponse)
-    console.log('✅ Respuesta estratégica enviada exitosamente')
+    console.log('✅ Mensaje procesado correctamente (solo autoresponder activo)')
 
   } catch (error) {
     console.error('❌ Error en processMessagingEvent:', error)
-    await sendSimpleResponse(supabase, event.sender.id)
   }
 }
 
@@ -355,7 +323,6 @@ async function analyzeConversationProgress(
   idealTraits: Trait[]
 ): Promise<AnalysisResult> {
   try {
-    // Verificar si ya existe un análisis guardado
     const { data: existingAnalysis } = await supabase
       .from('prospect_analysis')
       .select('*')
@@ -371,7 +338,6 @@ async function analyzeConversationProgress(
       }
     }
 
-    // Si no hay análisis previo, analizar ahora
     console.log('🔍 Analizando conversación por primera vez...')
     
     const userMessages = conversationHistory
@@ -382,7 +348,6 @@ async function analyzeConversationProgress(
     if (userMessages.trim()) {
       const analysis = await analyzeWithAI(userMessages, idealTraits)
       
-      // Guardar análisis en Supabase
       await supabase.from('prospect_analysis').insert({
         sender_id: senderId,
         match_points: analysis.matchPoints,
@@ -403,8 +368,6 @@ async function analyzeConversationProgress(
 }
 
 async function analyzeWithAI(conversationText: string, idealTraits: Trait[]): Promise<AnalysisResult> {
-  // Implementación de análisis con IA (simplificada)
-  // En un entorno real, aquí haríamos el análisis completo
   return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
 }
 
@@ -416,223 +379,19 @@ async function generateStrategicAIResponse(
   idealTraits: Trait[],
   openaiKey: string
 ): Promise<string> {
-  try {
-    const enabledTraits = idealTraits.filter(t => t.enabled)
-    const pendingTraits = enabledTraits.filter(trait => !currentAnalysis.metTraits.includes(trait.trait))
-    const nextTrait = pendingTraits[0]
-
-    console.log('🎯 GENERANDO RESPUESTA ESTRATÉGICA CON PERSONALIDAD EN WEBHOOK')
-    console.log(`📊 Progreso: ${currentAnalysis.matchPoints}/${enabledTraits.length}`)
-    console.log(`🎯 Próximo objetivo: ${nextTrait?.trait || 'CONSEGUIR CONTACTO'}`)
-
-    // Crear pregunta estratégica natural
-    const createNaturalQuestion = (trait: string): string => {
-      const traitLower = trait.toLowerCase()
-      
-      if (traitLower.includes('interesado') || traitLower.includes('productos')) {
-        const questions = [
-          "¿Qué fue lo que más te llamó la atención de esto?",
-          "¿Es algo que has estado considerando por mucho tiempo?",
-          "¿Qué te motivó a buscar información sobre esto?"
-        ]
-        return questions[Math.floor(Math.random() * questions.length)]
-      }
-      
-      if (traitLower.includes('presupuesto') || traitLower.includes('adquirir')) {
-        const questions = [
-          "¿Has considerado hacer algún tipo de inversión en algo así?",
-          "¿Qué tipo de presupuesto manejas para este tipo de cosas?",
-          "¿Has hecho alguna inversión similar anteriormente?"
-        ]
-        return questions[Math.floor(Math.random() * questions.length)]
-      }
-      
-      if (traitLower.includes('decisión') || traitLower.includes('listo')) {
-        const questions = [
-          "¿Eres de los que cuando algo les convence actúan rápido?",
-          "¿Prefieres tomarte tu tiempo para decidir?",
-          "¿Tienes algún plazo en mente para tomar una decisión?"
-        ]
-        return questions[Math.floor(Math.random() * questions.length)]
-      }
-      
-      if (traitLower.includes('zona') || traitLower.includes('servicio')) {
-        const questions = [
-          "¿De qué parte del país me escribes?",
-          "¿Necesitarías que fuera algo local?",
-          "¿Cómo está la situación por tu zona para este tipo de cosas?"
-        ]
-        return questions[Math.floor(Math.random() * questions.length)]
-      }
-      
-      return "¿Podrías contarme un poco más sobre tu situación actual?"
-    }
-
-    const strategicQuestion = nextTrait ? createNaturalQuestion(nextTrait.trait) : null
-
-    // 🎭 OBTENER PERSONALIDAD GUARDADA DESDE SUPABASE CON MANEJO MEJORADO
-    console.log('🔍 Cargando personalidad desde Supabase...')
-    let savedPersonality = null
-    
-    try {
-      const { data: settings, error } = await supabase
-        .from('user_settings')
-        .select('ia_persona')
-        .limit(1)
-        .single()
-
-      console.log('📊 Respuesta de user_settings:', { 
-        data: settings, 
-        error: error,
-        hasData: !!settings,
-        hasPersonality: settings?.ia_persona
-      })
-
-      if (error) {
-        console.error('❌ Error consultando user_settings:', error)
-      } else if (settings?.ia_persona) {
-        savedPersonality = settings.ia_persona
-        console.log('✅ Personalidad encontrada en Supabase:', savedPersonality.substring(0, 100) + '...')
-      } else {
-        console.log('⚠️ No hay personalidad guardada en Supabase')
-      }
-    } catch (personalityError) {
-      console.error('❌ Error obteniendo personalidad:', personalityError)
-    }
-
-    console.log(`🎭 Personalidad personalizada en webhook: ${savedPersonality ? 'SÍ' : 'NO'}`)
-
-    // Base del prompt con o sin personalidad personalizada
-    const personalitySection = savedPersonality 
-      ? `🎭 TU PERSONALIDAD Y ESTILO DE COMUNICACIÓN:
-${savedPersonality}
-
-IMPORTANTE: Debes responder usando EXACTAMENTE el estilo de comunicación descrito arriba. Usa las mismas expresiones, tono y manera de hablar que se describe en tu personalidad.`
-      : `🎭 TU PERSONALIDAD:
-Eres María, una asesora de viajes experta y vendedora NATURAL pero ESTRATÉGICA. Eres cálida, empática y genuinamente interesada en ayudar a las personas.`
-
-    const systemPrompt = `${personalitySection}
-
-Tu objetivo es tener conversaciones NATURALES pero con propósito estratégico.
-
-🎯 CARACTERÍSTICAS A DESCUBRIR:
-${enabledTraits.map((trait, i) => `${i + 1}. ${trait.trait}`).join('\n')}
-
-📊 PROGRESO ACTUAL:
-- Características confirmadas: ${currentAnalysis.matchPoints}/${enabledTraits.length}
-- Ya cumple: ${currentAnalysis.metTraits.join(', ') || 'Ninguna aún'}
-- Próximo objetivo: ${nextTrait ? `"${nextTrait.trait}"` : 'Conseguir contacto/WhatsApp'}
-
-ESTRATEGIA EQUILIBRADA:
-${currentAnalysis.matchPoints === 0 ? 
-  `🌱 INICIAL: Conecta genuinamente y pregunta: "${strategicQuestion}"` :
-  currentAnalysis.matchPoints < enabledTraits.length ?
-  `💬 ACTIVO: Responde empáticamente y descubre: "${strategicQuestion}"` :
-  `🏆 COMPLETO: ¡Cumple todas las características! Busca conseguir WhatsApp o llamada`
-}
-
-REGLAS CONVERSACIONALES:
-1. Responde específicamente al mensaje del usuario
-2. Conecta emocionalmente con lo que dice
-3. Incluye UNA pregunta estratégica que fluya naturalmente
-4. Justifica tu curiosidad profesionalmente
-5. Máximo 3 oraciones, tono cálido pero profesional
-6. USA TU PERSONALIDAD específica si está definida
-
-MENSAJE USUARIO: "${userMessage}"
-
-Responde usando tu personalidad específica de forma natural conectando con su mensaje pero incluyendo la pregunta estratégica.`
-
-    console.log('📤 Enviando a OpenAI con personalidad personalizada...')
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        temperature: 0.85,
-        max_tokens: 180,
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Error de OpenAI: ${response.status}`)
-    }
-
-    const data = await response.json()
-    const aiResponse = data.choices[0].message.content.trim()
-
-    console.log('✅ Respuesta estratégica con personalidad generada:', aiResponse)
-    return aiResponse
-
-  } catch (error) {
-    console.error('❌ Error generando respuesta estratégica:', error)
-    return "Me da mucho gusto que me hayas contactado. ¿Podrías contarme un poco más sobre lo que buscas?"
-  }
+  return "Respuesta IA desactivada temporalmente"
 }
 
 async function sendFirstStrategicResponse(supabase: any, userId: string, userMessage: string) {
-  const response = `¡Hola! Soy María, tu asesora de viajes. Me da mucho gusto que te hayas puesto en contacto. Veo que me escribes sobre "${userMessage}". ¿Qué tipo de experiencia de viaje tienes en mente?`
-  await sendResponse(supabase, userId, response)
+  console.log('🤖 Respuesta estratégica inicial DESACTIVADA')
 }
 
 async function sendSimpleResponse(supabase: any, userId: string) {
-  const response = "¡Hola! ¿En qué puedo ayudarte hoy?"
-  await sendResponse(supabase, userId, response)
+  console.log('🤖 Respuesta simple DESACTIVADA')
 }
 
 async function sendResponse(supabase: any, senderId: string, messageText: string) {
-  try {
-    console.log('📨 PREPARANDO ENVÍO ESTRATÉGICO...')
-    
-    // Obtener delay
-    const { data: settings } = await supabase
-      .from('user_settings')
-      .select('ai_delay')
-      .limit(1)
-      .single()
-
-    const delay = (settings?.ai_delay || 3) * 1000
-    console.log(`⏰ ESPERANDO ${delay}ms...`)
-    
-    await new Promise(resolve => setTimeout(resolve, delay))
-
-    const success = await sendInstagramMessage(senderId, messageText)
-    
-    if (success) {
-      console.log('✅ MENSAJE ESTRATÉGICO ENVIADO A INSTAGRAM')
-      
-      // Guardar mensaje enviado
-      const sentMessageData = {
-        instagram_message_id: `ai_strategic_${Date.now()}_${Math.random()}`,
-        sender_id: 'ai_assistant_maria_strategic',
-        recipient_id: senderId,
-        message_text: messageText,
-        message_type: 'sent',
-        timestamp: new Date().toISOString(),
-        raw_data: {
-          ai_generated: true,
-          strategic_response: true,
-          source: 'webhook_ai_strategic_response'
-        }
-      }
-
-      await supabase.from('instagram_messages').insert(sentMessageData)
-      console.log('✅ RESPUESTA ESTRATÉGICA GUARDADA EN BD')
-    } else {
-      console.error('❌ ERROR ENVIANDO RESPUESTA ESTRATÉGICA A INSTAGRAM')
-    }
-
-  } catch (error) {
-    console.error('❌ ERROR EN sendResponse estratégico:', error)
-  }
+  console.log('🤖 Respuesta IA DESACTIVADA')
 }
 
 async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
@@ -653,7 +412,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       }
     }
 
-    console.log('📤 ENVIANDO RESPUESTA ESTRATÉGICA A INSTAGRAM API:', JSON.stringify(messagePayload, null, 2))
+    console.log('📤 ENVIANDO AUTORESPONDER A INSTAGRAM API:', JSON.stringify(messagePayload, null, 2))
 
     const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
       method: 'POST',
@@ -670,7 +429,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       return false
     }
 
-    console.log('✅ RESPUESTA ESTRATÉGICA EXITOSA DE INSTAGRAM:', JSON.stringify(responseData, null, 2))
+    console.log('✅ AUTORESPONDER EXITOSO DE INSTAGRAM:', JSON.stringify(responseData, null, 2))
     return true
 
   } catch (error) {
