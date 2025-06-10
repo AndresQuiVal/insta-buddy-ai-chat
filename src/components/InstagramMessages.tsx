@@ -124,7 +124,7 @@ const InstagramMessages: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Cargar características ideales desde Supabase
+    // Cargar características ideales desde localStorage
     loadIdealTraits();
     
     // Escuchar cambios en las características
@@ -443,7 +443,7 @@ const InstagramMessages: React.FC = () => {
               addLog(`❌ Usuario ${conversation.sender_id.slice(-4)}: 0 características cumplidas`, 'info');
             }
 
-          } catch (error) {
+          } catch (error: any) {
             console.error(`❌ Error analizando ${conversation.sender_id}:`, error);
             addLog(`❌ Error analizando Usuario ${conversation.sender_id.slice(-4)}: ${error.message}`, 'error');
           }
@@ -464,7 +464,7 @@ const InstagramMessages: React.FC = () => {
         description: `${totalAnalyzed} conversaciones analizadas. ${totalWithMatches} con características cumplidas.`,
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Error en análisis completo:", error);
       addLog(`❌ Error general: ${error.message}`, 'error');
       toast({
@@ -667,7 +667,7 @@ const InstagramMessages: React.FC = () => {
           variant: "destructive"
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       addLog(`Error en envío de mensaje: ${error.message}`, 'error');
       console.error('Error sending message:', error);
       toast({
@@ -778,7 +778,7 @@ const InstagramMessages: React.FC = () => {
           )}
           {idealTraits.length > 0 && idealTraits.filter(t => t.enabled).length === 0 && (
             <p className="text-xs text-orange-500 mt-1 text-center">
-              Habilita al menos una característica en Configuración > Cliente Ideal
+              Habilita al menos una característica en Configuración {'>'}  Cliente Ideal
             </p>
           )}
           <div className="mt-2 text-center">
@@ -1091,5 +1091,3 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
-
-}
