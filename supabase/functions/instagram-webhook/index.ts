@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -320,13 +319,58 @@ async function generateStrategicAIResponse(
     const pendingTraits = enabledTraits.filter(trait => !currentAnalysis.metTraits.includes(trait.trait))
     const nextTrait = pendingTraits[0]
 
-    console.log('🎯 GENERANDO RESPUESTA ESTRATÉGICA')
+    console.log('🎯 GENERANDO RESPUESTA ESTRATÉGICA NATURAL')
     console.log(`📊 Progreso: ${currentAnalysis.matchPoints}/${enabledTraits.length}`)
     console.log(`🎯 Próximo objetivo: ${nextTrait?.trait || 'CONSEGUIR CONTACTO'}`)
 
-    const systemPrompt = `Eres María, asesora de viajes y vendedora estratégica. Tu objetivo es tener conversaciones naturales pero enfocadas en descubrir características específicas del cliente ideal.
+    // Crear pregunta estratégica natural
+    const createNaturalQuestion = (trait: string): string => {
+      const traitLower = trait.toLowerCase()
+      
+      if (traitLower.includes('interesado') || traitLower.includes('productos')) {
+        const questions = [
+          "¿Qué fue lo que más te llamó la atención de esto?",
+          "¿Es algo que has estado considerando por mucho tiempo?",
+          "¿Qué te motivó a buscar información sobre esto?"
+        ]
+        return questions[Math.floor(Math.random() * questions.length)]
+      }
+      
+      if (traitLower.includes('presupuesto') || traitLower.includes('adquirir')) {
+        const questions = [
+          "¿Has considerado hacer algún tipo de inversión en algo así?",
+          "¿Qué tipo de presupuesto manejas para este tipo de cosas?",
+          "¿Has hecho alguna inversión similar anteriormente?"
+        ]
+        return questions[Math.floor(Math.random() * questions.length)]
+      }
+      
+      if (traitLower.includes('decisión') || traitLower.includes('listo')) {
+        const questions = [
+          "¿Eres de los que cuando algo les convence actúan rápido?",
+          "¿Prefieres tomarte tu tiempo para decidir?",
+          "¿Tienes algún plazo en mente para tomar una decisión?"
+        ]
+        return questions[Math.floor(Math.random() * questions.length)]
+      }
+      
+      if (traitLower.includes('zona') || traitLower.includes('servicio')) {
+        const questions = [
+          "¿De qué parte del país me escribes?",
+          "¿Necesitarías que fuera algo local?",
+          "¿Cómo está la situación por tu zona para este tipo de cosas?"
+        ]
+        return questions[Math.floor(Math.random() * questions.length)]
+      }
+      
+      return "¿Podrías contarme un poco más sobre tu situación actual?"
+    }
 
-🎯 CARACTERÍSTICAS A EVALUAR:
+    const strategicQuestion = nextTrait ? createNaturalQuestion(nextTrait.trait) : null
+
+    const systemPrompt = `Eres María, asesora de viajes experta. Tu objetivo es tener conversaciones NATURALES pero con propósito estratégico.
+
+🎯 CARACTERÍSTICAS A DESCUBRIR:
 ${enabledTraits.map((trait, i) => `${i + 1}. ${trait.trait}`).join('\n')}
 
 📊 PROGRESO ACTUAL:
@@ -334,17 +378,24 @@ ${enabledTraits.map((trait, i) => `${i + 1}. ${trait.trait}`).join('\n')}
 - Ya cumple: ${currentAnalysis.metTraits.join(', ') || 'Ninguna aún'}
 - Próximo objetivo: ${nextTrait ? `"${nextTrait.trait}"` : 'Conseguir contacto/WhatsApp'}
 
-ESTRATEGIA:
+ESTRATEGIA EQUILIBRADA:
 ${currentAnalysis.matchPoints === 0 ? 
-  `🌟 ETAPA INICIAL: Crea conexión y haz UNA pregunta para descubrir "${nextTrait?.trait}"` :
+  `🌱 INICIAL: Conecta genuinamente y pregunta: "${strategicQuestion}"` :
   currentAnalysis.matchPoints < enabledTraits.length ?
-  `💬 FILTRADO ACTIVO: Responde empáticamente y enfócate en descubrir "${nextTrait?.trait}"` :
-  `🏆 CLIENTE IDEAL: ¡Cumple todas las características! Busca conseguir WhatsApp o llamada`
+  `💬 ACTIVO: Responde empáticamente y descubre: "${strategicQuestion}"` :
+  `🏆 COMPLETO: ¡Cumple todas las características! Busca conseguir WhatsApp o llamada`
 }
+
+REGLAS CONVERSACIONALES:
+1. Responde específicamente al mensaje del usuario
+2. Conecta emocionalmente con lo que dice
+3. Incluye UNA pregunta estratégica que fluya naturalmente
+4. Justifica tu curiosidad profesionalmente
+5. Máximo 3 oraciones, tono cálido pero profesional
 
 MENSAJE USUARIO: "${userMessage}"
 
-Responde de forma natural pero estratégica (máximo 2-3 oraciones).`
+Responde de forma natural conectando con su mensaje pero incluyendo la pregunta estratégica.`
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -358,8 +409,8 @@ Responde de forma natural pero estratégica (máximo 2-3 oraciones).`
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
-        temperature: 0.8,
-        max_tokens: 200,
+        temperature: 0.85,
+        max_tokens: 180,
       }),
     })
 
@@ -370,12 +421,12 @@ Responde de forma natural pero estratégica (máximo 2-3 oraciones).`
     const data = await response.json()
     const aiResponse = data.choices[0].message.content.trim()
 
-    console.log('✅ Respuesta estratégica generada:', aiResponse)
+    console.log('✅ Respuesta estratégica natural generada:', aiResponse)
     return aiResponse
 
   } catch (error) {
     console.error('❌ Error generando respuesta estratégica:', error)
-    return "Gracias por tu mensaje. ¿Podrías contarme un poco más sobre lo que buscas?"
+    return "Me da mucho gusto que me hayas contactado. ¿Podrías contarme un poco más sobre lo que buscas?"
   }
 }
 
@@ -478,3 +529,5 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     return false
   }
 }
+
+// ... keep existing code (rest of the functions) the same ...
