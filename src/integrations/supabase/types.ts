@@ -9,6 +9,65 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      autoresponder_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          message_text: string
+          name: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message_text: string
+          name: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          message_text?: string
+          name?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      autoresponder_sent_log: {
+        Row: {
+          autoresponder_message_id: string | null
+          id: string
+          sender_id: string
+          sent_at: string
+        }
+        Insert: {
+          autoresponder_message_id?: string | null
+          id?: string
+          sender_id: string
+          sent_at?: string
+        }
+        Update: {
+          autoresponder_message_id?: string | null
+          id?: string
+          sender_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autoresponder_sent_log_autoresponder_message_id_fkey"
+            columns: ["autoresponder_message_id"]
+            isOneToOne: false
+            referencedRelation: "autoresponder_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ideal_client_traits: {
         Row: {
           created_at: string

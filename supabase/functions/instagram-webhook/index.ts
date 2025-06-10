@@ -190,8 +190,24 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     }
 
     await supabase.from('instagram_messages').insert(messageData)
+
+    // PASO 2: Verificar si es la primera vez que esta persona escribe (para autoresponder)
+    const { data: previousMessages } = await supabase
+      .from('instagram_messages')
+      .select('id')
+      .eq('sender_id', event.sender.id)
+      .eq('message_type', 'received')
+      .limit(2) // Solo necesitamos saber si hay más de 1
+
+    console.log(`📊 Mensajes previos del usuario ${event.sender.id}:`, previousMessages?.length || 0)
+
+    // Si es la primera vez que escribe, verificar autoresponder
+    if (previousMessages && previousMessages.length === 1) {
+      console.log('🆕 PRIMERA VEZ QUE ESCRIBE - VERIFICANDO AUTORESPONDER')
+      await handleAutoresponder(supabase, event.sender.id)
+    }
     
-    // PASO 2: Obtener TODA la conversación anterior
+    // PASO 3: Obtener TODA la conversación anterior
     const { data: conversationHistory } = await supabase
       .from('instagram_messages')
       .select('*')
@@ -203,13 +219,13 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       return await sendFirstStrategicResponse(supabase, event.sender.id, event.message.text)
     }
 
-    // PASO 3: Cargar características ideales desde Supabase
+    // PASO 4: Cargar características ideales desde Supabase
     const idealTraits = await loadIdealTraits(supabase)
     
-    // PASO 4: Analizar conversación para determinar progreso actual
+    // PASO 5: Analizar conversación para determinar progreso actual
     const currentAnalysis = await analyzeConversationProgress(supabase, event.sender.id, conversationHistory, idealTraits)
     
-    // PASO 5: Generar respuesta estratégica
+    // PASO 6: Generar respuesta estratégica
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiKey) {
       console.log('⚠️ No hay API key de OpenAI')
@@ -225,13 +241,82 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       openaiKey
     )
 
-    // PASO 6: Enviar respuesta estratégica
+    // PASO 7: Enviar respuesta estratégica
     await sendResponse(supabase, event.sender.id, strategicResponse)
     console.log('✅ Respuesta estratégica enviada exitosamente')
 
   } catch (error) {
     console.error('❌ Error en processMessagingEvent:', error)
     await sendSimpleResponse(supabase, event.sender.id)
+  }
+}
+
+async function handleAutoresponder(supabase: any, senderId: string) {
+  try {
+    console.log('🤖 INICIANDO PROCESO DE AUTORESPONDER')
+
+    // Verificar si ya se le envió una respuesta automática a este usuario
+    const { data: alreadySent } = await supabase
+      .from('autoresponder_sent_log')
+      .select('id')
+      .eq('sender_id', senderId)
+      .single()
+
+    if (alreadySent) {
+      console.log('⏭️ Ya se envió autoresponder a este usuario - saltando')
+      return
+    }
+
+    // Obtener una respuesta automática activa (la primera que encuentre)
+    const { data: autoresponderMessage } = await supabase
+      .from('autoresponder_messages')
+      .select('*')
+      .eq('is_active', true)
+      .limit(1)
+      .single()
+
+    if (!autoresponderMessage) {
+      console.log('⚠️ No hay respuestas automáticas activas')
+      return
+    }
+
+    console.log('📤 ENVIANDO AUTORESPONDER:', autoresponderMessage.name)
+
+    // Enviar la respuesta automática
+    const success = await sendInstagramMessage(senderId, autoresponderMessage.message_text)
+
+    if (success) {
+      console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
+
+      // Registrar que se envió para no volver a enviar
+      await supabase.from('autoresponder_sent_log').insert({
+        sender_id: senderId,
+        autoresponder_message_id: autoresponderMessage.id
+      })
+
+      // Guardar el mensaje enviado en el historial
+      const sentMessageData = {
+        instagram_message_id: `autoresponder_${Date.now()}_${Math.random()}`,
+        sender_id: 'autoresponder_system',
+        recipient_id: senderId,
+        message_text: autoresponderMessage.message_text,
+        message_type: 'sent',
+        timestamp: new Date().toISOString(),
+        raw_data: {
+          autoresponder: true,
+          autoresponder_id: autoresponderMessage.id,
+          source: 'autoresponder_system'
+        }
+      }
+
+      await supabase.from('instagram_messages').insert(sentMessageData)
+      console.log('✅ AUTORESPONDER GUARDADO EN HISTORIAL')
+    } else {
+      console.error('❌ ERROR ENVIANDO AUTORESPONDER')
+    }
+
+  } catch (error) {
+    console.error('❌ Error en handleAutoresponder:', error)
   }
 }
 
@@ -390,7 +475,6 @@ async function generateStrategicAIResponse(
     let savedPersonality = null
     
     try {
-      // Usar limit 1 y single() para obtener solo un registro
       const { data: settings, error } = await supabase
         .from('user_settings')
         .select('ia_persona')
