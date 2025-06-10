@@ -55,6 +55,18 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     setIsLoading(true);
 
     try {
+      // Obtener el usuario autenticado
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: "Error",
+          description: "Debes estar autenticado para guardar respuestas automáticas",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (message) {
         // Editar mensaje existente
         const { error } = await supabase
@@ -81,7 +93,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
             name: name.trim(),
             message_text: messageText.trim(),
             is_active: isActive,
-            user_id: null // Se manejará por RLS
+            user_id: user.id // Usar el ID del usuario autenticado
           });
 
         if (error) throw error;
