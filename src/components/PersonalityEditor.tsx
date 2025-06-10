@@ -16,25 +16,43 @@ const PersonalityEditor: React.FC = () => {
 
   const loadSavedPersonality = async () => {
     try {
+      console.log('🔍 Cargando personalidad desde Supabase...');
+      
       // Intentar cargar desde Supabase primero
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_settings')
         .select('ia_persona')
         .limit(1);
 
+      console.log('📊 Respuesta de Supabase:', { data, error });
+
+      if (error) {
+        console.error('❌ Error en Supabase:', error);
+        // Fallback a localStorage si hay error
+        const localPersonality = localStorage.getItem('hower-system-prompt');
+        if (localPersonality) {
+          console.log('📱 Usando personalidad de localStorage');
+          setSavedPersonality(localPersonality);
+        }
+        return;
+      }
+
       if (data && data.length > 0 && data[0].ia_persona) {
+        console.log('✅ Personalidad encontrada en Supabase');
         setSavedPersonality(data[0].ia_persona);
         // También guardar en localStorage para compatibilidad
         localStorage.setItem('hower-system-prompt', data[0].ia_persona);
       } else {
+        console.log('⚠️ No hay personalidad en Supabase, buscando en localStorage...');
         // Fallback a localStorage
         const localPersonality = localStorage.getItem('hower-system-prompt');
         if (localPersonality) {
+          console.log('📱 Personalidad encontrada en localStorage');
           setSavedPersonality(localPersonality);
         }
       }
     } catch (error) {
-      console.error('Error cargando personalidad:', error);
+      console.error('❌ Error cargando personalidad:', error);
       // Fallback a localStorage
       const localPersonality = localStorage.getItem('hower-system-prompt');
       if (localPersonality) {
@@ -64,6 +82,8 @@ const PersonalityEditor: React.FC = () => {
         });
         return;
       }
+
+      console.log('🤖 Generando personalidad con OpenAI...');
 
       // Enviar las conversaciones a OpenAI para analizar la personalidad
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -95,34 +115,63 @@ const PersonalityEditor: React.FC = () => {
       }
 
       const newPersonality = data.choices[0].message.content;
+      console.log('✅ Personalidad generada:', newPersonality.substring(0, 100) + '...');
       
-      // Guardar en Supabase
-      const { error } = await supabase
+      // Guardar en Supabase con upsert más robusto
+      console.log('💾 Guardando en Supabase...');
+      
+      // Primero verificar si existe un registro
+      const { data: existingData } = await supabase
         .from('user_settings')
-        .upsert({ 
-          ia_persona: newPersonality,
-          updated_at: new Date().toISOString()
-        });
+        .select('id')
+        .limit(1);
 
-      if (error) {
-        console.error('Error guardando en Supabase:', error);
-        // Fallback a localStorage
-        localStorage.setItem('hower-system-prompt', newPersonality);
+      let saveResult;
+      if (existingData && existingData.length > 0) {
+        // Actualizar registro existente
+        saveResult = await supabase
+          .from('user_settings')
+          .update({ 
+            ia_persona: newPersonality,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData[0].id);
       } else {
+        // Crear nuevo registro
+        saveResult = await supabase
+          .from('user_settings')
+          .insert({ 
+            ia_persona: newPersonality,
+            updated_at: new Date().toISOString()
+          });
+      }
+
+      console.log('📊 Resultado guardado:', saveResult);
+
+      if (saveResult.error) {
+        console.error('❌ Error guardando en Supabase:', saveResult.error);
+        // Fallback a localStorage si falla Supabase
+        localStorage.setItem('hower-system-prompt', newPersonality);
+        toast({
+          title: "⚠️ Guardado en local",
+          description: "Se guardó localmente. Error en Supabase: " + saveResult.error.message,
+          variant: "destructive"
+        });
+      } else {
+        console.log('✅ Guardado exitoso en Supabase');
         // También guardar en localStorage para compatibilidad
         localStorage.setItem('hower-system-prompt', newPersonality);
+        toast({
+          title: "¡Personalidad actualizada!",
+          description: "La IA ahora imitará tu estilo de comunicación en todas las respuestas automáticas",
+        });
       }
       
       setSavedPersonality(newPersonality);
       setConversations(''); // Limpiar el área de texto
-      
-      toast({
-        title: "¡Personalidad actualizada!",
-        description: "La IA ahora imitará tu estilo de comunicación en todas las respuestas automáticas",
-      });
 
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error completo:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al generar la personalidad",
@@ -135,24 +184,35 @@ const PersonalityEditor: React.FC = () => {
 
   const handleResetPersonality = async () => {
     try {
+      console.log('🔄 Reiniciando personalidad...');
+      
       // Limpiar de Supabase
-      await supabase
+      const { data: existingData } = await supabase
         .from('user_settings')
-        .upsert({ 
-          ia_persona: null,
-          updated_at: new Date().toISOString()
-        });
+        .select('id')
+        .limit(1);
+
+      if (existingData && existingData.length > 0) {
+        await supabase
+          .from('user_settings')
+          .update({ 
+            ia_persona: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData[0].id);
+      }
 
       // Limpiar de localStorage
       localStorage.removeItem('hower-system-prompt');
       setSavedPersonality('');
       
+      console.log('✅ Personalidad reiniciada');
       toast({
         title: "Personalidad reiniciada",
         description: "La IA volverá a usar su personalidad por defecto",
       });
     } catch (error) {
-      console.error('Error reiniciando personalidad:', error);
+      console.error('❌ Error reiniciando personalidad:', error);
       // Fallback local
       localStorage.removeItem('hower-system-prompt');
       setSavedPersonality('');

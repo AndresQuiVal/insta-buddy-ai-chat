@@ -386,13 +386,35 @@ async function generateStrategicAIResponse(
 
     const strategicQuestion = nextTrait ? createNaturalQuestion(nextTrait.trait) : null
 
-    // Obtener personalidad guardada desde la base de datos
-    const { data: settings } = await supabase
-      .from('user_settings')
-      .select('ia_persona')
-      .limit(1)
+    // 🎭 OBTENER PERSONALIDAD GUARDADA DESDE SUPABASE
+    console.log('🔍 Cargando personalidad desde Supabase...')
+    let savedPersonality = null
+    
+    try {
+      const { data: settings, error } = await supabase
+        .from('user_settings')
+        .select('ia_persona')
+        .limit(1)
 
-    const savedPersonality = settings && settings.length > 0 ? settings[0].ia_persona : null
+      console.log('📊 Respuesta de user_settings:', { 
+        data: settings, 
+        error: error,
+        hasData: settings && settings.length > 0,
+        hasPersonality: settings && settings.length > 0 && settings[0].ia_persona
+      })
+
+      if (error) {
+        console.error('❌ Error consultando user_settings:', error)
+      } else if (settings && settings.length > 0 && settings[0].ia_persona) {
+        savedPersonality = settings[0].ia_persona
+        console.log('✅ Personalidad encontrada en Supabase:', savedPersonality.substring(0, 100) + '...')
+      } else {
+        console.log('⚠️ No hay personalidad guardada en Supabase')
+      }
+    } catch (personalityError) {
+      console.error('❌ Error obteniendo personalidad:', personalityError)
+    }
+
     console.log(`🎭 Personalidad personalizada en webhook: ${savedPersonality ? 'SÍ' : 'NO'}`)
 
     // Base del prompt con o sin personalidad personalizada
@@ -435,6 +457,8 @@ REGLAS CONVERSACIONALES:
 MENSAJE USUARIO: "${userMessage}"
 
 Responde usando tu personalidad específica de forma natural conectando con su mensaje pero incluyendo la pregunta estratégica.`
+
+    console.log('📤 Enviando a OpenAI con personalidad personalizada...')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
