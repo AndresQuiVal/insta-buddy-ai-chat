@@ -441,3 +441,43 @@ Responde de manera natural y específica al contexto actual.`;
     return "Lo siento, tuve un problema al procesar tu mensaje. ¿Podrías reformularlo?";
   }
 };
+
+export { generateStrategicResponse, getCurrentProspectAnalysis } from './strategicAIService';
+
+/**
+ * Función principal para manejar respuestas automáticas con estrategia
+ */
+export const handleStrategicAutomaticResponse = async (
+  message: string,
+  senderId: string,
+  conversationHistory: ChatMessage[]
+): Promise<string> => {
+  try {
+    console.log('🎯 INICIANDO RESPUESTA AUTOMÁTICA ESTRATÉGICA');
+    console.log(`💬 Mensaje: "${message}"`);
+    console.log(`👤 Sender: ${senderId}`);
+
+    // Importar dinámicamente para evitar problemas de ciclo
+    const { generateStrategicResponse, getCurrentProspectAnalysis } = await import('./strategicAIService');
+    
+    // Obtener análisis actual del prospecto
+    const currentAnalysis = getCurrentProspectAnalysis(senderId);
+    
+    console.log(`📊 Análisis actual: ${currentAnalysis.matchPoints} características cumplidas`);
+    console.log(`✅ Características: ${currentAnalysis.metTraits.join(', ')}`);
+    
+    // Generar respuesta estratégica
+    const strategicResponse = await generateStrategicResponse(
+      message,
+      conversationHistory,
+      currentAnalysis
+    );
+    
+    console.log('✅ Respuesta estratégica generada exitosamente');
+    return strategicResponse;
+    
+  } catch (error) {
+    console.error('❌ Error en respuesta automática estratégica:', error);
+    return "Gracias por tu mensaje. ¿Podrías contarme un poco más sobre lo que buscas?";
+  }
+};

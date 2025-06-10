@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ChatMessage, handleAutomaticResponse, isOpenAIConfigured } from '@/services/openaiService';
 import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
+import { handleStrategicAutomaticResponse } from '@/services/openaiService';
 
 interface Message {
   id: string;
@@ -346,7 +346,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
       return;
     }
 
-    console.log("📤 DEBUG: === ENVIANDO MENSAJE ===");
+    console.log("📤 DEBUG: === ENVIANDO MENSAJE CON IA ESTRATÉGICA ===");
     console.log("💬 DEBUG: Mensaje:", newMessage);
     console.log("🎯 DEBUG: Conversación activa:", activeConversation);
 
@@ -362,42 +362,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
     setNewMessage('');
 
     console.log("📊 DEBUG: Total de mensajes después del envío:", newMessages.length);
-    console.log("🚀 DEBUG: El useEffect debería detectar este cambio y analizar automáticamente...");
 
-    // Respuesta automática de IA (si está habilitada)
+    // Respuesta automática estratégica de IA (si está habilitada)
     if (aiConfig.autoRespond) {
-      console.log("🤖 DEBUG: IA configurada para responder automáticamente...");
+      console.log("🤖 DEBUG: IA estratégica configurada para responder automáticamente...");
       setIsTyping(true);
-      
-      // Determinar si se usa OpenAI o la respuesta simple
-      const useOpenAI = isOpenAIConfigured();
       
       setTimeout(async () => {
         let responseText = '';
         
-        if (useOpenAI) {
-          try {
-            // Usar OpenAI para generar respuesta
-            const conversationHistory = getOpenAIConversationHistory(newMessages);
-            
-            // Verificar si hay un prompt personalizado guardado
-            const savedPrompt = localStorage.getItem('hower-system-prompt');
-            
-            responseText = await handleAutomaticResponse(
-              newMessage,
-              conversationHistory,
-              businessConfig,
-              savedPrompt
-            );
-            console.log("✅ DEBUG: Respuesta generada con OpenAI:", responseText);
-          } catch (error) {
-            console.error("❌ DEBUG: Error al generar respuesta con OpenAI:", error);
-            responseText = generateSimpleResponse(newMessage);
-          }
-        } else {
-          // Usar respuesta simple
+        try {
+          // Usar el nuevo sistema estratégico
+          const conversationHistory = getOpenAIConversationHistory(newMessages);
+          
+          responseText = await handleStrategicAutomaticResponse(
+            newMessage,
+            activeConversation,
+            conversationHistory
+          );
+          
+          console.log("✅ DEBUG: Respuesta estratégica generada:", responseText);
+        } catch (error) {
+          console.error("❌ DEBUG: Error al generar respuesta estratégica:", error);
           responseText = generateSimpleResponse(newMessage);
-          console.log("✅ DEBUG: Respuesta generada simple:", responseText);
         }
         
         const aiResponse: Message = {
@@ -411,11 +398,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
         setMessages(finalMessages);
         setIsTyping(false);
         
-        console.log("🚀 DEBUG: Respuesta de IA agregada, el useEffect debería analizar nuevamente...");
+        console.log("🎯 DEBUG: Respuesta estratégica agregada, analizando automáticamente...");
         
         toast({
-          title: "🤖 IA Respondió Automáticamente",
-          description: `${aiConfig.name} ha enviado una respuesta`,
+          title: "🎯 IA Estratégica Respondió",
+          description: `${aiConfig.name} envió una respuesta enfocada en descubrir características del cliente ideal`,
         });
       }, aiConfig.responseDelay);
     }

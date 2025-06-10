@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -29,6 +30,18 @@ interface ChangeEvent {
     verb: string;
     messaging?: MessagingEvent[];
   };
+}
+
+interface Trait {
+  trait: string;
+  enabled: boolean;
+  position: number;
+}
+
+interface AnalysisResult {
+  matchPoints: number;
+  metTraits: string[];
+  metTraitIndices?: number[];
 }
 
 const corsHeaders = {
@@ -124,7 +137,7 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  console.log('🚀 PROCESANDO MENSAJE DE INSTAGRAM')
+  console.log('🚀 PROCESANDO MENSAJE DE INSTAGRAM CON IA ESTRATÉGICA')
   console.log('👤 SENDER ID:', event.sender.id)
   console.log('💬 MENSAJE:', event.message?.text)
 
@@ -173,71 +186,165 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     if (!conversationHistory || conversationHistory.length === 0) {
       console.log('⚠️ No hay historial de conversación')
-      return await sendFirstResponse(supabase, event.sender.id)
+      return await sendFirstStrategicResponse(supabase, event.sender.id, event.message.text)
     }
 
-    // PASO 3: Procesar la conversación para OpenAI
-    const processedConversation = conversationHistory.map(msg => {
-      const role = msg.sender_id === event.sender.id ? 'user' : 'assistant'
-      return {
-        role,
-        content: msg.message_text,
-        timestamp: new Date(msg.timestamp).toLocaleString()
-      }
-    })
-
-    console.log('📚 HISTORIAL PROCESADO:', processedConversation)
-
-    // PASO 4: Generar respuesta con contexto completo
+    // PASO 3: Cargar características ideales desde Supabase
+    const idealTraits = await loadIdealTraits(supabase)
+    
+    // PASO 4: Analizar conversación para determinar progreso actual
+    const currentAnalysis = await analyzeConversationProgress(supabase, event.sender.id, conversationHistory, idealTraits)
+    
+    // PASO 5: Generar respuesta estratégica
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiKey) {
       console.log('⚠️ No hay API key de OpenAI')
       return await sendSimpleResponse(supabase, event.sender.id)
     }
 
-    const systemPrompt = `Eres María, una asesora de viajes experta. INSTRUCCIONES CRÍTICAS:
+    const strategicResponse = await generateStrategicAIResponse(
+      event.message.text,
+      conversationHistory,
+      currentAnalysis,
+      idealTraits,
+      openaiKey
+    )
 
-1. CONTEXTO ACTUAL:
-- El usuario te está preguntando: "${event.message.text}"
-- Tienes un historial de ${processedConversation.length} mensajes con este usuario
-- DEBES usar este contexto para responder apropiadamente
+    // PASO 6: Enviar respuesta estratégica
+    await sendResponse(supabase, event.sender.id, strategicResponse)
+    console.log('✅ Respuesta estratégica enviada exitosamente')
 
-2. REGLAS ESTRICTAS:
-❌ NUNCA RESPONDER:
-- "Interesante, cuéntame más"
-- "Qué bueno/interesante"
-- Cualquier variación genérica
-- NO IGNORAR el contexto previo
+  } catch (error) {
+    console.error('❌ Error en processMessagingEvent:', error)
+    await sendSimpleResponse(supabase, event.sender.id)
+  }
+}
 
-✅ SIEMPRE:
-- LEER y ENTENDER el mensaje actual
-- REVISAR la conversación anterior
-- RESPONDER específicamente a lo preguntado
-- Si mencionan algo previo, DEMOSTRAR que lo recuerdas
-- Si preguntan por una conversación anterior, BUSCAR en el historial
-- Si no encuentras la conversación mencionada, ADMITIRLO honestamente
+async function loadIdealTraits(supabase: any): Promise<Trait[]> {
+  try {
+    const { data: traits, error } = await supabase
+      .from('ideal_client_traits')
+      .select('*')
+      .order('position')
 
-3. EJEMPLOS DE RESPUESTAS CORRECTAS:
-Usuario: "¿recuerdas nuestra conversación?"
-❌ MAL: "Interesante, cuéntame más"
-✅ BIEN: "He revisado nuestras conversaciones anteriores. [Mencionar específicamente el tema del que hablaron]"
+    if (error || !traits || traits.length === 0) {
+      console.log('⚠️ No se encontraron características, usando por defecto')
+      return [
+        { trait: "Interesado en nuestros productos o servicios", enabled: true, position: 0 },
+        { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true, position: 1 },
+        { trait: "Está listo para tomar una decisión de compra", enabled: true, position: 2 },
+        { trait: "Se encuentra en nuestra zona de servicio", enabled: true, position: 3 }
+      ]
+    }
 
-Usuario: "hola"
-❌ MAL: "Hola, ¿cómo estás?"
-✅ BIEN: "¡Hola! Veo que hemos hablado antes sobre [tema específico]. ¿Te gustaría continuar con ese tema o prefieres explorar otras opciones de viaje?"
+    return traits.map(t => ({
+      trait: t.trait,
+      enabled: t.enabled,
+      position: t.position
+    }))
+  } catch (error) {
+    console.error('❌ Error cargando características:', error)
+    return []
+  }
+}
 
-4. FORMATO DE RESPUESTA:
-1) Reconocer el mensaje actual
-2) Referenciar contexto relevante si existe
-3) Responder específicamente
-4) Hacer preguntas concretas si es necesario
+async function analyzeConversationProgress(
+  supabase: any, 
+  senderId: string, 
+  conversationHistory: any[], 
+  idealTraits: Trait[]
+): Promise<AnalysisResult> {
+  try {
+    // Verificar si ya existe un análisis guardado
+    const { data: existingAnalysis } = await supabase
+      .from('prospect_analysis')
+      .select('*')
+      .eq('sender_id', senderId)
+      .single()
 
-CONVERSACIÓN ANTERIOR (en orden cronológico):
-${processedConversation.map(msg => 
-  `[${msg.timestamp}] ${msg.role === 'user' ? 'Usuario' : 'María'}: ${msg.content}`
-).join('\n')}
+    if (existingAnalysis) {
+      console.log('📊 Análisis existente encontrado:', existingAnalysis)
+      return {
+        matchPoints: existingAnalysis.match_points || 0,
+        metTraits: existingAnalysis.met_traits || [],
+        metTraitIndices: existingAnalysis.met_trait_indices || []
+      }
+    }
 
-RESPONDE de manera específica y útil, demostrando que entiendes el contexto completo.`
+    // Si no hay análisis previo, analizar ahora
+    console.log('🔍 Analizando conversación por primera vez...')
+    
+    const userMessages = conversationHistory
+      .filter(msg => msg.sender_id === senderId)
+      .map(msg => msg.message_text)
+      .join(' ')
+
+    if (userMessages.trim()) {
+      const analysis = await analyzeWithAI(userMessages, idealTraits)
+      
+      // Guardar análisis en Supabase
+      await supabase.from('prospect_analysis').insert({
+        sender_id: senderId,
+        match_points: analysis.matchPoints,
+        met_traits: analysis.metTraits,
+        met_trait_indices: analysis.metTraitIndices || [],
+        last_analyzed_at: new Date().toISOString(),
+        message_count: conversationHistory.length
+      })
+
+      return analysis
+    }
+
+    return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
+  } catch (error) {
+    console.error('❌ Error analizando progreso:', error)
+    return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
+  }
+}
+
+async function analyzeWithAI(conversationText: string, idealTraits: Trait[]): Promise<AnalysisResult> {
+  // Implementación de análisis con IA (simplificada)
+  // En un entorno real, aquí haríamos el análisis completo
+  return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
+}
+
+async function generateStrategicAIResponse(
+  userMessage: string,
+  conversationHistory: any[],
+  currentAnalysis: AnalysisResult,
+  idealTraits: Trait[],
+  openaiKey: string
+): Promise<string> {
+  try {
+    const enabledTraits = idealTraits.filter(t => t.enabled)
+    const pendingTraits = enabledTraits.filter(trait => !currentAnalysis.metTraits.includes(trait.trait))
+    const nextTrait = pendingTraits[0]
+
+    console.log('🎯 GENERANDO RESPUESTA ESTRATÉGICA')
+    console.log(`📊 Progreso: ${currentAnalysis.matchPoints}/${enabledTraits.length}`)
+    console.log(`🎯 Próximo objetivo: ${nextTrait?.trait || 'CONSEGUIR CONTACTO'}`)
+
+    const systemPrompt = `Eres María, asesora de viajes y vendedora estratégica. Tu objetivo es tener conversaciones naturales pero enfocadas en descubrir características específicas del cliente ideal.
+
+🎯 CARACTERÍSTICAS A EVALUAR:
+${enabledTraits.map((trait, i) => `${i + 1}. ${trait.trait}`).join('\n')}
+
+📊 PROGRESO ACTUAL:
+- Características confirmadas: ${currentAnalysis.matchPoints}/${enabledTraits.length}
+- Ya cumple: ${currentAnalysis.metTraits.join(', ') || 'Ninguna aún'}
+- Próximo objetivo: ${nextTrait ? `"${nextTrait.trait}"` : 'Conseguir contacto/WhatsApp'}
+
+ESTRATEGIA:
+${currentAnalysis.matchPoints === 0 ? 
+  `🌟 ETAPA INICIAL: Crea conexión y haz UNA pregunta para descubrir "${nextTrait?.trait}"` :
+  currentAnalysis.matchPoints < enabledTraits.length ?
+  `💬 FILTRADO ACTIVO: Responde empáticamente y enfócate en descubrir "${nextTrait?.trait}"` :
+  `🏆 CLIENTE IDEAL: ¡Cumple todas las características! Busca conseguir WhatsApp o llamada`
+}
+
+MENSAJE USUARIO: "${userMessage}"
+
+Responde de forma natural pero estratégica (máximo 2-3 oraciones).`
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -246,13 +353,13 @@ RESPONDE de manera específica y útil, demostrando que entiendes el contexto co
         'Authorization': `Bearer ${openaiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: event.message.text }
+          { role: 'user', content: userMessage }
         ],
-        temperature: 0.7,
-        max_tokens: 150,
+        temperature: 0.8,
+        max_tokens: 200,
       }),
     })
 
@@ -261,50 +368,30 @@ RESPONDE de manera específica y útil, demostrando que entiendes el contexto co
     }
 
     const data = await response.json()
-    let aiResponse = data.choices[0].message.content.trim()
+    const aiResponse = data.choices[0].message.content.trim()
 
-    // PASO 5: Verificación final de respuesta genérica
-    const genericResponses = [
-      'interesante',
-      'cuéntame más',
-      'qué bueno',
-      'me gustaría saber',
-      'qué bien',
-      'dime más'
-    ]
-
-    if (genericResponses.some(phrase => aiResponse.toLowerCase().includes(phrase))) {
-      console.log('⚠️ Respuesta genérica detectada - usando respuesta de emergencia')
-      aiResponse = `He revisado nuestra conversación anterior. ${
-        processedConversation.length > 1 
-          ? `Veo que hemos estado hablando sobre ${processedConversation[processedConversation.length - 2].content}. ¿Te gustaría que profundicemos en ese tema?` 
-          : '¿Qué tipo de viaje te interesa explorar? Por ejemplo, ¿prefieres destinos de playa, ciudades culturales, o aventuras en la naturaleza?'
-      }`
-    }
-
-    // PASO 6: Enviar y guardar respuesta
-    await sendResponse(supabase, event.sender.id, aiResponse)
-    console.log('✅ Respuesta enviada exitosamente')
+    console.log('✅ Respuesta estratégica generada:', aiResponse)
+    return aiResponse
 
   } catch (error) {
-    console.error('❌ Error en processMessagingEvent:', error)
-    await sendSimpleResponse(supabase, event.sender.id)
+    console.error('❌ Error generando respuesta estratégica:', error)
+    return "Gracias por tu mensaje. ¿Podrías contarme un poco más sobre lo que buscas?"
   }
 }
 
-async function sendFirstResponse(supabase: any, userId: string) {
-  const response = "¡Hola! Soy María, tu asesora de viajes. ¿Qué tipo de experiencia de viaje estás buscando? Por ejemplo, ¿te interesan más las playas paradisíacas, las aventuras en la naturaleza, o explorar ciudades culturales?"
+async function sendFirstStrategicResponse(supabase: any, userId: string, userMessage: string) {
+  const response = `¡Hola! Soy María, tu asesora de viajes. Me da mucho gusto que te hayas puesto en contacto. Veo que me escribes sobre "${userMessage}". ¿Qué tipo de experiencia de viaje tienes en mente?`
   await sendResponse(supabase, userId, response)
 }
 
 async function sendSimpleResponse(supabase: any, userId: string) {
-  const response = "¡Hola! ¿Qué tipo de viaje te gustaría explorar?"
+  const response = "¡Hola! ¿En qué puedo ayudarte hoy?"
   await sendResponse(supabase, userId, response)
 }
 
 async function sendResponse(supabase: any, senderId: string, messageText: string) {
   try {
-    console.log('📨 PREPARANDO ENVÍO...')
+    console.log('📨 PREPARANDO ENVÍO ESTRATÉGICO...')
     
     // Obtener delay
     const { data: settings } = await supabase
@@ -320,30 +407,31 @@ async function sendResponse(supabase: any, senderId: string, messageText: string
     const success = await sendInstagramMessage(senderId, messageText)
     
     if (success) {
-      console.log('✅ MENSAJE ENVIADO A INSTAGRAM')
+      console.log('✅ MENSAJE ESTRATÉGICO ENVIADO A INSTAGRAM')
       
       // Guardar mensaje enviado
       const sentMessageData = {
-        instagram_message_id: `ai_response_${Date.now()}_${Math.random()}`,
-        sender_id: 'ai_assistant_maria',
+        instagram_message_id: `ai_strategic_${Date.now()}_${Math.random()}`,
+        sender_id: 'ai_assistant_maria_strategic',
         recipient_id: senderId,
         message_text: messageText,
         message_type: 'sent',
         timestamp: new Date().toISOString(),
         raw_data: {
           ai_generated: true,
-          source: 'webhook_ai_response'
+          strategic_response: true,
+          source: 'webhook_ai_strategic_response'
         }
       }
 
       await supabase.from('instagram_messages').insert(sentMessageData)
-      console.log('✅ RESPUESTA GUARDADA EN BD')
+      console.log('✅ RESPUESTA ESTRATÉGICA GUARDADA EN BD')
     } else {
-      console.error('❌ ERROR ENVIANDO A INSTAGRAM')
+      console.error('❌ ERROR ENVIANDO RESPUESTA ESTRATÉGICA A INSTAGRAM')
     }
 
   } catch (error) {
-    console.error('❌ ERROR EN sendResponse:', error)
+    console.error('❌ ERROR EN sendResponse estratégico:', error)
   }
 }
 
@@ -365,7 +453,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       }
     }
 
-    console.log('📤 ENVIANDO A INSTAGRAM API:', JSON.stringify(messagePayload, null, 2))
+    console.log('📤 ENVIANDO RESPUESTA ESTRATÉGICA A INSTAGRAM API:', JSON.stringify(messagePayload, null, 2))
 
     const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
       method: 'POST',
@@ -382,7 +470,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       return false
     }
 
-    console.log('✅ RESPUESTA EXITOSA DE INSTAGRAM:', JSON.stringify(responseData, null, 2))
+    console.log('✅ RESPUESTA ESTRATÉGICA EXITOSA DE INSTAGRAM:', JSON.stringify(responseData, null, 2))
     return true
 
   } catch (error) {
