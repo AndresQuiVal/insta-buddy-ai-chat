@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, MessageCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, MessageCircle, Cloud, HardDrive } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AutoresponderForm from './AutoresponderForm';
@@ -24,11 +24,24 @@ const AutoresponderManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingMessage, setEditingMessage] = useState<AutoresponderMessage | null>(null);
+  const [dataSource, setDataSource] = useState<'database' | 'localStorage'>('database');
   const { toast } = useToast();
 
   useEffect(() => {
     loadMessages();
   }, []);
+
+  const loadFromLocalStorage = () => {
+    try {
+      const localMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
+      setMessages(localMessages);
+      setDataSource('localStorage');
+      console.log('📱 Cargado desde localStorage:', localMessages.length, 'mensajes');
+    } catch (error) {
+      console.error('Error loading from localStorage:', error);
+      setMessages([]);
+    }
+  };
 
   const loadMessages = async () => {
     try {
@@ -38,13 +51,17 @@ const AutoresponderManager = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
       setMessages(data || []);
+      setDataSource('database');
+      console.log('☁️ Cargado desde base de datos:', data?.length || 0, 'mensajes');
+      
     } catch (error) {
-      console.error('Error loading autoresponder messages:', error);
+      console.error('Error loading from database, fallback to localStorage:', error);
+      loadFromLocalStorage();
       toast({
-        title: "Error",
-        description: "No se pudieron cargar las respuestas automáticas",
-        variant: "destructive"
+        title: "Modo sin conexión",
+        description: "Cargando datos desde tu navegador",
       });
     } finally {
       setIsLoading(false);
@@ -86,12 +103,19 @@ const AutoresponderManager = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('autoresponder_messages')
-        .delete()
-        .eq('id', id);
+      if (dataSource === 'database') {
+        const { error } = await supabase
+          .from('autoresponder_messages')
+          .delete()
+          .eq('id', id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
+
+      // También eliminar de localStorage
+      const localMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
+      const updatedLocal = localMessages.filter((msg: any) => msg.id !== id);
+      localStorage.setItem('autoresponder-messages', JSON.stringify(updatedLocal));
 
       setMessages(prev => prev.filter(msg => msg.id !== id));
       toast({
@@ -127,7 +151,22 @@ const AutoresponderManager = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Autoresponder</h2>
-          <p className="text-gray-600">Configura respuestas automáticas para nuevos prospectos</p>
+          <div className="flex items-center gap-2 text-gray-600">
+            <p>Configura respuestas automáticas para nuevos prospectos</p>
+            <div className="flex items-center gap-1 text-sm">
+              {dataSource === 'database' ? (
+                <>
+                  <Cloud className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600">Sincronizado</span>
+                </>
+              ) : (
+                <>
+                  <HardDrive className="w-4 h-4 text-orange-500" />
+                  <span className="text-orange-600">Local</span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
         <Button
           onClick={() => setShowForm(true)}

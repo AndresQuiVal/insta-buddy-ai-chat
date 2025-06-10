@@ -39,6 +39,33 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     }
   }, [message]);
 
+  const saveToLocalStorage = (messageData: any) => {
+    try {
+      const existingMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
+      
+      if (message) {
+        // Actualizar mensaje existente
+        const updatedMessages = existingMessages.map((msg: any) => 
+          msg.id === message.id ? { ...msg, ...messageData } : msg
+        );
+        localStorage.setItem('autoresponder-messages', JSON.stringify(updatedMessages));
+      } else {
+        // Agregar nuevo mensaje
+        const newMessage = {
+          id: `local_${Date.now()}`,
+          ...messageData,
+          created_at: new Date().toISOString()
+        };
+        existingMessages.push(newMessage);
+        localStorage.setItem('autoresponder-messages', JSON.stringify(existingMessages));
+      }
+      
+      console.log('✅ Guardado en localStorage como respaldo');
+    } catch (error) {
+      console.error('⚠️ Error guardando en localStorage:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -53,16 +80,26 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
 
     setIsLoading(true);
 
+    const messageData = {
+      name: name.trim(),
+      message_text: messageText.trim(),
+      is_active: isActive
+    };
+
     try {
-      // Usar la autenticación de Instagram en lugar de Supabase auth
+      // PASO 1: Siempre guardar en localStorage como respaldo
+      saveToLocalStorage(messageData);
+
+      // PASO 2: Intentar guardar en base de datos
       const instagramUser = localStorage.getItem('hower-instagram-user');
       
       if (!instagramUser) {
         toast({
-          title: "Error",
-          description: "Debes estar conectado con Instagram para guardar respuestas automáticas",
-          variant: "destructive"
+          title: "Guardado localmente",
+          description: "Se guardó en tu navegador. Conéctate con Instagram para sincronizar.",
+          variant: "default"
         });
+        onSubmit();
         return;
       }
 
@@ -74,9 +111,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         const { error } = await supabase
           .from('autoresponder_messages')
           .update({
-            name: name.trim(),
-            message_text: messageText.trim(),
-            is_active: isActive,
+            ...messageData,
             updated_at: new Date().toISOString()
           })
           .eq('id', message.id);
@@ -92,10 +127,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         const { error } = await supabase
           .from('autoresponder_messages')
           .insert({
-            name: name.trim(),
-            message_text: messageText.trim(),
-            is_active: isActive,
-            user_id: userId // Usar el ID del usuario de Instagram
+            ...messageData,
+            user_id: userId
           });
 
         if (error) throw error;
@@ -110,10 +143,10 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     } catch (error) {
       console.error('Error saving autoresponder message:', error);
       toast({
-        title: "Error",
-        description: "No se pudo guardar la respuesta automática",
-        variant: "destructive"
+        title: "Guardado localmente",
+        description: "Se guardó en tu navegador. Error al sincronizar con servidor.",
       });
+      onSubmit(); // Continúa porque se guardó localmente
     } finally {
       setIsLoading(false);
     }
