@@ -21,15 +21,38 @@ const IdealClientTraits: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Cargar características desde Supabase
+  // Cargar características desde localStorage primero, luego Supabase como fallback
   useEffect(() => {
-    loadTraitsFromSupabase();
+    loadTraitsFromStorage();
   }, []);
 
-  const loadTraitsFromSupabase = async () => {
+  const loadTraitsFromStorage = async () => {
     try {
       setIsLoading(true);
-      console.log("🔍 Cargando características desde Supabase...");
+      console.log("🔍 Cargando características desde localStorage...");
+      
+      // Intentar cargar desde localStorage primero
+      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+      if (savedTraits) {
+        const parsedTraits = JSON.parse(savedTraits);
+        const traitsData = parsedTraits.map((t: any) => ({
+          trait: t.trait,
+          enabled: t.enabled,
+          position: t.position
+        }));
+
+        console.log("✅ Características cargadas desde localStorage:", traitsData);
+        setTraits(traitsData);
+        
+        toast({
+          title: "✅ Características cargadas",
+          description: `${traitsData.filter((t: any) => t.enabled).length} de ${traitsData.length} características habilitadas`,
+        });
+        return;
+      }
+
+      // Si no hay datos en localStorage, intentar cargar desde Supabase
+      console.log("🔍 No hay datos en localStorage, intentando desde Supabase...");
       
       const { data: traits, error } = await supabase
         .from('ideal_client_traits')
@@ -57,6 +80,9 @@ const IdealClientTraits: React.FC = () => {
       console.log("✅ Características cargadas desde Supabase:", traitsData);
       setTraits(traitsData);
       
+      // Guardar en localStorage para futuras cargas
+      localStorage.setItem('hower-ideal-client-traits', JSON.stringify(traitsData));
+      
       toast({
         title: "✅ Características cargadas",
         description: `${traitsData.filter(t => t.enabled).length} de ${traitsData.length} características habilitadas`,
@@ -79,44 +105,51 @@ const IdealClientTraits: React.FC = () => {
     ];
     
     setTraits(defaultTraits);
-    await saveTraitsToSupabase(defaultTraits);
+    await saveTraitsToStorage(defaultTraits);
   };
 
-  const saveTraitsToSupabase = async (traitsToSave: Trait[]) => {
+  const saveTraitsToStorage = async (traitsToSave: Trait[]) => {
     try {
-      console.log("💾 Guardando características en Supabase:", traitsToSave);
+      console.log("💾 Guardando características en localStorage y Supabase:", traitsToSave);
       
-      // Primero, eliminar todas las características existentes
-      const { error: deleteError } = await supabase
-        .from('ideal_client_traits')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Eliminar todas
-
-      if (deleteError) {
-        console.error("Error al eliminar características anteriores:", deleteError);
-      }
-
-      // Luego, insertar las nuevas características
-      const { data, error: insertError } = await supabase
-        .from('ideal_client_traits')
-        .insert(
-          traitsToSave.map(trait => ({
-            trait: trait.trait,
-            enabled: trait.enabled,
-            position: trait.position,
-            user_id: '00000000-0000-0000-0000-000000000000' // Usuario por defecto
-          }))
-        );
-
-      if (insertError) {
-        console.error("Error al guardar características:", insertError);
-        throw insertError;
-      }
-
-      console.log("✅ Características guardadas en Supabase");
-      
-      // También guardar en localStorage como respaldo
+      // PRIMERO: Guardar en localStorage (prioridad)
       localStorage.setItem('hower-ideal-client-traits', JSON.stringify(traitsToSave));
+      console.log("✅ Características guardadas en localStorage");
+      
+      // SEGUNDO: Intentar guardar en Supabase como respaldo
+      try {
+        // Eliminar todas las características existentes
+        const { error: deleteError } = await supabase
+          .from('ideal_client_traits')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000');
+
+        if (deleteError) {
+          console.error("Error al eliminar características anteriores:", deleteError);
+        }
+
+        // Insertar las nuevas características
+        const { data, error: insertError } = await supabase
+          .from('ideal_client_traits')
+          .insert(
+            traitsToSave.map(trait => ({
+              trait: trait.trait,
+              enabled: trait.enabled,
+              position: trait.position,
+              user_id: '00000000-0000-0000-0000-000000000000'
+            }))
+          );
+
+        if (insertError) {
+          console.error("Error al guardar en Supabase:", insertError);
+          // No lanzar error, localStorage ya tiene los datos
+        } else {
+          console.log("✅ Características también guardadas en Supabase");
+        }
+      } catch (supabaseError) {
+        console.error("Error con Supabase (usando localStorage):", supabaseError);
+        // No es crítico, localStorage funciona
+      }
       
       // Disparar evento para que otros componentes se actualicen
       window.dispatchEvent(new CustomEvent('traits-updated', { detail: traitsToSave }));
@@ -131,7 +164,7 @@ const IdealClientTraits: React.FC = () => {
     setIsSaving(true);
     
     try {
-      await saveTraitsToSupabase(traits);
+      await saveTraitsToStorage(traits);
       
       toast({
         title: "Características guardadas",
@@ -155,7 +188,7 @@ const IdealClientTraits: React.FC = () => {
       setNewTrait('');
       
       try {
-        await saveTraitsToSupabase(newTraits);
+        await saveTraitsToStorage(newTraits);
         toast({
           title: "Característica agregada",
           description: "La nueva característica se ha guardado correctamente",
@@ -177,7 +210,7 @@ const IdealClientTraits: React.FC = () => {
       setTraits(reindexedTraits);
       
       try {
-        await saveTraitsToSupabase(reindexedTraits);
+        await saveTraitsToStorage(reindexedTraits);
         toast({
           title: "Característica eliminada",
           description: "La característica se ha eliminado correctamente",
@@ -204,7 +237,7 @@ const IdealClientTraits: React.FC = () => {
     setTraits(updatedTraits);
     
     try {
-      await saveTraitsToSupabase(updatedTraits);
+      await saveTraitsToStorage(updatedTraits);
       toast({
         title: updatedTraits[index].enabled ? "Característica habilitada" : "Característica deshabilitada",
         description: "Los cambios se han guardado correctamente",
@@ -323,7 +356,7 @@ const IdealClientTraits: React.FC = () => {
           <li>📊 Asigna puntos de compatibilidad automáticamente (1-4 estrellas)</li>
           <li>🎯 Los prospectos aparecen ordenados por compatibilidad en "Mis Prospectos"</li>
           <li>🤖 La IA responde automáticamente según tu configuración</li>
-          <li>💾 Todo se guarda en la base de datos Supabase</li>
+          <li>💾 Todo se guarda en localStorage y Supabase como respaldo</li>
         </ul>
       </div>
     </div>
