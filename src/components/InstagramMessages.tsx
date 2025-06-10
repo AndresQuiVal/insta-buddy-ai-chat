@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -957,7 +956,7 @@ const InstagramMessages: React.FC = () => {
         <ConversationDebug
           messages={conversations.find(c => c.sender_id === selectedConversation)?.messages.map(msg => ({
             text: msg.message_text,
-            sender: msg.message_type === 'sent' ? 'bot' : 'user',
+            sender: msg.message_type === 'sent' ? 'ai' : 'user',
             timestamp: msg.timestamp,
             id: msg.id
           })) || []}
@@ -969,3 +968,5 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
+
+</edits_to_apply>
