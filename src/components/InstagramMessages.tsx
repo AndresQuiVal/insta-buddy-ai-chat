@@ -529,7 +529,7 @@ const InstagramMessages: React.FC = () => {
                   size="icon"
                   onClick={() => setShowDebug(true)}
                   title="Ver debug de conversación"
-                >
+            >
                   <Bug className="h-4 w-4" />
                 </Button>
                 <Button
@@ -537,7 +537,7 @@ const InstagramMessages: React.FC = () => {
                   size="icon"
                   onClick={() => setShowLogs(true)}
                   title="Ver logs en vivo"
-                >
+            >
                   <Terminal className="h-4 w-4" />
                 </Button>
               </>

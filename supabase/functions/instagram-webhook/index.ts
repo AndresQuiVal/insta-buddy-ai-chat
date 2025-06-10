@@ -124,48 +124,17 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  console.log('🚀 ==========================================')
   console.log('🚀 PROCESANDO MENSAJE DE INSTAGRAM')
-  console.log('🚀 ==========================================')
+  console.log('👤 SENDER ID:', event.sender.id)
+  console.log('💬 MENSAJE:', event.message?.text)
 
   try {
-    // Si es echo, solo guardar
-    if (event.message?.is_echo) {
-      console.log('🔄 ECHO detectado - solo guardando mensaje enviado')
-      if (event.message.text) {
-        const messageData = {
-          instagram_message_id: event.message.mid,
-          sender_id: event.sender.id,
-          recipient_id: event.recipient.id,
-          message_text: event.message.text,
-          message_type: 'sent',
-          timestamp: new Date(event.timestamp).toISOString(),
-          is_read: false,
-          raw_data: {
-            webhook_data: event,
-            received_at: new Date().toISOString(),
-            source: 'instagram_webhook',
-            is_echo: true
-          }
-        }
-        await supabase.from('instagram_messages').insert(messageData)
-        console.log('💾 Echo guardado exitosamente')
-      }
+    // PASO 1: Guardar el mensaje recibido
+    if (!event.message?.text || event.message?.is_echo) {
+      console.log('⏭️ Mensaje no válido o es un echo - saltando')
       return
     }
 
-    // Verificar que hay mensaje real del usuario
-    if (!event.message || !event.message.text) {
-      console.log('⏭️ NO HAY MENSAJE DE TEXTO - saltando')
-      return
-    }
-
-    console.log('✅ MENSAJE REAL DEL USUARIO DETECTADO')
-    console.log('👤 SENDER ID:', event.sender.id)
-    console.log('💬 MENSAJE DEL USUARIO:', event.message.text)
-
-    // PASO 1: GUARDAR MENSAJE
-    console.log('📝 ========== PASO 1: GUARDAR MENSAJE ==========')
     const messageData = {
       instagram_message_id: event.message.mid,
       sender_id: event.sender.id,
@@ -181,7 +150,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       }
     }
 
-    // Verificar si ya existe
+    // Verificar duplicados
     const { data: existingMessage } = await supabase
       .from('instagram_messages')
       .select('id')
@@ -189,147 +158,86 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       .single()
 
     if (existingMessage) {
-      console.log('⏭️ MENSAJE YA EXISTE - saltando')
+      console.log('⏭️ Mensaje duplicado - saltando')
       return
     }
 
     await supabase.from('instagram_messages').insert(messageData)
-    console.log('✅ PASO 1 COMPLETADO: Mensaje guardado')
-
-    // PASO 2: OBTENER CONVERSACIÓN COMPLETA - CON LOGS DETALLADOS
-    console.log('📚 ========== PASO 2: OBTENER CONVERSACIÓN COMPLETA ==========')
     
-    // Obtener TODA la conversación ordenada por timestamp
-    const { data: conversationHistory, error: historyError } = await supabase
+    // PASO 2: Obtener TODA la conversación anterior
+    const { data: conversationHistory } = await supabase
       .from('instagram_messages')
       .select('*')
       .or(`sender_id.eq.${event.sender.id},recipient_id.eq.${event.sender.id}`)
       .order('timestamp', { ascending: true })
 
-    if (historyError) {
-      console.error('❌ ERROR OBTENIENDO HISTORIAL:', historyError)
-      await sendSimpleResponse(supabase, event.sender.id, "¡Hola! ¿Cómo estás?")
-      return
+    if (!conversationHistory || conversationHistory.length === 0) {
+      console.log('⚠️ No hay historial de conversación')
+      return await sendFirstResponse(supabase, event.sender.id)
     }
 
-    const messages = conversationHistory || []
-    console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
-    
-    // Log detallado de la conversación completa
-    console.log('🔍 =============== CONVERSACIÓN COMPLETA - ANÁLISIS DETALLADO ===============')
-    console.log('🔍 NÚMERO TOTAL DE MENSAJES:', messages.length)
-    console.log('🔍 ===============================================================')
-    
-    if (messages.length === 0) {
-      console.log('⚠️ NO HAY MENSAJES EN LA CONVERSACIÓN!')
-    } else {
-      messages.forEach((msg, index) => {
-        const isFromUser = msg.sender_id === event.sender.id
-        const sender = isFromUser ? 'USUARIO' : 'MARÍA'
-        const direction = isFromUser ? '👤➡️' : '🤖⬅️'
-        
-        console.log(`🔍 [${index + 1}/${messages.length}] ${direction} ${sender}: "${msg.message_text}"`)
-        console.log(`    📅 Timestamp: ${new Date(msg.timestamp).toLocaleString()}`)
-        console.log(`    📝 Message Type: ${msg.message_type}`)
-        console.log(`    🆔 Sender ID: ${msg.sender_id}`)
-        console.log(`    🎯 Recipient ID: ${msg.recipient_id}`)
-        console.log('    ─────────────────────────────────────────')
-      })
-    }
-    
-    console.log('🔍 ===============================================================')
-    console.log(`🔍 ÚLTIMO MENSAJE DEL USUARIO: "${event.message.text}"`)
-    console.log('🔍 ===============================================================')
+    // PASO 3: Procesar la conversación para OpenAI
+    const processedConversation = conversationHistory.map(msg => {
+      const role = msg.sender_id === event.sender.id ? 'user' : 'assistant'
+      return {
+        role,
+        content: msg.message_text,
+        timestamp: new Date(msg.timestamp).toLocaleString()
+      }
+    })
 
-    // Crear contexto para el AI con TODA la conversación
-    const conversationContext = messages
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-      .map(msg => {
-        const isFromUser = msg.sender_id === event.sender.id
-        const sender = isFromUser ? 'Usuario' : 'María'
-        const timestamp = new Date(msg.timestamp).toLocaleString()
-        return `[${timestamp}] ${sender}: ${msg.message_text}`
-      })
-      .join('\n')
+    console.log('📚 HISTORIAL PROCESADO:', processedConversation)
 
-    console.log('📖 =============== CONTEXTO COMPLETO PARA EL AI ===============')
-    console.log(conversationContext)
-    console.log('📖 =====================================================')
-
-    // PASO 3: GENERAR RESPUESTA INTELIGENTE CON CONTEXTO COMPLETO
-    console.log('🤖 ========== PASO 3: GENERAR RESPUESTA INTELIGENTE ==========')
-    const aiResponse = await generateIntelligentResponse(conversationContext, event.message.text)
-    
-    // Agregar delay para simular tiempo de escritura
-    const delay = Math.max(aiResponse.length * 50, 2000) // mínimo 2 segundos
-    console.log(`⏳ Esperando ${delay}ms antes de enviar respuesta...`)
-    await new Promise(resolve => setTimeout(resolve, delay))
-    
-    // ENVIAR RESPUESTA
-    console.log('📤 ========== ENVIANDO RESPUESTA ==========')
-    console.log('💬 RESPUESTA GENERADA:', aiResponse)
-    await sendResponse(supabase, event.sender.id, aiResponse)
-
-    console.log('✅ ========== PROCESO COMPLETADO ==========')
-
-  } catch (error) {
-    console.error('❌ ERROR EN processMessagingEvent:', error)
-    throw error
-  }
-}
-
-async function generateIntelligentResponse(conversationContext: string, currentMessage: string): Promise<string> {
-  console.log('🧠 GENERANDO RESPUESTA CONVERSACIONAL...')
-  console.log('🔥 MENSAJE ACTUAL:', currentMessage)
-  console.log('📚 CONTEXTO COMPLETO:', conversationContext)
-  
-  try {
+    // PASO 4: Generar respuesta con contexto completo
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
-    
     if (!openaiKey) {
-      console.log('⚠️ NO HAY API KEY DE OPENAI - respuesta simple')
-      return getSimpleResponse(currentMessage)
+      console.log('⚠️ No hay API key de OpenAI')
+      return await sendSimpleResponse(supabase, event.sender.id)
     }
 
-    // PROMPT MEJORADO PARA EVITAR RESPUESTAS GENÉRICAS
-    const prompt = `Eres María, una asesora de viajes experta. Tu trabajo es mantener conversaciones significativas y útiles.
+    const systemPrompt = `Eres María, una asesora de viajes experta. INSTRUCCIONES CRÍTICAS:
 
-REGLAS ESTRICTAS:
-1. PROHIBIDO usar frases como:
-   - "Interesante, cuéntame más"
-   - "Me gustaría saber más"
-   - "Qué interesante"
-   - Cualquier variación de estas frases genéricas
+1. CONTEXTO ACTUAL:
+- El usuario te está preguntando: "${event.message.text}"
+- Tienes un historial de ${processedConversation.length} mensajes con este usuario
+- DEBES usar este contexto para responder apropiadamente
 
-2. SIEMPRE debes:
-   - Responder específicamente al contenido del mensaje
-   - Hacer preguntas concretas sobre detalles específicos
-   - Demostrar que entiendes el contexto de la conversación
-   - Si no entiendes algo, pedir aclaración sobre puntos específicos
+2. REGLAS ESTRICTAS:
+❌ NUNCA RESPONDER:
+- "Interesante, cuéntame más"
+- "Qué bueno/interesante"
+- Cualquier variación genérica
+- NO IGNORAR el contexto previo
 
-3. FORMATO DE RESPUESTA:
-   - Primero, reconoce específicamente lo que dijo el usuario
-   - Luego, haz una pregunta específica o da información relevante
-   - NO uses emojis ni respuestas vagas
+✅ SIEMPRE:
+- LEER y ENTENDER el mensaje actual
+- REVISAR la conversación anterior
+- RESPONDER específicamente a lo preguntado
+- Si mencionan algo previo, DEMOSTRAR que lo recuerdas
+- Si preguntan por una conversación anterior, BUSCAR en el historial
+- Si no encuentras la conversación mencionada, ADMITIRLO honestamente
 
-CONVERSACIÓN ANTERIOR:
-${conversationContext}
+3. EJEMPLOS DE RESPUESTAS CORRECTAS:
+Usuario: "¿recuerdas nuestra conversación?"
+❌ MAL: "Interesante, cuéntame más"
+✅ BIEN: "He revisado nuestras conversaciones anteriores. [Mencionar específicamente el tema del que hablaron]"
 
-ÚLTIMO MENSAJE DEL USUARIO:
-"${currentMessage}"
+Usuario: "hola"
+❌ MAL: "Hola, ¿cómo estás?"
+✅ BIEN: "¡Hola! Veo que hemos hablado antes sobre [tema específico]. ¿Te gustaría continuar con ese tema o prefieres explorar otras opciones de viaje?"
 
-EJEMPLOS DE BUENAS RESPUESTAS:
-Usuario: "Me gustan los cruceros"
-❌ NO RESPONDER: "Interesante, cuéntame más sobre eso"
-✅ RESPONDER: "Los cruceros son una excelente opción. ¿Has realizado alguno antes? Me ayudaría saber tu experiencia previa para recomendarte las mejores rutas."
+4. FORMATO DE RESPUESTA:
+1) Reconocer el mensaje actual
+2) Referenciar contexto relevante si existe
+3) Responder específicamente
+4) Hacer preguntas concretas si es necesario
 
-Usuario: "Hola"
-❌ NO RESPONDER: "Hola, ¿cómo estás?"
-✅ RESPONDER: "¡Bienvenido! Soy María, asesora de viajes. ¿Estás buscando información sobre algún destino o tipo de viaje en particular?"
+CONVERSACIÓN ANTERIOR (en orden cronológico):
+${processedConversation.map(msg => 
+  `[${msg.timestamp}] ${msg.role === 'user' ? 'Usuario' : 'María'}: ${msg.content}`
+).join('\n')}
 
-RESPONDE AHORA con un mensaje específico y útil, evitando COMPLETAMENTE respuestas genéricas.`
-
-    console.log('📤 ENVIANDO PROMPT A OPENAI...')
+RESPONDE de manera específica y útil, demostrando que entiendes el contexto completo.`
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -340,84 +248,58 @@ RESPONDE AHORA con un mensaje específico y útil, evitando COMPLETAMENTE respue
       body: JSON.stringify({
         model: 'gpt-4',
         messages: [
-          {
-            role: 'system',
-            content: 'Eres María, una asesora de viajes experta que NUNCA da respuestas genéricas o vagas. Siempre respondes con información específica y preguntas concretas.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: event.message.text }
         ],
+        temperature: 0.7,
         max_tokens: 150,
-        temperature: 0.5, // Reducido para respuestas más consistentes
       }),
     })
 
-    console.log('📨 RESPUESTA DE OPENAI STATUS:', response.status)
-
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ ERROR DETALLADO DE OPENAI:', errorText)
-      return getSimpleResponse(currentMessage)
+      throw new Error(`Error de OpenAI: ${response.status}`)
     }
 
     const data = await response.json()
-    let aiMessage = data.choices?.[0]?.message?.content || "¡Hola! ¿Qué tipo de viaje te interesa realizar?"
-    
-    // VERIFICACIÓN ADICIONAL DE RESPUESTA GENÉRICA
-    const genericPhrases = [
+    let aiResponse = data.choices[0].message.content.trim()
+
+    // PASO 5: Verificación final de respuesta genérica
+    const genericResponses = [
       'interesante',
       'cuéntame más',
+      'qué bueno',
+      'me gustaría saber',
       'qué bien',
-      'me gustaría saber más',
-      'qué interesante',
       'dime más'
     ]
 
-    const responseLower = aiMessage.toLowerCase()
-    if (genericPhrases.some(phrase => responseLower.includes(phrase))) {
-      console.log('⚠️ RESPUESTA GENÉRICA DETECTADA - GENERANDO NUEVA RESPUESTA')
-      return "¡Hola! Para ayudarte mejor, ¿podrías decirme qué tipo de viaje estás considerando? Por ejemplo, ¿te interesan los cruceros, viajes en tierra, o algún destino específico?"
+    if (genericResponses.some(phrase => aiResponse.toLowerCase().includes(phrase))) {
+      console.log('⚠️ Respuesta genérica detectada - usando respuesta de emergencia')
+      aiResponse = `He revisado nuestra conversación anterior. ${
+        processedConversation.length > 1 
+          ? `Veo que hemos estado hablando sobre ${processedConversation[processedConversation.length - 2].content}. ¿Te gustaría que profundicemos en ese tema?` 
+          : '¿Qué tipo de viaje te interesa explorar? Por ejemplo, ¿prefieres destinos de playa, ciudades culturales, o aventuras en la naturaleza?'
+      }`
     }
 
-    console.log('🤖 RESPUESTA FINAL:', aiMessage)
-    return aiMessage.trim()
+    // PASO 6: Enviar y guardar respuesta
+    await sendResponse(supabase, event.sender.id, aiResponse)
+    console.log('✅ Respuesta enviada exitosamente')
 
   } catch (error) {
-    console.error('❌ ERROR DETALLADO EN generateIntelligentResponse:', error)
-    return getSimpleResponse(currentMessage)
+    console.error('❌ Error en processMessagingEvent:', error)
+    await sendSimpleResponse(supabase, event.sender.id)
   }
 }
 
-function getSimpleResponse(currentMessage: string): string {
-  console.log('🤖 GENERANDO RESPUESTA SIMPLE CONVERSACIONAL')
-  
-  const lowerMessage = currentMessage.toLowerCase()
-  
-  // Respuestas simples y naturales
-  if (lowerMessage.includes('hola') || lowerMessage.includes('buenas')) {
-    return "¡Hola! ¿Cómo estás? 😊"
-  }
-  
-  if (lowerMessage.includes('llamas') || lowerMessage.includes('nombre')) {
-    return "Soy María, mucho gusto 😊"
-  }
-  
-  if (lowerMessage.includes('qué tal') || lowerMessage.includes('como estas')) {
-    return "¡Todo bien! ¿Y tú cómo estás?"
-  }
-  
-  if (lowerMessage.includes('bien') || lowerMessage.includes('excelente')) {
-    return "¡Qué bueno! Me alegra saber eso 😊"
-  }
-  
-  if (lowerMessage.includes('gracias')) {
-    return "¡De nada! ¿En qué más puedo ayudarte?"
-  }
-  
-  // Respuesta conversacional por defecto
-  return "Interesante, cuéntame más sobre eso 😊"
+async function sendFirstResponse(supabase: any, userId: string) {
+  const response = "¡Hola! Soy María, tu asesora de viajes. ¿Qué tipo de experiencia de viaje estás buscando? Por ejemplo, ¿te interesan más las playas paradisíacas, las aventuras en la naturaleza, o explorar ciudades culturales?"
+  await sendResponse(supabase, userId, response)
+}
+
+async function sendSimpleResponse(supabase: any, userId: string) {
+  const response = "¡Hola! ¿Qué tipo de viaje te gustaría explorar?"
+  await sendResponse(supabase, userId, response)
 }
 
 async function sendResponse(supabase: any, senderId: string, messageText: string) {
@@ -462,33 +344,6 @@ async function sendResponse(supabase: any, senderId: string, messageText: string
 
   } catch (error) {
     console.error('❌ ERROR EN sendResponse:', error)
-  }
-}
-
-async function sendSimpleResponse(supabase: any, senderId: string, messageText: string) {
-  try {
-    console.log('📨 ENVIANDO RESPUESTA SIMPLE:', messageText)
-    
-    const success = await sendInstagramMessage(senderId, messageText)
-    
-    if (success) {
-      const sentMessageData = {
-        instagram_message_id: `simple_response_${Date.now()}_${Math.random()}`,
-        sender_id: 'ai_assistant_maria',
-        recipient_id: senderId,
-        message_text: messageText,
-        message_type: 'sent',
-        timestamp: new Date().toISOString(),
-        raw_data: {
-          ai_generated: false,
-          source: 'webhook_simple_response'
-        }
-      }
-
-      await supabase.from('instagram_messages').insert(sentMessageData)
-    }
-  } catch (error) {
-    console.error('❌ ERROR EN sendSimpleResponse:', error)
   }
 }
 
