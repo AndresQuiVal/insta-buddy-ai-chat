@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -131,26 +130,53 @@ const InstagramMessages: React.FC = () => {
 
   const loadIdealTraits = async () => {
     try {
+      console.log("🔍 Cargando características ideales desde Supabase...");
+      
       const { data: traits, error } = await supabase
         .from('ideal_client_traits')
         .select('*')
-        .eq('enabled', true)
         .order('position');
 
       if (error) {
-        console.error('Error loading ideal traits:', error);
+        console.error('❌ Error loading ideal traits:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las características del cliente ideal",
+          variant: "destructive"
+        });
         return;
       }
 
-      const traitsData = traits?.map(t => ({
+      console.log("📋 Datos de características obtenidos:", traits);
+
+      if (!traits || traits.length === 0) {
+        console.log("⚠️ No se encontraron características en la base de datos");
+        setIdealTraits([]);
+        return;
+      }
+
+      const traitsData = traits.map(t => ({
         trait: t.trait,
         enabled: t.enabled
-      })) || [];
+      }));
+
+      console.log("✅ Características procesadas:", traitsData);
+      console.log(`📊 Total características: ${traitsData.length}, Habilitadas: ${traitsData.filter(t => t.enabled).length}`);
 
       setIdealTraits(traitsData);
-      console.log("📋 Características ideales cargadas:", traitsData);
+      
+      toast({
+        title: "✅ Características cargadas",
+        description: `${traitsData.filter(t => t.enabled).length} características habilitadas`,
+      });
+
     } catch (error) {
-      console.error('Error in loadIdealTraits:', error);
+      console.error('💥 Error in loadIdealTraits:', error);
+      toast({
+        title: "Error",
+        description: "Error al cargar las características del cliente ideal",
+        variant: "destructive"
+      });
     }
   };
 
@@ -283,15 +309,26 @@ const InstagramMessages: React.FC = () => {
       return;
     }
 
+    const enabledTraits = idealTraits.filter(t => t.enabled);
+    
+    if (enabledTraits.length === 0) {
+      toast({
+        title: "⚠️ Sin características habilitadas",
+        description: "Habilita al menos una característica en Configuración > Cliente Ideal",
+        variant: "destructive"
+      });
+      return;
+    }
+
     console.log("🔍 INICIANDO ANÁLISIS COMPLETO DE TODAS LAS CONVERSACIONES");
-    console.log(`🎯 Características a evaluar: ${idealTraits.length}`);
-    idealTraits.forEach((trait, idx) => {
+    console.log(`🎯 Características habilitadas: ${enabledTraits.length}/${idealTraits.length}`);
+    enabledTraits.forEach((trait, idx) => {
       console.log(`   ${idx + 1}. ${trait.trait}`);
     });
 
     setIsAnalyzingAll(true);
     addLog('=== INICIANDO ANÁLISIS COMPLETO ===', 'info');
-    addLog(`Características a evaluar: ${idealTraits.length}`, 'info');
+    addLog(`Características habilitadas: ${enabledTraits.length}/${idealTraits.length}`, 'info');
     
     try {
       let totalAnalyzed = 0;
@@ -309,7 +346,7 @@ const InstagramMessages: React.FC = () => {
         if (userMessages.trim()) {
           console.log(`📝 Analizando ${conversation.sender_id}: "${userMessages.substring(0, 100)}..."`);
           
-          const traits = idealTraits.map((t, idx) => ({
+          const traits = enabledTraits.map((t, idx) => ({
             trait: t.trait,
             enabled: t.enabled,
             position: idx
@@ -327,7 +364,7 @@ const InstagramMessages: React.FC = () => {
             
             if (result.matchPoints > 0) {
               totalWithMatches++;
-              addLog(`✅ Usuario ${conversation.sender_id.slice(-4)}: ${result.matchPoints}/${idealTraits.length} características`, 'success');
+              addLog(`✅ Usuario ${conversation.sender_id.slice(-4)}: ${result.matchPoints}/${enabledTraits.length} características`, 'success');
               
               // Guardar en Supabase
               await saveAnalysisToSupabase(conversation.sender_id, result, conversation.messages.length);
@@ -668,6 +705,19 @@ const InstagramMessages: React.FC = () => {
               Configura características del cliente ideal primero
             </p>
           )}
+          {idealTraits.length > 0 && idealTraits.filter(t => t.enabled).length === 0 && (
+            <p className="text-xs text-orange-500 mt-1 text-center">
+              Habilita al menos una característica en Configuración
+            </p>
+          )}
+          <div className="mt-2 text-center">
+            <button 
+              onClick={loadIdealTraits}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              🔄 Recargar características
+            </button>
+          </div>
         </div>
 
         {/* Configuración */}
@@ -969,3 +1019,5 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
+
+}
