@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,17 +54,20 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     setIsLoading(true);
 
     try {
-      // Obtener el usuario autenticado
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      // Usar la autenticación de Instagram en lugar de Supabase auth
+      const instagramUser = localStorage.getItem('hower-instagram-user');
       
-      if (authError || !user) {
+      if (!instagramUser) {
         toast({
           title: "Error",
-          description: "Debes estar autenticado para guardar respuestas automáticas",
+          description: "Debes estar conectado con Instagram para guardar respuestas automáticas",
           variant: "destructive"
         });
         return;
       }
+
+      const userData = JSON.parse(instagramUser);
+      const userId = userData.facebook?.id || userData.instagram?.id || 'instagram_user';
 
       if (message) {
         // Editar mensaje existente
@@ -93,7 +95,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
             name: name.trim(),
             message_text: messageText.trim(),
             is_active: isActive,
-            user_id: user.id // Usar el ID del usuario autenticado
+            user_id: userId // Usar el ID del usuario de Instagram
           });
 
         if (error) throw error;
