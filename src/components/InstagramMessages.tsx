@@ -142,7 +142,36 @@ const InstagramMessages: React.FC = () => {
 
   const loadIdealTraits = async () => {
     try {
-      console.log("🔍 Cargando características ideales desde Supabase...");
+      console.log("🔍 Cargando características ideales desde localStorage...");
+      
+      // Intentar cargar desde localStorage primero
+      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+      if (savedTraits) {
+        const parsedTraits = JSON.parse(savedTraits);
+        const traitsData = parsedTraits.map((t: any) => ({
+          trait: t.trait,
+          enabled: t.enabled
+        }));
+        
+        console.log("✅ Características cargadas desde localStorage:", traitsData);
+        setIdealTraits(traitsData);
+        
+        const enabledCount = traitsData.filter((t: any) => t.enabled).length;
+        
+        if (enabledCount === 0) {
+          toast({
+            title: "⚠️ Sin características habilitadas",
+            description: "Ve a Configuración > Cliente Ideal y habilita al menos una característica",
+            variant: "destructive"
+          });
+        } else {
+          console.log(`✅ ${enabledCount} de ${traitsData.length} características habilitadas correctamente`);
+        }
+        return;
+      }
+
+      // Si no hay datos en localStorage, intentar cargar desde Supabase como fallback
+      console.log("🔍 No se encontraron características en localStorage, intentando Supabase...");
       
       const { data: traits, error } = await supabase
         .from('ideal_client_traits')
@@ -150,23 +179,11 @@ const InstagramMessages: React.FC = () => {
         .order('position');
 
       if (error) {
-        console.error('❌ Error loading ideal traits:', error);
-        // Si hay error en Supabase, intentar cargar desde localStorage
-        const savedTraits = localStorage.getItem('hower-ideal-client-traits');
-        if (savedTraits) {
-          const parsedTraits = JSON.parse(savedTraits);
-          const traitsData = parsedTraits.map((t: any) => ({
-            trait: t.trait,
-            enabled: t.enabled
-          }));
-          setIdealTraits(traitsData);
-          console.log("✅ Características cargadas desde localStorage:", traitsData);
-          return;
-        }
-        
+        console.error('❌ Error loading ideal traits from Supabase:', error);
+        setIdealTraits([]);
         toast({
-          title: "Error al cargar características",
-          description: "Verifica tu conexión y recarga las características",
+          title: "⚠️ Sin características configuradas",
+          description: "Ve a Configuración > Cliente Ideal para configurar las características",
           variant: "destructive"
         });
         return;
@@ -175,7 +192,7 @@ const InstagramMessages: React.FC = () => {
       console.log("📋 Datos de características obtenidos desde Supabase:", traits);
 
       if (!traits || traits.length === 0) {
-        console.log("⚠️ No se encontraron características en Supabase");
+        console.log("⚠️ No se encontraron características en Supabase ni localStorage");
         setIdealTraits([]);
         toast({
           title: "⚠️ Sin características configuradas",
@@ -191,8 +208,6 @@ const InstagramMessages: React.FC = () => {
       }));
 
       console.log("✅ Características procesadas desde Supabase:", traitsData);
-      console.log(`📊 Total características: ${traitsData.length}, Habilitadas: ${traitsData.filter(t => t.enabled).length}`);
-
       setIdealTraits(traitsData);
       
       const enabledCount = traitsData.filter(t => t.enabled).length;
@@ -209,6 +224,25 @@ const InstagramMessages: React.FC = () => {
 
     } catch (error) {
       console.error('💥 Error in loadIdealTraits:', error);
+      
+      // Último recurso: intentar cargar desde localStorage incluso si hay error
+      try {
+        const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+        if (savedTraits) {
+          const parsedTraits = JSON.parse(savedTraits);
+          const traitsData = parsedTraits.map((t: any) => ({
+            trait: t.trait,
+            enabled: t.enabled
+          }));
+          
+          console.log("✅ Características cargadas desde localStorage (fallback):", traitsData);
+          setIdealTraits(traitsData);
+          return;
+        }
+      } catch (localStorageError) {
+        console.error('❌ Error al leer localStorage:', localStorageError);
+      }
+      
       toast({
         title: "Error",
         description: "Error al cargar las características del cliente ideal",
@@ -744,7 +778,7 @@ const InstagramMessages: React.FC = () => {
           )}
           {idealTraits.length > 0 && idealTraits.filter(t => t.enabled).length === 0 && (
             <p className="text-xs text-orange-500 mt-1 text-center">
-              Habilita al menos una característica en Configuración
+              Habilita al menos una característica en Configuración > Cliente Ideal
             </p>
           )}
           <div className="mt-2 text-center">
@@ -1057,3 +1091,5 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
+
+}
