@@ -126,6 +126,18 @@ const InstagramMessages: React.FC = () => {
   useEffect(() => {
     // Cargar características ideales desde Supabase
     loadIdealTraits();
+    
+    // Escuchar cambios en las características
+    const handleTraitsUpdate = () => {
+      console.log("🔄 Recargando características por evento...");
+      loadIdealTraits();
+    };
+    
+    window.addEventListener('traits-updated', handleTraitsUpdate);
+    
+    return () => {
+      window.removeEventListener('traits-updated', handleTraitsUpdate);
+    };
   }, []);
 
   const loadIdealTraits = async () => {
@@ -139,18 +151,31 @@ const InstagramMessages: React.FC = () => {
 
       if (error) {
         console.error('❌ Error loading ideal traits:', error);
+        // Si hay error en Supabase, intentar cargar desde localStorage
+        const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+        if (savedTraits) {
+          const parsedTraits = JSON.parse(savedTraits);
+          const traitsData = parsedTraits.map((t: any) => ({
+            trait: t.trait,
+            enabled: t.enabled
+          }));
+          setIdealTraits(traitsData);
+          console.log("✅ Características cargadas desde localStorage:", traitsData);
+          return;
+        }
+        
         toast({
-          title: "Error",
-          description: "No se pudieron cargar las características del cliente ideal",
+          title: "Error al cargar características",
+          description: "Verifica tu conexión y recarga las características",
           variant: "destructive"
         });
         return;
       }
 
-      console.log("📋 Datos de características obtenidos:", traits);
+      console.log("📋 Datos de características obtenidos desde Supabase:", traits);
 
       if (!traits || traits.length === 0) {
-        console.log("⚠️ No se encontraron características en la base de datos");
+        console.log("⚠️ No se encontraron características en Supabase");
         setIdealTraits([]);
         toast({
           title: "⚠️ Sin características configuradas",
@@ -165,7 +190,7 @@ const InstagramMessages: React.FC = () => {
         enabled: t.enabled
       }));
 
-      console.log("✅ Características procesadas:", traitsData);
+      console.log("✅ Características procesadas desde Supabase:", traitsData);
       console.log(`📊 Total características: ${traitsData.length}, Habilitadas: ${traitsData.filter(t => t.enabled).length}`);
 
       setIdealTraits(traitsData);
@@ -179,10 +204,7 @@ const InstagramMessages: React.FC = () => {
           variant: "destructive"
         });
       } else {
-        toast({
-          title: "✅ Características cargadas",
-          description: `${enabledCount} de ${traitsData.length} características habilitadas`,
-        });
+        console.log(`✅ ${enabledCount} de ${traitsData.length} características habilitadas correctamente`);
       }
 
     } catch (error) {
@@ -1035,3 +1057,5 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
+
+}
