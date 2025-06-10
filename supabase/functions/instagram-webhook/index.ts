@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -386,27 +385,28 @@ async function generateStrategicAIResponse(
 
     const strategicQuestion = nextTrait ? createNaturalQuestion(nextTrait.trait) : null
 
-    // 🎭 OBTENER PERSONALIDAD GUARDADA DESDE SUPABASE
+    // 🎭 OBTENER PERSONALIDAD GUARDADA DESDE SUPABASE CON MANEJO MEJORADO
     console.log('🔍 Cargando personalidad desde Supabase...')
     let savedPersonality = null
     
     try {
+      // Usar maybeSingle() para evitar errores por múltiples registros
       const { data: settings, error } = await supabase
         .from('user_settings')
         .select('ia_persona')
-        .limit(1)
+        .maybeSingle()
 
       console.log('📊 Respuesta de user_settings:', { 
         data: settings, 
         error: error,
-        hasData: settings && settings.length > 0,
-        hasPersonality: settings && settings.length > 0 && settings[0].ia_persona
+        hasData: !!settings,
+        hasPersonality: settings?.ia_persona
       })
 
       if (error) {
         console.error('❌ Error consultando user_settings:', error)
-      } else if (settings && settings.length > 0 && settings[0].ia_persona) {
-        savedPersonality = settings[0].ia_persona
+      } else if (settings?.ia_persona) {
+        savedPersonality = settings.ia_persona
         console.log('✅ Personalidad encontrada en Supabase:', savedPersonality.substring(0, 100) + '...')
       } else {
         console.log('⚠️ No hay personalidad guardada en Supabase')
@@ -511,9 +511,9 @@ async function sendResponse(supabase: any, senderId: string, messageText: string
     const { data: settings } = await supabase
       .from('user_settings')
       .select('ai_delay')
-      .limit(1)
+      .maybeSingle()
 
-    const delay = (settings && settings.length > 0 ? settings[0].ai_delay : 3) * 1000
+    const delay = (settings?.ai_delay || 3) * 1000
     console.log(`⏰ ESPERANDO ${delay}ms...`)
     
     await new Promise(resolve => setTimeout(resolve, delay))

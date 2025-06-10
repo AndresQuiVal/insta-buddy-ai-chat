@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Brain, Save, AlertCircle, RefreshCw } from 'lucide-react';
@@ -18,11 +17,11 @@ const PersonalityEditor: React.FC = () => {
     try {
       console.log('🔍 Cargando personalidad desde Supabase...');
       
-      // Intentar cargar desde Supabase primero
+      // Usar maybeSingle() para evitar errores si no hay registros
       const { data, error } = await supabase
         .from('user_settings')
         .select('ia_persona')
-        .limit(1);
+        .maybeSingle();
 
       console.log('📊 Respuesta de Supabase:', { data, error });
 
@@ -37,11 +36,11 @@ const PersonalityEditor: React.FC = () => {
         return;
       }
 
-      if (data && data.length > 0 && data[0].ia_persona) {
+      if (data && data.ia_persona) {
         console.log('✅ Personalidad encontrada en Supabase');
-        setSavedPersonality(data[0].ia_persona);
+        setSavedPersonality(data.ia_persona);
         // También guardar en localStorage para compatibilidad
-        localStorage.setItem('hower-system-prompt', data[0].ia_persona);
+        localStorage.setItem('hower-system-prompt', data.ia_persona);
       } else {
         console.log('⚠️ No hay personalidad en Supabase, buscando en localStorage...');
         // Fallback a localStorage
@@ -117,44 +116,29 @@ const PersonalityEditor: React.FC = () => {
       const newPersonality = data.choices[0].message.content;
       console.log('✅ Personalidad generada:', newPersonality.substring(0, 100) + '...');
       
-      // Guardar en Supabase con upsert más robusto
+      // Guardar en Supabase con upsert más simple
       console.log('💾 Guardando en Supabase...');
       
-      // Primero verificar si existe un registro
-      const { data: existingData } = await supabase
+      const { data: saveResult, error: saveError } = await supabase
         .from('user_settings')
-        .select('id')
-        .limit(1);
+        .upsert({ 
+          ia_persona: newPersonality,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        })
+        .select()
+        .maybeSingle();
 
-      let saveResult;
-      if (existingData && existingData.length > 0) {
-        // Actualizar registro existente
-        saveResult = await supabase
-          .from('user_settings')
-          .update({ 
-            ia_persona: newPersonality,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingData[0].id);
-      } else {
-        // Crear nuevo registro
-        saveResult = await supabase
-          .from('user_settings')
-          .insert({ 
-            ia_persona: newPersonality,
-            updated_at: new Date().toISOString()
-          });
-      }
+      console.log('📊 Resultado guardado:', { saveResult, saveError });
 
-      console.log('📊 Resultado guardado:', saveResult);
-
-      if (saveResult.error) {
-        console.error('❌ Error guardando en Supabase:', saveResult.error);
+      if (saveError) {
+        console.error('❌ Error guardando en Supabase:', saveError);
         // Fallback a localStorage si falla Supabase
         localStorage.setItem('hower-system-prompt', newPersonality);
         toast({
           title: "⚠️ Guardado en local",
-          description: "Se guardó localmente. Error en Supabase: " + saveResult.error.message,
+          description: "Se guardó localmente. Error en Supabase: " + saveError.message,
           variant: "destructive"
         });
       } else {
@@ -186,20 +170,18 @@ const PersonalityEditor: React.FC = () => {
     try {
       console.log('🔄 Reiniciando personalidad...');
       
-      // Limpiar de Supabase
-      const { data: existingData } = await supabase
+      // Limpiar de Supabase usando upsert
+      const { error } = await supabase
         .from('user_settings')
-        .select('id')
-        .limit(1);
+        .upsert({ 
+          ia_persona: null,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        });
 
-      if (existingData && existingData.length > 0) {
-        await supabase
-          .from('user_settings')
-          .update({ 
-            ia_persona: null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingData[0].id);
+      if (error) {
+        console.error('❌ Error limpiando Supabase:', error);
       }
 
       // Limpiar de localStorage
