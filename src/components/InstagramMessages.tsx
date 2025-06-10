@@ -152,6 +152,11 @@ const InstagramMessages: React.FC = () => {
       if (!traits || traits.length === 0) {
         console.log("⚠️ No se encontraron características en la base de datos");
         setIdealTraits([]);
+        toast({
+          title: "⚠️ Sin características configuradas",
+          description: "Ve a Configuración > Cliente Ideal para configurar las características",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -165,10 +170,20 @@ const InstagramMessages: React.FC = () => {
 
       setIdealTraits(traitsData);
       
-      toast({
-        title: "✅ Características cargadas",
-        description: `${traitsData.filter(t => t.enabled).length} características habilitadas`,
-      });
+      const enabledCount = traitsData.filter(t => t.enabled).length;
+      
+      if (enabledCount === 0) {
+        toast({
+          title: "⚠️ Sin características habilitadas",
+          description: "Ve a Configuración > Cliente Ideal y habilita al menos una característica",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "✅ Características cargadas",
+          description: `${enabledCount} de ${traitsData.length} características habilitadas`,
+        });
+      }
 
     } catch (error) {
       console.error('💥 Error in loadIdealTraits:', error);
@@ -713,7 +728,8 @@ const InstagramMessages: React.FC = () => {
           <div className="mt-2 text-center">
             <button 
               onClick={loadIdealTraits}
-              className="text-xs text-blue-600 hover:underline"
+              disabled={isAnalyzingAll}
+              className="text-xs text-blue-600 hover:underline disabled:opacity-50"
             >
               🔄 Recargar características
             </button>
@@ -1019,5 +1035,3 @@ const InstagramMessages: React.FC = () => {
 };
 
 export default InstagramMessages;
-
-}
