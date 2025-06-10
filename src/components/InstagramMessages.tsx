@@ -11,27 +11,6 @@ import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
 import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { loadIdealTraits, IdealTrait } from '@/services/traitService';
-import { analyzeAllConversations } from '@/services/aiTraitAnalysisService';
-import { Trait } from '@/services/prospectAnalysisService';
-
-interface RawMessage {
-  id: string;
-  instagram_message_id: string;
-  sender_id: string;
-  recipient_id: string;
-  message_text: string;
-  message_type: string;
-  timestamp: string;
-  raw_data: any;
-  is_read: boolean;
-  conversation_stage?: string;
-  created_at?: string;
-  updated_at?: string;
-  is_invitation?: boolean;
-  is_presentation?: boolean;
-  is_inscription?: boolean;
-}
 
 interface InstagramMessage {
   id: string;
@@ -41,8 +20,9 @@ interface InstagramMessage {
   message_text: string;
   message_type: 'received' | 'sent';
   timestamp: string;
+  created_at: string;
   raw_data: any;
-  is_read: boolean;
+  is_read?: boolean;
 }
 
 interface Conversation {
@@ -91,12 +71,6 @@ interface LogMessage {
   timestamp: Date;
   message: string;
   type: 'info' | 'error' | 'success';
-}
-
-interface Message {
-  text: string;
-  sender: 'user' | 'ai';
-  timestamp?: string;
 }
 
 const InstagramMessages: React.FC = () => {
@@ -285,34 +259,14 @@ const InstagramMessages: React.FC = () => {
     console.log("🔍 Iniciando análisis completo con IA...");
     
     try {
-      // Obtener características ideales configuradas
-      const idealTraits = loadIdealTraits();
+      await analyzeAll();
       
-      if (!idealTraits || idealTraits.filter(t => t.enabled).length === 0) {
-        toast({
-          title: "⚠️ No hay características configuradas",
-          description: "Configura las características del cliente ideal antes de analizar",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Mostrar toast de inicio
       toast({
-        title: "🤖 Iniciando análisis...",
-        description: "Analizando todas las conversaciones con IA"
+        title: "🤖 ¡Análisis completado!",
+        description: "Todas las conversaciones han sido analizadas con IA",
       });
       
-      // Ejecutar análisis completo
-      await analyzeAllConversations(idealTraits);
-      
-      // Notificar éxito
-      toast({
-        title: "✅ ¡Análisis completado!",
-        description: "Todas las conversaciones han sido analizadas y ordenadas"
-      });
-      
-      // Recargar conversaciones para mostrar resultados actualizados
+      // Recargar estadísticas después del análisis
       await loadConversations();
       
     } catch (error) {
@@ -332,78 +286,105 @@ const InstagramMessages: React.FC = () => {
     try {
       setLoading(true);
       
-      const { data: rawMessages, error } = await supabase
+      const { data: messages, error } = await supabase
         .from('instagram_messages')
         .select('*')
-        .order('timestamp', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching messages:', error);
+        console.error('Error loading messages:', error);
         return;
       }
 
-      if (!rawMessages) {
-        setConversations([]);
-        return;
+      // Obtener configuraciones de usuario
+      const { data: userData, error: userError } = await supabase
+        .from('user_settings')
+        .select('*')
+        .single();
+
+      if (!userError && userData) {
+        setPageId(userData.instagram_page_id || null);
+        setIaPersona(userData.ia_persona || '');
       }
 
-      // Group messages by conversation
+      // Agrupar mensajes por conversación
       const conversationMap = new Map<string, Conversation>();
-      
-      rawMessages.forEach((rawMessage: RawMessage) => {
-        // Convert raw message to InstagramMessage type
-        const message: InstagramMessage = {
-          id: rawMessage.id,
-          instagram_message_id: rawMessage.instagram_message_id,
-          sender_id: rawMessage.sender_id,
-          recipient_id: rawMessage.recipient_id,
-          message_text: rawMessage.message_text,
-          message_type: rawMessage.message_type === 'sent' ? 'sent' : 'received',
-          timestamp: rawMessage.timestamp,
-          raw_data: rawMessage.raw_data,
-          is_read: rawMessage.is_read || false
-        };
-        
+
+      messages?.forEach((message) => {
         const conversationId = message.sender_id;
         
         if (!conversationMap.has(conversationId)) {
           conversationMap.set(conversationId, {
             sender_id: conversationId,
             messages: [],
-            last_message: message,
-            unread_count: 0
+            last_message: {
+              id: message.id,
+              instagram_message_id: message.instagram_message_id,
+              sender_id: message.sender_id,
+              recipient_id: message.recipient_id,
+              message_text: message.message_text,
+              message_type: message.message_type as 'received' | 'sent',
+              timestamp: message.timestamp,
+              created_at: message.created_at,
+              raw_data: message.raw_data
+            },
+            unread_count: 0,
+            matchPoints: 0,
+            metTraits: [],
+            metTraitIndices: []
           });
         }
-        
+
         const conversation = conversationMap.get(conversationId)!;
-        conversation.messages.push(message);
+        const messageObj: InstagramMessage = {
+          id: message.id,
+          instagram_message_id: message.instagram_message_id,
+          sender_id: message.sender_id,
+          recipient_id: message.recipient_id,
+          message_text: message.message_text,
+          message_type: message.message_type as 'received' | 'sent',
+          timestamp: message.timestamp,
+          created_at: message.created_at,
+          raw_data: message.raw_data,
+          is_read: message.is_read
+        };
         
-        // Update last message if this one is more recent
-        if (new Date(message.timestamp) > new Date(conversation.last_message.timestamp)) {
-          conversation.last_message = message;
+        conversation.messages.push(messageObj);
+        
+        // Actualizar último mensaje (el más reciente)
+        if (new Date(message.created_at) > new Date(conversation.last_message.created_at)) {
+          conversation.last_message = messageObj;
         }
-        
-        // Count unread messages
+
+        // Contar mensajes no leídos
         if (message.message_type === 'received' && !message.is_read) {
           conversation.unread_count++;
         }
       });
-      
-      // Convert map to array and sort by last message time
+
+      // Cargar análisis guardados
+      const { data: analysisData, error: analysisError } = await supabase
+        .from('prospect_analysis')
+        .select('*');
+
+      if (!analysisError && analysisData) {
+        analysisData.forEach((analysis: any) => {
+          const conversation = conversationMap.get(analysis.sender_id);
+          if (conversation) {
+            conversation.matchPoints = analysis.match_points || 0;
+            conversation.metTraits = analysis.met_traits || [];
+            conversation.metTraitIndices = analysis.met_trait_indices || [];
+          }
+        });
+      }
+
       const conversationsArray = Array.from(conversationMap.values())
-        .sort((a, b) => new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime());
-      
+        .sort((a, b) => new Date(b.last_message.created_at).getTime() - new Date(a.last_message.created_at).getTime());
+
       setConversations(conversationsArray);
       
-      // Convert all messages for the chat view
-      const convertedMessages = rawMessages.map((msg: RawMessage) => ({
-        ...msg,
-        message_type: msg.message_type === 'sent' ? 'sent' : 'received'
-      } as InstagramMessage));
-      setMessages(convertedMessages);
-      
     } catch (error) {
-      console.error('Error in loadConversations:', error);
+      console.error('Error loading conversations:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar las conversaciones",
