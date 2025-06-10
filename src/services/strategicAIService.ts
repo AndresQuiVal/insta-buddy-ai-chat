@@ -1,5 +1,5 @@
-
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Trait {
   trait: string;
@@ -30,6 +30,39 @@ const getOpenAIKey = (): string => {
     throw new Error('No hay API key de OpenAI configurada');
   }
   return key;
+};
+
+// Función para obtener la personalidad guardada desde Supabase con fallback a localStorage
+const getSavedPersonality = async (): Promise<string | null> => {
+  try {
+    console.log('🎭 Cargando personalidad desde Supabase...');
+    const { data } = await supabase
+      .from('user_settings')
+      .select('ia_persona')
+      .limit(1);
+
+    if (data && data.length > 0 && data[0].ia_persona) {
+      console.log('✅ Personalidad encontrada en Supabase');
+      return data[0].ia_persona;
+    } else {
+      console.log('⚠️ No hay personalidad en Supabase, intentando localStorage...');
+      const localPersonality = localStorage.getItem('hower-system-prompt');
+      if (localPersonality) {
+        console.log('✅ Personalidad encontrada en localStorage');
+        return localPersonality;
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error cargando personalidad desde Supabase:', error);
+    const localPersonality = localStorage.getItem('hower-system-prompt');
+    if (localPersonality) {
+      console.log('✅ Fallback: personalidad encontrada en localStorage');
+      return localPersonality;
+    }
+  }
+  
+  console.log('⚠️ No se encontró personalidad personalizada');
+  return null;
 };
 
 /**
@@ -118,27 +151,42 @@ const createNaturalStrategicQuestion = (trait: string, userMessage: string): str
 };
 
 /**
- * Crea un prompt estratégico NATURAL y EQUILIBRADO
+ * Crea un prompt estratégico NATURAL y EQUILIBRADO con personalidad personalizada
  */
-export const createStrategicPrompt = (
+export const createStrategicPrompt = async (
   idealTraits: Trait[],
   currentAnalysis: AnalysisResult,
   conversationHistory: ChatMessage[],
   userMessage: string
-): string => {
+): Promise<string> => {
   const enabledTraits = idealTraits.filter(t => t.enabled);
   const pendingTraits = enabledTraits.filter(trait => !currentAnalysis.metTraits.includes(trait.trait));
   const nextTrait = pendingTraits[0]; // Próxima característica a descubrir
 
-  console.log("🎯 CREANDO PROMPT ESTRATÉGICO NATURAL:");
+  console.log("🎯 CREANDO PROMPT ESTRATÉGICO NATURAL CON PERSONALIDAD:");
   console.log(`📊 Progreso: ${currentAnalysis.matchPoints}/${enabledTraits.length} características`);
   console.log(`✅ Cumplidas: ${currentAnalysis.metTraits.join(', ')}`);
   console.log(`🎯 Próximo objetivo: ${nextTrait?.trait || 'CONSEGUIR CONTACTO'}`);
 
+  // Obtener personalidad guardada
+  const savedPersonality = await getSavedPersonality();
+  console.log(`🎭 Personalidad personalizada: ${savedPersonality ? 'SÍ' : 'NO'}`);
+
   // Generar pregunta estratégica natural
   const strategicQuestion = nextTrait ? createNaturalStrategicQuestion(nextTrait.trait, userMessage) : null;
 
-  return `Eres María, una asesora de viajes experta y vendedora NATURAL pero ESTRATÉGICA. Tu objetivo es tener conversaciones GENUINAS que conecten con las personas, pero con un propósito claro: identificar sutilmente si son clientes ideales.
+  // Base del prompt con o sin personalidad personalizada
+  const personalitySection = savedPersonality 
+    ? `🎭 TU PERSONALIDAD Y ESTILO DE COMUNICACIÓN:
+${savedPersonality}
+
+IMPORTANTE: Debes responder usando EXACTAMENTE el estilo de comunicación descrito arriba. Usa las mismas expresiones, tono y manera de hablar que se describe en tu personalidad.`
+    : `🎭 TU PERSONALIDAD:
+Eres María, una asesora de viajes experta y vendedora NATURAL pero ESTRATÉGICA. Eres cálida, empática y genuinamente interesada en ayudar a las personas.`;
+
+  return `${personalitySection}
+
+Tu objetivo es tener conversaciones GENUINAS que conecten con las personas, pero con un propósito claro: identificar sutilmente si son clientes ideales.
 
 🎯 CARACTERÍSTICAS DEL CLIENTE IDEAL:
 ${enabledTraits.map((trait, i) => `${i + 1}. ${trait.trait}`).join('\n')}
@@ -189,6 +237,7 @@ ${currentAnalysis.matchPoints === 0 ? `
 6. **NUNCA uses lenguaje de ventas** - Evita "características", "requisitos", "calificar"
 7. **MANTÉN el tono conversacional** - Como si fueras una amiga genuinamente interesada
 8. **Máximo 3-4 oraciones** - Sé concisa pero cálida
+9. **USA TU PERSONALIDAD** - Habla exactamente como se describe en tu estilo de comunicación
 
 📝 ESTRUCTURA IDEAL:
 1. Respuesta empática a su mensaje (1 oración)
@@ -198,7 +247,7 @@ ${currentAnalysis.matchPoints === 0 ? `
 EJEMPLO DE RESPUESTA EQUILIBRADA:
 "Ay, entiendo perfectamente esa sensación de [retomar tema actual]. Me pasa seguido que la gente me cuenta situaciones similares. ${strategicQuestion} Es que me gusta entender bien el contexto para poder sugerir las mejores opciones."
 
-RESPONDE COMO MARÍA de forma natural, cálida pero con propósito estratégico claro.`;
+RESPONDE usando tu personalidad específica de forma natural, cálida pero con propósito estratégico claro.`;
 };
 
 /**
@@ -210,7 +259,7 @@ export const generateStrategicResponse = async (
   currentAnalysis: AnalysisResult = { matchPoints: 0, metTraits: [], metTraitIndices: [] }
 ): Promise<string> => {
   try {
-    console.log("🤖 GENERANDO RESPUESTA ESTRATÉGICA NATURAL:");
+    console.log("🤖 GENERANDO RESPUESTA ESTRATÉGICA CON PERSONALIDAD:");
     console.log(`💬 Mensaje usuario: "${userMessage}"`);
     console.log(`📊 Análisis actual:`, currentAnalysis);
 
@@ -223,8 +272,8 @@ export const generateStrategicResponse = async (
       return "¡Hola! Gracias por contactarme. ¿En qué puedo ayudarte hoy?";
     }
 
-    // Crear prompt estratégico natural
-    const systemPrompt = createStrategicPrompt(idealTraits, currentAnalysis, conversationHistory, userMessage);
+    // Crear prompt estratégico natural CON personalidad
+    const systemPrompt = await createStrategicPrompt(idealTraits, currentAnalysis, conversationHistory, userMessage);
 
     const messages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
@@ -232,7 +281,7 @@ export const generateStrategicResponse = async (
       { role: 'user', content: userMessage }
     ];
 
-    console.log("📤 Enviando a OpenAI con prompt estratégico natural...");
+    console.log("📤 Enviando a OpenAI con prompt estratégico natural + personalidad...");
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -256,7 +305,7 @@ export const generateStrategicResponse = async (
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
-    console.log("✅ Respuesta estratégica natural generada:", aiResponse);
+    console.log("✅ Respuesta estratégica con personalidad generada:", aiResponse);
 
     // Verificar calidad de la respuesta
     const responseQuality = checkResponseQuality(aiResponse, userMessage);

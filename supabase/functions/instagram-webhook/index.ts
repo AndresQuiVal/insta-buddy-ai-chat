@@ -565,5 +565,3 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     return false
   }
 }
-
-}
