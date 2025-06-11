@@ -17,34 +17,44 @@ serve(async (req) => {
   try {
     if (req.method === 'POST') {
       const body = await req.json()
-      console.log('📨 Solicitud POST:', body)
+      console.log('📨 Solicitud POST recibida:', JSON.stringify(body, null, 2))
       
-      // Si viene con autoresponders, los almacenamos
+      // Si viene con action store, almacenar autoresponders
       if (body.action === 'store' && body.autoresponders) {
         storedAutoresponders = body.autoresponders
-        console.log('💾 Autoresponders almacenados:', storedAutoresponders.length)
+        console.log('💾 Autoresponders almacenados exitosamente:', storedAutoresponders.length)
         
         return new Response(JSON.stringify({ 
           success: true, 
           message: 'Autoresponders almacenados correctamente',
-          count: storedAutoresponders.length 
+          count: storedAutoresponders.length,
+          stored: storedAutoresponders
         }), {
           status: 200,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         })
       }
       
-      // Si es una consulta desde el webhook, devolvemos los almacenados
-      console.log('📋 Consultando autoresponders almacenados:', storedAutoresponders.length)
+      // Si no tiene action store, es una consulta desde el webhook
+      console.log('🔍 Consultando autoresponders almacenados')
+      console.log('📋 Total almacenados:', storedAutoresponders.length)
       
       // Filtrar solo los activos
-      const activeAutoresponders = storedAutoresponders.filter((ar: any) => ar.is_active)
+      const activeAutoresponders = storedAutoresponders.filter((ar: any) => ar.is_active === true)
       
-      console.log('✅ Autoresponders activos:', activeAutoresponders.length)
+      console.log('✅ Autoresponders activos encontrados:', activeAutoresponders.length)
+      console.log('📊 Detalle de activos:', activeAutoresponders.map(ar => ({
+        id: ar.id,
+        name: ar.name,
+        is_active: ar.is_active,
+        message_text: ar.message_text?.substring(0, 50) + '...'
+      })))
       
       return new Response(JSON.stringify({ 
         success: true, 
-        autoresponders: activeAutoresponders 
+        autoresponders: activeAutoresponders,
+        total_stored: storedAutoresponders.length,
+        total_active: activeAutoresponders.length
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -53,11 +63,15 @@ serve(async (req) => {
 
     if (req.method === 'GET') {
       // GET request para consultar autoresponders
-      const activeAutoresponders = storedAutoresponders.filter((ar: any) => ar.is_active)
+      const activeAutoresponders = storedAutoresponders.filter((ar: any) => ar.is_active === true)
+      
+      console.log('📋 GET - Autoresponders activos:', activeAutoresponders.length)
       
       return new Response(JSON.stringify({ 
         success: true, 
-        autoresponders: activeAutoresponders 
+        autoresponders: activeAutoresponders,
+        total_stored: storedAutoresponders.length,
+        total_active: activeAutoresponders.length
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -72,7 +86,8 @@ serve(async (req) => {
     console.error('❌ Error en get-autoresponders:', error)
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: error.message,
+      stored_count: storedAutoresponders.length
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }

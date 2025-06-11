@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -125,7 +124,7 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  console.log('🚀 PROCESANDO MENSAJE - AUTORESPONDER DESDE SERVIDOR')
+  console.log('🚀 === PROCESANDO MENSAJE PARA AUTORESPONDER ===')
   console.log('👤 SENDER ID:', event.sender.id)
   console.log('💬 MENSAJE:', event.message?.text)
 
@@ -187,13 +186,12 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: OBTENER AUTORESPONDER DESDE SERVIDOR
-    console.log('🔍 ===== OBTENIENDO AUTORESPONDER DESDE SERVIDOR =====')
+    // PASO 3: OBTENER AUTORESPONDERS DESDE NUESTRO ENDPOINT
+    console.log('🔍 === OBTENIENDO AUTORESPONDERS ===')
     
     let autoresponders = [];
     try {
-      // Llamar al endpoint para obtener autoresponders almacenados
-      console.log('📡 Consultando autoresponders en servidor')
+      console.log('📡 Consultando autoresponders desde endpoint...')
       
       const { data: autoresponderData, error: autoresponderError } = await supabase.functions.invoke('get-autoresponders', {
         body: {}
@@ -204,39 +202,46 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
         return;
       }
       
-      if (autoresponderData?.success) {
-        autoresponders = autoresponderData.autoresponders || [];
-        console.log('✅ Autoresponders obtenidos del servidor:', autoresponders.length);
+      console.log('📊 Respuesta del endpoint:', JSON.stringify(autoresponderData, null, 2));
+      
+      if (autoresponderData?.success && autoresponderData?.autoresponders) {
+        autoresponders = autoresponderData.autoresponders;
+        console.log('✅ Autoresponders obtenidos:', autoresponders.length);
+        console.log('📋 Lista de autoresponders:', autoresponders.map(ar => ({
+          id: ar.id,
+          name: ar.name,
+          is_active: ar.is_active,
+          message_preview: ar.message_text?.substring(0, 30) + '...'
+        })));
       } else {
-        console.error('❌ Respuesta no exitosa del servidor');
+        console.error('❌ Respuesta no exitosa del endpoint:', autoresponderData);
         return;
       }
       
     } catch (error) {
-      console.error('❌ Error consultando autoresponders:', error);
+      console.error('❌ Error crítico consultando autoresponders:', error);
       return;
     }
 
     if (!autoresponders || autoresponders.length === 0) {
-      console.log('❌ NO HAY AUTORESPONDERS DISPONIBLES EN EL SERVIDOR')
+      console.log('❌ NO HAY AUTORESPONDERS DISPONIBLES')
+      console.log('💡 Asegúrate de haber configurado autoresponders en la aplicación')
       return
     }
 
-    const selectedAutoresponder = autoresponders[0]; // Usar el primero disponible
+    // Usar el primer autoresponder activo
+    const selectedAutoresponder = autoresponders[0];
     
-    console.log('📋 Autoresponder seleccionado desde servidor:', {
-      id: selectedAutoresponder.id,
-      name: selectedAutoresponder.name,
-      message_text: selectedAutoresponder.message_text,
-      send_only_first_message: selectedAutoresponder.send_only_first_message
-    })
-    console.log('🔍 ===== FIN OBTENCION DESDE SERVIDOR =====')
+    console.log('🎯 AUTORESPONDER SELECCIONADO:')
+    console.log('📋 ID:', selectedAutoresponder.id)
+    console.log('📋 Nombre:', selectedAutoresponder.name)
+    console.log('📋 Mensaje:', selectedAutoresponder.message_text)
+    console.log('📋 Solo primer mensaje:', selectedAutoresponder.send_only_first_message)
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
     let shouldSendAutoresponder = true
 
     if (selectedAutoresponder.send_only_first_message) {
-      // Solo enviar si es la primera vez - verificar en BD
       console.log('🔍 Verificando si ya se le envió autoresponder a:', event.sender.id)
       
       const { data: alreadySent, error: checkError } = await supabase
@@ -253,20 +258,21 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
         console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR')
         shouldSendAutoresponder = false
       } else {
-        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO DESDE SERVIDOR')
+        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO')
       }
     } else {
-      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO DESDE SERVIDOR')
+      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO')
     }
 
     // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
     if (shouldSendAutoresponder) {
+      console.log('🚀 ENVIANDO AUTORESPONDER...')
       await handleAutoresponder(supabase, event.sender.id, selectedAutoresponder)
     } else {
       console.log('⏭️ No enviando autoresponder según configuración')
     }
     
-    console.log('✅ Mensaje procesado correctamente')
+    console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
 
   } catch (error) {
     console.error('❌ Error en processMessagingEvent:', error)
@@ -275,16 +281,17 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
 async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any) {
   try {
-    console.log('🤖 INICIANDO AUTORESPONDER DESDE SERVIDOR PARA:', senderId)
+    console.log('🤖 INICIANDO ENVÍO DE AUTORESPONDER')
+    console.log('👤 Para usuario:', senderId)
 
     const messageToSend = autoresponderConfig.message_text
     const autoresponderMessageId = autoresponderConfig.id
 
-    console.log('📤 ENVIANDO AUTORESPONDER DESDE SERVIDOR:', messageToSend)
+    console.log('📤 ENVIANDO MENSAJE:', messageToSend)
     const success = await sendInstagramMessage(senderId, messageToSend)
 
     if (success) {
-      console.log('✅ AUTORESPONDER DESDE SERVIDOR ENVIADO EXITOSAMENTE')
+      console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
 
       // Solo registrar en log si está configurado como "solo primer mensaje"
       if (autoresponderConfig.send_only_first_message) {
@@ -312,7 +319,7 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
           autoresponder: true,
           autoresponder_id: autoresponderMessageId,
           send_only_first_message: autoresponderConfig.send_only_first_message,
-          source: 'servidor_autoresponder_system'
+          source: 'autoresponder_system'
         }
       }
 
@@ -320,10 +327,10 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
       if (saveError) {
         console.error('⚠️ Error guardando mensaje enviado:', saveError)
       } else {
-        console.log('✅ AUTORESPONDER DESDE SERVIDOR GUARDADO EN HISTORIAL')
+        console.log('✅ AUTORESPONDER GUARDADO EN HISTORIAL')
       }
     } else {
-      console.error('❌ ERROR ENVIANDO AUTORESPONDER DESDE SERVIDOR')
+      console.error('❌ ERROR ENVIANDO AUTORESPONDER')
     }
 
   } catch (error) {
@@ -338,12 +345,10 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     
     if (!accessToken) {
       console.error('❌ NO HAY TOKEN DE INSTAGRAM EN VARIABLES DE ENTORNO')
-      console.error('📋 Variables disponibles:', Object.keys(Deno.env.toObject()).filter(key => key.includes('INSTAGRAM')))
       return false
     }
 
     console.log('✅ Token encontrado, longitud:', accessToken.length)
-    console.log('🔍 Token preview:', accessToken.substring(0, 20) + '...')
 
     const messagePayload = {
       recipient: {
@@ -356,7 +361,6 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
 
     console.log('📤 ENVIANDO A INSTAGRAM API:')
     console.log('📋 Payload:', JSON.stringify(messagePayload, null, 2))
-    console.log('🎯 URL:', `https://graph.facebook.com/v19.0/me/messages`)
 
     const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
       method: 'POST',
@@ -376,26 +380,14 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     if (!response.ok) {
       console.error('❌ ERROR EN INSTAGRAM API:')
       console.error('📋 Error completo:', JSON.stringify(responseData, null, 2))
-      
-      if (responseData.error) {
-        console.error('🚨 Tipo de error:', responseData.error.type)
-        console.error('🚨 Código de error:', responseData.error.code)
-        console.error('🚨 Mensaje de error:', responseData.error.message)
-        console.error('🚨 Subtipo de error:', responseData.error.error_subcode)
-      }
-      
       return false
     }
 
     console.log('✅ MENSAJE ENVIADO EXITOSAMENTE')
-    console.log('📋 Respuesta exitosa:', JSON.stringify(responseData, null, 2))
     return true
 
   } catch (error) {
-    console.error('❌ ERROR CRÍTICO EN sendInstagramMessage:')
-    console.error('📋 Error details:', error)
-    console.error('📋 Error message:', error.message)
-    console.error('📋 Error stack:', error.stack)
+    console.error('❌ ERROR CRÍTICO EN sendInstagramMessage:', error)
     return false
   }
 }
