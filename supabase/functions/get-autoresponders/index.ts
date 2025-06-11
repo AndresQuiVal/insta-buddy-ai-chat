@@ -6,6 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Almacenamiento temporal en memoria (en producción esto sería una base de datos)
+let storedAutoresponders: any[] = []
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -14,17 +17,43 @@ serve(async (req) => {
   try {
     if (req.method === 'POST') {
       const body = await req.json()
-      console.log('📨 Solicitud de autoresponders:', body)
+      console.log('📨 Solicitud POST:', body)
       
-      // Obtener autoresponders desde localStorage (enviado en el body)
-      const autoresponders = body.autoresponders || []
+      // Si viene con autoresponders, los almacenamos
+      if (body.action === 'store' && body.autoresponders) {
+        storedAutoresponders = body.autoresponders
+        console.log('💾 Autoresponders almacenados:', storedAutoresponders.length)
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Autoresponders almacenados correctamente',
+          count: storedAutoresponders.length 
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        })
+      }
       
-      console.log('📋 Autoresponders encontrados:', autoresponders.length)
+      // Si es una consulta desde el webhook, devolvemos los almacenados
+      console.log('📋 Consultando autoresponders almacenados:', storedAutoresponders.length)
       
       // Filtrar solo los activos
-      const activeAutoresponders = autoresponders.filter((ar: any) => ar.is_active)
+      const activeAutoresponders = storedAutoresponders.filter((ar: any) => ar.is_active)
       
       console.log('✅ Autoresponders activos:', activeAutoresponders.length)
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        autoresponders: activeAutoresponders 
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      })
+    }
+
+    if (req.method === 'GET') {
+      // GET request para consultar autoresponders
+      const activeAutoresponders = storedAutoresponders.filter((ar: any) => ar.is_active)
       
       return new Response(JSON.stringify({ 
         success: true, 

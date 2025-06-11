@@ -125,7 +125,7 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  console.log('🚀 PROCESANDO MENSAJE - AUTORESPONDER DESDE ENDPOINT')
+  console.log('🚀 PROCESANDO MENSAJE - AUTORESPONDER DESDE SERVIDOR')
   console.log('👤 SENDER ID:', event.sender.id)
   console.log('💬 MENSAJE:', event.message?.text)
 
@@ -187,16 +187,16 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: OBTENER AUTORESPONDER DESDE ENDPOINT
-    console.log('🔍 ===== OBTENIENDO AUTORESPONDER DESDE ENDPOINT =====')
+    // PASO 3: OBTENER AUTORESPONDER DESDE SERVIDOR
+    console.log('🔍 ===== OBTENIENDO AUTORESPONDER DESDE SERVIDOR =====')
     
     let autoresponders = [];
     try {
-      // Llamar al endpoint get-autoresponders
-      console.log('📡 Llamando endpoint get-autoresponders')
+      // Llamar al endpoint para obtener autoresponders almacenados
+      console.log('📡 Consultando autoresponders en servidor')
       
       const { data: autoresponderData, error: autoresponderError } = await supabase.functions.invoke('get-autoresponders', {
-        body: { autoresponders: [] } // El endpoint manejará esto
+        body: {}
       });
       
       if (autoresponderError) {
@@ -206,31 +206,31 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       
       if (autoresponderData?.success) {
         autoresponders = autoresponderData.autoresponders || [];
-        console.log('✅ Autoresponders obtenidos del endpoint:', autoresponders.length);
+        console.log('✅ Autoresponders obtenidos del servidor:', autoresponders.length);
       } else {
-        console.error('❌ Respuesta no exitosa del endpoint');
+        console.error('❌ Respuesta no exitosa del servidor');
         return;
       }
       
     } catch (error) {
-      console.error('❌ Error llamando endpoint autoresponders:', error);
+      console.error('❌ Error consultando autoresponders:', error);
       return;
     }
 
     if (!autoresponders || autoresponders.length === 0) {
-      console.log('❌ NO HAY AUTORESPONDERS DISPONIBLES')
+      console.log('❌ NO HAY AUTORESPONDERS DISPONIBLES EN EL SERVIDOR')
       return
     }
 
     const selectedAutoresponder = autoresponders[0]; // Usar el primero disponible
     
-    console.log('📋 Autoresponder seleccionado desde endpoint:', {
+    console.log('📋 Autoresponder seleccionado desde servidor:', {
       id: selectedAutoresponder.id,
       name: selectedAutoresponder.name,
       message_text: selectedAutoresponder.message_text,
       send_only_first_message: selectedAutoresponder.send_only_first_message
     })
-    console.log('🔍 ===== FIN OBTENCION DESDE ENDPOINT =====')
+    console.log('🔍 ===== FIN OBTENCION DESDE SERVIDOR =====')
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
     let shouldSendAutoresponder = true
@@ -253,10 +253,10 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
         console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR')
         shouldSendAutoresponder = false
       } else {
-        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO DESDE ENDPOINT')
+        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO DESDE SERVIDOR')
       }
     } else {
-      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO DESDE ENDPOINT')
+      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO DESDE SERVIDOR')
     }
 
     // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
@@ -275,16 +275,16 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
 async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any) {
   try {
-    console.log('🤖 INICIANDO AUTORESPONDER DESDE LOCALSTORAGE PARA:', senderId)
+    console.log('🤖 INICIANDO AUTORESPONDER DESDE SERVIDOR PARA:', senderId)
 
     const messageToSend = autoresponderConfig.message_text
     const autoresponderMessageId = autoresponderConfig.id
 
-    console.log('📤 ENVIANDO AUTORESPONDER DESDE LOCALSTORAGE:', messageToSend)
+    console.log('📤 ENVIANDO AUTORESPONDER DESDE SERVIDOR:', messageToSend)
     const success = await sendInstagramMessage(senderId, messageToSend)
 
     if (success) {
-      console.log('✅ AUTORESPONDER DESDE LOCALSTORAGE ENVIADO EXITOSAMENTE')
+      console.log('✅ AUTORESPONDER DESDE SERVIDOR ENVIADO EXITOSAMENTE')
 
       // Solo registrar en log si está configurado como "solo primer mensaje"
       if (autoresponderConfig.send_only_first_message) {
@@ -312,7 +312,7 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
           autoresponder: true,
           autoresponder_id: autoresponderMessageId,
           send_only_first_message: autoresponderConfig.send_only_first_message,
-          source: 'localStorage_autoresponder_system'
+          source: 'servidor_autoresponder_system'
         }
       }
 
@@ -320,10 +320,10 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
       if (saveError) {
         console.error('⚠️ Error guardando mensaje enviado:', saveError)
       } else {
-        console.log('✅ AUTORESPONDER DESDE LOCALSTORAGE GUARDADO EN HISTORIAL')
+        console.log('✅ AUTORESPONDER DESDE SERVIDOR GUARDADO EN HISTORIAL')
       }
     } else {
-      console.error('❌ ERROR ENVIANDO AUTORESPONDER DESDE LOCALSTORAGE')
+      console.error('❌ ERROR ENVIANDO AUTORESPONDER DESDE SERVIDOR')
     }
 
   } catch (error) {

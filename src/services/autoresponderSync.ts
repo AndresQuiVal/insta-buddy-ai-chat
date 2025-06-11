@@ -3,16 +3,19 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const syncAutoresponders = async () => {
   try {
-    console.log('🔄 Sincronizando autoresponders con webhook...');
+    console.log('🔄 Sincronizando autoresponders con servidor...');
     
     // Obtener autoresponders desde localStorage
     const localAutoresponders = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
     
     console.log('📋 Autoresponders en localStorage:', localAutoresponders.length);
     
-    // Enviar al endpoint
+    // Enviar al endpoint para almacenar en el servidor
     const { data, error } = await supabase.functions.invoke('get-autoresponders', {
-      body: { autoresponders: localAutoresponders }
+      body: { 
+        action: 'store',
+        autoresponders: localAutoresponders 
+      }
     });
     
     if (error) {
@@ -20,7 +23,7 @@ export const syncAutoresponders = async () => {
       return false;
     }
     
-    console.log('✅ Autoresponders sincronizados:', data);
+    console.log('✅ Autoresponders sincronizados con servidor:', data);
     return true;
     
   } catch (error) {
@@ -35,7 +38,7 @@ export const setupAutoSync = () => {
   localStorage.setItem = function(key: string, value: string) {
     originalSetItem.call(this, key, value);
     if (key === 'autoresponder-messages') {
-      console.log('📡 localStorage modificado, sincronizando...');
+      console.log('📡 localStorage modificado, sincronizando con servidor...');
       syncAutoresponders();
     }
   };

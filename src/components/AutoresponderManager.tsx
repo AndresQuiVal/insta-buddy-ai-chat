@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Plus, Edit, Trash2, MessageCircle, Cloud, HardDrive } from 'lucide-reac
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AutoresponderForm from './AutoresponderForm';
+import { setupAutoSync, syncAutoresponders } from '@/services/autoresponderSync';
 
 interface AutoresponderMessage {
   id: string;
@@ -28,6 +28,12 @@ const AutoresponderManager = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Configurar sincronización automática
+    setupAutoSync();
+    
+    // Sincronizar autoresponders existentes al cargar
+    syncAutoresponders();
+    
     loadMessages();
   }, []);
 
