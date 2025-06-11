@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -171,7 +172,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       .from('instagram_messages')
       .select('id')
       .eq('instagram_message_id', event.message.mid)
-      .single()
+      .maybeSingle()
 
     if (existingMessage) {
       console.log('⏭️ Mensaje duplicado - saltando')
@@ -194,9 +195,14 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       .select('*')
       .eq('is_active', true)
       .limit(1)
-      .single()
+      .maybeSingle()
 
-    if (queryError || !autoresponderMessage) {
+    if (queryError) {
+      console.error('❌ Error obteniendo autoresponder:', queryError)
+      return
+    }
+
+    if (!autoresponderMessage) {
       console.log('⚠️ No hay respuestas automáticas activas')
       return
     }
@@ -207,6 +213,8 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     })
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
+    let shouldSendAutoresponder = true
+
     if (autoresponderMessage.send_only_first_message) {
       // Solo enviar si es la primera vez
       console.log('🔍 Verificando si ya se le envió autoresponder a:', event.sender.id)
@@ -215,25 +223,29 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
         .from('autoresponder_sent_log')
         .select('id')
         .eq('sender_id', event.sender.id)
-        .single()
+        .maybeSingle()
 
       if (checkError && checkError.code !== 'PGRST116') {
         console.error('❌ Error verificando autoresponder:', checkError)
       }
 
       if (alreadySent) {
-        console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR (configurado como solo primer mensaje)')
-        return
+        console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR')
+        shouldSendAutoresponder = false
+      } else {
+        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO AUTORESPONDER')
       }
-
-      console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO AUTORESPONDER')
     } else {
       // Enviar siempre
       console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO AUTORESPONDER')
     }
 
-    // PASO 5: ENVIAR AUTORESPONDER
-    await handleAutoresponder(supabase, event.sender.id, autoresponderMessage)
+    // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
+    if (shouldSendAutoresponder) {
+      await handleAutoresponder(supabase, event.sender.id, autoresponderMessage)
+    } else {
+      console.log('⏭️ No enviando autoresponder según configuración')
+    }
     
     console.log('✅ Mensaje procesado correctamente')
 
@@ -272,7 +284,7 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
 
       // Guardar el mensaje enviado en el historial
       const sentMessageData = {
-        instagram_message_id: `autoresponder_${Date.now()}_${Math.random()}`,
+        instagram_message_id: `autoresponder_${Date.now()}_${Math.random().toString().substring(2, 8)}`,
         sender_id: 'system',
         recipient_id: senderId,
         message_text: messageToSend,
@@ -345,6 +357,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
   }
 }
 
+// Funciones de análisis de conversación que mantienen pero no se usan activamente
 async function loadIdealTraits(supabase: any): Promise<any[]> {
   return []
 }
