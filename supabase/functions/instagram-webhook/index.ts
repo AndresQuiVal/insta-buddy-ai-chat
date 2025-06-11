@@ -315,12 +315,17 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
 
 async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
   try {
+    console.log('🔑 VERIFICANDO TOKEN DE INSTAGRAM...')
     const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
     
     if (!accessToken) {
-      console.error('❌ NO HAY TOKEN DE INSTAGRAM')
+      console.error('❌ NO HAY TOKEN DE INSTAGRAM EN VARIABLES DE ENTORNO')
+      console.error('📋 Variables disponibles:', Object.keys(Deno.env.toObject()).filter(key => key.includes('INSTAGRAM')))
       return false
     }
+
+    console.log('✅ Token encontrado, longitud:', accessToken.length)
+    console.log('🔍 Token preview:', accessToken.substring(0, 20) + '...')
 
     const messagePayload = {
       recipient: {
@@ -331,7 +336,9 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       }
     }
 
-    console.log('📤 ENVIANDO A INSTAGRAM API:', JSON.stringify(messagePayload, null, 2))
+    console.log('📤 ENVIANDO A INSTAGRAM API:')
+    console.log('📋 Payload:', JSON.stringify(messagePayload, null, 2))
+    console.log('🎯 URL:', `https://graph.facebook.com/v19.0/me/messages`)
 
     const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
       method: 'POST',
@@ -341,18 +348,36 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       body: JSON.stringify(messagePayload)
     })
 
+    console.log('📊 RESPUESTA DE INSTAGRAM:')
+    console.log('🔢 Status:', response.status)
+    console.log('✅ OK:', response.ok)
+
     const responseData = await response.json()
+    console.log('📋 Data:', JSON.stringify(responseData, null, 2))
     
     if (!response.ok) {
-      console.error('❌ ERROR EN INSTAGRAM API:', JSON.stringify(responseData, null, 2))
+      console.error('❌ ERROR EN INSTAGRAM API:')
+      console.error('📋 Error completo:', JSON.stringify(responseData, null, 2))
+      
+      if (responseData.error) {
+        console.error('🚨 Tipo de error:', responseData.error.type)
+        console.error('🚨 Código de error:', responseData.error.code)
+        console.error('🚨 Mensaje de error:', responseData.error.message)
+        console.error('🚨 Subtipo de error:', responseData.error.error_subcode)
+      }
+      
       return false
     }
 
-    console.log('✅ MENSAJE ENVIADO EXITOSAMENTE:', JSON.stringify(responseData, null, 2))
+    console.log('✅ MENSAJE ENVIADO EXITOSAMENTE')
+    console.log('📋 Respuesta exitosa:', JSON.stringify(responseData, null, 2))
     return true
 
   } catch (error) {
-    console.error('❌ ERROR EN sendInstagramMessage:', error)
+    console.error('❌ ERROR CRÍTICO EN sendInstagramMessage:')
+    console.error('📋 Error details:', error)
+    console.error('📋 Error message:', error.message)
+    console.error('📋 Error stack:', error.stack)
     return false
   }
 }
