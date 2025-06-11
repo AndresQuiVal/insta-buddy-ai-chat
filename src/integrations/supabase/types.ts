@@ -14,30 +14,36 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          keywords: string[] | null
           message_text: string
           name: string
           send_only_first_message: boolean
           updated_at: string
+          use_keywords: boolean | null
           user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           is_active?: boolean
+          keywords?: string[] | null
           message_text: string
           name: string
           send_only_first_message?: boolean
           updated_at?: string
+          use_keywords?: boolean | null
           user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           is_active?: boolean
+          keywords?: string[] | null
           message_text?: string
           name?: string
           send_only_first_message?: boolean
           updated_at?: string
+          use_keywords?: boolean | null
           user_id?: string | null
         }
         Relationships: []

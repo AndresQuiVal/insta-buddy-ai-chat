@@ -14,8 +14,8 @@ interface AutoresponderMessage {
   message_text: string;
   is_active: boolean;
   send_only_first_message: boolean;
-  use_keywords?: boolean;
-  keywords?: string[];
+  use_keywords: boolean;
+  keywords: string[];
   created_at: string;
 }
 
