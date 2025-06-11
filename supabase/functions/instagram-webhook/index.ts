@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -268,7 +267,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
     if (shouldSendAutoresponder) {
       console.log('🚀 ENVIANDO AUTORESPONDER...')
-      await handleAutoresponder(supabase, event.sender.id, selectedAutoresponder, event.recipient.id)
+      await handleAutoresponder(supabase, event.sender.id, selectedAutoresponder)
     } else {
       console.log('⏭️ No enviando autoresponder según configuración')
     }
@@ -280,17 +279,16 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   }
 }
 
-async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any, recipientPageId: string) {
+async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any) {
   try {
     console.log('🤖 INICIANDO ENVÍO DE AUTORESPONDER')
     console.log('👤 Para usuario:', senderId)
-    console.log('📱 ID de página de Instagram:', recipientPageId)
 
     const messageToSend = autoresponderConfig.message_text
     const autoresponderMessageId = autoresponderConfig.id
 
     console.log('📤 ENVIANDO MENSAJE:', messageToSend)
-    const success = await sendInstagramMessage(senderId, messageToSend, recipientPageId)
+    const success = await sendInstagramMessage(senderId, messageToSend)
 
     if (success) {
       console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
@@ -340,7 +338,31 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
   }
 }
 
-async function sendInstagramMessage(recipientId: string, messageText: string, pageId: string): Promise<boolean> {
+async function getFacebookPageId(accessToken: string): Promise<string | null> {
+  try {
+    console.log('🔍 Obteniendo Facebook Page ID programáticamente...')
+    
+    const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`)
+    const accountsData = await accountsResponse.json()
+    
+    if (accountsData.data) {
+      for (const page of accountsData.data) {
+        if (page.instagram_business_account) {
+          console.log(`✅ Facebook Page ID encontrado: ${page.id} (${page.name})`)
+          return page.id
+        }
+      }
+    }
+    
+    console.log('❌ No se encontró Facebook Page ID con Instagram Business')
+    return null
+  } catch (error) {
+    console.error('❌ Error obteniendo Facebook Page ID:', error)
+    return null
+  }
+}
+
+async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
   try {
     console.log('🔑 VERIFICANDO TOKEN DE INSTAGRAM...')
     const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
@@ -351,7 +373,24 @@ async function sendInstagramMessage(recipientId: string, messageText: string, pa
     }
 
     console.log('✅ Token encontrado, longitud:', accessToken.length)
-    console.log('📱 Usando Page ID:', pageId)
+
+    // NUEVO: Obtener el Facebook Page ID programáticamente
+    console.log('🔍 Obteniendo Facebook Page ID...')
+    let pageId = Deno.env.get('PAGE_ID')
+    
+    if (!pageId) {
+      console.log('⚠️ PAGE_ID no encontrado en secretos, obteniendo dinámicamente...')
+      pageId = await getFacebookPageId(accessToken)
+      
+      if (!pageId) {
+        console.error('❌ No se pudo obtener Facebook Page ID')
+        return false
+      }
+    } else {
+      console.log('✅ PAGE_ID encontrado en secretos:', pageId)
+    }
+
+    console.log('📱 Usando Facebook Page ID:', pageId)
 
     const messagePayload = {
       recipient: {
@@ -365,7 +404,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string, pa
     console.log('📤 ENVIANDO A INSTAGRAM API:')
     console.log('📋 Payload:', JSON.stringify(messagePayload, null, 2))
 
-    // Usar el Page ID correcto en lugar de 'me'
+    // CORREGIDO: Usar Facebook Page ID en lugar de Instagram Business Account ID
     const apiUrl = `https://graph.facebook.com/v19.0/${pageId}/messages?access_token=${accessToken}`
     console.log('🌐 URL de API:', apiUrl.replace(accessToken, '[TOKEN_HIDDEN]'))
 
