@@ -125,7 +125,7 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  console.log('🚀 PROCESANDO MENSAJE - AUTORESPONDER DESDE LOCALSTORAGE')
+  console.log('🚀 PROCESANDO MENSAJE - AUTORESPONDER DESDE ENDPOINT')
   console.log('👤 SENDER ID:', event.sender.id)
   console.log('💬 MENSAJE:', event.message?.text)
 
@@ -187,45 +187,50 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: OBTENER AUTORESPONDER DESDE LOCALSTORAGE
-    console.log('🔍 ===== OBTENIENDO AUTORESPONDER DESDE LOCALSTORAGE =====')
+    // PASO 3: OBTENER AUTORESPONDER DESDE ENDPOINT
+    console.log('🔍 ===== OBTENIENDO AUTORESPONDER DESDE ENDPOINT =====')
     
     let autoresponders = [];
     try {
-      // Simular acceso a localStorage (en el webhook no tenemos acceso real)
-      // Pero vamos a usar el mensaje predeterminado por ahora
-      console.log('📱 Usando autoresponder desde localStorage (simulado)')
+      // Llamar al endpoint get-autoresponders
+      console.log('📡 Llamando endpoint get-autoresponders')
       
-      // Autoresponder por defecto hasta que implementemos la lectura real
-      const defaultAutoresponder = {
-        id: 'localStorage_default',
-        name: 'Respuesta desde localStorage',
-        message_text: '¡Hola! Gracias por tu mensaje. Te responderemos lo antes posible.',
-        is_active: true,
-        send_only_first_message: true
-      };
+      const { data: autoresponderData, error: autoresponderError } = await supabase.functions.invoke('get-autoresponders', {
+        body: { autoresponders: [] } // El endpoint manejará esto
+      });
       
-      autoresponders = [defaultAutoresponder];
+      if (autoresponderError) {
+        console.error('❌ Error obteniendo autoresponders:', autoresponderError);
+        return;
+      }
+      
+      if (autoresponderData?.success) {
+        autoresponders = autoresponderData.autoresponders || [];
+        console.log('✅ Autoresponders obtenidos del endpoint:', autoresponders.length);
+      } else {
+        console.error('❌ Respuesta no exitosa del endpoint');
+        return;
+      }
       
     } catch (error) {
-      console.error('❌ Error accediendo a localStorage:', error);
+      console.error('❌ Error llamando endpoint autoresponders:', error);
       return;
     }
 
     if (!autoresponders || autoresponders.length === 0) {
-      console.log('❌ NO HAY AUTORESPONDERS EN LOCALSTORAGE')
+      console.log('❌ NO HAY AUTORESPONDERS DISPONIBLES')
       return
     }
 
     const selectedAutoresponder = autoresponders[0]; // Usar el primero disponible
     
-    console.log('📋 Autoresponder seleccionado desde localStorage:', {
+    console.log('📋 Autoresponder seleccionado desde endpoint:', {
       id: selectedAutoresponder.id,
       name: selectedAutoresponder.name,
       message_text: selectedAutoresponder.message_text,
       send_only_first_message: selectedAutoresponder.send_only_first_message
     })
-    console.log('🔍 ===== FIN OBTENCION DESDE LOCALSTORAGE =====')
+    console.log('🔍 ===== FIN OBTENCION DESDE ENDPOINT =====')
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
     let shouldSendAutoresponder = true
@@ -248,10 +253,10 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
         console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR')
         shouldSendAutoresponder = false
       } else {
-        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO DESDE LOCALSTORAGE')
+        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO DESDE ENDPOINT')
       }
     } else {
-      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO DESDE LOCALSTORAGE')
+      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO DESDE ENDPOINT')
     }
 
     // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
