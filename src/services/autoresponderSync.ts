@@ -9,15 +9,16 @@ export const syncAutoresponders = async () => {
     const localAutoresponders = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
     
     console.log('📋 Autoresponders en localStorage:', localAutoresponders.length);
-    console.log('📊 Detalles:', localAutoresponders.map(ar => ({
+    console.log('📊 Detalles completos:', localAutoresponders.map(ar => ({
       id: ar.id,
       name: ar.name,
       is_active: ar.is_active,
-      message_preview: ar.message_text?.substring(0, 30) + '...'
+      send_only_first_message: ar.send_only_first_message,
+      message_text: ar.message_text
     })));
     
-    // Enviar al endpoint para almacenar en la base de datos
-    console.log('📤 Enviando autoresponders al servidor (base de datos)...');
+    // Enviar al endpoint para REEMPLAZAR completamente en la base de datos
+    console.log('📤 Enviando autoresponders al servidor para REEMPLAZAR en BD...');
     
     const { data, error } = await supabase.functions.invoke('get-autoresponders', {
       body: { 
@@ -31,8 +32,15 @@ export const syncAutoresponders = async () => {
       return false;
     }
     
-    console.log('✅ SINCRONIZACIÓN EXITOSA CON BASE DE DATOS');
+    console.log('✅ SINCRONIZACIÓN EXITOSA - BASE DE DATOS ACTUALIZADA');
     console.log('📊 Respuesta del servidor:', data);
+    
+    // Verificar que se almacenó correctamente
+    if (data?.action === 'stored') {
+      console.log('🎯 Confirmado: Autoresponders almacenados correctamente');
+      console.log('📈 Cantidad sincronizada:', data.count);
+    }
+    
     return true;
     
   } catch (error) {
@@ -50,7 +58,10 @@ export const setupAutoSync = () => {
     originalSetItem.call(this, key, value);
     if (key === 'autoresponder-messages') {
       console.log('📡 localStorage modificado para autoresponders - Sincronizando...');
-      syncAutoresponders();
+      // Sincronizar después de un pequeño delay para asegurar que se guardó
+      setTimeout(() => {
+        syncAutoresponders();
+      }, 100);
     }
   };
   

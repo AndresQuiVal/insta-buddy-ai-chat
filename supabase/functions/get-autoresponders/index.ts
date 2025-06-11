@@ -26,7 +26,22 @@ serve(async (req) => {
       if (body.action === 'store' && body.autoresponders) {
         console.log('💾 Guardando autoresponders en base de datos:', body.autoresponders.length)
         
-        // Primero eliminar todos los autoresponders existentes
+        // PRIMERO: Eliminar TODOS los autoresponders existentes sin excepción
+        console.log('🗑️ Eliminando TODOS los autoresponders anteriores...')
+        
+        // Primero eliminar las referencias en autoresponder_sent_log
+        const { error: logDeleteError } = await supabase
+          .from('autoresponder_sent_log')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000') // Eliminar todos
+        
+        if (logDeleteError) {
+          console.error('⚠️ Error eliminando log de autoresponders:', logDeleteError)
+        } else {
+          console.log('✅ Log de autoresponders limpiado')
+        }
+
+        // Ahora eliminar todos los autoresponders
         const { error: deleteError } = await supabase
           .from('autoresponder_messages')
           .delete()
@@ -34,10 +49,14 @@ serve(async (req) => {
         
         if (deleteError) {
           console.error('⚠️ Error eliminando autoresponders anteriores:', deleteError)
+        } else {
+          console.log('✅ Todos los autoresponders anteriores eliminados')
         }
 
-        // Ahora insertar los nuevos autoresponders
+        // SEGUNDO: Insertar los nuevos autoresponders SOLO si hay alguno
         if (body.autoresponders.length > 0) {
+          console.log('📝 Insertando nuevos autoresponders:', body.autoresponders.length)
+          
           const autoresponderData = body.autoresponders.map((ar: any) => ({
             name: ar.name,
             message_text: ar.message_text,
@@ -45,6 +64,8 @@ serve(async (req) => {
             send_only_first_message: ar.send_only_first_message || false,
             user_id: null // Sin usuario específico por ahora
           }))
+
+          console.log('📋 Datos a insertar:', JSON.stringify(autoresponderData, null, 2))
 
           const { error: insertError } = await supabase
             .from('autoresponder_messages')
@@ -60,14 +81,19 @@ serve(async (req) => {
               headers: { 'Content-Type': 'application/json', ...corsHeaders }
             })
           }
+          
+          console.log('✅ Nuevos autoresponders insertados exitosamente')
+        } else {
+          console.log('⚠️ No hay autoresponders para insertar - base de datos limpiada')
         }
         
-        console.log('✅ Autoresponders guardados exitosamente en BD')
+        console.log('✅ Proceso de almacenamiento completado')
         
         return new Response(JSON.stringify({ 
           success: true, 
-          message: 'Autoresponders almacenados correctamente en base de datos',
-          count: body.autoresponders.length
+          message: 'Autoresponders actualizados correctamente en base de datos',
+          count: body.autoresponders.length,
+          action: 'stored'
         }), {
           status: 200,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -75,13 +101,14 @@ serve(async (req) => {
       }
       
       // Si no tiene action store, es una consulta desde el webhook
-      console.log('🔍 Consultando autoresponders desde base de datos')
+      console.log('🔍 Consultando autoresponders desde base de datos para webhook')
       
       // Obtener autoresponders activos de la base de datos
       const { data: autoresponders, error } = await supabase
         .from('autoresponder_messages')
         .select('*')
         .eq('is_active', true)
+        .order('created_at', { ascending: false })
       
       if (error) {
         console.error('❌ Error consultando autoresponders:', error)
@@ -95,10 +122,11 @@ serve(async (req) => {
       }
       
       console.log('✅ Autoresponders activos encontrados:', autoresponders?.length || 0)
-      console.log('📊 Detalle de activos:', autoresponders?.map(ar => ({
+      console.log('📊 Detalle de autoresponders activos:', autoresponders?.map(ar => ({
         id: ar.id,
         name: ar.name,
         is_active: ar.is_active,
+        send_only_first_message: ar.send_only_first_message,
         message_text: ar.message_text?.substring(0, 50) + '...'
       })))
       
@@ -118,6 +146,7 @@ serve(async (req) => {
         .from('autoresponder_messages')
         .select('*')
         .eq('is_active', true)
+        .order('created_at', { ascending: false })
       
       if (error) {
         console.error('❌ Error en GET autoresponders:', error)
