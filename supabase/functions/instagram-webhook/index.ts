@@ -31,18 +31,6 @@ interface ChangeEvent {
   };
 }
 
-interface Trait {
-  trait: string;
-  enabled: boolean;
-  position: number;
-}
-
-interface AnalysisResult {
-  matchPoints: number;
-  metTraits: string[];
-  metTraitIndices?: number[];
-}
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -141,7 +129,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   console.log('💬 MENSAJE:', event.message?.text)
 
   try {
-    // PASO 0: Actualizar actividad del prospecto
+    // PASO 0: Actualizar actividad del prospecto (solo actualizar, no usar UUID)
     try {
       const { error: activityError } = await supabase.rpc('update_prospect_activity', {
         p_prospect_id: event.sender.id
@@ -189,27 +177,37 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       return
     }
 
-    await supabase.from('instagram_messages').insert(messageData)
+    const { error: insertError } = await supabase.from('instagram_messages').insert(messageData)
+    if (insertError) {
+      console.error('❌ Error guardando mensaje:', insertError)
+    } else {
+      console.log('✅ Mensaje guardado correctamente')
+    }
 
-    // PASO 2: Verificar si es la primera vez que esta persona escribe (para autoresponder)
-    const { data: previousMessages } = await supabase
+    // PASO 2: Verificar si es la primera vez que esta persona escribe
+    const { data: previousMessages, error: queryError } = await supabase
       .from('instagram_messages')
       .select('id')
       .eq('sender_id', event.sender.id)
       .eq('message_type', 'received')
-      .limit(2) // Solo necesitamos saber si hay más de 1
 
-    console.log(`📊 Mensajes previos del usuario ${event.sender.id}:`, previousMessages?.length || 0)
+    if (queryError) {
+      console.error('❌ Error consultando mensajes previos:', queryError)
+      // Continúar con autoresponder de todas formas
+    }
 
-    // Si es la primera vez que escribe, verificar autoresponder
-    if (previousMessages && previousMessages.length === 1) {
-      console.log('🆕 PRIMERA VEZ QUE ESCRIBE - VERIFICANDO AUTORESPONDER')
+    const messageCount = previousMessages ? previousMessages.length : 0
+    console.log(`📊 Mensajes totales del usuario ${event.sender.id}: ${messageCount}`)
+
+    // Si es la primera vez que escribe (o hay error en consulta), enviar autoresponder
+    if (messageCount <= 1) {
+      console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO AUTORESPONDER')
       await handleAutoresponder(supabase, event.sender.id)
     } else {
       console.log('👥 Usuario ya escribió antes - NO se envía autoresponder')
     }
     
-    console.log('✅ Mensaje procesado correctamente (autoresponder activo)')
+    console.log('✅ Mensaje procesado correctamente')
 
   } catch (error) {
     console.error('❌ Error en processMessagingEvent:', error)
@@ -218,7 +216,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
 async function handleAutoresponder(supabase: any, senderId: string) {
   try {
-    console.log('🤖 INICIANDO PROCESO DE AUTORESPONDER')
+    console.log('🤖 INICIANDO AUTORESPONDER')
 
     // Verificar si ya se le envió una respuesta automática a este usuario
     const { data: alreadySent } = await supabase
@@ -232,45 +230,36 @@ async function handleAutoresponder(supabase: any, senderId: string) {
       return
     }
 
-    // Obtener una respuesta automática activa (la primera que encuentre)
-    const { data: autoresponderMessage } = await supabase
+    // Obtener mensaje automático activo
+    const { data: autoresponderMessage, error: queryError } = await supabase
       .from('autoresponder_messages')
       .select('*')
       .eq('is_active', true)
       .limit(1)
       .single()
 
-    if (!autoresponderMessage) {
-      console.log('⚠️ No hay respuestas automáticas activas en la base de datos')
-      console.log('📤 ENVIANDO AUTORESPONDER POR DEFECTO')
-      
-      // Usar mensaje por defecto
-      const defaultMessage = '¡Hola! Gracias por escribirme. Te responderé pronto. 😊'
-      
-      const success = await sendInstagramMessage(senderId, defaultMessage)
-      
-      if (success) {
-        await supabase.from('autoresponder_sent_log').insert({
-          sender_id: senderId,
-          autoresponder_message_id: null
-        })
-        console.log('✅ AUTORESPONDER POR DEFECTO ENVIADO')
-      }
-      return
+    let messageToSend = '¡Hola! Gracias por escribirme. Te responderé pronto. 😊'
+    let autoresponderMessageId = null
+
+    if (queryError || !autoresponderMessage) {
+      console.log('⚠️ No hay respuestas automáticas activas - usando mensaje por defecto')
+    } else {
+      console.log('📤 Usando respuesta automática:', autoresponderMessage.name)
+      messageToSend = autoresponderMessage.message_text
+      autoresponderMessageId = autoresponderMessage.id
     }
 
-    console.log('📤 ENVIANDO AUTORESPONDER:', autoresponderMessage.name)
-
     // Enviar la respuesta automática
-    const success = await sendInstagramMessage(senderId, autoresponderMessage.message_text)
+    console.log('📤 ENVIANDO AUTORESPONDER:', messageToSend)
+    const success = await sendInstagramMessage(senderId, messageToSend)
 
     if (success) {
       console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
 
-      // Registrar que se envió para no volver a enviar
+      // Registrar que se envió
       await supabase.from('autoresponder_sent_log').insert({
         sender_id: senderId,
-        autoresponder_message_id: autoresponderMessage.id
+        autoresponder_message_id: autoresponderMessageId
       })
 
       // Guardar el mensaje enviado en el historial
@@ -278,12 +267,12 @@ async function handleAutoresponder(supabase: any, senderId: string) {
         instagram_message_id: `autoresponder_${Date.now()}_${Math.random()}`,
         sender_id: 'autoresponder_system',
         recipient_id: senderId,
-        message_text: autoresponderMessage.message_text,
+        message_text: messageToSend,
         message_type: 'sent',
         timestamp: new Date().toISOString(),
         raw_data: {
           autoresponder: true,
-          autoresponder_id: autoresponderMessage.id,
+          autoresponder_id: autoresponderMessageId,
           source: 'autoresponder_system'
         }
       }
@@ -423,7 +412,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       }
     }
 
-    console.log('📤 ENVIANDO AUTORESPONDER A INSTAGRAM API:', JSON.stringify(messagePayload, null, 2))
+    console.log('📤 ENVIANDO A INSTAGRAM API:', JSON.stringify(messagePayload, null, 2))
 
     const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
       method: 'POST',
@@ -440,7 +429,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       return false
     }
 
-    console.log('✅ AUTORESPONDER EXITOSO DE INSTAGRAM:', JSON.stringify(responseData, null, 2))
+    console.log('✅ MENSAJE ENVIADO EXITOSAMENTE:', JSON.stringify(responseData, null, 2))
     return true
 
   } catch (error) {
