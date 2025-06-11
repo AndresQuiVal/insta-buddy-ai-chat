@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ interface AutoresponderMessage {
   name: string;
   message_text: string;
   is_active: boolean;
+  send_only_first_message?: boolean;
 }
 
 interface AutoresponderFormProps {
@@ -24,6 +26,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const [name, setName] = useState('');
   const [messageText, setMessageText] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [sendOnlyFirstMessage, setSendOnlyFirstMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -32,10 +35,12 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setName(message.name);
       setMessageText(message.message_text);
       setIsActive(message.is_active);
+      setSendOnlyFirstMessage(message.send_only_first_message || false);
     } else {
       setName('');
       setMessageText('');
       setIsActive(true);
+      setSendOnlyFirstMessage(false); // Por defecto desactivado
     }
   }, [message]);
 
@@ -83,7 +88,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     const messageData = {
       name: name.trim(),
       message_text: messageText.trim(),
-      is_active: isActive
+      is_active: isActive,
+      send_only_first_message: sendOnlyFirstMessage
     };
 
     try {
@@ -187,6 +193,21 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
           onCheckedChange={setIsActive}
         />
         <Label htmlFor="active">Activar esta respuesta automática</Label>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="sendOnlyFirst"
+          checked={sendOnlyFirstMessage}
+          onCheckedChange={setSendOnlyFirstMessage}
+        />
+        <Label htmlFor="sendOnlyFirst">Solo enviar el primer mensaje</Label>
+        <p className="text-sm text-gray-500">
+          {sendOnlyFirstMessage 
+            ? "Solo responderá la primera vez que alguien te escriba" 
+            : "Responderá a todos los mensajes que recibas"
+          }
+        </p>
       </div>
 
       <div className="flex justify-end space-x-2">

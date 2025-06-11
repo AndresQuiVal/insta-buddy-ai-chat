@@ -186,27 +186,54 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: VERIFICAR SI YA SE LE ENVIÓ AUTORESPONDER ANTES
-    console.log('🔍 Verificando si ya se le envió autoresponder a:', event.sender.id)
+    // PASO 3: OBTENER CONFIGURACIÓN DE AUTORESPONDER ACTIVO
+    console.log('🔍 Obteniendo configuración de autoresponder...')
     
-    const { data: alreadySent, error: checkError } = await supabase
-      .from('autoresponder_sent_log')
-      .select('id')
-      .eq('sender_id', event.sender.id)
+    const { data: autoresponderMessage, error: queryError } = await supabase
+      .from('autoresponder_messages')
+      .select('*')
+      .eq('is_active', true)
+      .limit(1)
       .single()
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('❌ Error verificando autoresponder:', checkError)
-    }
-
-    if (alreadySent) {
-      console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR')
+    if (queryError || !autoresponderMessage) {
+      console.log('⚠️ No hay respuestas automáticas activas')
       return
     }
 
-    // PASO 4: ENVIAR AUTORESPONDER (primera vez que escribe)
-    console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO AUTORESPONDER')
-    await handleAutoresponder(supabase, event.sender.id)
+    console.log('📋 Configuración encontrada:', {
+      name: autoresponderMessage.name,
+      sendOnlyFirst: autoresponderMessage.send_only_first_message
+    })
+
+    // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
+    if (autoresponderMessage.send_only_first_message) {
+      // Solo enviar si es la primera vez
+      console.log('🔍 Verificando si ya se le envió autoresponder a:', event.sender.id)
+      
+      const { data: alreadySent, error: checkError } = await supabase
+        .from('autoresponder_sent_log')
+        .select('id')
+        .eq('sender_id', event.sender.id)
+        .single()
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('❌ Error verificando autoresponder:', checkError)
+      }
+
+      if (alreadySent) {
+        console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR (configurado como solo primer mensaje)')
+        return
+      }
+
+      console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO AUTORESPONDER')
+    } else {
+      // Enviar siempre
+      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO AUTORESPONDER')
+    }
+
+    // PASO 5: ENVIAR AUTORESPONDER
+    await handleAutoresponder(supabase, event.sender.id, autoresponderMessage)
     
     console.log('✅ Mensaje procesado correctamente')
 
@@ -215,28 +242,12 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   }
 }
 
-async function handleAutoresponder(supabase: any, senderId: string) {
+async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any) {
   try {
     console.log('🤖 INICIANDO AUTORESPONDER PARA:', senderId)
 
-    // Obtener mensaje automático activo
-    const { data: autoresponderMessage, error: queryError } = await supabase
-      .from('autoresponder_messages')
-      .select('*')
-      .eq('is_active', true)
-      .limit(1)
-      .single()
-
-    let messageToSend = '¡Hola! Gracias por escribirme. Te responderé pronto. 😊'
-    let autoresponderMessageId = null
-
-    if (queryError || !autoresponderMessage) {
-      console.log('⚠️ No hay respuestas automáticas activas - usando mensaje por defecto')
-    } else {
-      console.log('📤 Usando respuesta automática:', autoresponderMessage.name)
-      messageToSend = autoresponderMessage.message_text
-      autoresponderMessageId = autoresponderMessage.id
-    }
+    const messageToSend = autoresponderConfig.message_text || '¡Hola! Gracias por escribirme. Te responderé pronto. 😊'
+    const autoresponderMessageId = autoresponderConfig.id
 
     // Enviar la respuesta automática
     console.log('📤 ENVIANDO AUTORESPONDER:', messageToSend)
@@ -245,14 +256,18 @@ async function handleAutoresponder(supabase: any, senderId: string) {
     if (success) {
       console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
 
-      // Registrar que se envió para no enviarlo de nuevo
-      const { error: logError } = await supabase.from('autoresponder_sent_log').insert({
-        sender_id: senderId,
-        autoresponder_message_id: autoresponderMessageId
-      })
+      // Solo registrar en log si está configurado como "solo primer mensaje"
+      if (autoresponderConfig.send_only_first_message) {
+        const { error: logError } = await supabase.from('autoresponder_sent_log').insert({
+          sender_id: senderId,
+          autoresponder_message_id: autoresponderMessageId
+        })
 
-      if (logError) {
-        console.error('⚠️ Error guardando log de autoresponder:', logError)
+        if (logError) {
+          console.error('⚠️ Error guardando log de autoresponder:', logError)
+        } else {
+          console.log('✅ Registrado en log para no enviar de nuevo')
+        }
       }
 
       // Guardar el mensaje enviado en el historial
@@ -266,6 +281,7 @@ async function handleAutoresponder(supabase: any, senderId: string) {
         raw_data: {
           autoresponder: true,
           autoresponder_id: autoresponderMessageId,
+          send_only_first_message: autoresponderConfig.send_only_first_message,
           source: 'autoresponder_system'
         }
       }
