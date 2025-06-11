@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Edit, Trash2, MessageCircle, Cloud, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import AutoresponderForm from './AutoresponderForm';
 import AutoresponderTypeDialog from './AutoresponderTypeDialog';
 
@@ -27,6 +27,7 @@ const AutoresponderManager = () => {
   const [showTypeDialog, setShowTypeDialog] = useState(false);
   const [editingMessage, setEditingMessage] = useState<AutoresponderMessage | null>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     loadMessages();
@@ -190,17 +191,17 @@ const AutoresponderManager = () => {
           </div>
         </div>
         
-        {/* Floating Add Button */}
+        {/* Floating Add Button with Hover Expansion */}
         <div className="group relative">
           <Button
             onClick={handleNewAutoresponder}
-            className="w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 p-0"
+            className="group-hover:w-auto w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 p-0 group-hover:px-4 overflow-hidden"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-6 h-6 text-white flex-shrink-0" />
+            <span className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap text-white hidden group-hover:inline">
+              Agregar respuesta automática
+            </span>
           </Button>
-          <span className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
-            Nueva Respuesta
-          </span>
         </div>
       </div>
 
@@ -291,14 +292,16 @@ const AutoresponderManager = () => {
                       )}
                     </div>
 
-                    {/* Message preview - smaller and subtle */}
-                    <div className="mb-3">
-                      <p className="text-sm text-gray-500 italic line-clamp-2">
-                        "{message.message_text.length > 100 
-                          ? message.message_text.substring(0, 100) + '...' 
-                          : message.message_text}"
-                      </p>
-                    </div>
+                    {/* Message preview - hidden on mobile */}
+                    {!isMobile && (
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-500 italic line-clamp-2">
+                          "{message.message_text.length > 100 
+                            ? message.message_text.substring(0, 100) + '...' 
+                            : message.message_text}"
+                        </p>
+                      </div>
+                    )}
 
                     {/* Keywords */}
                     {message.use_keywords && message.keywords && message.keywords.length > 0 && (
