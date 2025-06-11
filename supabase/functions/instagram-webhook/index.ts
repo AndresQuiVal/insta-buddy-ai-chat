@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -30,6 +31,11 @@ interface ChangeEvent {
     messaging?: MessagingEvent[];
   };
 }
+
+// Cache para PAGE_ID (en memoria, se resetea con cada reinicio de función)
+let cachedPageId: string | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos en milliseconds
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -338,37 +344,99 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
   }
 }
 
-async function getFacebookPageId(accessToken: string): Promise<string | null> {
+async function getFacebookPageIdDynamically(accessToken: string): Promise<string | null> {
   try {
-    console.log('🔍 Obteniendo Facebook Page ID programáticamente...')
+    console.log('🔍 Obteniendo Facebook Page ID dinámicamente usando Graph API...')
     
-    const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`)
-    const accountsData = await accountsResponse.json()
+    // Usar endpoint /me/accounts con permisos pages_show_list según documentación
+    const accountsResponse = await fetch(
+      `https://graph.facebook.com/v20.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`
+    )
     
-    console.log('📊 Respuesta de Facebook API:', JSON.stringify(accountsData, null, 2))
-    
-    if (accountsData.error) {
-      console.error('❌ Error de Facebook API:', accountsData.error)
+    if (!accountsResponse.ok) {
+      console.error('❌ Error en respuesta de Facebook API:', accountsResponse.status, accountsResponse.statusText)
       return null
     }
     
-    if (accountsData.data) {
+    const accountsData = await accountsResponse.json()
+    console.log('📊 Respuesta completa de Facebook API:', JSON.stringify(accountsData, null, 2))
+    
+    // Verificar errores en la respuesta
+    if (accountsData.error) {
+      console.error('❌ Error de Facebook Graph API:', accountsData.error)
+      console.error('💡 Verifica que el token tenga permisos: pages_show_list o manage_pages')
+      return null
+    }
+    
+    // Buscar página con Instagram Business Account
+    if (accountsData.data && Array.isArray(accountsData.data)) {
+      console.log(`📄 Total de páginas encontradas: ${accountsData.data.length}`)
+      
       for (const page of accountsData.data) {
-        console.log(`📄 Página encontrada: ${page.name} (ID: ${page.id})`)
+        console.log(`📋 Página: ${page.name} (ID: ${page.id})`)
+        console.log(`📱 Instagram Business Account:`, page.instagram_business_account)
+        
         if (page.instagram_business_account) {
-          console.log(`✅ Facebook Page ID encontrado: ${page.id} (${page.name})`)
-          console.log(`📱 Instagram Business Account: ${page.instagram_business_account.id}`)
+          console.log(`✅ ¡ENCONTRADO! Facebook Page ID: ${page.id} - ${page.name}`)
+          console.log(`📱 Instagram Business Account ID: ${page.instagram_business_account.id}`)
           return page.id
         }
       }
+      
+      console.log('⚠️ No se encontró ninguna página con Instagram Business Account vinculado')
+      console.log('💡 Asegúrate de que la página tenga Instagram Business conectado')
+    } else {
+      console.log('⚠️ No se encontraron páginas en la respuesta de Facebook API')
     }
     
-    console.log('❌ No se encontró Facebook Page ID con Instagram Business')
     return null
   } catch (error) {
-    console.error('❌ Error obteniendo Facebook Page ID:', error)
+    console.error('❌ Error crítico obteniendo Facebook Page ID:', error)
     return null
   }
+}
+
+async function getPageId(accessToken: string): Promise<string | null> {
+  const now = Date.now()
+  
+  // Verificar si tenemos cache válido
+  if (cachedPageId && (now - cacheTimestamp) < CACHE_DURATION) {
+    console.log('✅ Usando PAGE_ID desde cache:', cachedPageId)
+    return cachedPageId
+  }
+  
+  console.log('🔍 Cache expirado o vacío, obteniendo PAGE_ID...')
+  
+  // 1. Intentar obtener desde secretos de Supabase (más rápido)
+  let pageId = Deno.env.get('PAGE_ID')
+  
+  if (pageId) {
+    console.log('✅ PAGE_ID encontrado en secretos de Supabase:', pageId)
+    // Actualizar cache
+    cachedPageId = pageId
+    cacheTimestamp = now
+    return pageId
+  }
+  
+  // 2. Si no está en secretos, obtener dinámicamente desde Facebook Graph API
+  console.log('⚠️ PAGE_ID no encontrado en secretos, consultando Facebook Graph API...')
+  pageId = await getFacebookPageIdDynamically(accessToken)
+  
+  if (pageId) {
+    console.log('✅ PAGE_ID obtenido dinámicamente:', pageId)
+    // Actualizar cache
+    cachedPageId = pageId
+    cacheTimestamp = now
+    return pageId
+  }
+  
+  console.error('❌ No se pudo obtener PAGE_ID de ninguna fuente')
+  console.error('💡 Soluciones:')
+  console.error('   1. Agregar PAGE_ID a los secretos de Supabase')
+  console.error('   2. Verificar permisos del token: pages_show_list, manage_pages')
+  console.error('   3. Verificar que la página tenga Instagram Business conectado')
+  
+  return null
 }
 
 async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
@@ -383,20 +451,13 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
 
     console.log('✅ Token encontrado, longitud:', accessToken.length)
 
-    // NUEVO: Obtener el Facebook Page ID programáticamente
+    // Obtener PAGE_ID usando estrategia híbrida (secretos + dinámico + cache)
     console.log('🔍 Obteniendo Facebook Page ID...')
-    let pageId = Deno.env.get('PAGE_ID')
+    const pageId = await getPageId(accessToken)
     
     if (!pageId) {
-      console.log('⚠️ PAGE_ID no encontrado en secretos, obteniendo dinámicamente...')
-      pageId = await getFacebookPageId(accessToken)
-      
-      if (!pageId) {
-        console.error('❌ No se pudo obtener Facebook Page ID')
-        return false
-      }
-    } else {
-      console.log('✅ PAGE_ID encontrado en secretos:', pageId)
+      console.error('❌ No se pudo obtener Facebook Page ID')
+      return false
     }
 
     console.log('📱 Usando Facebook Page ID:', pageId)
@@ -413,8 +474,8 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     console.log('📤 ENVIANDO A INSTAGRAM API:')
     console.log('📋 Payload:', JSON.stringify(messagePayload, null, 2))
 
-    // CORREGIDO: Usar Facebook Page ID en lugar de Instagram Business Account ID
-    const apiUrl = `https://graph.facebook.com/v19.0/${pageId}/messages?access_token=${accessToken}`
+    // Usar Facebook Page ID según documentación oficial
+    const apiUrl = `https://graph.facebook.com/v20.0/${pageId}/messages?access_token=${accessToken}`
     console.log('🌐 URL de API:', apiUrl.replace(accessToken, '[TOKEN_HIDDEN]'))
 
     const response = await fetch(apiUrl, {
@@ -435,6 +496,14 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     if (!response.ok) {
       console.error('❌ ERROR EN INSTAGRAM API:')
       console.error('📋 Error completo:', JSON.stringify(responseData, null, 2))
+      
+      // Limpiar cache si hay error (puede ser PAGE_ID incorrecto)
+      if (response.status === 400 || response.status === 403) {
+        console.log('🧹 Limpiando cache por posible PAGE_ID incorrecto')
+        cachedPageId = null
+        cacheTimestamp = 0
+      }
+      
       return false
     }
 
