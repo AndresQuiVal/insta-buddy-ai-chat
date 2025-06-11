@@ -96,54 +96,30 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       // PASO 1: Siempre guardar en localStorage como respaldo
       saveToLocalStorage(messageData);
 
-      // PASO 2: Intentar guardar en base de datos
-      const instagramUser = localStorage.getItem('hower-instagram-user');
-      
-      if (!instagramUser) {
-        toast({
-          title: "Guardado localmente",
-          description: "Se guardó en tu navegador. Conéctate con Instagram para sincronizar.",
-          variant: "default"
-        });
-        onSubmit();
-        return;
+      // Registrar para diagnóstico
+      console.log('📋 Guardando autoresponder:', messageData);
+
+      // PASO 2: Guardar en base de datos SIN user_id por ahora
+      // Esto garantiza que se guarde un registro que el webhook podrá encontrar
+      const { data, error } = await supabase
+        .from('autoresponder_messages')
+        .insert({
+          ...messageData,
+          // No incluimos user_id a propósito para que sea NULL
+        })
+        .select();
+
+      if (error) {
+        console.error('Error al guardar en BD:', error);
+        throw error;
       }
 
-      const userData = JSON.parse(instagramUser);
-      const userId = userData.facebook?.id || userData.instagram?.id || 'instagram_user';
+      console.log('✅ Autoresponder guardado en BD:', data);
 
-      if (message) {
-        // Editar mensaje existente
-        const { error } = await supabase
-          .from('autoresponder_messages')
-          .update({
-            ...messageData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', message.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "¡Actualizado!",
-          description: "Respuesta automática actualizada correctamente",
-        });
-      } else {
-        // Crear nuevo mensaje
-        const { error } = await supabase
-          .from('autoresponder_messages')
-          .insert({
-            ...messageData,
-            user_id: userId
-          });
-
-        if (error) throw error;
-
-        toast({
-          title: "¡Creado!",
-          description: "Respuesta automática creada correctamente",
-        });
-      }
+      toast({
+        title: "¡Creado!",
+        description: "Respuesta automática creada correctamente",
+      });
 
       onSubmit();
     } catch (error) {
