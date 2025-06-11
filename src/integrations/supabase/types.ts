@@ -9,6 +9,74 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      autoresponder_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          keywords: string[] | null
+          message_text: string
+          name: string
+          send_only_first_message: boolean
+          updated_at: string
+          use_keywords: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[] | null
+          message_text: string
+          name: string
+          send_only_first_message?: boolean
+          updated_at?: string
+          use_keywords?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[] | null
+          message_text?: string
+          name?: string
+          send_only_first_message?: boolean
+          updated_at?: string
+          use_keywords?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      autoresponder_sent_log: {
+        Row: {
+          autoresponder_message_id: string | null
+          id: string
+          sender_id: string
+          sent_at: string
+        }
+        Insert: {
+          autoresponder_message_id?: string | null
+          id?: string
+          sender_id: string
+          sent_at?: string
+        }
+        Update: {
+          autoresponder_message_id?: string | null
+          id?: string
+          sender_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autoresponder_sent_log_autoresponder_message_id_fkey"
+            columns: ["autoresponder_message_id"]
+            isOneToOne: false
+            referencedRelation: "autoresponder_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ideal_client_traits: {
         Row: {
           created_at: string
@@ -135,10 +203,38 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_last_activity: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string
+          prospect_id: string
+          traits_reset_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string
+          prospect_id: string
+          traits_reset_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string
+          prospect_id?: string
+          traits_reset_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           ai_delay: number | null
           ai_enabled: boolean | null
+          auto_reset_hours: number | null
           created_at: string
           ia_persona: string | null
           id: string
@@ -150,6 +246,7 @@ export type Database = {
         Insert: {
           ai_delay?: number | null
           ai_enabled?: boolean | null
+          auto_reset_hours?: number | null
           created_at?: string
           ia_persona?: string | null
           id?: string
@@ -161,6 +258,7 @@ export type Database = {
         Update: {
           ai_delay?: number | null
           ai_enabled?: boolean | null
+          auto_reset_hours?: number | null
           created_at?: string
           ia_persona?: string | null
           id?: string
@@ -196,6 +294,14 @@ export type Database = {
           avg_response_time_seconds: number
           last_message_date: string
         }[]
+      }
+      reset_inactive_prospect_traits: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      update_prospect_activity: {
+        Args: { p_prospect_id: string }
+        Returns: undefined
       }
     }
     Enums: {

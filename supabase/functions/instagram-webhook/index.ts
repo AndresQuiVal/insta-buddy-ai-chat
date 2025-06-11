@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -30,6 +31,11 @@ interface ChangeEvent {
     messaging?: MessagingEvent[];
   };
 }
+
+// Cache para PAGE_ID (en memoria, se resetea con cada reinicio de función)
+let cachedPageId: string | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos en milliseconds
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -73,7 +79,7 @@ serve(async (req) => {
       const body = await req.json()
       console.log('📨 Instagram webhook received:', JSON.stringify(body, null, 2))
 
-      // Inicializar cliente Supabase
+      // Inicializar cliente Supabase solo para mensajes
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -124,48 +130,33 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  console.log('🚀 ==========================================')
-  console.log('🚀 PROCESANDO MENSAJE DE INSTAGRAM')
-  console.log('🚀 ==========================================')
+  console.log('🚀 === PROCESANDO MENSAJE PARA AUTORESPONDER ===')
+  console.log('👤 SENDER ID:', event.sender.id)
+  console.log('💬 MENSAJE:', event.message?.text)
 
   try {
-    // Si es echo, solo guardar
-    if (event.message?.is_echo) {
-      console.log('🔄 ECHO detectado - solo guardando mensaje enviado')
-      if (event.message.text) {
-        const messageData = {
-          instagram_message_id: event.message.mid,
-          sender_id: event.sender.id,
-          recipient_id: event.recipient.id,
-          message_text: event.message.text,
-          message_type: 'sent',
-          timestamp: new Date(event.timestamp).toISOString(),
-          is_read: false,
-          raw_data: {
-            webhook_data: event,
-            received_at: new Date().toISOString(),
-            source: 'instagram_webhook',
-            is_echo: true
-          }
-        }
-        await supabase.from('instagram_messages').insert(messageData)
-        console.log('💾 Echo guardado exitosamente')
+    // PASO 0: Actualizar actividad del prospecto en BD
+    try {
+      const { error: activityError } = await supabase.rpc('update_prospect_activity', {
+        p_prospect_id: event.sender.id
+      });
+      
+      if (activityError) {
+        console.error('⚠️ Error actualizando actividad:', activityError);
+      } else {
+        console.log('✅ Actividad del prospecto actualizada');
       }
+    } catch (error) {
+      console.error('⚠️ Error en actualización de actividad:', error);
+    }
+
+    // PASO 1: Verificar que no sea un echo y que tenga texto
+    if (!event.message?.text || event.message?.is_echo) {
+      console.log('⏭️ Mensaje no válido o es un echo - saltando')
       return
     }
 
-    // Verificar que hay mensaje real del usuario
-    if (!event.message || !event.message.text) {
-      console.log('⏭️ NO HAY MENSAJE DE TEXTO - saltando')
-      return
-    }
-
-    console.log('✅ MENSAJE REAL DEL USUARIO DETECTADO')
-    console.log('👤 SENDER ID:', event.sender.id)
-    console.log('💬 MENSAJE DEL USUARIO:', event.message.text)
-
-    // PASO 1: GUARDAR MENSAJE
-    console.log('📝 ========== PASO 1: GUARDAR MENSAJE ==========')
+    // PASO 2: Guardar el mensaje recibido en BD
     const messageData = {
       instagram_message_id: event.message.mid,
       sender_id: event.sender.id,
@@ -181,279 +172,334 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       }
     }
 
-    // Verificar si ya existe
+    // Verificar duplicados por mensaje ID
     const { data: existingMessage } = await supabase
       .from('instagram_messages')
       .select('id')
       .eq('instagram_message_id', event.message.mid)
-      .single()
+      .maybeSingle()
 
     if (existingMessage) {
-      console.log('⏭️ MENSAJE YA EXISTE - saltando')
+      console.log('⏭️ Mensaje duplicado - saltando')
       return
     }
 
-    await supabase.from('instagram_messages').insert(messageData)
-    console.log('✅ PASO 1 COMPLETADO: Mensaje guardado')
-
-    // PASO 2: OBTENER CONVERSACIÓN COMPLETA - CON LOGS DETALLADOS
-    console.log('📚 ========== PASO 2: OBTENER CONVERSACIÓN COMPLETA ==========')
-    
-    // Obtener TODA la conversación
-    const { data: conversationHistory, error: historyError } = await supabase
-      .from('instagram_messages')
-      .select('*')
-      .or(`sender_id.eq.${event.sender.id},recipient_id.eq.${event.sender.id}`)
-      .order('timestamp', { ascending: true })
-
-    if (historyError) {
-      console.error('❌ ERROR OBTENIENDO HISTORIAL:', historyError)
-      await sendSimpleResponse(supabase, event.sender.id, "¡Hola! ¿Cómo estás?")
-      return
-    }
-
-    const messages = conversationHistory || []
-    console.log(`📊 TOTAL MENSAJES EN CONVERSACIÓN: ${messages.length}`)
-    
-    // ========== AQUÍ ESTÁ EL LOG DETALLADO QUE PEDISTE ==========
-    console.log('🔍 =============== CONVERSACIÓN COMPLETA - ANÁLISIS DETALLADO ===============')
-    console.log('🔍 NÚMERO TOTAL DE MENSAJES:', messages.length)
-    console.log('🔍 ===============================================================')
-    
-    if (messages.length === 0) {
-      console.log('⚠️ NO HAY MENSAJES EN LA CONVERSACIÓN!')
+    const { error: insertError } = await supabase.from('instagram_messages').insert(messageData)
+    if (insertError) {
+      console.error('❌ Error guardando mensaje:', insertError)
+      // Continuar con autoresponder aunque falle el guardado
     } else {
-      messages.forEach((msg, index) => {
-        const isFromUser = msg.sender_id === event.sender.id
-        const sender = isFromUser ? 'USUARIO' : 'MARÍA'
-        const direction = isFromUser ? '👤➡️' : '🤖⬅️'
-        
-        console.log(`🔍 [${index + 1}/${messages.length}] ${direction} ${sender}: "${msg.message_text}"`)
-        console.log(`    📅 Timestamp: ${msg.timestamp}`)
-        console.log(`    📝 Message Type: ${msg.message_type}`)
-        console.log(`    🆔 Sender ID: ${msg.sender_id}`)
-        console.log(`    🎯 Recipient ID: ${msg.recipient_id}`)
-        console.log('    ─────────────────────────────────────────')
-      })
-    }
-    
-    console.log('🔍 ===============================================================')
-    console.log(`🔍 ÚLTIMO MENSAJE DEL USUARIO: "${event.message.text}"`)
-    console.log('🔍 ===============================================================')
-
-    // Crear contexto para el AI con TODA la conversación
-    const conversationContext = messages
-      .map(msg => {
-        const isFromUser = msg.sender_id === event.sender.id
-        const sender = isFromUser ? 'Usuario' : 'María'
-        return `${sender}: ${msg.message_text}`
-      })
-      .join('\n')
-
-    console.log('📖 =============== CONTEXTO PARA EL AI ===============')
-    console.log(conversationContext)
-    console.log('📖 =====================================================')
-
-    // PASO 3: GENERAR RESPUESTA INTELIGENTE
-    console.log('🤖 ========== PASO 3: GENERAR RESPUESTA INTELIGENTE ==========')
-    const aiResponse = await generateIntelligentResponse(conversationContext, event.message.text)
-    
-    // ENVIAR RESPUESTA
-    console.log('📤 ========== ENVIANDO RESPUESTA ==========')
-    console.log('💬 RESPUESTA GENERADA:', aiResponse)
-    await sendResponse(supabase, event.sender.id, aiResponse)
-
-    console.log('✅ ========== PROCESO COMPLETADO ==========')
-
-  } catch (error) {
-    console.error('❌ ERROR EN processMessagingEvent:', error)
-    throw error
-  }
-}
-
-async function generateIntelligentResponse(conversationContext: string, currentMessage: string): Promise<string> {
-  console.log('🧠 GENERANDO RESPUESTA CONVERSACIONAL...')
-  console.log('🔥 MENSAJE ACTUAL:', currentMessage)
-  console.log('📚 CONTEXTO COMPLETO:', conversationContext)
-  
-  try {
-    const openaiKey = Deno.env.get('OPENAI_API_KEY')
-    
-    if (!openaiKey) {
-      console.log('⚠️ NO HAY API KEY DE OPENAI - respuesta simple')
-      return getSimpleResponse(currentMessage)
+      console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PROMPT SIMPLE Y CONVERSACIONAL
-    const prompt = `Eres María, una asesora de viajes amigable y natural.
-
-CONVERSACIÓN ANTERIOR:
-${conversationContext}
-
-ÚLTIMO MENSAJE:
-"${currentMessage}"
-
-Responde de manera natural y conversacional como María. Sé auténtica, amigable y mantén la conversación fluida. Si te preguntan algo específico, responde directamente. Si es un saludo o comentario general, responde como lo haría una persona real en una conversación normal.
-
-Mantén las respuestas cortas (1-2 líneas máximo) y naturales.
-
-Responde SOLO el mensaje que enviarías:`
-
-    console.log('📤 ENVIANDO PROMPT CONVERSACIONAL A OPENAI...')
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'Eres María, una asesora de viajes que mantiene conversaciones naturales y auténticas.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 100,
-        temperature: 0.8,
-      }),
-    })
-
-    console.log('📨 RESPUESTA DE OPENAI STATUS:', response.status)
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ ERROR DETALLADO DE OPENAI:', errorText)
-      return getSimpleResponse(currentMessage)
-    }
-
-    const data = await response.json()
-    const aiMessage = data.choices?.[0]?.message?.content || "¡Hola! ¿Cómo estás?"
+    // PASO 3: OBTENER AUTORESPONDERS DESDE NUESTRO ENDPOINT
+    console.log('🔍 === OBTENIENDO AUTORESPONDERS ===')
     
-    console.log('🤖 RESPUESTA CONVERSACIONAL GENERADA:', aiMessage)
-    return aiMessage.trim()
-
-  } catch (error) {
-    console.error('❌ ERROR DETALLADO EN generateIntelligentResponse:', error)
-    return getSimpleResponse(currentMessage)
-  }
-}
-
-function getSimpleResponse(currentMessage: string): string {
-  console.log('🤖 GENERANDO RESPUESTA SIMPLE CONVERSACIONAL')
-  
-  const lowerMessage = currentMessage.toLowerCase()
-  
-  // Respuestas simples y naturales
-  if (lowerMessage.includes('hola') || lowerMessage.includes('buenas')) {
-    return "¡Hola! ¿Cómo estás? 😊"
-  }
-  
-  if (lowerMessage.includes('llamas') || lowerMessage.includes('nombre')) {
-    return "Soy María, mucho gusto 😊"
-  }
-  
-  if (lowerMessage.includes('qué tal') || lowerMessage.includes('como estas')) {
-    return "¡Todo bien! ¿Y tú cómo estás?"
-  }
-  
-  if (lowerMessage.includes('bien') || lowerMessage.includes('excelente')) {
-    return "¡Qué bueno! Me alegra saber eso 😊"
-  }
-  
-  if (lowerMessage.includes('gracias')) {
-    return "¡De nada! ¿En qué más puedo ayudarte?"
-  }
-  
-  // Respuesta conversacional por defecto
-  return "Interesante, cuéntame más sobre eso 😊"
-}
-
-async function sendResponse(supabase: any, senderId: string, messageText: string) {
-  try {
-    console.log('📨 PREPARANDO ENVÍO...')
-    
-    // Obtener delay
-    const { data: settings } = await supabase
-      .from('user_settings')
-      .select('ai_delay')
-      .limit(1)
-
-    const delay = (settings && settings.length > 0 ? settings[0].ai_delay : 3) * 1000
-    console.log(`⏰ ESPERANDO ${delay}ms...`)
-    
-    await new Promise(resolve => setTimeout(resolve, delay))
-
-    const success = await sendInstagramMessage(senderId, messageText)
-    
-    if (success) {
-      console.log('✅ MENSAJE ENVIADO A INSTAGRAM')
+    let autoresponders = [];
+    try {
+      console.log('📡 Consultando autoresponders desde endpoint...')
       
-      // Guardar mensaje enviado
-      const sentMessageData = {
-        instagram_message_id: `ai_response_${Date.now()}_${Math.random()}`,
-        sender_id: 'ai_assistant_maria',
-        recipient_id: senderId,
-        message_text: messageText,
-        message_type: 'sent',
-        timestamp: new Date().toISOString(),
-        raw_data: {
-          ai_generated: true,
-          source: 'webhook_ai_response'
-        }
+      const { data: autoresponderData, error: autoresponderError } = await supabase.functions.invoke('get-autoresponders', {
+        body: {}
+      });
+      
+      if (autoresponderError) {
+        console.error('❌ Error obteniendo autoresponders:', autoresponderError);
+        return;
       }
-
-      await supabase.from('instagram_messages').insert(sentMessageData)
-      console.log('✅ RESPUESTA GUARDADA EN BD')
-    } else {
-      console.error('❌ ERROR ENVIANDO A INSTAGRAM')
+      
+      console.log('📊 Respuesta del endpoint:', JSON.stringify(autoresponderData, null, 2));
+      
+      if (autoresponderData?.success && autoresponderData?.autoresponders) {
+        autoresponders = autoresponderData.autoresponders;
+        console.log('✅ Autoresponders obtenidos:', autoresponders.length);
+        console.log('📋 Lista de autoresponders:', autoresponders.map(ar => ({
+          id: ar.id,
+          name: ar.name,
+          is_active: ar.is_active,
+          message_preview: ar.message_text?.substring(0, 30) + '...',
+          use_keywords: ar.use_keywords,
+          keywords: ar.keywords
+        })));
+      } else {
+        console.error('❌ Respuesta no exitosa del endpoint:', autoresponderData);
+        return;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error crítico consultando autoresponders:', error);
+      return;
     }
 
+    if (!autoresponders || autoresponders.length === 0) {
+      console.log('❌ NO HAY AUTORESPONDERS DISPONIBLES')
+      console.log('💡 Asegúrate de haber configurado autoresponders en la aplicación')
+      return
+    }
+
+    // NUEVO: Filtrar autoresponders que coincidan con palabras clave
+    const messageText = event.message?.text?.toLowerCase() || '';
+    console.log('🔍 FILTRANDO POR PALABRAS CLAVE')
+    console.log('📝 Mensaje recibido (lowercase):', messageText)
+    
+    let matchingAutoresponders = autoresponders.filter(ar => {
+      // Si no usa palabras clave, siempre coincide
+      if (!ar.use_keywords || !ar.keywords || ar.keywords.length === 0) {
+        console.log(`✅ Autoresponder "${ar.name}" no usa palabras clave - COINCIDE`)
+        return true;
+      }
+      
+      // Verificar si alguna palabra clave está en el mensaje
+      const hasKeywordMatch = ar.keywords.some(keyword => {
+        const keywordLower = keyword.toLowerCase();
+        const matches = messageText.includes(keywordLower);
+        console.log(`🔍 Verificando palabra clave "${keyword}" -> ${matches ? 'COINCIDE' : 'NO COINCIDE'}`);
+        return matches;
+      });
+      
+      if (hasKeywordMatch) {
+        console.log(`✅ Autoresponder "${ar.name}" tiene coincidencia de palabras clave - COINCIDE`)
+      } else {
+        console.log(`❌ Autoresponder "${ar.name}" NO tiene coincidencia de palabras clave - NO COINCIDE`)
+      }
+      
+      return hasKeywordMatch;
+    });
+
+    if (matchingAutoresponders.length === 0) {
+      console.log('❌ NO HAY AUTORESPONDERS QUE COINCIDAN CON LAS PALABRAS CLAVE')
+      console.log('💡 El mensaje no contiene ninguna palabra clave configurada')
+      return;
+    }
+
+    // Usar el primer autoresponder que coincida
+    const selectedAutoresponder = matchingAutoresponders[0];
+    
+    console.log('🎯 AUTORESPONDER SELECCIONADO:')
+    console.log('📋 ID:', selectedAutoresponder.id)
+    console.log('📋 Nombre:', selectedAutoresponder.name)
+    console.log('📋 Mensaje:', selectedAutoresponder.message_text)
+    console.log('📋 Solo primer mensaje:', selectedAutoresponder.send_only_first_message)
+    console.log('📋 Usa palabras clave:', selectedAutoresponder.use_keywords)
+    console.log('📋 Palabras clave:', selectedAutoresponder.keywords)
+
+    // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
+    let shouldSendAutoresponder = true
+
+    if (selectedAutoresponder.send_only_first_message) {
+      console.log('🔍 Verificando si ya se le envió autoresponder a:', event.sender.id)
+      
+      const { data: alreadySent, error: checkError } = await supabase
+        .from('autoresponder_sent_log')
+        .select('id')
+        .eq('sender_id', event.sender.id)
+        .maybeSingle()
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('❌ Error verificando autoresponder:', checkError)
+      }
+
+      if (alreadySent) {
+        console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR')
+        shouldSendAutoresponder = false
+      } else {
+        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO')
+      }
+    } else {
+      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO')
+    }
+
+    // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
+    if (shouldSendAutoresponder) {
+      console.log('🚀 ENVIANDO AUTORESPONDER...')
+      await handleAutoresponder(supabase, event.sender.id, selectedAutoresponder)
+    } else {
+      console.log('⏭️ No enviando autoresponder según configuración')
+    }
+    
+    console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
+
   } catch (error) {
-    console.error('❌ ERROR EN sendResponse:', error)
+    console.error('❌ Error en processMessagingEvent:', error)
   }
 }
 
-async function sendSimpleResponse(supabase: any, senderId: string, messageText: string) {
+async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any) {
   try {
-    console.log('📨 ENVIANDO RESPUESTA SIMPLE:', messageText)
-    
-    const success = await sendInstagramMessage(senderId, messageText)
-    
+    console.log('🤖 INICIANDO ENVÍO DE AUTORESPONDER')
+    console.log('👤 Para usuario:', senderId)
+
+    const messageToSend = autoresponderConfig.message_text
+    const autoresponderMessageId = autoresponderConfig.id
+
+    console.log('📤 ENVIANDO MENSAJE:', messageToSend)
+    const success = await sendInstagramMessage(senderId, messageToSend)
+
     if (success) {
-      const sentMessageData = {
-        instagram_message_id: `simple_response_${Date.now()}_${Math.random()}`,
-        sender_id: 'ai_assistant_maria',
-        recipient_id: senderId,
-        message_text: messageText,
-        message_type: 'sent',
-        timestamp: new Date().toISOString(),
-        raw_data: {
-          ai_generated: false,
-          source: 'webhook_simple_response'
+      console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
+
+      // Solo registrar en log si está configurado como "solo primer mensaje"
+      if (autoresponderConfig.send_only_first_message) {
+        const { error: logError } = await supabase.from('autoresponder_sent_log').insert({
+          sender_id: senderId,
+          autoresponder_message_id: autoresponderMessageId
+        })
+
+        if (logError) {
+          console.error('⚠️ Error guardando log de autoresponder:', logError)
+        } else {
+          console.log('✅ Registrado en log para no enviar de nuevo')
         }
       }
 
-      await supabase.from('instagram_messages').insert(sentMessageData)
+      // Guardar el mensaje enviado en el historial
+      const sentMessageData = {
+        instagram_message_id: `autoresponder_${Date.now()}_${Math.random().toString().substring(2, 8)}`,
+        sender_id: 'system',
+        recipient_id: senderId,
+        message_text: messageToSend,
+        message_type: 'sent',
+        timestamp: new Date().toISOString(),
+        raw_data: {
+          autoresponder: true,
+          autoresponder_id: autoresponderMessageId,
+          send_only_first_message: autoresponderConfig.send_only_first_message,
+          source: 'autoresponder_system'
+        }
+      }
+
+      const { error: saveError } = await supabase.from('instagram_messages').insert(sentMessageData)
+      if (saveError) {
+        console.error('⚠️ Error guardando mensaje enviado:', saveError)
+      } else {
+        console.log('✅ AUTORESPONDER GUARDADO EN HISTORIAL')
+      }
+    } else {
+      console.error('❌ ERROR ENVIANDO AUTORESPONDER')
     }
+
   } catch (error) {
-    console.error('❌ ERROR EN sendSimpleResponse:', error)
+    console.error('❌ Error en handleAutoresponder:', error)
   }
+}
+
+async function getFacebookPageIdDynamically(accessToken: string): Promise<string | null> {
+  try {
+    console.log('🔍 Obteniendo Facebook Page ID dinámicamente usando Graph API...')
+    
+    // Usar endpoint /me/accounts con permisos pages_show_list según documentación
+    const accountsResponse = await fetch(
+      `https://graph.facebook.com/v20.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`
+    )
+    
+    if (!accountsResponse.ok) {
+      console.error('❌ Error en respuesta de Facebook API:', accountsResponse.status, accountsResponse.statusText)
+      return null
+    }
+    
+    const accountsData = await accountsResponse.json()
+    console.log('📊 Respuesta completa de Facebook API:', JSON.stringify(accountsData, null, 2))
+    
+    // Verificar errores en la respuesta
+    if (accountsData.error) {
+      console.error('❌ Error de Facebook Graph API:', accountsData.error)
+      console.error('💡 Verifica que el token tenga permisos: pages_show_list o manage_pages')
+      return null
+    }
+    
+    // Buscar página con Instagram Business Account
+    if (accountsData.data && Array.isArray(accountsData.data)) {
+      console.log(`📄 Total de páginas encontradas: ${accountsData.data.length}`)
+      
+      for (const page of accountsData.data) {
+        console.log(`📋 Página: ${page.name} (ID: ${page.id})`)
+        console.log(`📱 Instagram Business Account:`, page.instagram_business_account)
+        
+        if (page.instagram_business_account) {
+          console.log(`✅ ¡ENCONTRADO! Facebook Page ID: ${page.id} - ${page.name}`)
+          console.log(`📱 Instagram Business Account ID: ${page.instagram_business_account.id}`)
+          return page.id
+        }
+      }
+      
+      console.log('⚠️ No se encontró ninguna página con Instagram Business Account vinculado')
+      console.log('💡 Asegúrate de que la página tenga Instagram Business conectado')
+    } else {
+      console.log('⚠️ No se encontraron páginas en la respuesta de Facebook API')
+    }
+    
+    return null
+  } catch (error) {
+    console.error('❌ Error crítico obteniendo Facebook Page ID:', error)
+    return null
+  }
+}
+
+async function getPageId(accessToken: string): Promise<string | null> {
+  const now = Date.now()
+  
+  // Verificar si tenemos cache válido
+  if (cachedPageId && (now - cacheTimestamp) < CACHE_DURATION) {
+    console.log('✅ Usando PAGE_ID desde cache:', cachedPageId)
+    return cachedPageId
+  }
+  
+  console.log('🔍 Cache expirado o vacío, obteniendo PAGE_ID...')
+  
+  // 1. Intentar obtener desde secretos de Supabase (más rápido)
+  let pageId = Deno.env.get('PAGE_ID')
+  
+  if (pageId) {
+    console.log('✅ PAGE_ID encontrado en secretos de Supabase:', pageId)
+    // Actualizar cache
+    cachedPageId = pageId
+    cacheTimestamp = now
+    return pageId
+  }
+  
+  // 2. Si no está en secretos, obtener dinámicamente desde Facebook Graph API
+  console.log('⚠️ PAGE_ID no encontrado en secretos, consultando Facebook Graph API...')
+  pageId = await getFacebookPageIdDynamically(accessToken)
+  
+  if (pageId) {
+    console.log('✅ PAGE_ID obtenido dinámicamente:', pageId)
+    // Actualizar cache
+    cachedPageId = pageId
+    cacheTimestamp = now
+    return pageId
+  }
+  
+  console.error('❌ No se pudo obtener PAGE_ID de ninguna fuente')
+  console.error('💡 Soluciones:')
+  console.error('   1. Agregar PAGE_ID a los secretos de Supabase')
+  console.error('   2. Verificar permisos del token: pages_show_list, manage_pages')
+  console.error('   3. Verificar que la página tenga Instagram Business conectado')
+  
+  return null
 }
 
 async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
   try {
+    console.log('🔑 VERIFICANDO TOKEN DE INSTAGRAM...')
     const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
     
     if (!accessToken) {
-      console.error('❌ NO HAY TOKEN DE INSTAGRAM')
+      console.error('❌ NO HAY TOKEN DE INSTAGRAM EN VARIABLES DE ENTORNO')
       return false
     }
+
+    console.log('✅ Token encontrado, longitud:', accessToken.length)
+
+    // Obtener PAGE_ID usando estrategia híbrida (secretos + dinámico + cache)
+    console.log('🔍 Obteniendo Facebook Page ID...')
+    const pageId = await getPageId(accessToken)
+    
+    if (!pageId) {
+      console.error('❌ No se pudo obtener Facebook Page ID')
+      return false
+    }
+
+    console.log('📱 Usando Facebook Page ID:', pageId)
 
     const messagePayload = {
       recipient: {
@@ -464,9 +510,14 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       }
     }
 
-    console.log('📤 ENVIANDO A INSTAGRAM API:', JSON.stringify(messagePayload, null, 2))
+    console.log('📤 ENVIANDO A INSTAGRAM API:')
+    console.log('📋 Payload:', JSON.stringify(messagePayload, null, 2))
 
-    const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
+    // Usar Facebook Page ID según documentación oficial
+    const apiUrl = `https://graph.facebook.com/v20.0/${pageId}/messages?access_token=${accessToken}`
+    console.log('🌐 URL de API:', apiUrl.replace(accessToken, '[TOKEN_HIDDEN]'))
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -474,18 +525,61 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       body: JSON.stringify(messagePayload)
     })
 
+    console.log('📊 RESPUESTA DE INSTAGRAM:')
+    console.log('🔢 Status:', response.status)
+    console.log('✅ OK:', response.ok)
+
     const responseData = await response.json()
+    console.log('📋 Data:', JSON.stringify(responseData, null, 2))
     
     if (!response.ok) {
-      console.error('❌ ERROR EN INSTAGRAM API:', JSON.stringify(responseData, null, 2))
+      console.error('❌ ERROR EN INSTAGRAM API:')
+      console.error('📋 Error completo:', JSON.stringify(responseData, null, 2))
+      
+      // Limpiar cache si hay error (puede ser PAGE_ID incorrecto)
+      if (response.status === 400 || response.status === 403) {
+        console.log('🧹 Limpiando cache por posible PAGE_ID incorrecto')
+        cachedPageId = null
+        cacheTimestamp = 0
+      }
+      
       return false
     }
 
-    console.log('✅ RESPUESTA EXITOSA DE INSTAGRAM:', JSON.stringify(responseData, null, 2))
+    console.log('✅ MENSAJE ENVIADO EXITOSAMENTE')
     return true
 
   } catch (error) {
-    console.error('❌ ERROR EN sendInstagramMessage:', error)
+    console.error('❌ ERROR CRÍTICO EN sendInstagramMessage:', error)
     return false
   }
+}
+
+// Funciones desactivadas que no se usan
+async function loadIdealTraits(supabase: any): Promise<any[]> {
+  return []
+}
+
+async function analyzeConversationProgress(supabase: any, senderId: string, conversationHistory: any[], idealTraits: any[]): Promise<any> {
+  return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
+}
+
+async function analyzeWithAI(conversationText: string, idealTraits: any[]): Promise<any> {
+  return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
+}
+
+async function generateStrategicAIResponse(supabase: any, userMessage: string, conversationHistory: any[], currentAnalysis: any, idealTraits: any[], openaiKey: string): Promise<string> {
+  return "Respuesta IA desactivada temporalmente"
+}
+
+async function sendFirstStrategicResponse(supabase: any, userId: string, userMessage: string) {
+  console.log('🤖 Respuesta estratégica inicial DESACTIVADA')
+}
+
+async function sendSimpleResponse(supabase: any, userId: string) {
+  console.log('🤖 Respuesta simple DESACTIVADA')
+}
+
+async function sendResponse(supabase: any, senderId: string, messageText: string) {
+  console.log('🤖 Respuesta IA DESACTIVADA')
 }

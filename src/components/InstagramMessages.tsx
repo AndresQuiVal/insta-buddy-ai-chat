@@ -1,14 +1,16 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain, Star, ArrowLeft } from 'lucide-react';
+import { MessageCircle, Send, User, Bot, RefreshCw, Settings, Clock, Brain, Star, ArrowLeft, Bug, Terminal } from 'lucide-react';
 import { handleAutomaticResponse, ChatMessage } from '@/services/openaiService';
 import { sendInstagramMessage } from '@/services/instagramService';
 import HistoricalSyncButton from './HistoricalSyncButton';
+import ConversationDebug from './ConversationDebug';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTraitAnalysis } from '@/hooks/useTraitAnalysis';
 import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface InstagramMessage {
   id: string;
@@ -65,6 +67,12 @@ interface ProspectAnalysis {
   message_count?: number;
 }
 
+interface LogMessage {
+  timestamp: Date;
+  message: string;
+  type: 'info' | 'error' | 'success';
+}
+
 const InstagramMessages: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -83,10 +91,14 @@ const InstagramMessages: React.FC = () => {
   const myTabId = React.useRef(`${Date.now()}-${Math.random()}`);
   const isMobile = useIsMobile();
   const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
+  const [logs, setLogs] = useState<LogMessage[]>([]);
+  const logsRef = useRef<LogMessage[]>([]);
+  const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   
   // Hook de análisis de características
   const { isAnalyzing, analyzeAndUpdateProspect } = useTraitAnalysis();
-  const { isAnalyzing: isAnalyzingAll, analyzeAll, loadIdealTraits } = useAITraitAnalysis();
 
   // 🔥 NUEVA FLAG PARA EVITAR BUCLES
   const isLoadingRef = useRef(false);
@@ -112,10 +124,132 @@ const InstagramMessages: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const traits = loadIdealTraits();
-    setIdealTraits(traits);
-    console.log("📋 Características cargadas en Messages:", traits);
-  }, [loadIdealTraits]);
+    // Cargar características ideales desde localStorage
+    loadIdealTraits();
+    
+    // Escuchar cambios en las características
+    const handleTraitsUpdate = () => {
+      console.log("🔄 Recargando características por evento...");
+      loadIdealTraits();
+    };
+    
+    window.addEventListener('traits-updated', handleTraitsUpdate);
+    
+    return () => {
+      window.removeEventListener('traits-updated', handleTraitsUpdate);
+    };
+  }, []);
+
+  const loadIdealTraits = async () => {
+    try {
+      console.log("🔍 Cargando características ideales desde localStorage...");
+      
+      // Intentar cargar desde localStorage primero
+      const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+      if (savedTraits) {
+        const parsedTraits = JSON.parse(savedTraits);
+        const traitsData = parsedTraits.map((t: any) => ({
+          trait: t.trait,
+          enabled: t.enabled
+        }));
+        
+        console.log("✅ Características cargadas desde localStorage:", traitsData);
+        setIdealTraits(traitsData);
+        
+        const enabledCount = traitsData.filter((t: any) => t.enabled).length;
+        
+        if (enabledCount === 0) {
+          toast({
+            title: "⚠️ Sin características habilitadas",
+            description: "Ve a Configuración > Cliente Ideal y habilita al menos una característica",
+            variant: "destructive"
+          });
+        } else {
+          console.log(`✅ ${enabledCount} de ${traitsData.length} características habilitadas correctamente`);
+        }
+        return;
+      }
+
+      // Si no hay datos en localStorage, intentar cargar desde Supabase como fallback
+      console.log("🔍 No se encontraron características en localStorage, intentando Supabase...");
+      
+      const { data: traits, error } = await supabase
+        .from('ideal_client_traits')
+        .select('*')
+        .order('position');
+
+      if (error) {
+        console.error('❌ Error loading ideal traits from Supabase:', error);
+        setIdealTraits([]);
+        toast({
+          title: "⚠️ Sin características configuradas",
+          description: "Ve a Configuración > Cliente Ideal para configurar las características",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log("📋 Datos de características obtenidos desde Supabase:", traits);
+
+      if (!traits || traits.length === 0) {
+        console.log("⚠️ No se encontraron características en Supabase ni localStorage");
+        setIdealTraits([]);
+        toast({
+          title: "⚠️ Sin características configuradas",
+          description: "Ve a Configuración > Cliente Ideal para configurar las características",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const traitsData = traits.map(t => ({
+        trait: t.trait,
+        enabled: t.enabled
+      }));
+
+      console.log("✅ Características procesadas desde Supabase:", traitsData);
+      setIdealTraits(traitsData);
+      
+      const enabledCount = traitsData.filter(t => t.enabled).length;
+      
+      if (enabledCount === 0) {
+        toast({
+          title: "⚠️ Sin características habilitadas",
+          description: "Ve a Configuración > Cliente Ideal y habilita al menos una característica",
+          variant: "destructive"
+        });
+      } else {
+        console.log(`✅ ${enabledCount} de ${traitsData.length} características habilitadas correctamente`);
+      }
+
+    } catch (error) {
+      console.error('💥 Error in loadIdealTraits:', error);
+      
+      // Último recurso: intentar cargar desde localStorage incluso si hay error
+      try {
+        const savedTraits = localStorage.getItem('hower-ideal-client-traits');
+        if (savedTraits) {
+          const parsedTraits = JSON.parse(savedTraits);
+          const traitsData = parsedTraits.map((t: any) => ({
+            trait: t.trait,
+            enabled: t.enabled
+          }));
+          
+          console.log("✅ Características cargadas desde localStorage (fallback):", traitsData);
+          setIdealTraits(traitsData);
+          return;
+        }
+      } catch (localStorageError) {
+        console.error('❌ Error al leer localStorage:', localStorageError);
+      }
+      
+      toast({
+        title: "Error",
+        description: "Error al cargar las características del cliente ideal",
+        variant: "destructive"
+      });
+    }
+  };
 
   useEffect(() => {
     loadConversations();
@@ -150,18 +284,11 @@ const InstagramMessages: React.FC = () => {
       console.log('🔍 Analizando mensaje recibido de:', newMessage.sender_id);
       
       try {
-        // Obtener todas las características ideales
-        const { data: traitsData } = await supabase
-          .from('ideal_client_traits')
-          .select('*')
-          .eq('enabled', true)
-          .order('position');
-
-        if (traitsData && traitsData.length > 0) {
-          const traits = traitsData.map(t => ({
+        if (idealTraits && idealTraits.length > 0) {
+          const traits = idealTraits.map((t, idx) => ({
             trait: t.trait,
             enabled: t.enabled,
-            position: t.position
+            position: idx
           }));
 
           // Obtener todo el historial de mensajes de este remitente
@@ -244,26 +371,109 @@ const InstagramMessages: React.FC = () => {
   };
 
   const handleAnalyzeAll = async () => {
-    console.log("🔍 Iniciando análisis completo con IA...");
+    if (idealTraits.length === 0) {
+      toast({
+        title: "⚠️ Sin características configuradas",
+        description: "Primero configura las características del cliente ideal en Configuración",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const enabledTraits = idealTraits.filter(t => t.enabled);
+    
+    if (enabledTraits.length === 0) {
+      toast({
+        title: "⚠️ Sin características habilitadas",
+        description: "Habilita al menos una característica en Configuración > Cliente Ideal",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log("🔍 INICIANDO ANÁLISIS COMPLETO DE TODAS LAS CONVERSACIONES");
+    console.log(`🎯 Características habilitadas: ${enabledTraits.length}/${idealTraits.length}`);
+    enabledTraits.forEach((trait, idx) => {
+      console.log(`   ${idx + 1}. ${trait.trait}`);
+    });
+
+    setIsAnalyzingAll(true);
+    addLog('=== INICIANDO ANÁLISIS COMPLETO ===', 'info');
+    addLog(`Características habilitadas: ${enabledTraits.length}/${idealTraits.length}`, 'info');
     
     try {
-      await analyzeAll();
+      let totalAnalyzed = 0;
+      let totalWithMatches = 0;
+
+      for (const conversation of conversations) {
+        addLog(`🔍 Analizando: Usuario ${conversation.sender_id.slice(-4)}`, 'info');
+        
+        // Obtener solo los mensajes del usuario (recibidos)
+        const userMessages = conversation.messages
+          .filter(msg => msg.message_type === 'received')
+          .map(msg => msg.message_text)
+          .join(' ');
+
+        if (userMessages.trim()) {
+          console.log(`📝 Analizando ${conversation.sender_id}: "${userMessages.substring(0, 100)}..."`);
+          
+          const traits = enabledTraits.map((t, idx) => ({
+            trait: t.trait,
+            enabled: t.enabled,
+            position: idx
+          }));
+
+          try {
+            const result = await analyzeAndUpdateProspect(
+              conversation.sender_id,
+              `Usuario ${conversation.sender_id.slice(-4)}`,
+              userMessages,
+              traits
+            );
+
+            totalAnalyzed++;
+            
+            if (result.matchPoints > 0) {
+              totalWithMatches++;
+              addLog(`✅ Usuario ${conversation.sender_id.slice(-4)}: ${result.matchPoints}/${enabledTraits.length} características`, 'success');
+              
+              // Guardar en Supabase
+              await saveAnalysisToSupabase(conversation.sender_id, result, conversation.messages.length);
+            } else {
+              addLog(`❌ Usuario ${conversation.sender_id.slice(-4)}: 0 características cumplidas`, 'info');
+            }
+
+          } catch (error: any) {
+            console.error(`❌ Error analizando ${conversation.sender_id}:`, error);
+            addLog(`❌ Error analizando Usuario ${conversation.sender_id.slice(-4)}: ${error.message}`, 'error');
+          }
+        } else {
+          addLog(`⚠️ Usuario ${conversation.sender_id.slice(-4)}: Sin mensajes del usuario para analizar`, 'info');
+        }
+      }
+
+      addLog('=== ANÁLISIS COMPLETADO ===', 'success');
+      addLog(`📊 Total conversaciones analizadas: ${totalAnalyzed}`, 'success');
+      addLog(`⭐ Conversaciones con características: ${totalWithMatches}`, 'success');
+
+      // Recargar conversaciones para mostrar análisis actualizado
+      await loadConversations();
       
       toast({
         title: "🤖 ¡Análisis completado!",
-        description: "Todas las conversaciones han sido analizadas con IA",
+        description: `${totalAnalyzed} conversaciones analizadas. ${totalWithMatches} con características cumplidas.`,
       });
       
-      // Recargar estadísticas después del análisis
-      await loadConversations();
-      
-    } catch (error) {
-      console.error("Error en análisis:", error);
+    } catch (error: any) {
+      console.error("❌ Error en análisis completo:", error);
+      addLog(`❌ Error general: ${error.message}`, 'error');
       toast({
-        title: "Error",
+        title: "Error en análisis",
         description: "Hubo un problema al analizar las conversaciones",
         variant: "destructive"
       });
+    } finally {
+      setIsAnalyzingAll(false);
     }
   };
 
@@ -366,8 +576,25 @@ const InstagramMessages: React.FC = () => {
         });
       }
 
+      // ORDENAR CONVERSACIONES POR MATCH POINTS (mayor a menor) Y LUEGO POR FECHA
       const conversationsArray = Array.from(conversationMap.values())
-        .sort((a, b) => new Date(b.last_message.created_at).getTime() - new Date(a.last_message.created_at).getTime());
+        .sort((a, b) => {
+          // Primero ordenar por matchPoints (mayor a menor)
+          const matchPointsA = a.matchPoints || 0;
+          const matchPointsB = b.matchPoints || 0;
+          
+          if (matchPointsA !== matchPointsB) {
+            return matchPointsB - matchPointsA;
+          }
+          
+          // Si tienen los mismos matchPoints, ordenar por fecha (más reciente primero)
+          return new Date(b.last_message.created_at).getTime() - new Date(a.last_message.created_at).getTime();
+        });
+
+      console.log("📊 CONVERSACIONES ORDENADAS POR MATCH POINTS:");
+      conversationsArray.forEach((conv, idx) => {
+        console.log(`${idx + 1}. Usuario ${conv.sender_id.slice(-4)}: ${conv.matchPoints || 0}/${idealTraits.length} características`);
+      });
 
       setConversations(conversationsArray);
       
@@ -393,16 +620,38 @@ const InstagramMessages: React.FC = () => {
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) || []
     : [];
 
+  const addLog = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
+    const newLog = { timestamp: new Date(), message, type };
+    logsRef.current = [...logsRef.current, newLog];
+    setLogs(logsRef.current);
+  };
+
   const sendMessage = async (messageText: string) => {
     if (!selectedConversation || !messageText.trim() || !pageId) return;
     
     try {
       setSending(true);
       
+      // Obtener y mostrar la conversación completa antes de enviar
+      const currentConversation = conversations.find(c => c.sender_id === selectedConversation);
+      if (currentConversation) {
+        addLog('=== CONVERSACIÓN COMPLETA ANTES DE ENVIAR MENSAJE ===', 'info');
+        addLog(`ID de Conversación: ${selectedConversation}`, 'info');
+        addLog('Historial de mensajes:', 'info');
+        currentConversation.messages
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+          .forEach((msg, index) => {
+            addLog(`[${index + 1}] ${msg.message_type === 'received' ? 'USUARIO' : 'BOT'} (${new Date(msg.timestamp).toLocaleString()}): ${msg.message_text}`, 'info');
+          });
+        addLog('=== FIN DE LA CONVERSACIÓN ===', 'info');
+        addLog(`Nuevo mensaje a enviar: ${messageText}`, 'info');
+      }
+      
       const result = await sendInstagramMessage(selectedConversation, messageText);
       
       if (result.success) {
         setNewMessage('');
+        addLog('Mensaje enviado exitosamente', 'success');
         toast({
           title: "Mensaje enviado",
           description: "Tu mensaje se ha enviado correctamente",
@@ -411,13 +660,15 @@ const InstagramMessages: React.FC = () => {
         // Recargar conversaciones para mostrar el nuevo mensaje
         loadConversations();
       } else {
+        addLog(`Error al enviar mensaje: ${result.error}`, 'error');
         toast({
           title: "Error al enviar",
           description: result.error || "No se pudo enviar el mensaje",
           variant: "destructive"
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      addLog(`Error en envío de mensaje: ${error.message}`, 'error');
       console.error('Error sending message:', error);
       toast({
         title: "Error",
@@ -479,34 +730,33 @@ const InstagramMessages: React.FC = () => {
   }
 
   return (
-    <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex">
+    <div className="flex-1 flex">
       {/* Lista de conversaciones */}
-      <div className={`${isMobile && selectedConversation ? 'hidden' : 'flex'} flex-col w-full ${!isMobile ? 'max-w-md' : ''} border-r border-purple-100`}>
-        <div className="flex items-center justify-between p-4 border-b border-purple-100">
-          <div>
-            <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
-              <MessageCircle className="w-6 h-6" /> Conversaciones
-            </h2>
-            <p className="text-sm text-gray-600">{conversations.length} conversaciones</p>
-            <p className="text-sm text-gray-600 mt-1">
-              Características configuradas: {idealTraits.filter(t => t.enabled).length} activas
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="Configuración"
-            >
-              <Settings className="w-5 h-5 text-gray-600" />
-            </button>
-            <button
-              onClick={loadConversations}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="Recargar"
-            >
-              <RefreshCw className="w-5 h-5 text-gray-600" />
-            </button>
+      <div className={`w-80 border-r border-gray-200 flex flex-col ${isMobile && selectedConversation ? 'hidden' : ''}`}>
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Mensajes</h2>
+          <div className="flex items-center gap-2">
+            <HistoricalSyncButton />
+            {selectedConversation && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowDebug(true)}
+                  title="Ver debug de conversación"
+                >
+                  <Bug className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowLogs(true)}
+                  title="Ver logs en vivo"
+                >
+                  <Terminal className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -514,13 +764,32 @@ const InstagramMessages: React.FC = () => {
         <div className="p-4 border-b border-purple-100">
           <button
             onClick={handleAnalyzeAll}
-            disabled={isAnalyzingAll}
+            disabled={isAnalyzingAll || idealTraits.length === 0}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <Brain className="w-4 h-4" />
             {isAnalyzingAll ? 'Analizando...' : `🔍 Analizar Todo (${idealTraits.filter(t => t.enabled).length} criterios)`}
             {isAnalyzingAll && <RefreshCw className="w-4 h-4 animate-spin ml-2" />}
           </button>
+          {idealTraits.length === 0 && (
+            <p className="text-xs text-red-500 mt-1 text-center">
+              Configura características del cliente ideal primero
+            </p>
+          )}
+          {idealTraits.length > 0 && idealTraits.filter(t => t.enabled).length === 0 && (
+            <p className="text-xs text-orange-500 mt-1 text-center">
+              Habilita al menos una característica en Configuración {'>'}  Cliente Ideal
+            </p>
+          )}
+          <div className="mt-2 text-center">
+            <button 
+              onClick={loadIdealTraits}
+              disabled={isAnalyzingAll}
+              className="text-xs text-blue-600 hover:underline disabled:opacity-50"
+            >
+              🔄 Recargar características
+            </button>
+          </div>
         </div>
 
         {/* Configuración */}
@@ -608,7 +877,7 @@ const InstagramMessages: React.FC = () => {
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-500 fill-current" />
                         <span className="text-sm font-medium text-yellow-700">
-                          {conversation.matchPoints}/4
+                          {conversation.matchPoints}/{idealTraits.length}
                         </span>
                       </div>
                     )}
@@ -770,6 +1039,52 @@ const InstagramMessages: React.FC = () => {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Logs Modal */}
+      {showLogs && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Logs en Vivo</h2>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setLogs([])}>Limpiar</Button>
+                <Button variant="outline" onClick={() => setShowLogs(false)}>Cerrar</Button>
+              </div>
+            </div>
+            
+            <ScrollArea className="flex-1 bg-gray-900 rounded-lg p-4 font-mono text-sm">
+              <div className="space-y-1">
+                {logs.map((log, index) => (
+                  <div 
+                    key={index} 
+                    className={`${
+                      log.type === 'error' ? 'text-red-400' :
+                      log.type === 'success' ? 'text-green-400' :
+                      'text-gray-300'
+                    }`}
+                  >
+                    <span className="text-gray-500">[{log.timestamp.toLocaleTimeString()}]</span>{' '}
+                    {log.message}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      )}
+
+      {/* Debug Modal */}
+      {showDebug && selectedConversation && (
+        <ConversationDebug
+          messages={conversations.find(c => c.sender_id === selectedConversation)?.messages.map(msg => ({
+            text: msg.message_text,
+            sender: msg.message_type === 'sent' ? 'ai' : 'user',
+            timestamp: new Date(msg.timestamp),
+            id: msg.id
+          })) || []}
+          onClose={() => setShowDebug(false)}
+        />
       )}
     </div>
   );
