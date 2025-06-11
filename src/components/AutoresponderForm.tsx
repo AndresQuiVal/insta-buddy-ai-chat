@@ -40,7 +40,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setName('');
       setMessageText('');
       setIsActive(true);
-      setSendOnlyFirstMessage(false); // Por defecto desactivado
+      setSendOnlyFirstMessage(false);
     }
   }, [message]);
 
@@ -49,13 +49,11 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       const existingMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
       
       if (message) {
-        // Actualizar mensaje existente
         const updatedMessages = existingMessages.map((msg: any) => 
           msg.id === message.id ? { ...msg, ...messageData } : msg
         );
         localStorage.setItem('autoresponder-messages', JSON.stringify(updatedMessages));
       } else {
-        // Agregar nuevo mensaje
         const newMessage = {
           id: `local_${Date.now()}`,
           ...messageData,
@@ -96,18 +94,44 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       // PASO 1: Siempre guardar en localStorage como respaldo
       saveToLocalStorage(messageData);
 
-      // Registrar para diagnóstico
       console.log('📋 Guardando autoresponder:', messageData);
 
-      // PASO 2: Guardar en base de datos SIN user_id por ahora
-      // Esto garantiza que se guarde un registro que el webhook podrá encontrar
-      const { data, error } = await supabase
-        .from('autoresponder_messages')
-        .insert({
-          ...messageData,
-          // No incluimos user_id a propósito para que sea NULL
-        })
-        .select();
+      // PASO 2: Intentar obtener user_id real del usuario conectado
+      let userId = null;
+      try {
+        const instagramUser = localStorage.getItem('hower-instagram-user');
+        if (instagramUser) {
+          const userData = JSON.parse(instagramUser);
+          userId = userData.facebook?.id || userData.instagram?.id || 'instagram_user';
+          console.log('👤 Usuario ID encontrado:', userId);
+        }
+      } catch (e) {
+        console.log('⚠️ No se pudo obtener user_id, usando general');
+      }
+
+      // PASO 3: Guardar en base de datos con user_id o como general
+      const dataToSave = {
+        ...messageData,
+        user_id: userId // Puede ser null si no hay usuario
+      };
+
+      let result;
+      if (message) {
+        // Actualizar existente
+        result = await supabase
+          .from('autoresponder_messages')
+          .update(dataToSave)
+          .eq('id', message.id)
+          .select();
+      } else {
+        // Crear nuevo
+        result = await supabase
+          .from('autoresponder_messages')
+          .insert(dataToSave)
+          .select();
+      }
+
+      const { data, error } = result;
 
       if (error) {
         console.error('Error al guardar en BD:', error);
@@ -117,8 +141,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       console.log('✅ Autoresponder guardado en BD:', data);
 
       toast({
-        title: "¡Creado!",
-        description: "Respuesta automática creada correctamente",
+        title: message ? "¡Actualizado!" : "¡Creado!",
+        description: "Respuesta automática guardada correctamente",
       });
 
       onSubmit();
@@ -128,7 +152,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         title: "Guardado localmente",
         description: "Se guardó en tu navegador. Error al sincronizar con servidor.",
       });
-      onSubmit(); // Continúa porque se guardó localmente
+      onSubmit();
     } finally {
       setIsLoading(false);
     }
