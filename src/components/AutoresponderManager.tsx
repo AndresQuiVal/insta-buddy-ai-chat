@@ -7,6 +7,7 @@ import { Plus, Edit, Trash2, MessageCircle, Cloud, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AutoresponderForm from './AutoresponderForm';
+import AutoresponderTypeDialog from './AutoresponderTypeDialog';
 
 interface AutoresponderMessage {
   id: string;
@@ -23,6 +24,7 @@ const AutoresponderManager = () => {
   const [messages, setMessages] = useState<AutoresponderMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showTypeDialog, setShowTypeDialog] = useState(false);
   const [editingMessage, setEditingMessage] = useState<AutoresponderMessage | null>(null);
   const { toast } = useToast();
 
@@ -146,6 +148,29 @@ const AutoresponderManager = () => {
     setEditingMessage(null);
   };
 
+  const handleNewAutoresponder = () => {
+    setShowTypeDialog(true);
+  };
+
+  const handleSelectType = (type: 'comments' | 'messages') => {
+    setShowTypeDialog(false);
+    
+    if (type === 'comments') {
+      // Para comentarios, no hacer nada por ahora
+      toast({
+        title: "Próximamente",
+        description: "La funcionalidad para comentarios estará disponible pronto",
+        variant: "default"
+      });
+      return;
+    }
+    
+    // Para mensajes directos, mostrar el formulario
+    if (type === 'messages') {
+      setShowForm(true);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -168,13 +193,19 @@ const AutoresponderManager = () => {
           </div>
         </div>
         <Button
-          onClick={() => setShowForm(true)}
+          onClick={handleNewAutoresponder}
           className="flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Nueva Respuesta
         </Button>
       </div>
+
+      <AutoresponderTypeDialog
+        open={showTypeDialog}
+        onOpenChange={setShowTypeDialog}
+        onSelectType={handleSelectType}
+      />
 
       {showForm && (
         <Card>
@@ -207,7 +238,7 @@ const AutoresponderManager = () => {
               <p className="text-gray-600 text-center mb-4">
                 Crea tu primera respuesta automática para nuevos prospectos
               </p>
-              <Button onClick={() => setShowForm(true)}>
+              <Button onClick={handleNewAutoresponder}>
                 <Plus className="w-4 h-4 mr-2" />
                 Crear Primera Respuesta
               </Button>
