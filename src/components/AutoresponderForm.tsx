@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { X } from 'lucide-react';
 
 interface AutoresponderMessage {
   id: string;
@@ -14,6 +15,8 @@ interface AutoresponderMessage {
   message_text: string;
   is_active: boolean;
   send_only_first_message?: boolean;
+  use_keywords?: boolean;
+  keywords?: string[];
 }
 
 interface AutoresponderFormProps {
@@ -27,6 +30,9 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const [messageText, setMessageText] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [sendOnlyFirstMessage, setSendOnlyFirstMessage] = useState(false);
+  const [useKeywords, setUseKeywords] = useState(false);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [newKeyword, setNewKeyword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -36,13 +42,35 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setMessageText(message.message_text);
       setIsActive(message.is_active);
       setSendOnlyFirstMessage(message.send_only_first_message || false);
+      setUseKeywords(message.use_keywords || false);
+      setKeywords(message.keywords || []);
     } else {
       setName('');
       setMessageText('');
       setIsActive(true);
       setSendOnlyFirstMessage(false);
+      setUseKeywords(false);
+      setKeywords([]);
     }
   }, [message]);
+
+  const addKeyword = () => {
+    if (newKeyword.trim() && !keywords.includes(newKeyword.trim().toLowerCase())) {
+      setKeywords([...keywords, newKeyword.trim().toLowerCase()]);
+      setNewKeyword('');
+    }
+  };
+
+  const removeKeyword = (keywordToRemove: string) => {
+    setKeywords(keywords.filter(keyword => keyword !== keywordToRemove));
+  };
+
+  const handleKeywordInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addKeyword();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +79,15 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       toast({
         title: "Error",
         description: "Por favor completa todos los campos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (useKeywords && keywords.length === 0) {
+      toast({
+        title: "Error",
+        description: "Si activas el filtro de palabras clave, debes agregar al menos una palabra",
         variant: "destructive"
       });
       return;
@@ -66,6 +103,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         message_text: messageText.trim(),
         is_active: isActive,
         send_only_first_message: sendOnlyFirstMessage,
+        use_keywords: useKeywords,
+        keywords: useKeywords ? keywords : null,
         user_id: null // Sin usuario específico por ahora
       };
 
@@ -162,6 +201,64 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
             : "Responderá a todos los mensajes que recibas"
           }
         </p>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="useKeywords"
+            checked={useKeywords}
+            onCheckedChange={setUseKeywords}
+          />
+          <Label htmlFor="useKeywords">Solo responder a palabras clave específicas</Label>
+        </div>
+        
+        {useKeywords && (
+          <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+            <div>
+              <Label htmlFor="newKeyword">Agregar palabra clave</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="newKeyword"
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  onKeyPress={handleKeywordInputKeyPress}
+                  placeholder="Ej: hola, info, precios..."
+                  className="flex-1"
+                />
+                <Button type="button" onClick={addKeyword} disabled={!newKeyword.trim()}>
+                  Agregar
+                </Button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Solo responderá si el mensaje contiene alguna de estas palabras (no importan mayúsculas/minúsculas)
+              </p>
+            </div>
+            
+            {keywords.length > 0 && (
+              <div>
+                <Label>Palabras clave configuradas:</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {keywords.map((keyword, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm"
+                    >
+                      {keyword}
+                      <button
+                        type="button"
+                        onClick={() => removeKeyword(keyword)}
+                        className="hover:bg-blue-200 rounded-full p-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end space-x-2">

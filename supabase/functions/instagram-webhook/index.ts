@@ -217,7 +217,9 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
           id: ar.id,
           name: ar.name,
           is_active: ar.is_active,
-          message_preview: ar.message_text?.substring(0, 30) + '...'
+          message_preview: ar.message_text?.substring(0, 30) + '...',
+          use_keywords: ar.use_keywords,
+          keywords: ar.keywords
         })));
       } else {
         console.error('❌ Respuesta no exitosa del endpoint:', autoresponderData);
@@ -235,14 +237,51 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       return
     }
 
-    // Usar el primer autoresponder activo
-    const selectedAutoresponder = autoresponders[0];
+    // NUEVO: Filtrar autoresponders que coincidan con palabras clave
+    const messageText = event.message?.text?.toLowerCase() || '';
+    console.log('🔍 FILTRANDO POR PALABRAS CLAVE')
+    console.log('📝 Mensaje recibido (lowercase):', messageText)
+    
+    let matchingAutoresponders = autoresponders.filter(ar => {
+      // Si no usa palabras clave, siempre coincide
+      if (!ar.use_keywords || !ar.keywords || ar.keywords.length === 0) {
+        console.log(`✅ Autoresponder "${ar.name}" no usa palabras clave - COINCIDE`)
+        return true;
+      }
+      
+      // Verificar si alguna palabra clave está en el mensaje
+      const hasKeywordMatch = ar.keywords.some(keyword => {
+        const keywordLower = keyword.toLowerCase();
+        const matches = messageText.includes(keywordLower);
+        console.log(`🔍 Verificando palabra clave "${keyword}" -> ${matches ? 'COINCIDE' : 'NO COINCIDE'}`);
+        return matches;
+      });
+      
+      if (hasKeywordMatch) {
+        console.log(`✅ Autoresponder "${ar.name}" tiene coincidencia de palabras clave - COINCIDE`)
+      } else {
+        console.log(`❌ Autoresponder "${ar.name}" NO tiene coincidencia de palabras clave - NO COINCIDE`)
+      }
+      
+      return hasKeywordMatch;
+    });
+
+    if (matchingAutoresponders.length === 0) {
+      console.log('❌ NO HAY AUTORESPONDERS QUE COINCIDAN CON LAS PALABRAS CLAVE')
+      console.log('💡 El mensaje no contiene ninguna palabra clave configurada')
+      return;
+    }
+
+    // Usar el primer autoresponder que coincida
+    const selectedAutoresponder = matchingAutoresponders[0];
     
     console.log('🎯 AUTORESPONDER SELECCIONADO:')
     console.log('📋 ID:', selectedAutoresponder.id)
     console.log('📋 Nombre:', selectedAutoresponder.name)
     console.log('📋 Mensaje:', selectedAutoresponder.message_text)
     console.log('📋 Solo primer mensaje:', selectedAutoresponder.send_only_first_message)
+    console.log('📋 Usa palabras clave:', selectedAutoresponder.use_keywords)
+    console.log('📋 Palabras clave:', selectedAutoresponder.keywords)
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
     let shouldSendAutoresponder = true

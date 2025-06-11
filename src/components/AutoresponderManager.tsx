@@ -2,11 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, MessageCircle, Cloud } from 'lucide-react';
+import { Plus, Edit, Trash2, MessageCircle, Cloud, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AutoresponderForm from './AutoresponderForm';
@@ -17,6 +14,8 @@ interface AutoresponderMessage {
   message_text: string;
   is_active: boolean;
   send_only_first_message: boolean;
+  use_keywords?: boolean;
+  keywords?: string[];
   created_at: string;
 }
 
@@ -50,7 +49,9 @@ const AutoresponderManager = () => {
         id: ar.id,
         name: ar.name,
         is_active: ar.is_active,
-        send_only_first_message: ar.send_only_first_message
+        send_only_first_message: ar.send_only_first_message,
+        use_keywords: ar.use_keywords,
+        keywords: ar.keywords
       })));
       
       setMessages(data || []);
@@ -238,10 +239,31 @@ const AutoresponderManager = () => {
                           Solo primer mensaje
                         </span>
                       )}
+                      {message.use_keywords && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800 flex items-center gap-1">
+                          <Key className="w-3 h-3" />
+                          Palabras clave
+                        </span>
+                      )}
                     </div>
                     <p className="text-gray-600 mb-3">
                       {message.message_text}
                     </p>
+                    {message.use_keywords && message.keywords && message.keywords.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-500 mb-1">Palabras clave:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {message.keywords.map((keyword, index) => (
+                            <span
+                              key={index}
+                              className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full"
+                            >
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <p className="text-sm text-gray-500">
                       Creada el {new Date(message.created_at).toLocaleDateString()}
                     </p>
