@@ -16,8 +16,8 @@ export const syncAutoresponders = async () => {
       message_preview: ar.message_text?.substring(0, 30) + '...'
     })));
     
-    // Enviar al endpoint para almacenar en el servidor
-    console.log('📤 Enviando autoresponders al servidor...');
+    // Enviar al endpoint para almacenar en la base de datos
+    console.log('📤 Enviando autoresponders al servidor (base de datos)...');
     
     const { data, error } = await supabase.functions.invoke('get-autoresponders', {
       body: { 
@@ -31,7 +31,7 @@ export const syncAutoresponders = async () => {
       return false;
     }
     
-    console.log('✅ SINCRONIZACIÓN EXITOSA');
+    console.log('✅ SINCRONIZACIÓN EXITOSA CON BASE DE DATOS');
     console.log('📊 Respuesta del servidor:', data);
     return true;
     
