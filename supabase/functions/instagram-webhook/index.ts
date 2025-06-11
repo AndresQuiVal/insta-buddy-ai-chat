@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -187,10 +186,11 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: OBTENER CONFIGURACIÓN DE AUTORESPONDER ACTIVO
+    // PASO 3: OBTENER CONFIGURACIÓN DE AUTORESPONDER ACTIVO - MODIFICADO
     console.log('🔍 Obteniendo configuración de autoresponder...')
     
-    const { data: autoresponderMessage, error: queryError } = await supabase
+    // Primero intentar con user_id si existe, luego sin user_id como fallback
+    let { data: autoresponderMessage, error: queryError } = await supabase
       .from('autoresponder_messages')
       .select('*')
       .eq('is_active', true)
@@ -204,12 +204,24 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     if (!autoresponderMessage) {
       console.log('⚠️ No hay respuestas automáticas activas')
+      
+      // Debug: Mostrar todos los autoresponders para diagnosticar
+      const { data: allAutoresponders, error: debugError } = await supabase
+        .from('autoresponder_messages')
+        .select('*')
+      
+      if (!debugError && allAutoresponders) {
+        console.log('🔍 DEBUG - Todos los autoresponders:', JSON.stringify(allAutoresponders, null, 2))
+      }
+      
       return
     }
 
     console.log('📋 Configuración encontrada:', {
+      id: autoresponderMessage.id,
       name: autoresponderMessage.name,
-      sendOnlyFirst: autoresponderMessage.send_only_first_message
+      sendOnlyFirst: autoresponderMessage.send_only_first_message,
+      userId: autoresponderMessage.user_id
     })
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
