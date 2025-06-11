@@ -91,38 +91,37 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     };
 
     try {
+      console.log('📋 Intentando guardar autoresponder:', messageData);
+
       // PASO 1: Siempre guardar en localStorage como respaldo
       saveToLocalStorage(messageData);
 
-      console.log('📋 Guardando autoresponder:', messageData);
-
-      // PASO 2: Intentar obtener user_id real del usuario conectado
-      let userId = null;
+      // PASO 2: Obtener un user_id válido
+      let userId = 'default_user'; // Fallback por defecto
+      
       try {
         const instagramUser = localStorage.getItem('hower-instagram-user');
         if (instagramUser) {
           const userData = JSON.parse(instagramUser);
           userId = userData.facebook?.id || userData.instagram?.id || 'instagram_user';
           console.log('👤 Usuario ID encontrado:', userId);
-        } else {
-          // Si no hay usuario de Instagram, usar un ID genérico pero no null
-          userId = 'general_user';
-          console.log('👤 Usando usuario general');
         }
       } catch (e) {
-        console.log('⚠️ No se pudo obtener user_id, usando general');
-        userId = 'general_user';
+        console.log('⚠️ Usando usuario por defecto');
       }
 
-      // PASO 3: Guardar en base de datos - AHORA SIN RESTRICCIONES RLS
+      // PASO 3: Preparar datos para guardar
       const dataToSave = {
         ...messageData,
-        user_id: userId // Siempre incluir un user_id
+        user_id: userId
       };
+
+      console.log('💾 Datos a guardar en BD:', dataToSave);
 
       let result;
       if (message) {
         // Actualizar existente
+        console.log('🔄 Actualizando autoresponder existente:', message.id);
         result = await supabase
           .from('autoresponder_messages')
           .update(dataToSave)
@@ -130,6 +129,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
           .select();
       } else {
         // Crear nuevo
+        console.log('🆕 Creando nuevo autoresponder');
         result = await supabase
           .from('autoresponder_messages')
           .insert(dataToSave)
@@ -139,23 +139,36 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       const { data, error } = result;
 
       if (error) {
-        console.error('Error al guardar en BD:', error);
-        throw error;
+        console.error('❌ Error detallado de Supabase:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw new Error(`Error de base de datos: ${error.message}`);
       }
 
-      console.log('✅ Autoresponder guardado en BD exitosamente:', data);
+      if (!data || data.length === 0) {
+        throw new Error('No se retornaron datos después de guardar');
+      }
+
+      console.log('✅ Autoresponder guardado exitosamente en BD:', data);
 
       toast({
         title: message ? "¡Actualizado!" : "¡Creado!",
-        description: "Respuesta automática guardada correctamente en la base de datos",
+        description: "Respuesta automática guardada correctamente",
       });
 
       onSubmit();
-    } catch (error) {
-      console.error('Error saving autoresponder message:', error);
+    } catch (error: any) {
+      console.error('❌ Error completo:', error);
+      
+      // Mostrar error específico al usuario
+      const errorMessage = error.message || 'Error desconocido al guardar';
+      
       toast({
         title: "Error al guardar",
-        description: "No se pudo guardar en la base de datos. Revisa la consola para más detalles.",
+        description: `${errorMessage}. Los datos se guardaron localmente como respaldo.`,
         variant: "destructive"
       });
     } finally {
