@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -267,7 +268,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
     if (shouldSendAutoresponder) {
       console.log('🚀 ENVIANDO AUTORESPONDER...')
-      await handleAutoresponder(supabase, event.sender.id, selectedAutoresponder)
+      await handleAutoresponder(supabase, event.sender.id, selectedAutoresponder, event.recipient.id)
     } else {
       console.log('⏭️ No enviando autoresponder según configuración')
     }
@@ -279,16 +280,17 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   }
 }
 
-async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any) {
+async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any, recipientPageId: string) {
   try {
     console.log('🤖 INICIANDO ENVÍO DE AUTORESPONDER')
     console.log('👤 Para usuario:', senderId)
+    console.log('📱 ID de página de Instagram:', recipientPageId)
 
     const messageToSend = autoresponderConfig.message_text
     const autoresponderMessageId = autoresponderConfig.id
 
     console.log('📤 ENVIANDO MENSAJE:', messageToSend)
-    const success = await sendInstagramMessage(senderId, messageToSend)
+    const success = await sendInstagramMessage(senderId, messageToSend, recipientPageId)
 
     if (success) {
       console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
@@ -338,7 +340,7 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
   }
 }
 
-async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
+async function sendInstagramMessage(recipientId: string, messageText: string, pageId: string): Promise<boolean> {
   try {
     console.log('🔑 VERIFICANDO TOKEN DE INSTAGRAM...')
     const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
@@ -349,6 +351,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     }
 
     console.log('✅ Token encontrado, longitud:', accessToken.length)
+    console.log('📱 Usando Page ID:', pageId)
 
     const messagePayload = {
       recipient: {
@@ -362,7 +365,11 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     console.log('📤 ENVIANDO A INSTAGRAM API:')
     console.log('📋 Payload:', JSON.stringify(messagePayload, null, 2))
 
-    const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
+    // Usar el Page ID correcto en lugar de 'me'
+    const apiUrl = `https://graph.facebook.com/v19.0/${pageId}/messages?access_token=${accessToken}`
+    console.log('🌐 URL de API:', apiUrl.replace(accessToken, '[TOKEN_HIDDEN]'))
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
