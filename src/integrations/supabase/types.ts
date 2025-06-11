@@ -16,6 +16,7 @@ export type Database = {
           is_active: boolean
           message_text: string
           name: string
+          send_only_first_message: boolean
           updated_at: string
           user_id: string | null
         }
@@ -25,6 +26,7 @@ export type Database = {
           is_active?: boolean
           message_text: string
           name: string
+          send_only_first_message?: boolean
           updated_at?: string
           user_id?: string | null
         }
@@ -34,6 +36,7 @@ export type Database = {
           is_active?: boolean
           message_text?: string
           name?: string
+          send_only_first_message?: boolean
           updated_at?: string
           user_id?: string | null
         }
