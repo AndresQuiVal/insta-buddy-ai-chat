@@ -166,7 +166,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       }
     }
 
-    // Verificar duplicados
+    // Verificar duplicados por mensaje ID
     const { data: existingMessage } = await supabase
       .from('instagram_messages')
       .select('id')
@@ -181,32 +181,32 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     const { error: insertError } = await supabase.from('instagram_messages').insert(messageData)
     if (insertError) {
       console.error('❌ Error guardando mensaje:', insertError)
+      // Continuar con autoresponder aunque falle el guardado
     } else {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: Verificar si es la primera vez que esta persona escribe
-    const { data: previousMessages, error: queryError } = await supabase
-      .from('instagram_messages')
+    // PASO 3: VERIFICAR SI YA SE LE ENVIÓ AUTORESPONDER ANTES
+    console.log('🔍 Verificando si ya se le envió autoresponder a:', event.sender.id)
+    
+    const { data: alreadySent, error: checkError } = await supabase
+      .from('autoresponder_sent_log')
       .select('id')
       .eq('sender_id', event.sender.id)
-      .eq('message_type', 'received')
+      .single()
 
-    if (queryError) {
-      console.error('❌ Error consultando mensajes previos:', queryError)
-      // Continúar con autoresponder de todas formas
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('❌ Error verificando autoresponder:', checkError)
     }
 
-    const messageCount = previousMessages ? previousMessages.length : 0
-    console.log(`📊 Mensajes totales del usuario ${event.sender.id}: ${messageCount}`)
-
-    // Si es la primera vez que escribe (o hay error en consulta), enviar autoresponder
-    if (messageCount <= 1) {
-      console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO AUTORESPONDER')
-      await handleAutoresponder(supabase, event.sender.id)
-    } else {
-      console.log('👥 Usuario ya escribió antes - NO se envía autoresponder')
+    if (alreadySent) {
+      console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR')
+      return
     }
+
+    // PASO 4: ENVIAR AUTORESPONDER (primera vez que escribe)
+    console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO AUTORESPONDER')
+    await handleAutoresponder(supabase, event.sender.id)
     
     console.log('✅ Mensaje procesado correctamente')
 
@@ -217,19 +217,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
 async function handleAutoresponder(supabase: any, senderId: string) {
   try {
-    console.log('🤖 INICIANDO AUTORESPONDER')
-
-    // Verificar si ya se le envió una respuesta automática a este usuario
-    const { data: alreadySent } = await supabase
-      .from('autoresponder_sent_log')
-      .select('id')
-      .eq('sender_id', senderId)
-      .single()
-
-    if (alreadySent) {
-      console.log('⏭️ Ya se envió autoresponder a este usuario - saltando')
-      return
-    }
+    console.log('🤖 INICIANDO AUTORESPONDER PARA:', senderId)
 
     // Obtener mensaje automático activo
     const { data: autoresponderMessage, error: queryError } = await supabase
@@ -257,16 +245,20 @@ async function handleAutoresponder(supabase: any, senderId: string) {
     if (success) {
       console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
 
-      // Registrar que se envió
-      await supabase.from('autoresponder_sent_log').insert({
+      // Registrar que se envió para no enviarlo de nuevo
+      const { error: logError } = await supabase.from('autoresponder_sent_log').insert({
         sender_id: senderId,
         autoresponder_message_id: autoresponderMessageId
       })
 
+      if (logError) {
+        console.error('⚠️ Error guardando log de autoresponder:', logError)
+      }
+
       // Guardar el mensaje enviado en el historial
       const sentMessageData = {
         instagram_message_id: `autoresponder_${Date.now()}_${Math.random()}`,
-        sender_id: 'autoresponder_system',
+        sender_id: 'system',
         recipient_id: senderId,
         message_text: messageToSend,
         message_type: 'sent',
@@ -278,8 +270,12 @@ async function handleAutoresponder(supabase: any, senderId: string) {
         }
       }
 
-      await supabase.from('instagram_messages').insert(sentMessageData)
-      console.log('✅ AUTORESPONDER GUARDADO EN HISTORIAL')
+      const { error: saveError } = await supabase.from('instagram_messages').insert(sentMessageData)
+      if (saveError) {
+        console.error('⚠️ Error guardando mensaje enviado:', saveError)
+      } else {
+        console.log('✅ AUTORESPONDER GUARDADO EN HISTORIAL')
+      }
     } else {
       console.error('❌ ERROR ENVIANDO AUTORESPONDER')
     }
