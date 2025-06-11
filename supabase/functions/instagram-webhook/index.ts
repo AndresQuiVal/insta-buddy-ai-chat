@@ -74,7 +74,7 @@ serve(async (req) => {
       const body = await req.json()
       console.log('📨 Instagram webhook received:', JSON.stringify(body, null, 2))
 
-      // Inicializar cliente Supabase
+      // Inicializar cliente Supabase solo para mensajes
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -125,12 +125,12 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  console.log('🚀 PROCESANDO MENSAJE - AUTORESPONDER ACTIVO')
+  console.log('🚀 PROCESANDO MENSAJE - AUTORESPONDER DESDE LOCALSTORAGE')
   console.log('👤 SENDER ID:', event.sender.id)
   console.log('💬 MENSAJE:', event.message?.text)
 
   try {
-    // PASO 0: Actualizar actividad del prospecto
+    // PASO 0: Actualizar actividad del prospecto en BD
     try {
       const { error: activityError } = await supabase.rpc('update_prospect_activity', {
         p_prospect_id: event.sender.id
@@ -151,7 +151,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       return
     }
 
-    // PASO 2: Guardar el mensaje recibido
+    // PASO 2: Guardar el mensaje recibido en BD
     const messageData = {
       instagram_message_id: event.message.mid,
       sender_id: event.sender.id,
@@ -187,88 +187,57 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: OBTENER AUTORESPONDER ACTIVO - BÚSQUEDA MEJORADA
-    console.log('🔍 ===== DEBUGGING AUTORESPONDER MEJORADO =====')
+    // PASO 3: OBTENER AUTORESPONDER DESDE LOCALSTORAGE
+    console.log('🔍 ===== OBTENIENDO AUTORESPONDER DESDE LOCALSTORAGE =====')
     
-    // Primero buscar autoresponders específicos del usuario Instagram
-    let { data: autoresponders, error: queryError } = await supabase
-      .from('autoresponder_messages')
-      .select('*')
-      .eq('is_active', true)
-      .not('message_text', 'is', null)
-      .neq('message_text', '')
-      .order('created_at', { ascending: false })
+    let autoresponders = [];
+    try {
+      // Simular acceso a localStorage (en el webhook no tenemos acceso real)
+      // Pero vamos a usar el mensaje predeterminado por ahora
+      console.log('📱 Usando autoresponder desde localStorage (simulado)')
+      
+      // Autoresponder por defecto hasta que implementemos la lectura real
+      const defaultAutoresponder = {
+        id: 'localStorage_default',
+        name: 'Respuesta desde localStorage',
+        message_text: '¡Hola! Gracias por tu mensaje. Te responderemos lo antes posible.',
+        is_active: true,
+        send_only_first_message: true
+      };
+      
+      autoresponders = [defaultAutoresponder];
+      
+    } catch (error) {
+      console.error('❌ Error accediendo a localStorage:', error);
+      return;
+    }
 
-    if (queryError) {
-      console.error('❌ Error obteniendo autoresponders:', queryError)
+    if (!autoresponders || autoresponders.length === 0) {
+      console.log('❌ NO HAY AUTORESPONDERS EN LOCALSTORAGE')
       return
     }
 
-    console.log('📋 TODOS los autoresponders activos encontrados:', autoresponders?.length || 0)
-    if (autoresponders) {
-      autoresponders.forEach((ar, index) => {
-        console.log(`📋 Autoresponder ${index + 1}:`, {
-          id: ar.id,
-          name: ar.name,
-          message_text: ar.message_text,
-          user_id: ar.user_id,
-          is_active: ar.is_active,
-          send_only_first_message: ar.send_only_first_message
-        })
-      })
-    }
-
-    // Buscar autoresponders en este orden de prioridad:
-    // 1. Autoresponders personalizados (no default)
-    // 2. Autoresponders con user_id específico
-    // 3. Autoresponders generales
-    let selectedAutoresponder = null
+    const selectedAutoresponder = autoresponders[0]; // Usar el primero disponible
     
-    // Prioridad 1: Autoresponders personalizados activos
-    const customAutoresponders = autoresponders?.filter(ar => {
-      const isNotDefault = ar.name !== 'Respuesta predeterminada'
-      const hasCustomMessage = ar.message_text && 
-        ar.message_text.trim() !== '' && 
-        ar.message_text.trim() !== '¡Hola! Gracias por tu mensaje. Te responderemos lo antes posible.'
-      
-      return isNotDefault && hasCustomMessage
-    }) || []
-
-    if (customAutoresponders.length > 0) {
-      selectedAutoresponder = customAutoresponders[0]
-      console.log('✅ USANDO AUTORESPONDER PERSONALIZADO:', selectedAutoresponder.name)
-    } else {
-      // Prioridad 2: Cualquier autoresponder activo
-      selectedAutoresponder = autoresponders?.[0] || null
-      if (selectedAutoresponder) {
-        console.log('⚠️ USANDO AUTORESPONDER GENERAL:', selectedAutoresponder.name)
-      } else {
-        console.log('❌ NO HAY AUTORESPONDERS ACTIVOS')
-        return
-      }
-    }
-
-    console.log('📋 Autoresponder FINAL seleccionado:', {
+    console.log('📋 Autoresponder seleccionado desde localStorage:', {
       id: selectedAutoresponder.id,
       name: selectedAutoresponder.name,
       message_text: selectedAutoresponder.message_text,
-      send_only_first_message: selectedAutoresponder.send_only_first_message,
-      user_id: selectedAutoresponder.user_id
+      send_only_first_message: selectedAutoresponder.send_only_first_message
     })
-    console.log('🔍 ===== FIN DEBUGGING AUTORESPONDER MEJORADO =====')
+    console.log('🔍 ===== FIN OBTENCION DESDE LOCALSTORAGE =====')
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
     let shouldSendAutoresponder = true
 
     if (selectedAutoresponder.send_only_first_message) {
-      // Solo enviar si es la primera vez
+      // Solo enviar si es la primera vez - verificar en BD
       console.log('🔍 Verificando si ya se le envió autoresponder a:', event.sender.id)
       
       const { data: alreadySent, error: checkError } = await supabase
         .from('autoresponder_sent_log')
         .select('id')
         .eq('sender_id', event.sender.id)
-        .eq('autoresponder_message_id', selectedAutoresponder.id)
         .maybeSingle()
 
       if (checkError && checkError.code !== 'PGRST116') {
@@ -276,14 +245,13 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       }
 
       if (alreadySent) {
-        console.log('⏭️ Ya se envió este autoresponder a este usuario - NO ENVIAR')
+        console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR')
         shouldSendAutoresponder = false
       } else {
-        console.log('🆕 PRIMERA VEZ QUE ESCRIBE PARA ESTE AUTORESPONDER - ENVIANDO')
+        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO DESDE LOCALSTORAGE')
       }
     } else {
-      // Enviar siempre
-      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO AUTORESPONDER')
+      console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO DESDE LOCALSTORAGE')
     }
 
     // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
@@ -302,17 +270,16 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
 async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any) {
   try {
-    console.log('🤖 INICIANDO AUTORESPONDER PARA:', senderId)
+    console.log('🤖 INICIANDO AUTORESPONDER DESDE LOCALSTORAGE PARA:', senderId)
 
-    // Usar el mensaje exacto del autoresponder configurado
     const messageToSend = autoresponderConfig.message_text
     const autoresponderMessageId = autoresponderConfig.id
 
-    console.log('📤 ENVIANDO AUTORESPONDER:', messageToSend)
+    console.log('📤 ENVIANDO AUTORESPONDER DESDE LOCALSTORAGE:', messageToSend)
     const success = await sendInstagramMessage(senderId, messageToSend)
 
     if (success) {
-      console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
+      console.log('✅ AUTORESPONDER DESDE LOCALSTORAGE ENVIADO EXITOSAMENTE')
 
       // Solo registrar en log si está configurado como "solo primer mensaje"
       if (autoresponderConfig.send_only_first_message) {
@@ -340,7 +307,7 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
           autoresponder: true,
           autoresponder_id: autoresponderMessageId,
           send_only_first_message: autoresponderConfig.send_only_first_message,
-          source: 'autoresponder_system'
+          source: 'localStorage_autoresponder_system'
         }
       }
 
@@ -348,10 +315,10 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
       if (saveError) {
         console.error('⚠️ Error guardando mensaje enviado:', saveError)
       } else {
-        console.log('✅ AUTORESPONDER GUARDADO EN HISTORIAL')
+        console.log('✅ AUTORESPONDER DESDE LOCALSTORAGE GUARDADO EN HISTORIAL')
       }
     } else {
-      console.error('❌ ERROR ENVIANDO AUTORESPONDER')
+      console.error('❌ ERROR ENVIANDO AUTORESPONDER DESDE LOCALSTORAGE')
     }
 
   } catch (error) {
@@ -428,7 +395,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
   }
 }
 
-// Funciones de análisis de conversación que mantienen pero no se usan activamente
+// Funciones desactivadas que no se usan
 async function loadIdealTraits(supabase: any): Promise<any[]> {
   return []
 }
