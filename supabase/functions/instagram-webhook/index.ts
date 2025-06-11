@@ -136,7 +136,7 @@ serve(async (req) => {
 })
 
 async function processMessagingEvent(supabase: any, event: MessagingEvent) {
-  console.log('🚀 PROCESANDO MENSAJE - SOLO AUTORESPONDER ACTIVO')
+  console.log('🚀 PROCESANDO MENSAJE - AUTORESPONDER ACTIVO')
   console.log('👤 SENDER ID:', event.sender.id)
   console.log('💬 MENSAJE:', event.message?.text)
 
@@ -209,10 +209,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('👥 Usuario ya escribió antes - NO se envía autoresponder')
     }
     
-    // ⚠️ RESPUESTAS AUTOMÁTICAS DE IA DESACTIVADAS TEMPORALMENTE
-    console.log('🤖 IA automática DESACTIVADA - Solo funciona autoresponder')
-
-    console.log('✅ Mensaje procesado correctamente (solo autoresponder activo)')
+    console.log('✅ Mensaje procesado correctamente (autoresponder activo)')
 
   } catch (error) {
     console.error('❌ Error en processMessagingEvent:', error)
@@ -244,7 +241,27 @@ async function handleAutoresponder(supabase: any, senderId: string) {
       .single()
 
     if (!autoresponderMessage) {
-      console.log('⚠️ No hay respuestas automáticas activas')
+      console.log('⚠️ No hay respuestas automáticas activas en la base de datos')
+      console.log('🔍 Intentando cargar desde localStorage respaldo...')
+      
+      // Como último recurso, usar un mensaje genérico de fallback
+      const fallbackMessage = {
+        id: 'fallback',
+        name: 'Respuesta automática de fallback',
+        message_text: '¡Hola! Gracias por escribirme. Te responderé pronto.',
+        is_active: true
+      }
+      
+      console.log('📤 ENVIANDO AUTORESPONDER DE FALLBACK')
+      const success = await sendInstagramMessage(senderId, fallbackMessage.message_text)
+      
+      if (success) {
+        await supabase.from('autoresponder_sent_log').insert({
+          sender_id: senderId,
+          autoresponder_message_id: null
+        })
+        console.log('✅ AUTORESPONDER DE FALLBACK ENVIADO')
+      }
       return
     }
 

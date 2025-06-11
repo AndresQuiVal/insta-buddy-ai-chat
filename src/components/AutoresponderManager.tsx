@@ -34,9 +34,10 @@ const AutoresponderManager = () => {
   const loadFromLocalStorage = () => {
     try {
       const localMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
+      console.log('📱 Cargando desde localStorage:', localMessages);
       setMessages(localMessages);
       setDataSource('localStorage');
-      console.log('📱 Cargado desde localStorage:', localMessages.length, 'mensajes');
+      console.log('📱 Mensajes cargados desde localStorage:', localMessages.length);
     } catch (error) {
       console.error('Error loading from localStorage:', error);
       setMessages([]);
@@ -45,16 +46,35 @@ const AutoresponderManager = () => {
 
   const loadMessages = async () => {
     try {
+      // Primero intentar cargar desde la base de datos
+      const instagramUser = localStorage.getItem('hower-instagram-user');
+      
+      if (!instagramUser) {
+        console.log('⚠️ No hay usuario de Instagram, cargando desde localStorage');
+        loadFromLocalStorage();
+        setIsLoading(false);
+        return;
+      }
+
+      const userData = JSON.parse(instagramUser);
+      const userId = userData.facebook?.id || userData.instagram?.id || 'instagram_user';
+      
       const { data, error } = await supabase
         .from('autoresponder_messages')
         .select('*')
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      setMessages(data || []);
-      setDataSource('database');
-      console.log('☁️ Cargado desde base de datos:', data?.length || 0, 'mensajes');
+      if (data && data.length > 0) {
+        setMessages(data || []);
+        setDataSource('database');
+        console.log('☁️ Cargado desde base de datos:', data?.length || 0, 'mensajes');
+      } else {
+        console.log('⚠️ No hay datos en la base de datos, cargando desde localStorage');
+        loadFromLocalStorage();
+      }
       
     } catch (error) {
       console.error('Error loading from database, fallback to localStorage:', error);
@@ -70,12 +90,21 @@ const AutoresponderManager = () => {
 
   const toggleActive = async (id: string, currentActive: boolean) => {
     try {
-      const { error } = await supabase
-        .from('autoresponder_messages')
-        .update({ is_active: !currentActive })
-        .eq('id', id);
+      if (dataSource === 'database') {
+        const { error } = await supabase
+          .from('autoresponder_messages')
+          .update({ is_active: !currentActive })
+          .eq('id', id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
+
+      // También actualizar en localStorage
+      const localMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
+      const updatedLocal = localMessages.map((msg: any) => 
+        msg.id === id ? { ...msg, is_active: !currentActive } : msg
+      );
+      localStorage.setItem('autoresponder-messages', JSON.stringify(updatedLocal));
 
       setMessages(prev => 
         prev.map(msg => 
