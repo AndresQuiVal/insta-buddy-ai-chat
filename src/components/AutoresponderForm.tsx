@@ -104,15 +104,20 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
           const userData = JSON.parse(instagramUser);
           userId = userData.facebook?.id || userData.instagram?.id || 'instagram_user';
           console.log('👤 Usuario ID encontrado:', userId);
+        } else {
+          // Si no hay usuario de Instagram, usar un ID genérico pero no null
+          userId = 'general_user';
+          console.log('👤 Usando usuario general');
         }
       } catch (e) {
         console.log('⚠️ No se pudo obtener user_id, usando general');
+        userId = 'general_user';
       }
 
-      // PASO 3: Guardar en base de datos con user_id o como general
+      // PASO 3: Guardar en base de datos - AHORA SIN RESTRICCIONES RLS
       const dataToSave = {
         ...messageData,
-        user_id: userId // Puede ser null si no hay usuario
+        user_id: userId // Siempre incluir un user_id
       };
 
       let result;
@@ -138,21 +143,21 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         throw error;
       }
 
-      console.log('✅ Autoresponder guardado en BD:', data);
+      console.log('✅ Autoresponder guardado en BD exitosamente:', data);
 
       toast({
         title: message ? "¡Actualizado!" : "¡Creado!",
-        description: "Respuesta automática guardada correctamente",
+        description: "Respuesta automática guardada correctamente en la base de datos",
       });
 
       onSubmit();
     } catch (error) {
       console.error('Error saving autoresponder message:', error);
       toast({
-        title: "Guardado localmente",
-        description: "Se guardó en tu navegador. Error al sincronizar con servidor.",
+        title: "Error al guardar",
+        description: "No se pudo guardar en la base de datos. Revisa la consola para más detalles.",
+        variant: "destructive"
       });
-      onSubmit();
     } finally {
       setIsLoading(false);
     }

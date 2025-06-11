@@ -186,36 +186,10 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: OBTENER AUTORESPONDER ACTIVO CORRECTO - DEBUGGING COMPLETO
-    console.log('🔍 ===== DEBUGGING AUTORESPONDER =====')
-    console.log('🔍 Obteniendo TODOS los autoresponders de la base de datos...')
+    // PASO 3: OBTENER AUTORESPONDER ACTIVO - BÚSQUEDA MEJORADA
+    console.log('🔍 ===== DEBUGGING AUTORESPONDER MEJORADO =====')
     
-    // Primero obtener TODOS los autoresponders para debug
-    const { data: allAutoresponders, error: debugError } = await supabase
-      .from('autoresponder_messages')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (debugError) {
-      console.error('❌ Error obteniendo todos los autoresponders:', debugError)
-    } else {
-      console.log('📋 TODOS los autoresponders en BD:', allAutoresponders?.length || 0)
-      if (allAutoresponders) {
-        allAutoresponders.forEach((ar, index) => {
-          console.log(`📋 Autoresponder ${index + 1}:`, {
-            id: ar.id,
-            name: ar.name,
-            message_text: ar.message_text?.substring(0, 50) + '...',
-            is_active: ar.is_active,
-            send_only_first_message: ar.send_only_first_message,
-            user_id: ar.user_id,
-            created_at: ar.created_at
-          })
-        })
-      }
-    }
-
-    // Ahora obtener solo los activos
+    // Primero buscar autoresponders específicos del usuario Instagram
     let { data: autoresponders, error: queryError } = await supabase
       .from('autoresponder_messages')
       .select('*')
@@ -225,69 +199,67 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       .order('created_at', { ascending: false })
 
     if (queryError) {
-      console.error('❌ Error obteniendo autoresponders activos:', queryError)
+      console.error('❌ Error obteniendo autoresponders:', queryError)
       return
     }
 
-    console.log('📋 Autoresponders ACTIVOS encontrados:', autoresponders?.length || 0)
+    console.log('📋 TODOS los autoresponders activos encontrados:', autoresponders?.length || 0)
     if (autoresponders) {
       autoresponders.forEach((ar, index) => {
-        console.log(`📋 Autoresponder activo ${index + 1}:`, {
+        console.log(`📋 Autoresponder ${index + 1}:`, {
           id: ar.id,
           name: ar.name,
           message_text: ar.message_text,
-          send_only_first_message: ar.send_only_first_message,
           user_id: ar.user_id,
-          created_at: ar.created_at
+          is_active: ar.is_active,
+          send_only_first_message: ar.send_only_first_message
         })
       })
     }
 
-    // Buscar específicamente autoresponders con mensaje personalizado (no el default)
+    // Buscar autoresponders en este orden de prioridad:
+    // 1. Autoresponders personalizados (no default)
+    // 2. Autoresponders con user_id específico
+    // 3. Autoresponders generales
+    let selectedAutoresponder = null
+    
+    // Prioridad 1: Autoresponders personalizados activos
     const customAutoresponders = autoresponders?.filter(ar => {
       const isNotDefault = ar.name !== 'Respuesta predeterminada'
       const hasCustomMessage = ar.message_text && 
         ar.message_text.trim() !== '' && 
         ar.message_text.trim() !== '¡Hola! Gracias por tu mensaje. Te responderemos lo antes posible.'
       
-      console.log(`🎯 Evaluando autoresponder "${ar.name}":`, {
-        isNotDefault,
-        hasCustomMessage,
-        message_text: ar.message_text
-      })
-      
       return isNotDefault && hasCustomMessage
     }) || []
 
-    console.log('🎯 Autoresponders personalizados encontrados:', customAutoresponders.length)
-    
-    // Elegir el autoresponder a usar
-    let autoresponderMessage = null
-    
     if (customAutoresponders.length > 0) {
-      autoresponderMessage = customAutoresponders[0] // El más reciente
-      console.log('✅ USANDO AUTORESPONDER PERSONALIZADO:', autoresponderMessage.name)
-    } else if (autoresponders && autoresponders.length > 0) {
-      autoresponderMessage = autoresponders[0] // El más reciente de los activos
-      console.log('⚠️ USANDO AUTORESPONDER GENERAL:', autoresponderMessage.name)
+      selectedAutoresponder = customAutoresponders[0]
+      console.log('✅ USANDO AUTORESPONDER PERSONALIZADO:', selectedAutoresponder.name)
     } else {
-      console.log('❌ NO HAY AUTORESPONDERS ACTIVOS')
-      return
+      // Prioridad 2: Cualquier autoresponder activo
+      selectedAutoresponder = autoresponders?.[0] || null
+      if (selectedAutoresponder) {
+        console.log('⚠️ USANDO AUTORESPONDER GENERAL:', selectedAutoresponder.name)
+      } else {
+        console.log('❌ NO HAY AUTORESPONDERS ACTIVOS')
+        return
+      }
     }
 
     console.log('📋 Autoresponder FINAL seleccionado:', {
-      id: autoresponderMessage.id,
-      name: autoresponderMessage.name,
-      message_text: autoresponderMessage.message_text,
-      send_only_first_message: autoresponderMessage.send_only_first_message,
-      user_id: autoresponderMessage.user_id
+      id: selectedAutoresponder.id,
+      name: selectedAutoresponder.name,
+      message_text: selectedAutoresponder.message_text,
+      send_only_first_message: selectedAutoresponder.send_only_first_message,
+      user_id: selectedAutoresponder.user_id
     })
-    console.log('🔍 ===== FIN DEBUGGING AUTORESPONDER =====')
+    console.log('🔍 ===== FIN DEBUGGING AUTORESPONDER MEJORADO =====')
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
     let shouldSendAutoresponder = true
 
-    if (autoresponderMessage.send_only_first_message) {
+    if (selectedAutoresponder.send_only_first_message) {
       // Solo enviar si es la primera vez
       console.log('🔍 Verificando si ya se le envió autoresponder a:', event.sender.id)
       
@@ -295,7 +267,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
         .from('autoresponder_sent_log')
         .select('id')
         .eq('sender_id', event.sender.id)
-        .eq('autoresponder_message_id', autoresponderMessage.id)
+        .eq('autoresponder_message_id', selectedAutoresponder.id)
         .maybeSingle()
 
       if (checkError && checkError.code !== 'PGRST116') {
@@ -315,7 +287,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
     if (shouldSendAutoresponder) {
-      await handleAutoresponder(supabase, event.sender.id, autoresponderMessage)
+      await handleAutoresponder(supabase, event.sender.id, selectedAutoresponder)
     } else {
       console.log('⏭️ No enviando autoresponder según configuración')
     }
