@@ -242,25 +242,19 @@ async function handleAutoresponder(supabase: any, senderId: string) {
 
     if (!autoresponderMessage) {
       console.log('⚠️ No hay respuestas automáticas activas en la base de datos')
-      console.log('🔍 Intentando cargar desde localStorage respaldo...')
+      console.log('📤 ENVIANDO AUTORESPONDER POR DEFECTO')
       
-      // Como último recurso, usar un mensaje genérico de fallback
-      const fallbackMessage = {
-        id: 'fallback',
-        name: 'Respuesta automática de fallback',
-        message_text: '¡Hola! Gracias por escribirme. Te responderé pronto.',
-        is_active: true
-      }
+      // Usar mensaje por defecto
+      const defaultMessage = '¡Hola! Gracias por escribirme. Te responderé pronto. 😊'
       
-      console.log('📤 ENVIANDO AUTORESPONDER DE FALLBACK')
-      const success = await sendInstagramMessage(senderId, fallbackMessage.message_text)
+      const success = await sendInstagramMessage(senderId, defaultMessage)
       
       if (success) {
         await supabase.from('autoresponder_sent_log').insert({
           sender_id: senderId,
           autoresponder_message_id: null
         })
-        console.log('✅ AUTORESPONDER DE FALLBACK ENVIADO')
+        console.log('✅ AUTORESPONDER POR DEFECTO ENVIADO')
       }
       return
     }
