@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { syncAutoresponders } from '@/services/autoresponderSync';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AutoresponderMessage {
   id: string;
@@ -44,35 +44,6 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     }
   }, [message]);
 
-  const saveToLocalStorage = async (messageData: any) => {
-    try {
-      const existingMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
-      
-      if (message) {
-        const updatedMessages = existingMessages.map((msg: any) => 
-          msg.id === message.id ? { ...msg, ...messageData } : msg
-        );
-        localStorage.setItem('autoresponder-messages', JSON.stringify(updatedMessages));
-      } else {
-        const newMessage = {
-          id: `local_${Date.now()}`,
-          ...messageData,
-          created_at: new Date().toISOString()
-        };
-        existingMessages.push(newMessage);
-        localStorage.setItem('autoresponder-messages', JSON.stringify(existingMessages));
-      }
-      
-      console.log('✅ Guardado en localStorage');
-      
-      // Sincronizar con webhook
-      await syncAutoresponders();
-      
-    } catch (error) {
-      console.error('⚠️ Error guardando en localStorage:', error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -87,22 +58,44 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
 
     setIsLoading(true);
 
-    const messageData = {
-      name: name.trim(),
-      message_text: messageText.trim(),
-      is_active: isActive,
-      send_only_first_message: sendOnlyFirstMessage
-    };
-
     try {
-      console.log('📋 Guardando autoresponder:', messageData);
+      console.log('💾 Guardando autoresponder en BASE DE DATOS');
 
-      // Guardar SOLO en localStorage
-      await saveToLocalStorage(messageData);
+      const messageData = {
+        name: name.trim(),
+        message_text: messageText.trim(),
+        is_active: isActive,
+        send_only_first_message: sendOnlyFirstMessage,
+        user_id: null // Sin usuario específico por ahora
+      };
+
+      let result;
+
+      if (message) {
+        // Actualizar existente
+        console.log('🔄 Actualizando autoresponder:', message.id);
+        result = await supabase
+          .from('autoresponder_messages')
+          .update(messageData)
+          .eq('id', message.id);
+      } else {
+        // Crear nuevo
+        console.log('➕ Creando nuevo autoresponder');
+        result = await supabase
+          .from('autoresponder_messages')
+          .insert([messageData]);
+      }
+
+      if (result.error) {
+        console.error('❌ Error guardando en BD:', result.error);
+        throw result.error;
+      }
+
+      console.log('✅ AUTORESPONDER GUARDADO EN BASE DE DATOS');
 
       toast({
         title: message ? "¡Actualizado!" : "¡Creado!",
-        description: "Respuesta automática guardada en localStorage y sincronizada",
+        description: "Respuesta automática guardada en la base de datos",
       });
 
       onSubmit();
@@ -111,7 +104,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       
       toast({
         title: "Error al guardar",
-        description: error.message || 'Error desconocido al guardar',
+        description: error.message || 'Error desconocido al guardar en la base de datos',
         variant: "destructive"
       });
     } finally {

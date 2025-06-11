@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,17 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, MessageCircle, Cloud, HardDrive } from 'lucide-react';
+import { Plus, Edit, Trash2, MessageCircle, Cloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AutoresponderForm from './AutoresponderForm';
-import { setupAutoSync, syncAutoresponders } from '@/services/autoresponderSync';
 
 interface AutoresponderMessage {
   id: string;
   name: string;
   message_text: string;
   is_active: boolean;
+  send_only_first_message: boolean;
   created_at: string;
 }
 
@@ -24,70 +25,42 @@ const AutoresponderManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingMessage, setEditingMessage] = useState<AutoresponderMessage | null>(null);
-  const [dataSource, setDataSource] = useState<'database' | 'localStorage'>('database');
   const { toast } = useToast();
 
   useEffect(() => {
-    // Configurar sincronización automática
-    setupAutoSync();
-    
-    // Sincronizar autoresponders existentes al cargar
-    syncAutoresponders();
-    
     loadMessages();
   }, []);
 
-  const loadFromLocalStorage = () => {
-    try {
-      const localMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
-      console.log('📱 Cargando desde localStorage:', localMessages);
-      setMessages(localMessages);
-      setDataSource('localStorage');
-      console.log('📱 Mensajes cargados desde localStorage:', localMessages.length);
-    } catch (error) {
-      console.error('Error loading from localStorage:', error);
-      setMessages([]);
-    }
-  };
-
   const loadMessages = async () => {
     try {
-      // Primero intentar cargar desde la base de datos
-      const instagramUser = localStorage.getItem('hower-instagram-user');
-      
-      if (!instagramUser) {
-        console.log('⚠️ No hay usuario de Instagram, cargando desde localStorage');
-        loadFromLocalStorage();
-        setIsLoading(false);
-        return;
-      }
-
-      const userData = JSON.parse(instagramUser);
-      const userId = userData.facebook?.id || userData.instagram?.id || 'instagram_user';
+      console.log('📋 Cargando autoresponders desde BASE DE DATOS...');
       
       const { data, error } = await supabase
         .from('autoresponder_messages')
         .select('*')
-        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setMessages(data || []);
-        setDataSource('database');
-        console.log('☁️ Cargado desde base de datos:', data?.length || 0, 'mensajes');
-      } else {
-        console.log('⚠️ No hay datos en la base de datos, cargando desde localStorage');
-        loadFromLocalStorage();
+      if (error) {
+        console.error('❌ Error cargando desde BD:', error);
+        throw error;
       }
       
+      console.log('✅ Autoresponders cargados desde BD:', data?.length || 0);
+      console.log('📊 Detalles:', data?.map(ar => ({
+        id: ar.id,
+        name: ar.name,
+        is_active: ar.is_active,
+        send_only_first_message: ar.send_only_first_message
+      })));
+      
+      setMessages(data || []);
+      
     } catch (error) {
-      console.error('Error loading from database, fallback to localStorage:', error);
-      loadFromLocalStorage();
+      console.error('❌ Error loading autoresponders:', error);
       toast({
-        title: "Modo sin conexión",
-        description: "Cargando datos desde tu navegador",
+        title: "Error",
+        description: "No se pudieron cargar las respuestas automáticas",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
@@ -96,27 +69,25 @@ const AutoresponderManager = () => {
 
   const toggleActive = async (id: string, currentActive: boolean) => {
     try {
-      if (dataSource === 'database') {
-        const { error } = await supabase
-          .from('autoresponder_messages')
-          .update({ is_active: !currentActive })
-          .eq('id', id);
+      console.log('🔄 Cambiando estado de autoresponder:', id, 'a', !currentActive);
+      
+      const { error } = await supabase
+        .from('autoresponder_messages')
+        .update({ is_active: !currentActive })
+        .eq('id', id);
 
-        if (error) throw error;
+      if (error) {
+        console.error('❌ Error actualizando estado:', error);
+        throw error;
       }
-
-      // También actualizar en localStorage
-      const localMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
-      const updatedLocal = localMessages.map((msg: any) => 
-        msg.id === id ? { ...msg, is_active: !currentActive } : msg
-      );
-      localStorage.setItem('autoresponder-messages', JSON.stringify(updatedLocal));
 
       setMessages(prev => 
         prev.map(msg => 
           msg.id === id ? { ...msg, is_active: !currentActive } : msg
         )
       );
+
+      console.log('✅ Estado actualizado correctamente');
 
       toast({
         title: "¡Actualizado!",
@@ -138,21 +109,22 @@ const AutoresponderManager = () => {
     }
 
     try {
-      if (dataSource === 'database') {
-        const { error } = await supabase
-          .from('autoresponder_messages')
-          .delete()
-          .eq('id', id);
+      console.log('🗑️ Eliminando autoresponder:', id);
+      
+      const { error } = await supabase
+        .from('autoresponder_messages')
+        .delete()
+        .eq('id', id);
 
-        if (error) throw error;
+      if (error) {
+        console.error('❌ Error eliminando:', error);
+        throw error;
       }
 
-      // También eliminar de localStorage
-      const localMessages = JSON.parse(localStorage.getItem('autoresponder-messages') || '[]');
-      const updatedLocal = localMessages.filter((msg: any) => msg.id !== id);
-      localStorage.setItem('autoresponder-messages', JSON.stringify(updatedLocal));
-
       setMessages(prev => prev.filter(msg => msg.id !== id));
+      
+      console.log('✅ Autoresponder eliminado correctamente');
+
       toast({
         title: "¡Eliminado!",
         description: "Respuesta automática eliminada correctamente",
@@ -189,17 +161,8 @@ const AutoresponderManager = () => {
           <div className="flex items-center gap-2 text-gray-600">
             <p>Configura respuestas automáticas para nuevos prospectos</p>
             <div className="flex items-center gap-1 text-sm">
-              {dataSource === 'database' ? (
-                <>
-                  <Cloud className="w-4 h-4 text-green-500" />
-                  <span className="text-green-600">Sincronizado</span>
-                </>
-              ) : (
-                <>
-                  <HardDrive className="w-4 h-4 text-orange-500" />
-                  <span className="text-orange-600">Local</span>
-                </>
-              )}
+              <Cloud className="w-4 h-4 text-green-500" />
+              <span className="text-green-600">Base de Datos</span>
             </div>
           </div>
         </div>
@@ -270,6 +233,11 @@ const AutoresponderManager = () => {
                       }`}>
                         {message.is_active ? 'Activa' : 'Inactiva'}
                       </span>
+                      {message.send_only_first_message && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                          Solo primer mensaje
+                        </span>
+                      )}
                     </div>
                     <p className="text-gray-600 mb-3">
                       {message.message_text}
