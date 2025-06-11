@@ -129,7 +129,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   console.log('💬 MENSAJE:', event.message?.text)
 
   try {
-    // PASO 0: Actualizar actividad del prospecto (solo actualizar, no usar UUID)
+    // PASO 0: Actualizar actividad del prospecto
     try {
       const { error: activityError } = await supabase.rpc('update_prospect_activity', {
         p_prospect_id: event.sender.id
@@ -144,12 +144,13 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.error('⚠️ Error en actualización de actividad:', error);
     }
 
-    // PASO 1: Guardar el mensaje recibido
+    // PASO 1: Verificar que no sea un echo y que tenga texto
     if (!event.message?.text || event.message?.is_echo) {
       console.log('⏭️ Mensaje no válido o es un echo - saltando')
       return
     }
 
+    // PASO 2: Guardar el mensaje recibido
     const messageData = {
       instagram_message_id: event.message.mid,
       sender_id: event.sender.id,
@@ -184,7 +185,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 2: Verificar si es la primera vez que esta persona escribe
+    // PASO 3: Verificar si es la primera vez que esta persona escribe
     const { data: previousMessages, error: queryError } = await supabase
       .from('instagram_messages')
       .select('id')
@@ -288,112 +289,6 @@ async function handleAutoresponder(supabase: any, senderId: string) {
   }
 }
 
-async function loadIdealTraits(supabase: any): Promise<Trait[]> {
-  try {
-    const { data: traits, error } = await supabase
-      .from('ideal_client_traits')
-      .select('*')
-      .order('position')
-
-    if (error || !traits || traits.length === 0) {
-      console.log('⚠️ No se encontraron características, usando por defecto')
-      return [
-        { trait: "Interesado en nuestros productos o servicios", enabled: true, position: 0 },
-        { trait: "Tiene presupuesto adecuado para adquirir nuestras soluciones", enabled: true, position: 1 },
-        { trait: "Está listo para tomar una decisión de compra", enabled: true, position: 2 },
-        { trait: "Se encuentra en nuestra zona de servicio", enabled: true, position: 3 }
-      ]
-    }
-
-    return traits.map(t => ({
-      trait: t.trait,
-      enabled: t.enabled,
-      position: t.position
-    }))
-  } catch (error) {
-    console.error('❌ Error cargando características:', error)
-    return []
-  }
-}
-
-async function analyzeConversationProgress(
-  supabase: any, 
-  senderId: string, 
-  conversationHistory: any[], 
-  idealTraits: Trait[]
-): Promise<AnalysisResult> {
-  try {
-    const { data: existingAnalysis } = await supabase
-      .from('prospect_analysis')
-      .select('*')
-      .eq('sender_id', senderId)
-      .single()
-
-    if (existingAnalysis) {
-      console.log('📊 Análisis existente encontrado:', existingAnalysis)
-      return {
-        matchPoints: existingAnalysis.match_points || 0,
-        metTraits: existingAnalysis.met_traits || [],
-        metTraitIndices: existingAnalysis.met_trait_indices || []
-      }
-    }
-
-    console.log('🔍 Analizando conversación por primera vez...')
-    
-    const userMessages = conversationHistory
-      .filter(msg => msg.sender_id === senderId)
-      .map(msg => msg.message_text)
-      .join(' ')
-
-    if (userMessages.trim()) {
-      const analysis = await analyzeWithAI(userMessages, idealTraits)
-      
-      await supabase.from('prospect_analysis').insert({
-        sender_id: senderId,
-        match_points: analysis.matchPoints,
-        met_traits: analysis.metTraits,
-        met_trait_indices: analysis.metTraitIndices || [],
-        last_analyzed_at: new Date().toISOString(),
-        message_count: conversationHistory.length
-      })
-
-      return analysis
-    }
-
-    return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
-  } catch (error) {
-    console.error('❌ Error analizando progreso:', error)
-    return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
-  }
-}
-
-async function analyzeWithAI(conversationText: string, idealTraits: Trait[]): Promise<AnalysisResult> {
-  return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
-}
-
-async function generateStrategicAIResponse(
-  supabase: any,
-  userMessage: string,
-  conversationHistory: any[],
-  currentAnalysis: AnalysisResult,
-  idealTraits: Trait[],
-  openaiKey: string
-): Promise<string> {
-  return "Respuesta IA desactivada temporalmente"
-}
-
-async function sendFirstStrategicResponse(supabase: any, userId: string, userMessage: string) {
-  console.log('🤖 Respuesta estratégica inicial DESACTIVADA')
-}
-
-async function sendSimpleResponse(supabase: any, userId: string) {
-  console.log('🤖 Respuesta simple DESACTIVADA')
-}
-
-async function sendResponse(supabase: any, senderId: string, messageText: string) {
-  console.log('🤖 Respuesta IA DESACTIVADA')
-}
-
 async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
   try {
     const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
@@ -436,4 +331,32 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     console.error('❌ ERROR EN sendInstagramMessage:', error)
     return false
   }
+}
+
+async function loadIdealTraits(supabase: any): Promise<any[]> {
+  return []
+}
+
+async function analyzeConversationProgress(supabase: any, senderId: string, conversationHistory: any[], idealTraits: any[]): Promise<any> {
+  return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
+}
+
+async function analyzeWithAI(conversationText: string, idealTraits: any[]): Promise<any> {
+  return { matchPoints: 0, metTraits: [], metTraitIndices: [] }
+}
+
+async function generateStrategicAIResponse(supabase: any, userMessage: string, conversationHistory: any[], currentAnalysis: any, idealTraits: any[], openaiKey: string): Promise<string> {
+  return "Respuesta IA desactivada temporalmente"
+}
+
+async function sendFirstStrategicResponse(supabase: any, userId: string, userMessage: string) {
+  console.log('🤖 Respuesta estratégica inicial DESACTIVADA')
+}
+
+async function sendSimpleResponse(supabase: any, userId: string) {
+  console.log('🤖 Respuesta simple DESACTIVADA')
+}
+
+async function sendResponse(supabase: any, senderId: string, messageText: string) {
+  console.log('🤖 Respuesta IA DESACTIVADA')
 }
