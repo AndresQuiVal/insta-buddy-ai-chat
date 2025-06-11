@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -187,11 +186,36 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: OBTENER AUTORESPONDER ACTIVO CORRECTO
-    console.log('🔍 Obteniendo configuración de autoresponder...')
+    // PASO 3: OBTENER AUTORESPONDER ACTIVO CORRECTO - DEBUGGING COMPLETO
+    console.log('🔍 ===== DEBUGGING AUTORESPONDER =====')
+    console.log('🔍 Obteniendo TODOS los autoresponders de la base de datos...')
     
-    // Obtener autoresponders activos ordenados por fecha de creación (más recientes primero)
-    // y que tengan contenido de mensaje válido
+    // Primero obtener TODOS los autoresponders para debug
+    const { data: allAutoresponders, error: debugError } = await supabase
+      .from('autoresponder_messages')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (debugError) {
+      console.error('❌ Error obteniendo todos los autoresponders:', debugError)
+    } else {
+      console.log('📋 TODOS los autoresponders en BD:', allAutoresponders?.length || 0)
+      if (allAutoresponders) {
+        allAutoresponders.forEach((ar, index) => {
+          console.log(`📋 Autoresponder ${index + 1}:`, {
+            id: ar.id,
+            name: ar.name,
+            message_text: ar.message_text?.substring(0, 50) + '...',
+            is_active: ar.is_active,
+            send_only_first_message: ar.send_only_first_message,
+            user_id: ar.user_id,
+            created_at: ar.created_at
+          })
+        })
+      }
+    }
+
+    // Ahora obtener solo los activos
     let { data: autoresponders, error: queryError } = await supabase
       .from('autoresponder_messages')
       .select('*')
@@ -201,14 +225,14 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       .order('created_at', { ascending: false })
 
     if (queryError) {
-      console.error('❌ Error obteniendo autoresponders:', queryError)
+      console.error('❌ Error obteniendo autoresponders activos:', queryError)
       return
     }
 
-    console.log('📋 Autoresponders activos encontrados:', autoresponders?.length || 0)
+    console.log('📋 Autoresponders ACTIVOS encontrados:', autoresponders?.length || 0)
     if (autoresponders) {
       autoresponders.forEach((ar, index) => {
-        console.log(`📋 Autoresponder ${index + 1}:`, {
+        console.log(`📋 Autoresponder activo ${index + 1}:`, {
           id: ar.id,
           name: ar.name,
           message_text: ar.message_text,
@@ -219,32 +243,46 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       })
     }
 
-    // Filtrar autoresponders que NO sean el predeterminado y que tengan mensaje personalizado
-    const customAutoresponders = autoresponders?.filter(ar => 
-      ar.name !== 'Respuesta predeterminada' && 
-      ar.message_text && 
-      ar.message_text.trim() !== '¡Hola! Gracias por tu mensaje. Te responderemos lo antes posible.'
-    ) || []
+    // Buscar específicamente autoresponders con mensaje personalizado (no el default)
+    const customAutoresponders = autoresponders?.filter(ar => {
+      const isNotDefault = ar.name !== 'Respuesta predeterminada'
+      const hasCustomMessage = ar.message_text && 
+        ar.message_text.trim() !== '' && 
+        ar.message_text.trim() !== '¡Hola! Gracias por tu mensaje. Te responderemos lo antes posible.'
+      
+      console.log(`🎯 Evaluando autoresponder "${ar.name}":`, {
+        isNotDefault,
+        hasCustomMessage,
+        message_text: ar.message_text
+      })
+      
+      return isNotDefault && hasCustomMessage
+    }) || []
 
     console.log('🎯 Autoresponders personalizados encontrados:', customAutoresponders.length)
-
-    // Usar el autoresponder personalizado más reciente, o el general si no hay ninguno
-    const autoresponderMessage = customAutoresponders.length > 0 
-      ? customAutoresponders[0] 
-      : (autoresponders && autoresponders.length > 0 ? autoresponders[0] : null)
-
-    if (!autoresponderMessage) {
-      console.log('⚠️ No hay respuestas automáticas activas')
+    
+    // Elegir el autoresponder a usar
+    let autoresponderMessage = null
+    
+    if (customAutoresponders.length > 0) {
+      autoresponderMessage = customAutoresponders[0] // El más reciente
+      console.log('✅ USANDO AUTORESPONDER PERSONALIZADO:', autoresponderMessage.name)
+    } else if (autoresponders && autoresponders.length > 0) {
+      autoresponderMessage = autoresponders[0] // El más reciente de los activos
+      console.log('⚠️ USANDO AUTORESPONDER GENERAL:', autoresponderMessage.name)
+    } else {
+      console.log('❌ NO HAY AUTORESPONDERS ACTIVOS')
       return
     }
 
-    console.log('📋 Usando autoresponder:', {
+    console.log('📋 Autoresponder FINAL seleccionado:', {
       id: autoresponderMessage.id,
       name: autoresponderMessage.name,
       message_text: autoresponderMessage.message_text,
       send_only_first_message: autoresponderMessage.send_only_first_message,
       user_id: autoresponderMessage.user_id
     })
+    console.log('🔍 ===== FIN DEBUGGING AUTORESPONDER =====')
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
     let shouldSendAutoresponder = true
