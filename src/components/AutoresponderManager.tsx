@@ -186,7 +186,7 @@ const AutoresponderManager = () => {
           <h2 className="text-2xl font-bold text-gray-900">Autoresponder</h2>
           <div className="flex items-center gap-2 text-gray-600">
             <p>Configura respuestas automáticas para nuevos prospectos</p>
-            <Cloud className="w-4 h-4 text-green-500" title="Base de Datos" />
+            <Cloud className="w-4 h-4 text-green-500" />
           </div>
         </div>
         
@@ -195,7 +195,6 @@ const AutoresponderManager = () => {
           <Button
             onClick={handleNewAutoresponder}
             className="w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 p-0"
-            title="Nueva Respuesta"
           >
             <Plus className="w-6 h-6" />
           </Button>
