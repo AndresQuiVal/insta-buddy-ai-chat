@@ -345,10 +345,19 @@ async function getFacebookPageId(accessToken: string): Promise<string | null> {
     const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`)
     const accountsData = await accountsResponse.json()
     
+    console.log('📊 Respuesta de Facebook API:', JSON.stringify(accountsData, null, 2))
+    
+    if (accountsData.error) {
+      console.error('❌ Error de Facebook API:', accountsData.error)
+      return null
+    }
+    
     if (accountsData.data) {
       for (const page of accountsData.data) {
+        console.log(`📄 Página encontrada: ${page.name} (ID: ${page.id})`)
         if (page.instagram_business_account) {
           console.log(`✅ Facebook Page ID encontrado: ${page.id} (${page.name})`)
+          console.log(`📱 Instagram Business Account: ${page.instagram_business_account.id}`)
           return page.id
         }
       }
