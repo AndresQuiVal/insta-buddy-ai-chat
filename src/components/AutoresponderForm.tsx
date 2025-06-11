@@ -96,24 +96,10 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       // PASO 1: Siempre guardar en localStorage como respaldo
       saveToLocalStorage(messageData);
 
-      // PASO 2: Obtener un user_id válido
-      let userId = 'default_user'; // Fallback por defecto
-      
-      try {
-        const instagramUser = localStorage.getItem('hower-instagram-user');
-        if (instagramUser) {
-          const userData = JSON.parse(instagramUser);
-          userId = userData.facebook?.id || userData.instagram?.id || 'instagram_user';
-          console.log('👤 Usuario ID encontrado:', userId);
-        }
-      } catch (e) {
-        console.log('⚠️ Usando usuario por defecto');
-      }
-
-      // PASO 3: Preparar datos para guardar
+      // PASO 2: Preparar datos para guardar - SIN user_id para evitar error de UUID
       const dataToSave = {
-        ...messageData,
-        user_id: userId
+        ...messageData
+        // Removemos user_id completamente ya que la columna acepta NULL
       };
 
       console.log('💾 Datos a guardar en BD:', dataToSave);
