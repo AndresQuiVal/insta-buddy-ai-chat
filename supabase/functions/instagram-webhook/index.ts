@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -187,91 +186,46 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('✅ Mensaje guardado correctamente')
     }
 
-    // PASO 3: OBTENER CUALQUIER AUTORESPONDER ACTIVO
+    // PASO 3: OBTENER AUTORESPONDER ACTIVO
     console.log('🔍 Obteniendo configuración de autoresponder...')
-    console.log('🔎 BUSCANDO AUTORESPONDERS ACTIVOS SIN FILTRO DE USUARIO')
     
-    // Obtener cualquier autoresponder activo sin filtrar por usuario
-    let { data: autoresponderMessage, error: queryError } = await supabase
+    // Primero obtener TODOS los autoresponders activos
+    let { data: autoresponders, error: queryError } = await supabase
       .from('autoresponder_messages')
       .select('*')
       .eq('is_active', true)
-      .limit(1)
-      .maybeSingle()
+      .order('created_at', { ascending: false })
 
     if (queryError) {
-      console.error('❌ Error obteniendo autoresponder:', queryError)
+      console.error('❌ Error obteniendo autoresponders:', queryError)
       return
     }
 
+    console.log('📋 Todos los autoresponders activos encontrados:', autoresponders?.length || 0)
+    if (autoresponders) {
+      autoresponders.forEach((ar, index) => {
+        console.log(`📋 Autoresponder ${index + 1}:`, {
+          id: ar.id,
+          name: ar.name,
+          send_only_first_message: ar.send_only_first_message,
+          user_id: ar.user_id
+        })
+      })
+    }
+
+    // Tomar el primer autoresponder activo (prioriza los más recientes)
+    const autoresponderMessage = autoresponders && autoresponders.length > 0 ? autoresponders[0] : null
+
     if (!autoresponderMessage) {
       console.log('⚠️ No hay respuestas automáticas activas')
-      
-      // Debug: Mostrar todos los autoresponders para diagnosticar
-      const { data: allAutoresponders, error: debugError } = await supabase
-        .from('autoresponder_messages')
-        .select('*')
-      
-      if (!debugError) {
-        console.log('🔍 DEBUG - Todos los autoresponders:', JSON.stringify(allAutoresponders, null, 2))
-        
-        if (allAutoresponders && allAutoresponders.length > 0) {
-          console.log('🔔 ATENCIÓN: Hay autoresponders pero ninguno está activo')
-          
-          // Activar el primer autoresponder encontrado
-          const firstMessage = allAutoresponders[0];
-          const { error: updateError } = await supabase
-            .from('autoresponder_messages')
-            .update({ is_active: true })
-            .eq('id', firstMessage.id)
-          
-          if (!updateError) {
-            console.log('✅ Autoresponder activado automáticamente:', firstMessage.id)
-            autoresponderMessage = {...firstMessage, is_active: true};
-          } else {
-            console.error('❌ Error activando autoresponder:', updateError)
-            return;
-          }
-        } else {
-          console.log('⚠️ No hay ningún autoresponder en la base de datos')
-          
-          // Crear un autoresponder predeterminado si no existe ninguno
-          const defaultMessage = {
-            name: 'Respuesta predeterminada',
-            message_text: '¡Hola! Gracias por tu mensaje. Te responderemos lo antes posible.',
-            is_active: true,
-            send_only_first_message: true
-          };
-          
-          const { data: newAutoresponder, error: createError } = await supabase
-            .from('autoresponder_messages')
-            .insert(defaultMessage)
-            .select()
-          
-          if (!createError && newAutoresponder) {
-            console.log('✅ Autoresponder predeterminado creado:', newAutoresponder[0].id)
-            autoresponderMessage = newAutoresponder[0];
-          } else {
-            console.error('❌ Error creando autoresponder predeterminado:', createError)
-            return;
-          }
-        }
-      } else {
-        console.error('❌ Error obteniendo todos los autoresponders:', debugError)
-        return;
-      }
+      return
     }
 
-    if (!autoresponderMessage) {
-      console.log('⚠️ No se pudo obtener o crear un autoresponder')
-      return;
-    }
-
-    console.log('📋 Configuración encontrada:', {
+    console.log('📋 Usando autoresponder:', {
       id: autoresponderMessage.id,
       name: autoresponderMessage.name,
-      sendOnlyFirst: autoresponderMessage.send_only_first_message,
-      userId: autoresponderMessage.user_id
+      send_only_first_message: autoresponderMessage.send_only_first_message,
+      user_id: autoresponderMessage.user_id
     })
 
     // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
@@ -285,6 +239,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
         .from('autoresponder_sent_log')
         .select('id')
         .eq('sender_id', event.sender.id)
+        .eq('autoresponder_message_id', autoresponderMessage.id)
         .maybeSingle()
 
       if (checkError && checkError.code !== 'PGRST116') {
@@ -292,10 +247,10 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       }
 
       if (alreadySent) {
-        console.log('⏭️ Ya se envió autoresponder a este usuario - NO ENVIAR')
+        console.log('⏭️ Ya se envió este autoresponder a este usuario - NO ENVIAR')
         shouldSendAutoresponder = false
       } else {
-        console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO AUTORESPONDER')
+        console.log('🆕 PRIMERA VEZ QUE ESCRIBE PARA ESTE AUTORESPONDER - ENVIANDO')
       }
     } else {
       // Enviar siempre
