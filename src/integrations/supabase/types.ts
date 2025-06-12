@@ -77,6 +77,86 @@ export type Database = {
           },
         ]
       }
+      comment_autoresponder_log: {
+        Row: {
+          comment_autoresponder_id: string | null
+          comment_text: string | null
+          commenter_instagram_id: string
+          dm_message_sent: string
+          dm_sent_at: string
+          id: string
+          webhook_data: Json | null
+        }
+        Insert: {
+          comment_autoresponder_id?: string | null
+          comment_text?: string | null
+          commenter_instagram_id: string
+          dm_message_sent: string
+          dm_sent_at?: string
+          id?: string
+          webhook_data?: Json | null
+        }
+        Update: {
+          comment_autoresponder_id?: string | null
+          comment_text?: string | null
+          commenter_instagram_id?: string
+          dm_message_sent?: string
+          dm_sent_at?: string
+          id?: string
+          webhook_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_autoresponder_log_comment_autoresponder_id_fkey"
+            columns: ["comment_autoresponder_id"]
+            isOneToOne: false
+            referencedRelation: "comment_autoresponders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comment_autoresponders: {
+        Row: {
+          created_at: string
+          dm_message: string
+          id: string
+          is_active: boolean
+          keywords: string[]
+          name: string
+          post_caption: string | null
+          post_id: string
+          post_url: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dm_message: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          name: string
+          post_caption?: string | null
+          post_id: string
+          post_url: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dm_message?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          name?: string
+          post_caption?: string | null
+          post_id?: string
+          post_url?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ideal_client_traits: {
         Row: {
           created_at: string

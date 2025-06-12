@@ -3,27 +3,27 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, MessageCircle, Send, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { InstagramPost, truncateCaption } from '@/services/instagramPostsService';
+import { supabase } from '@/integrations/supabase/client';
+import { InstagramPost, formatPostDate, truncateCaption } from '@/services/instagramPostsService';
+
+export interface CommentAutoresponderConfig {
+  name: string;
+  keywords: string[];
+  dmMessage: string;
+  postId: string;
+  postUrl: string;
+  postCaption?: string;
+}
 
 interface CommentAutoresponderFormProps {
   selectedPost: InstagramPost;
   onBack: () => void;
   onSubmit: (config: CommentAutoresponderConfig) => void;
-}
-
-export interface CommentAutoresponderConfig {
-  post_id: string;
-  post_url: string;
-  post_caption: string;
-  name: string;
-  keywords: string[];
-  dm_message: string;
-  is_active: boolean;
 }
 
 const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAutoresponderFormProps) => {
@@ -35,32 +35,21 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   const { toast } = useToast();
 
   const addKeyword = () => {
-    const trimmedKeyword = newKeyword.trim().toLowerCase();
-    
-    if (!trimmedKeyword) {
-      toast({
-        title: "Palabra clave requerida",
-        description: "Ingresa una palabra clave válida",
-        variant: "destructive"
-      });
-      return;
+    if (newKeyword.trim() && !keywords.includes(newKeyword.trim().toLowerCase())) {
+      setKeywords([...keywords, newKeyword.trim().toLowerCase()]);
+      setNewKeyword('');
     }
-    
-    if (keywords.includes(trimmedKeyword)) {
-      toast({
-        title: "Palabra clave duplicada",
-        description: "Esta palabra clave ya existe",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setKeywords([...keywords, trimmedKeyword]);
-    setNewKeyword('');
   };
 
-  const removeKeyword = (keywordToRemove: string) => {
-    setKeywords(keywords.filter(k => k !== keywordToRemove));
+  const removeKeyword = (index: number) => {
+    setKeywords(keywords.filter((_, i) => i !== index));
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addKeyword();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,50 +57,78 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     
     if (!name.trim()) {
       toast({
-        title: "Nombre requerido",
-        description: "Ingresa un nombre para identificar este autoresponder",
+        title: "Error",
+        description: "El nombre es requerido",
         variant: "destructive"
       });
       return;
     }
-    
+
     if (keywords.length === 0) {
       toast({
-        title: "Palabras clave requeridas",
-        description: "Agrega al menos una palabra clave",
+        title: "Error", 
+        description: "Debes agregar al menos una palabra clave",
         variant: "destructive"
       });
       return;
     }
-    
+
     if (!dmMessage.trim()) {
       toast({
-        title: "Mensaje requerido",
-        description: "Ingresa el mensaje que se enviará por DM",
+        title: "Error",
+        description: "El mensaje DM es requerido",
         variant: "destructive"
       });
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
-      const config: CommentAutoresponderConfig = {
-        post_id: selectedPost.id,
-        post_url: selectedPost.permalink,
-        post_caption: selectedPost.caption || '',
+      console.log('💾 Guardando autoresponder de comentarios...');
+
+      const { data, error } = await supabase
+        .from('comment_autoresponders')
+        .insert({
+          user_id: 'temp-user-id', // TODO: Implementar autenticación real
+          post_id: selectedPost.id,
+          post_url: selectedPost.permalink,
+          post_caption: selectedPost.caption,
+          name: name.trim(),
+          keywords: keywords,
+          dm_message: dmMessage.trim(),
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error guardando:', error);
+        throw error;
+      }
+
+      console.log('✅ Autoresponder guardado:', data);
+
+      toast({
+        title: "¡Autoresponder creado!",
+        description: `Se configuró para detectar comentarios en el post seleccionado`,
+      });
+
+      // Llamar callback de éxito
+      onSubmit({
         name: name.trim(),
         keywords,
-        dm_message: dmMessage.trim(),
-        is_active: true
-      };
-      
-      onSubmit(config);
+        dmMessage: dmMessage.trim(),
+        postId: selectedPost.id,
+        postUrl: selectedPost.permalink,
+        postCaption: selectedPost.caption
+      });
+
     } catch (error) {
-      console.error('Error enviando configuración:', error);
+      console.error('❌ Error:', error);
       toast({
         title: "Error",
-        description: "No se pudo guardar la configuración",
+        description: "No se pudo guardar el autoresponder",
         variant: "destructive"
       });
     } finally {
@@ -131,117 +148,143 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
               Configurar Autoresponder para Comentarios
             </CardTitle>
             <p className="text-sm text-purple-700 mt-1">
-              Configura las palabras clave y el mensaje automático
+              Detectar palabras clave en comentarios y enviar DM automático
             </p>
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="p-6">
-        {/* Post seleccionado */}
-        <Card className="mb-6 border-purple-200 bg-purple-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <MessageCircle className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-purple-800">Post seleccionado:</span>
+        {/* Post Seleccionado */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+            <MessageCircle className="w-4 h-4" />
+            Post Seleccionado
+          </h3>
+          <div className="flex gap-3">
+            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+              <img 
+                src={selectedPost.thumbnail_url || selectedPost.media_url} 
+                alt="Post thumbnail"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
             </div>
-            <p className="text-sm text-purple-700">
-              {truncateCaption(selectedPost.caption, 150)}
-            </p>
-          </CardContent>
-        </Card>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-600 mb-1">
+                {formatPostDate(selectedPost.timestamp)}
+              </p>
+              <p className="text-sm text-gray-800 line-clamp-2">
+                {truncateCaption(selectedPost.caption, 120)}
+              </p>
+              <a 
+                href={selectedPost.permalink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-purple-600 hover:text-purple-800 flex items-center gap-1 mt-1"
+              >
+                Ver post <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Nombre del autoresponder */}
+          {/* Nombre del Autoresponder */}
           <div>
-            <Label htmlFor="name">Nombre del Autoresponder</Label>
+            <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+              Nombre del Autoresponder
+            </Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Autoresponder para promoción especial"
+              placeholder="Ej: Respuesta para lead magnet"
               className="mt-1"
+              required
             />
           </div>
 
-          {/* Palabras clave */}
+          {/* Palabras Clave */}
           <div>
-            <Label>Palabras Clave</Label>
-            <p className="text-sm text-gray-600 mb-3">
-              Cuando alguien comente alguna de estas palabras, se enviará el DM automáticamente
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Key className="w-4 h-4" />
+              Palabras Clave para Detectar
+            </Label>
+            <p className="text-xs text-gray-500 mb-2">
+              Cuando un comentario contenga alguna de estas palabras, se enviará el DM automáticamente
             </p>
             
-            {/* Input para agregar palabra clave */}
             <div className="flex gap-2 mb-3">
               <Input
                 value={newKeyword}
                 onChange={(e) => setNewKeyword(e.target.value)}
+                onKeyPress={handleKeyPress}
                 placeholder="Escribe una palabra clave..."
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
+                className="flex-1"
               />
-              <Button type="button" onClick={addKeyword} variant="outline">
+              <Button type="button" onClick={addKeyword} size="sm">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
-            
-            {/* Lista de palabras clave */}
+
             <div className="flex flex-wrap gap-2">
               {keywords.map((keyword, index) => (
                 <Badge key={index} variant="secondary" className="flex items-center gap-1">
                   {keyword}
-                  <button
-                    type="button"
-                    onClick={() => removeKeyword(keyword)}
-                    className="ml-1 hover:text-red-600"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  <X
+                    className="w-3 h-3 cursor-pointer hover:text-red-500"
+                    onClick={() => removeKeyword(index)}
+                  />
                 </Badge>
               ))}
+              {keywords.length === 0 && (
+                <p className="text-sm text-gray-400 italic">
+                  No se han agregado palabras clave
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Mensaje de DM */}
+          {/* Mensaje DM */}
           <div>
-            <Label htmlFor="dm-message">Mensaje de DM</Label>
-            <p className="text-sm text-gray-600 mb-2">
-              Este mensaje se enviará automáticamente por DM a quien comente la palabra clave
+            <Label htmlFor="dmMessage" className="text-sm font-medium text-gray-700">
+              Mensaje DM Automático
+            </Label>
+            <p className="text-xs text-gray-500 mb-2">
+              Este mensaje se enviará por DM cuando se detecte una palabra clave
             </p>
             <Textarea
-              id="dm-message"
+              id="dmMessage"
               value={dmMessage}
               onChange={(e) => setDmMessage(e.target.value)}
-              placeholder="¡Hola! Vi que comentaste en mi post. Te escribo para..."
+              placeholder="¡Hola! Vi tu comentario y me gustaría enviarte más información..."
               rows={4}
               className="mt-1"
+              required
             />
-          </div>
-
-          {/* Advertencia */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-amber-800 mb-1">
-                  Limitaciones de Instagram
-                </p>
-                <p className="text-amber-700">
-                  Por restricciones de Instagram, <strong>NO podemos responder automáticamente al comentario</strong>, 
-                  pero sí enviaremos un DM automático a la persona que comentó con la palabra clave.
-                </p>
-              </div>
-            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              {dmMessage.length}/1000 caracteres
+            </p>
           </div>
 
           {/* Botones */}
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onBack}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBack}
+              className="flex-1"
+            >
               Cancelar
             </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            <Button
+              type="submit"
+              disabled={isSubmitting || keywords.length === 0}
+              className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
               {isSubmitting ? (
                 <>
@@ -250,8 +293,8 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Guardar Autoresponder
+                  <Save className="w-4 h-4 mr-2" />
+                  Crear Autoresponder
                 </>
               )}
             </Button>

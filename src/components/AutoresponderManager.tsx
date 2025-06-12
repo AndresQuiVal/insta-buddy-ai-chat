@@ -182,26 +182,23 @@ const AutoresponderManager = () => {
 
   const handleCommentAutoresponderSubmit = async (config: CommentAutoresponderConfig) => {
     try {
-      console.log('💾 Guardando autoresponder para comentarios:', config);
-      
-      // TODO: Implementar guardado en base de datos
-      // Por ahora solo mostramos el toast de éxito
+      console.log('💾 Autoresponder de comentarios enviado desde formulario:', config);
       
       toast({
         title: "¡Autoresponder creado!",
-        description: `Se configuró el autoresponder para el post seleccionado`,
+        description: `Se configuró "${config.name}" para detectar comentarios`,
       });
       
       // Volver al listado principal
       setShowCommentForm(false);
       setSelectedPost(null);
-      loadMessages(); // Recargar la lista
+      loadMessages(); // Recargar la lista para incluir autoresponders de comentarios
       
     } catch (error) {
-      console.error('Error guardando autoresponder:', error);
+      console.error('Error en submit de autoresponder de comentarios:', error);
       toast({
         title: "Error",
-        description: "No se pudo guardar el autoresponder",
+        description: "No se pudo procesar el autoresponder",
         variant: "destructive"
       });
     }
