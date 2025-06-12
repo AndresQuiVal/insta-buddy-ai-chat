@@ -26,14 +26,17 @@ export const getInstagramPosts = async (): Promise<InstagramPost[]> => {
 
     console.log('🔍 Obteniendo posts de Instagram...');
 
-    // Primero obtenemos la información del usuario para conseguir el Instagram Business Account ID
-    const userResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${token}`);
+    // Primero obtenemos las páginas del usuario
+    const userResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${token}`);
     
     if (!userResponse.ok) {
-      throw new Error('Error obteniendo información de la cuenta');
+      const errorData = await userResponse.json();
+      console.error('❌ Error obteniendo páginas:', errorData);
+      throw new Error(errorData.error?.message || 'Error obteniendo información de la cuenta');
     }
     
     const accountsData = await userResponse.json();
+    console.log('📋 Páginas encontradas:', accountsData.data?.length || 0);
     
     // Buscar página con Instagram Business Account
     const pageWithInstagram = accountsData.data?.find((page: any) => page.instagram_business_account);
@@ -45,7 +48,7 @@ export const getInstagramPosts = async (): Promise<InstagramPost[]> => {
     const instagramAccountId = pageWithInstagram.instagram_business_account.id;
     console.log('📱 Instagram Business Account ID:', instagramAccountId);
 
-    // Obtener posts de Instagram
+    // Obtener posts de Instagram usando el ID correcto
     const postsResponse = await fetch(
       `https://graph.facebook.com/v19.0/${instagramAccountId}/media?fields=id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,thumbnail_url&limit=20&access_token=${token}`
     );
