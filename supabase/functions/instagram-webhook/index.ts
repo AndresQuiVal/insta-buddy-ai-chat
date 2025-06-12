@@ -380,17 +380,14 @@ async function processCommentEvent(supabase: any, change: ChangeEvent) {
     console.log('📋 Usuario que comentó:', commenterId)
     console.log('📋 Comment ID:', commentId)
     
-    // NUEVO: Procesar comentarios aunque verb sea undefined o null
-    // Esto es para manejar diferentes formatos de webhook de Meta
-    if (verb && verb !== 'add') {
-      console.log('⏭️ Comentario no es nuevo (verb:', verb, ') - saltando')
+    // CAMBIO CRÍTICO: No filtrar por verb si no está definido
+    // Facebook puede enviar eventos sin verb definido
+    if (verb === 'remove' || verb === 'edit') {
+      console.log('⏭️ Comentario editado o eliminado (verb:', verb, ') - saltando')
       return
     }
     
-    // Si verb es undefined/null, asumimos que es un comentario nuevo
-    if (verb === undefined || verb === null) {
-      console.log('⚠️ Verb no definido, asumiendo comentario nuevo')
-    }
+    console.log('✅ ===== COMENTARIO VÁLIDO PARA PROCESAR =====')
     
     if (!commentText || !commenterId) {
       console.log('⏭️ Información incompleta del comentario - saltando')
