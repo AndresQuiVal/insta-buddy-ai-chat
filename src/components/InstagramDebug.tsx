@@ -395,6 +395,21 @@ const InstagramDebug: React.FC = () => {
         </div>
       </div>
 
+      {/* Test de comentario específico - BOTÓN PRINCIPAL */}
+      <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+        <h4 className="font-medium text-orange-800 mb-3">🧪 Prueba de Comentario Específica</h4>
+        <p className="text-sm text-orange-700 mb-3">
+          Esta prueba simula exactamente cómo Facebook envía un webhook cuando alguien comenta "pedrin" en tu post.
+        </p>
+        <button
+          onClick={testWebhookWithComment}
+          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors text-sm font-medium"
+        >
+          <MessageSquare className="w-4 h-4" />
+          🧪 Test Comentario "pedrin"
+        </button>
+      </div>
+
       {/* Resultado del test de webhook */}
       {webhookTestResult && (
         <div className={`border rounded-lg p-4 ${webhookTestResult.testPassed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
