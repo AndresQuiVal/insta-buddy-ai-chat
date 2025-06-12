@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, MessageCircle, Cloud, Key } from 'lucide-react';
+import { Plus, Edit, Trash2, MessageCircle, Cloud, Key, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -21,10 +22,38 @@ interface AutoresponderMessage {
   use_keywords: boolean;
   keywords: string[];
   created_at: string;
+  type: 'message'; // Para distinguir del tipo comentario
 }
 
+interface CommentAutoresponder {
+  id: string;
+  name: string;
+  dm_message: string; // Diferente nombre de campo
+  is_active: boolean;
+  keywords: string[];
+  created_at: string;
+  post_url: string;
+  post_caption: string | null;
+  type: 'comment'; // Para distinguir del tipo mensaje
+}
+
+// Tipo unificado para mostrar en la lista
+type UnifiedAutoresponder = {
+  id: string;
+  name: string;
+  message_text: string;
+  is_active: boolean;
+  send_only_first_message?: boolean;
+  use_keywords?: boolean;
+  keywords: string[];
+  created_at: string;
+  type: 'message' | 'comment';
+  post_url?: string;
+  post_caption?: string | null;
+};
+
 const AutoresponderManager = () => {
-  const [messages, setMessages] = useState<AutoresponderMessage[]>([]);
+  const [messages, setMessages] = useState<UnifiedAutoresponder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showTypeDialog, setShowTypeDialog] = useState(false);
@@ -41,29 +70,65 @@ const AutoresponderManager = () => {
 
   const loadMessages = async () => {
     try {
-      console.log('📋 Cargando autoresponders desde BASE DE DATOS...');
+      console.log('📋 Cargando autoresponders desde AMBAS TABLAS...');
       
-      const { data, error } = await supabase
+      // Cargar autoresponders normales
+      const { data: normalAutoresponders, error: normalError } = await supabase
         .from('autoresponder_messages')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Error cargando desde BD:', error);
-        throw error;
+      if (normalError) {
+        console.error('❌ Error cargando autoresponders normales:', normalError);
+        throw normalError;
       }
+
+      // Cargar autoresponders de comentarios
+      const { data: commentAutoresponders, error: commentError } = await supabase
+        .from('comment_autoresponders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (commentError) {
+        console.error('❌ Error cargando autoresponders de comentarios:', commentError);
+        throw commentError;
+      }
+
+      // Unificar ambos tipos en una sola lista
+      const unifiedList: UnifiedAutoresponder[] = [
+        // Autoresponders normales
+        ...(normalAutoresponders || []).map((ar): UnifiedAutoresponder => ({
+          id: ar.id,
+          name: ar.name,
+          message_text: ar.message_text,
+          is_active: ar.is_active,
+          send_only_first_message: ar.send_only_first_message,
+          use_keywords: ar.use_keywords,
+          keywords: ar.keywords || [],
+          created_at: ar.created_at,
+          type: 'message'
+        })),
+        // Autoresponders de comentarios
+        ...(commentAutoresponders || []).map((ar): UnifiedAutoresponder => ({
+          id: ar.id,
+          name: ar.name,
+          message_text: ar.dm_message, // Mapear dm_message a message_text
+          is_active: ar.is_active,
+          keywords: ar.keywords || [],
+          created_at: ar.created_at,
+          type: 'comment',
+          post_url: ar.post_url,
+          post_caption: ar.post_caption
+        }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
-      console.log('✅ Autoresponders cargados desde BD:', data?.length || 0);
-      console.log('📊 Detalles:', data?.map(ar => ({
-        id: ar.id,
-        name: ar.name,
-        is_active: ar.is_active,
-        send_only_first_message: ar.send_only_first_message,
-        use_keywords: ar.use_keywords,
-        keywords: ar.keywords
-      })));
+      console.log('✅ Autoresponders cargados:', {
+        normales: normalAutoresponders?.length || 0,
+        comentarios: commentAutoresponders?.length || 0,
+        total: unifiedList.length
+      });
       
-      setMessages(data || []);
+      setMessages(unifiedList);
       
     } catch (error) {
       console.error('❌ Error loading autoresponders:', error);
@@ -77,12 +142,14 @@ const AutoresponderManager = () => {
     }
   };
 
-  const toggleActive = async (id: string, currentActive: boolean) => {
+  const toggleActive = async (id: string, currentActive: boolean, type: 'message' | 'comment') => {
     try {
-      console.log('🔄 Cambiando estado de autoresponder:', id, 'a', !currentActive);
+      console.log('🔄 Cambiando estado de autoresponder:', id, 'a', !currentActive, 'tipo:', type);
+      
+      const table = type === 'message' ? 'autoresponder_messages' : 'comment_autoresponders';
       
       const { error } = await supabase
-        .from('autoresponder_messages')
+        .from(table)
         .update({ is_active: !currentActive })
         .eq('id', id);
 
@@ -113,16 +180,18 @@ const AutoresponderManager = () => {
     }
   };
 
-  const deleteMessage = async (id: string) => {
+  const deleteMessage = async (id: string, type: 'message' | 'comment') => {
     if (!confirm('¿Estás seguro de que quieres eliminar esta respuesta automática?')) {
       return;
     }
 
     try {
-      console.log('🗑️ Eliminando autoresponder:', id);
+      console.log('🗑️ Eliminando autoresponder:', id, 'tipo:', type);
+      
+      const table = type === 'message' ? 'autoresponder_messages' : 'comment_autoresponders';
       
       const { error } = await supabase
-        .from('autoresponder_messages')
+        .from(table)
         .delete()
         .eq('id', id);
 
@@ -332,7 +401,7 @@ const AutoresponderManager = () => {
                       </h3>
                       <Switch
                         checked={message.is_active}
-                        onCheckedChange={() => toggleActive(message.id, message.is_active)}
+                        onCheckedChange={() => toggleActive(message.id, message.is_active, message.type)}
                       />
                       <span className={`text-xs px-3 py-1 rounded-full font-medium ${
                         message.is_active 
@@ -340,6 +409,14 @@ const AutoresponderManager = () => {
                           : 'bg-gray-100 text-gray-600 border border-gray-200'
                       }`}>
                         {message.is_active ? 'Activa' : 'Inactiva'}
+                      </span>
+                      {/* Badge para tipo */}
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        message.type === 'comment'
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'bg-purple-100 text-purple-700 border border-purple-200'
+                      }`}>
+                        {message.type === 'comment' ? 'Comentarios' : 'Mensajes'}
                       </span>
                     </div>
                     
@@ -357,7 +434,40 @@ const AutoresponderManager = () => {
                           Palabras clave
                         </span>
                       )}
+                      {message.type === 'comment' && message.keywords && message.keywords.length > 0 && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 border border-purple-200 flex items-center gap-1">
+                          <Key className="w-3 h-3" />
+                          Palabras clave
+                        </span>
+                      )}
                     </div>
+
+                    {/* Post info para autoresponders de comentarios */}
+                    {message.type === 'comment' && message.post_url && (
+                      <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-start gap-2">
+                          <MessageCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-blue-600 font-medium mb-1">Post configurado:</p>
+                            {message.post_caption && (
+                              <p className="text-xs text-blue-700 mb-2 line-clamp-2">
+                                {message.post_caption.length > 80 
+                                  ? message.post_caption.substring(0, 80) + '...' 
+                                  : message.post_caption}
+                              </p>
+                            )}
+                            <a 
+                              href={message.post_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            >
+                              Ver post <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Message preview - hidden on mobile */}
                     {!isMobile && (
@@ -371,7 +481,7 @@ const AutoresponderManager = () => {
                     )}
 
                     {/* Keywords */}
-                    {message.use_keywords && message.keywords && message.keywords.length > 0 && (
+                    {message.keywords && message.keywords.length > 0 && (
                       <div className="mb-3">
                         <div className="flex flex-wrap gap-1">
                           {message.keywords.slice(0, 3).map((keyword, index) => (
@@ -394,21 +504,23 @@ const AutoresponderManager = () => {
                   
                   {/* Action buttons */}
                   <div className="flex items-center gap-2 ml-4">
+                    {message.type === 'message' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingMessage(message as AutoresponderMessage);
+                          setShowForm(true);
+                        }}
+                        className="hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setEditingMessage(message);
-                        setShowForm(true);
-                      }}
-                      className="hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteMessage(message.id)}
+                      onClick={() => deleteMessage(message.id, message.type)}
                       className="hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
