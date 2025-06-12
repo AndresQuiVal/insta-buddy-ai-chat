@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, MessageCircle, Cloud, Key, ExternalLink, MessageSquare } from 'lucide-react';
+import { Plus, Edit, Trash2, MessageCircle, Cloud, Key, ExternalLink, MessageSquare, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -406,6 +406,68 @@ const AutoresponderManager = () => {
     }
   };
 
+  // NUEVA FUNCIÓN: Verificar comentarios procesados recientemente
+  const checkRecentComments = async () => {
+    try {
+      console.log('🔍 Verificando comentarios procesados en los últimos 10 minutos...');
+      
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      
+      const { data: recentLogs, error } = await supabase
+        .from('comment_autoresponder_log')
+        .select('*')
+        .gte('dm_sent_at', tenMinutesAgo)
+        .order('dm_sent_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('❌ Error consultando logs:', error);
+        toast({
+          title: "❌ Error",
+          description: "No se pudo consultar el historial de comentarios",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('📊 Comentarios procesados recientemente:', recentLogs);
+
+      if (!recentLogs || recentLogs.length === 0) {
+        toast({
+          title: "📭 Sin actividad reciente",
+          description: "No se han procesado comentarios en los últimos 10 minutos",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Mostrar los comentarios procesados
+      const lastComment = recentLogs[0];
+      const timeDiff = Math.round((Date.now() - new Date(lastComment.dm_sent_at).getTime()) / 1000);
+      
+      toast({
+        title: "🎉 ¡Comentarios procesados!",
+        description: `Último: "${lastComment.comment_text}" hace ${timeDiff}s. Total recientes: ${recentLogs.length}`,
+      });
+
+      // Mostrar detalles en consola
+      recentLogs.forEach((log, index) => {
+        console.log(`📝 [${index + 1}] Comentario: "${log.comment_text}" de ${log.commenter_instagram_id}`);
+        console.log(`📤 DM enviado: "${log.dm_message_sent}"`);
+        console.log(`⏰ Procesado: ${new Date(log.dm_sent_at).toLocaleString()}`);
+        console.log('---');
+      });
+
+    } catch (error) {
+      console.error('❌ Error verificando comentarios:', error);
+      toast({
+        title: "❌ Error",
+        description: "Error verificando comentarios procesados",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -469,6 +531,21 @@ const AutoresponderManager = () => {
         onOpenChange={setShowTypeDialog}
         onSelectType={handleSelectType}
       />
+
+      {/* NUEVO: Verificar comentarios reales procesados */}
+      <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+        <h4 className="font-medium text-green-800 mb-3">✅ Verificar Comentarios Reales</h4>
+        <p className="text-sm text-green-700 mb-3">
+          Verifica si tu comentario real "pedrin" fue procesado y se envió el DM automáticamente.
+        </p>
+        <button
+          onClick={checkRecentComments}
+          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium"
+        >
+          <RefreshCw className="w-4 h-4" />
+          🔍 Verificar Comentarios Procesados
+        </button>
+      </div>
 
       {/* Test de comentario específico - BOTÓN PRINCIPAL EN AUTORESPONDER */}
       <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
