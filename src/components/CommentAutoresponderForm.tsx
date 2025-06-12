@@ -52,6 +52,34 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     }
   };
 
+  // Función para obtener información del usuario usando el token de Instagram
+  const getInstagramUserInfo = async () => {
+    const token = localStorage.getItem('hower-instagram-token');
+    if (!token) {
+      throw new Error('No hay token de Instagram disponible');
+    }
+
+    try {
+      // Obtener información básica del usuario/página
+      const response = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${token}`);
+      
+      if (!response.ok) {
+        throw new Error('Token de Instagram inválido o expirado');
+      }
+      
+      const userData = await response.json();
+      console.log('📱 Información del usuario Instagram:', userData);
+      
+      return {
+        id: userData.id,
+        name: userData.name || 'Usuario Instagram'
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo info de Instagram:', error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -87,20 +115,21 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     try {
       console.log('💾 Guardando autoresponder de comentarios...');
 
-      // Intentar obtener el usuario autenticado, o usar un ID temporal
-      let userId = 'temp-user-id'; // ID temporal por defecto
+      // Obtener información del usuario usando el token de Instagram
+      let userId = 'temp-user-id'; // Fallback por defecto
       
       try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if (!userError && user) {
-          userId = user.id;
-          console.log('✅ Usuario autenticado encontrado:', userId);
-        } else {
-          console.log('⚠️ Sin autenticación - usando ID temporal');
+        const instagramUser = await getInstagramUserInfo();
+        userId = `instagram_${instagramUser.id}`; // Prefijo para identificar que es un usuario de Instagram
+        console.log('✅ Usuario Instagram identificado:', userId);
+      } catch (error) {
+        console.log('⚠️ Error obteniendo usuario Instagram - usando ID temporal:', error);
+        // Usar token como identificador si no podemos obtener la info del usuario
+        const token = localStorage.getItem('hower-instagram-token');
+        if (token) {
+          // Usar los primeros caracteres del token como identificador único
+          userId = `token_${token.substring(0, 20)}`;
         }
-      } catch (authError) {
-        console.log('⚠️ Error de autenticación - usando ID temporal:', authError);
       }
 
       const { data, error } = await supabase
