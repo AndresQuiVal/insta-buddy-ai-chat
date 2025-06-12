@@ -27,6 +27,13 @@ interface ChangeEvent {
     item: string;
     created_time: number;
     verb: string;
+    comment_id?: string;
+    media?: {
+      id: string;
+      media_product_type: string;
+    };
+    text?: string;
+    parent_id?: string;
     messaging?: MessagingEvent[];
   };
 }
@@ -78,7 +85,7 @@ serve(async (req) => {
       const body = await req.json()
       console.log('📨 Instagram webhook received:', JSON.stringify(body, null, 2))
 
-      // Inicializar cliente Supabase solo para mensajes
+      // Inicializar cliente Supabase
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -95,17 +102,21 @@ serve(async (req) => {
             }
           }
 
-          // NUEVO: Procesar comentarios de posts
+          // Procesar cambios (incluyendo comentarios)
           if (entry.changes) {
             for (const change of entry.changes) {
+              console.log('🔄 Processing change:', JSON.stringify(change, null, 2))
+              
+              // Procesar comentarios según la documentación oficial
               if (change.field === 'comments') {
                 console.log('💬 Processing comment event:', JSON.stringify(change, null, 2))
                 await processCommentEvent(supabase, change)
               }
               
+              // Procesar mensajes en changes
               if (change.field === 'messages' && change.value.messaging) {
                 for (const event of change.value.messaging) {
-                  console.log('📝 Processing change event:', JSON.stringify(event, null, 2))
+                  console.log('📝 Processing change messaging event:', JSON.stringify(event, null, 2))
                   await processMessagingEvent(supabase, event)
                 }
               }
@@ -335,28 +346,37 @@ async function processCommentEvent(supabase: any, change: ChangeEvent) {
     const commentData = change.value
     console.log('💬 Datos del comentario:', JSON.stringify(commentData, null, 2))
     
-    // Extraer información del comentario
-    const postId = commentData.post?.id || commentData.parent_id
-    const commentText = commentData.text || commentData.message
+    // Extraer información del comentario según la documentación oficial
+    const mediaId = commentData.media?.id || commentData.parent_id
+    const commentText = commentData.text
     const commenterId = commentData.from?.id
-    const commentId = commentData.id
+    const commentId = commentData.comment_id
+    const verb = commentData.verb // 'add', 'edit', 'remove', etc.
     
-    if (!postId || !commentText || !commenterId) {
-      console.log('⏭️ Información incompleta del comentario - saltando')
+    // Solo procesar comentarios nuevos
+    if (verb !== 'add') {
+      console.log('⏭️ Comentario no es nuevo (verb:', verb, ') - saltando')
       return
     }
     
-    console.log('📋 Post ID:', postId)
+    if (!mediaId || !commentText || !commenterId) {
+      console.log('⏭️ Información incompleta del comentario - saltando')
+      console.log('Media ID:', mediaId, 'Comment text:', commentText, 'Commenter ID:', commenterId)
+      return
+    }
+    
+    console.log('📋 Media ID:', mediaId)
     console.log('📋 Comentario:', commentText)
     console.log('📋 Usuario que comentó:', commenterId)
+    console.log('📋 Comment ID:', commentId)
     
     // PASO 1: Buscar autoresponders configurados para este post
-    console.log('🔍 Buscando autoresponders para post:', postId)
+    console.log('🔍 Buscando autoresponders para post:', mediaId)
     
     const { data: commentAutoresponders, error: queryError } = await supabase
       .from('comment_autoresponders')
       .select('*')
-      .eq('post_id', postId)
+      .eq('post_id', mediaId)
       .eq('is_active', true)
     
     if (queryError) {
@@ -389,8 +409,8 @@ async function processCommentEvent(supabase: any, change: ChangeEvent) {
       if (hasKeywordMatch) {
         console.log(`✅ ¡COINCIDENCIA! Enviando DM con autoresponder: ${autoresponder.name}`)
         
-        // PASO 3: Enviar DM al usuario que comentó
-        const dmSent = await sendInstagramMessage(commenterId, autoresponder.dm_message)
+        // PASO 3: Enviar DM usando la edge function existente
+        const dmSent = await sendInstagramDM(commenterId, autoresponder.dm_message)
         
         if (dmSent) {
           // PASO 4: Registrar en log
@@ -654,6 +674,48 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
 
   } catch (error) {
     console.error('❌ ERROR CRÍTICO EN sendInstagramMessage:', error)
+    return false
+  }
+}
+
+async function sendInstagramDM(recipientId: string, messageText: string): Promise<boolean> {
+  try {
+    console.log('📤 Enviando DM usando edge function...')
+    console.log('Recipient:', recipientId)
+    console.log('Message:', messageText)
+    
+    // Usar la edge function existente para enviar DMs
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    
+    const { data, error } = await supabase.functions.invoke('instagram-send-message', {
+      body: {
+        recipient_id: recipientId,
+        message_text: messageText
+      }
+    })
+
+    if (error) {
+      console.error('❌ Error enviando DM:', error)
+      return false
+    }
+
+    if (data?.error) {
+      console.error('❌ Error en respuesta de DM:', data)
+      return false
+    }
+
+    if (!data?.success) {
+      console.error('❌ DM no exitoso:', data)
+      return false
+    }
+
+    console.log('✅ DM enviado exitosamente')
+    return true
+
+  } catch (error) {
+    console.error('❌ Error crítico enviando DM:', error)
     return false
   }
 }

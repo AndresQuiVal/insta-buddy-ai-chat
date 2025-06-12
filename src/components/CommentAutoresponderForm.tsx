@@ -87,10 +87,23 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     try {
       console.log('💾 Guardando autoresponder de comentarios...');
 
+      // Obtener el usuario autenticado
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('❌ Error obteniendo usuario:', userError);
+        toast({
+          title: "Error de autenticación",
+          description: "No se pudo verificar tu sesión. Inicia sesión nuevamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .insert({
-          user_id: 'temp-user-id', // TODO: Implementar autenticación real
+          user_id: user.id, // Usar el ID real del usuario autenticado
           post_id: selectedPost.id,
           post_url: selectedPost.permalink,
           post_caption: selectedPost.caption,
