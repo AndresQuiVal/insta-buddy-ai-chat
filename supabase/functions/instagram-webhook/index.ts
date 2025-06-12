@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -86,6 +87,44 @@ serve(async (req) => {
       console.log('📨 ===== NUEVO WEBHOOK RECIBIDO =====')
       console.log('📋 Webhook completo:', JSON.stringify(body, null, 2))
 
+      // ⭐ NUEVO: Detectar específicamente comentarios
+      let foundComments = false
+      if (body.object === 'instagram' && body.entry) {
+        for (const entry of body.entry) {
+          if (entry.changes) {
+            for (const change of entry.changes) {
+              if (change.field === 'comments') {
+                foundComments = true
+                console.log('🎯 ===== ¡COMENTARIO DETECTADO! =====')
+                console.log('📝 Change completo:', JSON.stringify(change, null, 2))
+                console.log('💬 Texto del comentario:', change.value?.text)
+                console.log('👤 Usuario que comentó:', change.value?.from?.id)
+                console.log('📱 Media ID:', change.value?.media?.id)
+                console.log('🔢 Post ID:', change.value?.item)
+                console.log('⚡ Verb:', change.value?.verb)
+              }
+            }
+          }
+        }
+      }
+
+      if (!foundComments) {
+        console.log('❌ ===== NO SE ENCONTRARON COMENTARIOS EN ESTE WEBHOOK =====')
+        console.log('🔍 Verificando qué campos llegaron...')
+        if (body.entry) {
+          body.entry.forEach((entry, index) => {
+            console.log(`📋 Entry ${index + 1}:`)
+            if (entry.messaging) console.log(`  ✉️ Tiene messaging: ${entry.messaging.length} eventos`)
+            if (entry.changes) {
+              console.log(`  🔄 Tiene changes: ${entry.changes.length} eventos`)
+              entry.changes.forEach((change, changeIndex) => {
+                console.log(`    📋 Change ${changeIndex + 1}: field="${change.field}"`)
+              })
+            }
+          })
+        }
+      }
+
       // Inicializar cliente Supabase
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -95,7 +134,6 @@ serve(async (req) => {
         for (const entry of body.entry as WebhookEntry[]) {
           console.log(`🔄 ===== PROCESANDO ENTRY =====`)
           console.log(`📋 Entry ID: ${entry.id}`)
-          console.log(`📋 Entry completa:`, JSON.stringify(entry, null, 2))
 
           // Procesar mensajes directos
           if (entry.messaging) {
