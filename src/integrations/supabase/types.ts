@@ -107,7 +107,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "comment_autoresponder_log_comment_autoresponder_id_fkey"
+            foreignKeyName: "comment_autoresponder_log_new_comment_autoresponder_id_fkey"
             columns: ["comment_autoresponder_id"]
             isOneToOne: false
             referencedRelation: "comment_autoresponders"
