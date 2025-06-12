@@ -167,6 +167,68 @@ const InstagramDebug: React.FC = () => {
     }
   };
 
+  const testWebhookWithComment = async () => {
+    addLog('🧪 === PRUEBA ESPECÍFICA DE COMENTARIO ===');
+    try {
+      const webhookUrl = 'https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook';
+      
+      // Simular exactamente cómo Facebook envía un comentario
+      const commentWebhook = {
+        object: 'instagram',
+        entry: [{
+          id: 'test_page_id',
+          time: Date.now(),
+          changes: [{
+            field: 'comments',
+            value: {
+              from: { id: 'test_commenter_123' },
+              media: { id: '18027917109434048' }, // Tu post ID real
+              created_time: Math.floor(Date.now() / 1000),
+              text: 'pedrin',
+              id: `comment_test_${Date.now()}`
+            }
+          }]
+        }]
+      };
+      
+      addLog('📤 Enviando webhook de comentario simulado...');
+      addLog('📋 Payload: ' + JSON.stringify(commentWebhook, null, 2));
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(commentWebhook)
+      });
+      
+      const result = await response.text();
+      addLog(`📨 Respuesta: ${response.status} - ${result}`);
+      
+      if (response.ok) {
+        addLog('✅ Webhook respondió correctamente');
+        // Verificar si se procesó el comentario
+        setTimeout(async () => {
+          const { data: logs } = await supabase
+            .from('comment_autoresponder_log')
+            .select('*')
+            .eq('commenter_instagram_id', 'test_commenter_123')
+            .order('dm_sent_at', { ascending: false })
+            .limit(1);
+          
+          if (logs && logs.length > 0) {
+            addLog('✅ ¡El comentario fue procesado y registrado!');
+          } else {
+            addLog('❌ El comentario no fue procesado');
+          }
+        }, 2000);
+      } else {
+        addLog('❌ Error en webhook');
+      }
+      
+    } catch (error) {
+      addLog(`💥 Error: ${error.message}`);
+    }
+  };
+
   const checkInstagramTokenPermissions = async () => {
     addLog('=== VERIFICANDO PERMISOS DEL TOKEN ===');
     const token = localStorage.getItem('hower-instagram-token');
@@ -512,6 +574,13 @@ const InstagramDebug: React.FC = () => {
           >
             <Webhook className={`w-4 h-4 ${testingWebhook ? 'animate-spin' : ''}`} />
             Test Webhook Completo
+          </button>
+          <button
+            onClick={testWebhookWithComment}
+            className="flex items-center gap-2 px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors text-sm"
+          >
+            <MessageSquare className="w-4 h-4" />
+            Test Comentario Específico
           </button>
         </div>
       </div>
