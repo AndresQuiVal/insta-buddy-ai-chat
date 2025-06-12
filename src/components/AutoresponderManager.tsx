@@ -285,9 +285,47 @@ const AutoresponderManager = () => {
   const testWebhookWithComment = async () => {
     console.log('🧪 === PRUEBA ESPECÍFICA DE COMENTARIO ===');
     try {
+      // PASO 1: Obtener un autoresponder de comentarios activo para usar su post_id
+      const { data: commentAutoresponders, error } = await supabase
+        .from('comment_autoresponders')
+        .select('*')
+        .eq('is_active', true)
+        .limit(1);
+
+      if (error) {
+        console.error('❌ Error consultando autoresponders:', error);
+        toast({
+          title: "❌ Error",
+          description: "No se pudo consultar los autoresponders configurados",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!commentAutoresponders || commentAutoresponders.length === 0) {
+        toast({
+          title: "⚠️ Sin autoresponders",
+          description: "Primero debes crear un autoresponder de comentarios",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const autoresponder = commentAutoresponders[0];
+      const realPostId = autoresponder.post_id;
+      const keywords = autoresponder.keywords || [];
+      const testKeyword = keywords.length > 0 ? keywords[0] : 'test';
+
+      console.log('🎯 Usando autoresponder real:', {
+        name: autoresponder.name,
+        postId: realPostId,
+        keywords: keywords,
+        testKeyword: testKeyword
+      });
+
       const webhookUrl = 'https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook';
       
-      // Simular exactamente cómo Facebook envía un comentario
+      // Simular exactamente cómo Facebook envía un comentario con el POST ID REAL
       const commentWebhook = {
         object: 'instagram',
         entry: [{
@@ -297,9 +335,9 @@ const AutoresponderManager = () => {
             field: 'comments',
             value: {
               from: { id: 'test_commenter_123' },
-              media: { id: '18027917109434048' }, // Tu post ID real
+              media: { id: realPostId }, // Usar el ID real del post configurado
               created_time: Math.floor(Date.now() / 1000),
-              text: 'pedrin',
+              text: testKeyword, // Usar la primera palabra clave configurada
               id: `comment_test_${Date.now()}`
             }
           }]
@@ -322,7 +360,7 @@ const AutoresponderManager = () => {
         console.log('✅ Webhook respondió correctamente');
         toast({
           title: "✅ Webhook Test",
-          description: "Comentario de prueba enviado correctamente"
+          description: `Comentario "${testKeyword}" enviado para el post configurado`
         });
         
         // Verificar si se procesó el comentario
@@ -338,13 +376,13 @@ const AutoresponderManager = () => {
             console.log('✅ ¡El comentario fue procesado y registrado!');
             toast({
               title: "🎉 ¡Éxito!",
-              description: "El comentario fue procesado y el DM fue enviado"
+              description: `El comentario "${testKeyword}" activó el autoresponder y se envió el DM`
             });
           } else {
             console.log('❌ El comentario no fue procesado');
             toast({
               title: "⚠️ Sin respuesta",
-              description: "El comentario no activó ningún autoresponder",
+              description: `El comentario "${testKeyword}" no activó ningún autoresponder`,
               variant: "destructive"
             });
           }
@@ -432,18 +470,18 @@ const AutoresponderManager = () => {
         onSelectType={handleSelectType}
       />
 
-      {/* NUEVO: Test de comentario específico - BOTÓN PRINCIPAL EN AUTORESPONDER */}
+      {/* Test de comentario específico - BOTÓN PRINCIPAL EN AUTORESPONDER */}
       <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
         <h4 className="font-medium text-orange-800 mb-3">🧪 Prueba de Comentario para Autoresponder</h4>
         <p className="text-sm text-orange-700 mb-3">
-          Esta prueba simula exactamente cómo Facebook envía un webhook cuando alguien comenta "pedrin" en tu post configurado.
+          Esta prueba usa automáticamente el POST ID y palabras clave de tu primer autoresponder de comentarios configurado.
         </p>
         <button
           onClick={testWebhookWithComment}
           className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors text-sm font-medium"
         >
           <MessageSquare className="w-4 h-4" />
-          🧪 Test Comentario "pedrin"
+          🧪 Test Comentario Automático
         </button>
       </div>
 
