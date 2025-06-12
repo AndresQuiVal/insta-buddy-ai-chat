@@ -26,26 +26,67 @@ export const getInstagramPosts = async (): Promise<InstagramPost[]> => {
 
     console.log('🔍 Obteniendo posts de Instagram...');
 
-    // Primero obtenemos las páginas del usuario
-    const userResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${token}`);
+    // Primero verificamos qué tipo de token tenemos
+    const meResponse = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${token}`);
     
-    if (!userResponse.ok) {
-      const errorData = await userResponse.json();
-      console.error('❌ Error obteniendo páginas:', errorData);
-      throw new Error(errorData.error?.message || 'Error obteniendo información de la cuenta');
+    if (!meResponse.ok) {
+      const errorData = await meResponse.json();
+      console.error('❌ Error verificando token:', errorData);
+      throw new Error(errorData.error?.message || 'Token inválido');
     }
     
-    const accountsData = await userResponse.json();
-    console.log('📋 Páginas encontradas:', accountsData.data?.length || 0);
+    const meData = await meResponse.json();
+    console.log('🔍 Tipo de token detectado:', meData);
     
-    // Buscar página con Instagram Business Account
-    const pageWithInstagram = accountsData.data?.find((page: any) => page.instagram_business_account);
+    let instagramAccountId = null;
     
-    if (!pageWithInstagram) {
-      throw new Error('No se encontró cuenta de Instagram Business conectada');
+    // Si el token devuelve una página (tiene category), es un Page Access Token
+    if (meData.category) {
+      console.log('📄 Page Access Token detectado');
+      
+      // Para Page Access Token, necesitamos obtener el instagram_business_account directamente
+      const pageResponse = await fetch(`https://graph.facebook.com/v19.0/${meData.id}?fields=instagram_business_account&access_token=${token}`);
+      
+      if (!pageResponse.ok) {
+        const errorData = await pageResponse.json();
+        console.error('❌ Error obteniendo Instagram Business Account:', errorData);
+        throw new Error(errorData.error?.message || 'Error obteniendo cuenta de Instagram');
+      }
+      
+      const pageData = await pageResponse.json();
+      console.log('📱 Datos de la página:', pageData);
+      
+      if (!pageData.instagram_business_account) {
+        throw new Error('Esta página no tiene una cuenta de Instagram Business conectada');
+      }
+      
+      instagramAccountId = pageData.instagram_business_account.id;
+      
+    } else {
+      console.log('👤 User Access Token detectado');
+      
+      // Para User Access Token, usamos el método original
+      const userResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${token}`);
+      
+      if (!userResponse.ok) {
+        const errorData = await userResponse.json();
+        console.error('❌ Error obteniendo páginas:', errorData);
+        throw new Error(errorData.error?.message || 'Error obteniendo información de la cuenta');
+      }
+      
+      const accountsData = await userResponse.json();
+      console.log('📋 Páginas encontradas:', accountsData.data?.length || 0);
+      
+      // Buscar página con Instagram Business Account
+      const pageWithInstagram = accountsData.data?.find((page: any) => page.instagram_business_account);
+      
+      if (!pageWithInstagram) {
+        throw new Error('No se encontró cuenta de Instagram Business conectada');
+      }
+      
+      instagramAccountId = pageWithInstagram.instagram_business_account.id;
     }
     
-    const instagramAccountId = pageWithInstagram.instagram_business_account.id;
     console.log('📱 Instagram Business Account ID:', instagramAccountId);
 
     // Obtener posts de Instagram usando el ID correcto
