@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, MessageCircle, Cloud, Key, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, MessageCircle, Cloud, Key, ExternalLink, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -283,6 +282,92 @@ const AutoresponderManager = () => {
     setShowPostSelector(true);
   };
 
+  const testWebhookWithComment = async () => {
+    console.log('🧪 === PRUEBA ESPECÍFICA DE COMENTARIO ===');
+    try {
+      const webhookUrl = 'https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook';
+      
+      // Simular exactamente cómo Facebook envía un comentario
+      const commentWebhook = {
+        object: 'instagram',
+        entry: [{
+          id: 'test_page_id',
+          time: Date.now(),
+          changes: [{
+            field: 'comments',
+            value: {
+              from: { id: 'test_commenter_123' },
+              media: { id: '18027917109434048' }, // Tu post ID real
+              created_time: Math.floor(Date.now() / 1000),
+              text: 'pedrin',
+              id: `comment_test_${Date.now()}`
+            }
+          }]
+        }]
+      };
+      
+      console.log('📤 Enviando webhook de comentario simulado...');
+      console.log('📋 Payload:', JSON.stringify(commentWebhook, null, 2));
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(commentWebhook)
+      });
+      
+      const result = await response.text();
+      console.log(`📨 Respuesta: ${response.status} - ${result}`);
+      
+      if (response.ok) {
+        console.log('✅ Webhook respondió correctamente');
+        toast({
+          title: "✅ Webhook Test",
+          description: "Comentario de prueba enviado correctamente"
+        });
+        
+        // Verificar si se procesó el comentario
+        setTimeout(async () => {
+          const { data: logs } = await supabase
+            .from('comment_autoresponder_log')
+            .select('*')
+            .eq('commenter_instagram_id', 'test_commenter_123')
+            .order('dm_sent_at', { ascending: false })
+            .limit(1);
+          
+          if (logs && logs.length > 0) {
+            console.log('✅ ¡El comentario fue procesado y registrado!');
+            toast({
+              title: "🎉 ¡Éxito!",
+              description: "El comentario fue procesado y el DM fue enviado"
+            });
+          } else {
+            console.log('❌ El comentario no fue procesado');
+            toast({
+              title: "⚠️ Sin respuesta",
+              description: "El comentario no activó ningún autoresponder",
+              variant: "destructive"
+            });
+          }
+        }, 3000);
+      } else {
+        console.log('❌ Error en webhook');
+        toast({
+          title: "❌ Error",
+          description: `Error ${response.status}: ${result}`,
+          variant: "destructive"
+        });
+      }
+      
+    } catch (error) {
+      console.log(`💥 Error: ${error.message}`);
+      toast({
+        title: "💥 Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -346,6 +431,21 @@ const AutoresponderManager = () => {
         onOpenChange={setShowTypeDialog}
         onSelectType={handleSelectType}
       />
+
+      {/* NUEVO: Test de comentario específico - BOTÓN PRINCIPAL EN AUTORESPONDER */}
+      <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+        <h4 className="font-medium text-orange-800 mb-3">🧪 Prueba de Comentario para Autoresponder</h4>
+        <p className="text-sm text-orange-700 mb-3">
+          Esta prueba simula exactamente cómo Facebook envía un webhook cuando alguien comenta "pedrin" en tu post configurado.
+        </p>
+        <button
+          onClick={testWebhookWithComment}
+          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors text-sm font-medium"
+        >
+          <MessageSquare className="w-4 h-4" />
+          🧪 Test Comentario "pedrin"
+        </button>
+      </div>
 
       {showForm && (
         <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
