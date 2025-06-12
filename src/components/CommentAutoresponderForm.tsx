@@ -52,30 +52,34 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     }
   };
 
-  // Función para obtener información del usuario usando el token de Instagram
-  const getInstagramUserInfo = async () => {
+  // Función para obtener información de la página usando Page Access Token
+  const getPageInfo = async () => {
     const token = localStorage.getItem('hower-instagram-token');
     if (!token) {
       throw new Error('No hay token de Instagram disponible');
     }
 
     try {
-      // Obtener información básica del usuario/página
-      const response = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${token}`);
+      // Con un Page Access Token, primero verificamos qué página es
+      // usando el token para obtener info de la página específica
+      const response = await fetch(`https://graph.facebook.com/v19.0/me?fields=id,name,instagram_business_account&access_token=${token}`);
       
       if (!response.ok) {
-        throw new Error('Token de Instagram inválido o expirado');
+        const errorData = await response.json();
+        console.error('❌ Error API:', errorData);
+        throw new Error('Token de página inválido o expirado');
       }
       
-      const userData = await response.json();
-      console.log('📱 Información del usuario Instagram:', userData);
+      const pageData = await response.json();
+      console.log('📄 Información de la página:', pageData);
       
       return {
-        id: userData.id,
-        name: userData.name || 'Usuario Instagram'
+        pageId: pageData.id,
+        pageName: pageData.name || 'Página de Facebook',
+        instagramAccountId: pageData.instagram_business_account?.id || null
       };
     } catch (error) {
-      console.error('❌ Error obteniendo info de Instagram:', error);
+      console.error('❌ Error obteniendo info de la página:', error);
       throw error;
     }
   };
@@ -115,16 +119,21 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     try {
       console.log('💾 Guardando autoresponder de comentarios...');
 
-      // Obtener información del usuario usando el token de Instagram
+      // Obtener información de la página usando el Page Access Token
       let userId = 'temp-user-id'; // Fallback por defecto
       
       try {
-        const instagramUser = await getInstagramUserInfo();
-        userId = `instagram_${instagramUser.id}`; // Prefijo para identificar que es un usuario de Instagram
-        console.log('✅ Usuario Instagram identificado:', userId);
+        const pageInfo = await getPageInfo();
+        // Usar el ID de la página como identificador único
+        userId = `page_${pageInfo.pageId}`;
+        console.log('✅ Página identificada:', {
+          userId,
+          pageName: pageInfo.pageName,
+          instagramAccountId: pageInfo.instagramAccountId
+        });
       } catch (error) {
-        console.log('⚠️ Error obteniendo usuario Instagram - usando ID temporal:', error);
-        // Usar token como identificador si no podemos obtener la info del usuario
+        console.log('⚠️ Error obteniendo info de la página - usando ID temporal:', error);
+        // Usar token como identificador si no podemos obtener la info de la página
         const token = localStorage.getItem('hower-instagram-token');
         if (token) {
           // Usar los primeros caracteres del token como identificador único
