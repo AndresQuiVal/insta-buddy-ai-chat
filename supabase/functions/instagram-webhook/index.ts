@@ -344,7 +344,7 @@ async function processCommentEvent(supabase: any, change: ChangeEvent) {
     console.log('🚀 === PROCESANDO COMENTARIO PARA AUTORESPONDER ===')
     
     const commentData = change.value
-    console.log('💬 Datos del comentario:', JSON.stringify(commentData, null, 2))
+    console.log('💬 Datos del comentario completos:', JSON.stringify(commentData, null, 2))
     
     // Extraer información del comentario según la documentación oficial
     const mediaId = commentData.media?.id || commentData.parent_id
@@ -353,11 +353,20 @@ async function processCommentEvent(supabase: any, change: ChangeEvent) {
     const commentId = commentData.comment_id || commentData.id
     const verb = commentData.verb // 'add', 'edit', 'remove', etc.
     
+    console.log('🔍 === DIAGNÓSTICO DETALLADO ===')
     console.log('📋 Verb recibido:', verb)
-    console.log('📋 Media ID:', mediaId)
-    console.log('📋 Comentario:', commentText)
+    console.log('📋 Media ID extraído:', mediaId)
+    console.log('📋 Parent ID:', commentData.parent_id)
+    console.log('📋 Comentario texto:', commentText)
     console.log('📋 Usuario que comentó:', commenterId)
     console.log('📋 Comment ID:', commentId)
+    console.log('📋 Item field:', commentData.item)
+    
+    // DIAGNÓSTICO: Mostrar todos los IDs posibles
+    console.log('🔍 === TODOS LOS IDS POSIBLES ===')
+    console.log('media.id:', commentData.media?.id)
+    console.log('parent_id:', commentData.parent_id)
+    console.log('item:', commentData.item)
     
     // NUEVO: Procesar comentarios aunque verb sea undefined o null
     // Esto es para manejar diferentes formatos de webhook de Meta
@@ -371,56 +380,64 @@ async function processCommentEvent(supabase: any, change: ChangeEvent) {
       console.log('⚠️ Verb no definido, asumiendo comentario nuevo')
     }
     
-    if (!mediaId || !commentText || !commenterId) {
+    if (!commentText || !commenterId) {
       console.log('⏭️ Información incompleta del comentario - saltando')
-      console.log('Media ID:', mediaId, 'Comment text:', commentText, 'Commenter ID:', commenterId)
+      console.log('Comment text:', commentText, 'Commenter ID:', commenterId)
       return
     }
     
-    // PASO 1: Buscar autoresponders configurados para este post
-    console.log('🔍 Buscando autoresponders para post:', mediaId)
+    // PASO 1: Buscar autoresponders configurados para TODOS los IDs posibles
+    const possibleIds = [
+      commentData.media?.id,
+      commentData.parent_id,
+      commentData.item,
+      mediaId
+    ].filter(Boolean);
     
-    const { data: commentAutoresponders, error: queryError } = await supabase
-      .from('comment_autoresponders')
-      .select('*')
-      .eq('post_id', mediaId)
-      .eq('is_active', true)
+    console.log('🔍 === BUSCANDO AUTORESPONDERS ===')
+    console.log('IDs a buscar:', possibleIds)
     
-    if (queryError) {
-      console.error('❌ Error consultando autoresponders:', queryError)
-      return
-    }
+    let commentAutoresponders = [];
     
-    if (!commentAutoresponders || commentAutoresponders.length === 0) {
-      console.log('⏭️ No hay autoresponders configurados para este post')
-      console.log('💡 Post ID buscado:', mediaId)
+    for (const searchId of possibleIds) {
+      console.log(`🔍 Buscando autoresponders para ID: ${searchId}`)
       
-      // NUEVO: También buscar por parent_id en caso de que sea un post con múltiples medios
-      if (commentData.parent_id && commentData.parent_id !== mediaId) {
-        console.log('🔍 Buscando también por parent_id:', commentData.parent_id)
-        
-        const { data: parentAutoresponders, error: parentError } = await supabase
-          .from('comment_autoresponders')
-          .select('*')
-          .eq('post_id', commentData.parent_id)
-          .eq('is_active', true)
-        
-        if (parentError) {
-          console.error('❌ Error consultando autoresponders por parent_id:', parentError)
-          return
-        }
-        
-        if (parentAutoresponders && parentAutoresponders.length > 0) {
-          console.log('✅ Encontrados autoresponders por parent_id:', parentAutoresponders.length)
-          // Usar los autoresponders encontrados por parent_id
-          for (const autoresponder of parentAutoresponders) {
-            await processAutoresponderMatch(supabase, autoresponder, commentText, commenterId, change)
-          }
-          return
-        }
+      const { data: foundAutoresponders, error: queryError } = await supabase
+        .from('comment_autoresponders')
+        .select('*')
+        .eq('post_id', searchId)
+        .eq('is_active', true)
+      
+      if (queryError) {
+        console.error(`❌ Error consultando autoresponders para ${searchId}:`, queryError)
+        continue
       }
       
-      console.log('❌ No se encontraron autoresponders para ningún ID del post')
+      if (foundAutoresponders && foundAutoresponders.length > 0) {
+        console.log(`✅ Encontrados ${foundAutoresponders.length} autoresponders para ID: ${searchId}`)
+        commentAutoresponders = foundAutoresponders;
+        break; // Usar el primer match encontrado
+      } else {
+        console.log(`❌ No se encontraron autoresponders para ID: ${searchId}`)
+      }
+    }
+    
+    if (commentAutoresponders.length === 0) {
+      console.log('❌ === NO SE ENCONTRARON AUTORESPONDERS ===')
+      console.log('💡 Mostrando todos los autoresponders activos en la BD:')
+      
+      // DIAGNÓSTICO: Mostrar todos los autoresponders en la BD
+      const { data: allAutoresponders, error: allError } = await supabase
+        .from('comment_autoresponders')
+        .select('id, post_id, name, keywords, is_active')
+        .eq('is_active', true)
+      
+      if (allError) {
+        console.error('❌ Error consultando todos los autoresponders:', allError)
+      } else {
+        console.log('📊 Autoresponders activos en BD:', JSON.stringify(allAutoresponders, null, 2))
+      }
+      
       return
     }
     
@@ -428,6 +445,7 @@ async function processCommentEvent(supabase: any, change: ChangeEvent) {
     
     // PASO 2: Procesar cada autoresponder
     for (const autoresponder of commentAutoresponders) {
+      console.log(`🎯 Procesando autoresponder: ${autoresponder.name}`)
       await processAutoresponderMatch(supabase, autoresponder, commentText, commenterId, change)
     }
     
@@ -439,41 +457,56 @@ async function processCommentEvent(supabase: any, change: ChangeEvent) {
 }
 
 async function processAutoresponderMatch(supabase: any, autoresponder: any, commentText: string, commenterId: string, change: ChangeEvent) {
-  console.log(`🔍 Verificando autoresponder: ${autoresponder.name}`)
-  console.log(`🔑 Palabras clave:`, autoresponder.keywords)
+  console.log(`🔍 === VERIFICANDO AUTORESPONDER: ${autoresponder.name} ===`)
+  console.log(`🔑 Palabras clave configuradas:`, autoresponder.keywords)
+  console.log(`💬 Texto del comentario:`, commentText)
   
   // Verificar si alguna palabra clave está en el comentario
   const commentTextLower = commentText.toLowerCase()
+  console.log(`🔍 Texto en minúsculas: "${commentTextLower}"`)
+  
+  let matchedKeyword = null;
   const hasKeywordMatch = autoresponder.keywords.some(keyword => {
     const keywordLower = keyword.toLowerCase()
     const matches = commentTextLower.includes(keywordLower)
-    console.log(`🔍 Verificando "${keyword}" en "${commentText}" -> ${matches ? 'COINCIDE' : 'NO COINCIDE'}`)
+    console.log(`🔍 Verificando "${keyword}" (${keywordLower}) en "${commentTextLower}" -> ${matches ? 'COINCIDE ✅' : 'NO COINCIDE ❌'}`)
+    if (matches) {
+      matchedKeyword = keyword;
+    }
     return matches
   })
   
   if (hasKeywordMatch) {
-    console.log(`✅ ¡COINCIDENCIA! Enviando DM con autoresponder: ${autoresponder.name}`)
-    console.log(`📤 Mensaje a enviar: ${autoresponder.dm_message}`)
+    console.log(`✅ ¡COINCIDENCIA ENCONTRADA! Palabra clave: "${matchedKeyword}"`)
+    console.log(`📤 Enviando DM con autoresponder: ${autoresponder.name}`)
+    console.log(`💌 Mensaje a enviar: ${autoresponder.dm_message}`)
     
     // PASO 3: Enviar DM usando la edge function existente
+    console.log('🚀 Iniciando envío de DM...')
     const dmSent = await sendInstagramDM(commenterId, autoresponder.dm_message)
     
     if (dmSent) {
+      console.log('✅ DM enviado exitosamente')
+      
       // PASO 4: Registrar en log
+      const logData = {
+        comment_autoresponder_id: autoresponder.id,
+        commenter_instagram_id: commenterId,
+        comment_text: commentText,
+        dm_message_sent: autoresponder.dm_message,
+        webhook_data: change
+      };
+      
+      console.log('💾 Guardando en log:', logData)
+      
       const { error: logError } = await supabase
         .from('comment_autoresponder_log')
-        .insert({
-          comment_autoresponder_id: autoresponder.id,
-          commenter_instagram_id: commenterId,
-          comment_text: commentText,
-          dm_message_sent: autoresponder.dm_message,
-          webhook_data: change
-        })
+        .insert(logData)
       
       if (logError) {
         console.error('⚠️ Error guardando log:', logError)
       } else {
-        console.log('✅ DM enviado y registrado en log')
+        console.log('✅ DM enviado y registrado en log correctamente')
       }
     } else {
       console.error('❌ Error enviando DM')
@@ -482,7 +515,8 @@ async function processAutoresponderMatch(supabase: any, autoresponder: any, comm
     // Solo usar el primer autoresponder que coincida
     return
   } else {
-    console.log(`❌ No hay coincidencias para: ${autoresponder.name}`)
+    console.log(`❌ No hay coincidencias para autoresponder: ${autoresponder.name}`)
+    console.log(`💡 Palabras clave que no coincidieron: ${autoresponder.keywords.join(', ')}`)
   }
 }
 
