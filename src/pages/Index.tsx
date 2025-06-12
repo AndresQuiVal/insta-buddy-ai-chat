@@ -1,32 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import InstagramDashboard, { DashboardDebugPanel } from '@/components/InstagramDashboard';
-import InstagramMessages from '@/components/InstagramMessages';
-import InstagramDiagnostic from '@/components/InstagramDiagnostic';
-import AdvancedMetrics from '@/components/AdvancedMetrics';
-import InstagramProspect from '@/components/InstagramProspect';
-import HamburgerMenu from '@/components/HamburgerMenu';
-import InstagramLogin from '@/components/InstagramLogin';
-import InstagramAccountDiagnostic from '@/components/InstagramAccountDiagnostic';
-import ConfigPanel from '@/components/ConfigPanel';
-import { BarChart3, MessageCircle, Settings, Instagram, CheckCircle, AlertCircle, Key, Brain, LogOut, Bug, Users, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import MyProspects from '@/components/MyProspects';
-import { checkInstagramConnection } from '@/services/instagramService';
+import React, { useState, useEffect } from "react";
+import InstagramDashboard, {
+  DashboardDebugPanel,
+} from "@/components/InstagramDashboard";
+import InstagramMessages from "@/components/InstagramMessages";
+import InstagramDiagnostic from "@/components/InstagramDiagnostic";
+import AdvancedMetrics from "@/components/AdvancedMetrics";
+import InstagramProspect from "@/components/InstagramProspect";
+import HamburgerMenu from "@/components/HamburgerMenu";
+import InstagramLogin from "@/components/InstagramLogin";
+import InstagramAccountDiagnostic from "@/components/InstagramAccountDiagnostic";
+import ConfigPanel from "@/components/ConfigPanel";
+import {
+  BarChart3,
+  MessageCircle,
+  Settings,
+  Instagram,
+  CheckCircle,
+  AlertCircle,
+  Key,
+  Brain,
+  LogOut,
+  Bug,
+  Users,
+  ArrowLeft,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import MyProspects from "@/components/MyProspects";
+import { checkInstagramConnection } from "@/services/instagramService";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [accessToken, setAccessToken] = useState('');
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [accessToken, setAccessToken] = useState("");
   const [isTokenSaved, setIsTokenSaved] = useState(false);
   const { toast } = useToast();
   const [showDebug, setShowDebug] = useState(false);
-  const [openaiKey, setOpenaiKey] = useState('');
-  const [instagramToken, setInstagramToken] = useState('');
-  const [pageId, setPageId] = useState('');
+  const [openaiKey, setOpenaiKey] = useState("");
+  const [instagramToken, setInstagramToken] = useState("");
+  const [pageId, setPageId] = useState("");
   // TEMPORALMENTE SIEMPRE CONECTADO PARA PRUEBAS
-  const [isInstagramConnected, setIsInstagramConnected] = useState(true);
+  const [isInstagramConnected, setIsInstagramConnected] = useState(false);
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
 
   // Comentamos la verificación de conexión para pruebas
@@ -48,6 +63,23 @@ const Index = () => {
   }, []);
   */
 
+  useEffect(() => {
+    // Check if Instagram is connected from localStorage
+    const checkConnection = () => {
+      const instagramToken = localStorage.getItem("hower-instagram-token");
+      const isConnected =
+        !!instagramToken &&
+        instagramToken.length > 0 &&
+        instagramToken !== "undefined";
+      if (isConnected) setInstagramToken(instagramToken);
+      setIsInstagramConnected(isConnected);
+      setIsCheckingConnection(false);
+    };
+
+    setIsCheckingConnection(true);
+    checkConnection();
+  }, []);
+
   // Si está verificando la conexión, mostrar loading
   if (isCheckingConnection) {
     return (
@@ -61,26 +93,25 @@ const Index = () => {
   }
 
   // COMENTAMOS ESTA VERIFICACIÓN PARA PRUEBAS
-  /*
+
   if (!isInstagramConnected) {
     return <InstagramLogin />;
   }
-  */
 
   const handleSaveToken = () => {
     if (!accessToken.trim()) {
       toast({
         title: "Error",
         description: "Por favor ingresa un token válido",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
-    localStorage.setItem('instagram_access_token', accessToken);
+    localStorage.setItem("instagram_access_token", accessToken);
     setIsTokenSaved(true);
-    setAccessToken('');
-    
+    setAccessToken("");
+
     toast({
       title: "¡Token guardado!",
       description: "Tu token de Instagram se ha configurado correctamente",
@@ -88,7 +119,7 @@ const Index = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('instagram_access_token');
+    localStorage.removeItem("instagram_access_token");
     setIsTokenSaved(false);
     toast({
       title: "¡Sesión cerrada!",
@@ -98,20 +129,22 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':
-        return <InstagramDashboard onShowAnalysis={() => setActiveTab('analysis')} />;
-      case 'my_prospects':
+      case "dashboard":
+        return (
+          <InstagramDashboard onShowAnalysis={() => setActiveTab("analysis")} />
+        );
+      case "my_prospects":
         return <MyProspects />;
-      case 'messages':
+      case "messages":
         return <InstagramMessages />;
-      case 'prospect':
+      case "prospect":
         return <InstagramProspect />;
-      case 'analysis':
+      case "analysis":
         return (
           <div className="container mx-auto px-4 py-8">
             <div className="mb-8">
               <Button
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => setActiveTab("dashboard")}
                 className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
                 variant="ghost"
               >
@@ -119,24 +152,28 @@ const Index = () => {
                 Volver al Dashboard
               </Button>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Análisis Detallado</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">
+              Análisis Detallado
+            </h1>
             <div className="bg-white rounded-xl shadow-lg p-6">
               <AdvancedMetrics />
             </div>
           </div>
         );
-      case 'settings':
+      case "settings":
         return (
           <div className="space-y-6">
             {/* Diagnóstico de cuenta Instagram */}
             <InstagramAccountDiagnostic />
-            
+
             {/* Panel de configuración con tabs */}
             <ConfigPanel />
           </div>
         );
       default:
-        return <InstagramDashboard onShowAnalysis={() => setActiveTab('analysis')} />;
+        return (
+          <InstagramDashboard onShowAnalysis={() => setActiveTab("analysis")} />
+        );
     }
   };
 
@@ -159,9 +196,7 @@ const Index = () => {
         </div>
 
         {/* Main Content */}
-        <div className="space-y-6">
-          {renderContent()}
-        </div>
+        <div className="space-y-6">{renderContent()}</div>
       </div>
     </div>
   );
