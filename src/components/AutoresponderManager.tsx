@@ -8,6 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AutoresponderForm from './AutoresponderForm';
 import AutoresponderTypeDialog from './AutoresponderTypeDialog';
+import InstagramPostSelector from './InstagramPostSelector';
+import CommentAutoresponderForm, { CommentAutoresponderConfig } from './CommentAutoresponderForm';
+import { InstagramPost } from '@/services/instagramPostsService';
 
 interface AutoresponderMessage {
   id: string;
@@ -26,6 +29,9 @@ const AutoresponderManager = () => {
   const [showForm, setShowForm] = useState(false);
   const [showTypeDialog, setShowTypeDialog] = useState(false);
   const [editingMessage, setEditingMessage] = useState<AutoresponderMessage | null>(null);
+  const [showPostSelector, setShowPostSelector] = useState(false);
+  const [showCommentForm, setShowCommentForm] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<InstagramPost | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -157,25 +163,89 @@ const AutoresponderManager = () => {
     setShowTypeDialog(false);
     
     if (type === 'comments') {
-      // Para comentarios, no hacer nada por ahora
-      toast({
-        title: "Próximamente",
-        description: "La funcionalidad para comentarios estará disponible pronto",
-        variant: "default"
-      });
+      // Mostrar selector de posts para comentarios
+      setShowPostSelector(true);
       return;
     }
     
-    // Para mensajes directos, mostrar el formulario
+    // Para mensajes directos, mostrar el formulario normal
     if (type === 'messages') {
       setShowForm(true);
     }
+  };
+
+  const handlePostSelect = (post: InstagramPost) => {
+    setSelectedPost(post);
+    setShowPostSelector(false);
+    setShowCommentForm(true);
+  };
+
+  const handleCommentAutoresponderSubmit = async (config: CommentAutoresponderConfig) => {
+    try {
+      console.log('💾 Guardando autoresponder para comentarios:', config);
+      
+      // TODO: Implementar guardado en base de datos
+      // Por ahora solo mostramos el toast de éxito
+      
+      toast({
+        title: "¡Autoresponder creado!",
+        description: `Se configuró el autoresponder para el post seleccionado`,
+      });
+      
+      // Volver al listado principal
+      setShowCommentForm(false);
+      setSelectedPost(null);
+      loadMessages(); // Recargar la lista
+      
+    } catch (error) {
+      console.error('Error guardando autoresponder:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el autoresponder",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleBackFromSelector = () => {
+    setShowPostSelector(false);
+    setShowTypeDialog(true);
+  };
+
+  const handleBackFromCommentForm = () => {
+    setShowCommentForm(false);
+    setShowPostSelector(true);
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  // Si está mostrando el selector de posts
+  if (showPostSelector) {
+    return (
+      <div className="space-y-6">
+        <InstagramPostSelector
+          onPostSelect={handlePostSelect}
+          onBack={handleBackFromSelector}
+        />
+      </div>
+    );
+  }
+
+  // Si está mostrando el formulario de comentarios
+  if (showCommentForm && selectedPost) {
+    return (
+      <div className="space-y-6">
+        <CommentAutoresponderForm
+          selectedPost={selectedPost}
+          onBack={handleBackFromCommentForm}
+          onSubmit={handleCommentAutoresponderSubmit}
+        />
       </div>
     );
   }

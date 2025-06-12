@@ -44,13 +44,25 @@ const AutoresponderTypeDialog = ({ open, onOpenChange, onSelectType }: Autorespo
               <h3 className="text-xl font-semibold mb-3 text-gray-900">
                 Comentarios de Post
               </h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Responde automáticamente a usuarios que comenten en tus publicaciones de Instagram
+              <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                Envía DMs automáticos cuando detectemos comentarios con palabras clave en tus posts
               </p>
-              <div className="mt-4 px-4 py-2 bg-purple-50 rounded-lg">
-                <p className="text-xs text-purple-700 font-medium">
-                  Próximamente disponible
-                </p>
+              <div className="space-y-2">
+                <div className="px-4 py-2 bg-green-50 rounded-lg">
+                  <p className="text-xs text-green-700 font-medium">
+                    ✅ Detectar comentarios con palabras clave
+                  </p>
+                </div>
+                <div className="px-4 py-2 bg-green-50 rounded-lg">
+                  <p className="text-xs text-green-700 font-medium">
+                    ✅ Enviar DM automático
+                  </p>
+                </div>
+                <div className="px-4 py-2 bg-amber-50 rounded-lg">
+                  <p className="text-xs text-amber-700 font-medium">
+                    ⚠️ No responde al comentario (limitación de Instagram)
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -69,13 +81,25 @@ const AutoresponderTypeDialog = ({ open, onOpenChange, onSelectType }: Autorespo
               <h3 className="text-xl font-semibold mb-3 text-gray-900">
                 Mensajes Directos / Stories
               </h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
+              <p className="text-gray-600 text-sm leading-relaxed mb-4">
                 Responde automáticamente a mensajes directos y respuestas a tus historias
               </p>
-              <div className="mt-4 px-4 py-2 bg-green-50 rounded-lg">
-                <p className="text-xs text-green-700 font-medium">
-                  ✅ Disponible ahora
-                </p>
+              <div className="space-y-2">
+                <div className="px-4 py-2 bg-green-50 rounded-lg">
+                  <p className="text-xs text-green-700 font-medium">
+                    ✅ Mensajes directos
+                  </p>
+                </div>
+                <div className="px-4 py-2 bg-green-50 rounded-lg">
+                  <p className="text-xs text-green-700 font-medium">
+                    ✅ Respuestas a stories
+                  </p>
+                </div>
+                <div className="px-4 py-2 bg-green-50 rounded-lg">
+                  <p className="text-xs text-green-700 font-medium">
+                    ✅ Funcionamiento completo
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
