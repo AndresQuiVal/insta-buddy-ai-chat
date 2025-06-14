@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import InstagramDashboard, {
   DashboardDebugPanel,
@@ -29,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import MyProspects from "@/components/MyProspects";
-import { checkInstagramConnection } from "@/services/instagramService";
+import { useInstagramUsers } from "@/hooks/useInstagramUsers";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -38,50 +39,16 @@ const Index = () => {
   const { toast } = useToast();
   const [showDebug, setShowDebug] = useState(false);
   const [openaiKey, setOpenaiKey] = useState("");
-  const [instagramToken, setInstagramToken] = useState("");
-  const [pageId, setPageId] = useState("");
-  // TEMPORALMENTE SIEMPRE CONECTADO PARA PRUEBAS
-  const [isInstagramConnected, setIsInstagramConnected] = useState(false);
-  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
+  
+  const { currentUser, loading: userLoading, checkCurrentUser } = useInstagramUsers();
 
-  // Comentamos la verificación de conexión para pruebas
-  /*
+  // Verificar si hay usuario conectado
   useEffect(() => {
-    const checkConnection = () => {
-      console.log('🔍 Verificando conexión de Instagram...');
-      const connected = checkInstagramConnection();
-      console.log('Estado de conexión:', connected);
-      setIsInstagramConnected(connected);
-      setIsCheckingConnection(false);
-    };
-
-    checkConnection();
-
-    // Verificar periodicamente si el usuario se conecta
-    const interval = setInterval(checkConnection, 2000);
-    return () => clearInterval(interval);
-  }, []);
-  */
-
-  useEffect(() => {
-    // Check if Instagram is connected from localStorage
-    const checkConnection = () => {
-      const instagramToken = localStorage.getItem("hower-instagram-token");
-      const isConnected =
-        !!instagramToken &&
-        instagramToken.length > 0 &&
-        instagramToken !== "undefined";
-      if (isConnected) setInstagramToken(instagramToken);
-      setIsInstagramConnected(isConnected);
-      setIsCheckingConnection(false);
-    };
-
-    setIsCheckingConnection(true);
-    checkConnection();
+    checkCurrentUser();
   }, []);
 
-  // Si está verificando la conexión, mostrar loading
-  if (isCheckingConnection) {
+  // Si está cargando, mostrar loading
+  if (userLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -92,9 +59,8 @@ const Index = () => {
     );
   }
 
-  // COMENTAMOS ESTA VERIFICACIÓN PARA PRUEBAS
-
-  if (!isInstagramConnected) {
+  // Si no hay usuario conectado, mostrar login de Instagram
+  if (!currentUser) {
     return <InstagramLogin />;
   }
 
@@ -120,7 +86,10 @@ const Index = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("instagram_access_token");
+    localStorage.removeItem("hower-instagram-user");
+    localStorage.removeItem("hower-instagram-token");
     setIsTokenSaved(false);
+    window.location.reload(); // Recargar para resetear el estado
     toast({
       title: "¡Sesión cerrada!",
       description: "Tu sesión se ha cerrado correctamente",
@@ -188,11 +157,29 @@ const Index = () => {
               alt="Logo Hower"
               className="w-12 h-12 rounded-2xl object-cover"
             />
-            <h1 className="text-4xl font-light bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Hower <span className="font-bold">Assistant</span>
-            </h1>
+            <div>
+              <h1 className="text-4xl font-light bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Hower <span className="font-bold">Assistant</span>
+              </h1>
+              {currentUser && (
+                <p className="text-sm text-gray-600">
+                  Conectado como @{currentUser.username}
+                </p>
+              )}
+            </div>
           </div>
-          <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="text-red-600 hover:text-red-700"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Cerrar Sesión
+            </Button>
+            <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
+          </div>
         </div>
 
         {/* Main Content */}

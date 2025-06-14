@@ -1,5 +1,6 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,147 +8,201 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { recipient_id, message_text, reply_to_message_id, access_token } = await req.json()
+    const { recipient_id, message_text, reply_to_message_id, instagram_user_id } = await req.json()
 
-    if (!recipient_id || !message_text) {
+    console.log('🚀 Instagram Send Message Edge Function iniciada')
+    console.log('📝 Parámetros recibidos:', {
+      recipient_id,
+      message_text: message_text?.substring(0, 50) + '...',
+      reply_to_message_id,
+      instagram_user_id
+    })
+
+    // Validar parámetros requeridos
+    if (!recipient_id || !message_text || !instagram_user_id) {
+      console.error('❌ Faltan parámetros requeridos')
       return new Response(
-        JSON.stringify({ error: 'recipient_id y message_text son requeridos' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    console.log('=== ENVIANDO MENSAJE A INSTAGRAM GRAPH API v23.0 ===')
-    console.log('Recipient ID:', recipient_id)
-    console.log('Message:', message_text)
-    console.log('Reply to:', reply_to_message_id)
-
-    // NUEVA LÓGICA: Priorizar token del request, luego variable de entorno
-    let ACCESS_TOKEN = access_token || Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
-    
-    if (!ACCESS_TOKEN) {
-      console.error('❌ NO HAY TOKEN DE INSTAGRAM DISPONIBLE')
-      console.log('💡 Nota: Se requiere un token de acceso válido')
-      console.log('💡 Puede enviarse en el body del request o configurarse como variable de entorno')
-      return new Response(
-        JSON.stringify({ 
-          error: 'access_token_missing', 
-          error_description: 'Token de acceso de Instagram requerido. Envíalo en el body del request o configúralo como variable de entorno.',
-          needs_token: true
+        JSON.stringify({
+          error: 'missing_required_params',
+          message: 'Se requieren recipient_id, message_text e instagram_user_id'
         }),
-        { 
-          status: 400, 
+        {
+          status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
-    console.log('✅ Token encontrado, longitud:', ACCESS_TOKEN.length)
-    console.log('📝 Token preview:', ACCESS_TOKEN.substring(0, 20) + '...')
-    console.log('🔹 Fuente del token:', access_token ? 'request body' : 'environment variable')
+    // Crear cliente de Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Construir el payload del mensaje
-    const messagePayload: any = {
-      recipient: {
-        id: recipient_id
-      },
-      message: {
-        text: message_text
-      }
-    }
+    console.log('🔍 Buscando token para usuario:', instagram_user_id)
 
-    // Si es una respuesta, incluir referencia al mensaje original
-    if (reply_to_message_id) {
-      messagePayload.message.quick_replies = [
+    // Obtener token del usuario desde Supabase
+    const { data: userData, error: userError } = await supabase
+      .from('instagram_users')
+      .select('access_token, instagram_user_id, username')
+      .eq('instagram_user_id', instagram_user_id)
+      .eq('is_active', true)
+      .single()
+
+    if (userError || !userData) {
+      console.error('❌ Error obteniendo usuario:', userError)
+      return new Response(
+        JSON.stringify({
+          error: 'token_not_found',
+          message: 'No se encontró token para este usuario de Instagram',
+          debug_info: { userError, instagram_user_id }
+        }),
         {
-          content_type: "text",
-          title: "Respuesta automática",
-          payload: `reply_to_${reply_to_message_id}`
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
-      ]
+      )
     }
 
-    console.log('Message payload:', JSON.stringify(messagePayload, null, 2))
+    const accessToken = userData.access_token
+    console.log('✅ Token encontrado para usuario:', userData.username)
+    console.log('🔑 Token length:', accessToken.length)
 
-    // Usar Instagram Graph API v23.0
-    const response = await fetch(`https://graph.instagram.com/v23.0/me/messages?access_token=${ACCESS_TOKEN}`, {
+    // Obtener información de las páginas del usuario
+    console.log('📋 Obteniendo páginas del usuario...')
+    const pagesResponse = await fetch(
+      `https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`
+    )
+    const pagesData = await pagesResponse.json()
+
+    console.log('📄 Respuesta de páginas:', JSON.stringify(pagesData, null, 2))
+
+    if (pagesData.error) {
+      console.error('❌ Error obteniendo páginas:', pagesData.error)
+      return new Response(
+        JSON.stringify({
+          error: 'facebook_api_error',
+          message: pagesData.error.message,
+          debug_info: { pagesData }
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Buscar página con Instagram Business conectado
+    const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account)
+
+    if (!pageWithInstagram) {
+      console.error('❌ No se encontró página con Instagram Business')
+      return new Response(
+        JSON.stringify({
+          error: 'no_instagram_business_account',
+          message: 'No se encontró cuenta de Instagram Business conectada',
+          debug_info: { pagesData }
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    const pageId = pageWithInstagram.id
+    const instagramAccountId = pageWithInstagram.instagram_business_account.id
+
+    console.log('✅ Página encontrada:', {
+      pageId,
+      instagramAccountId,
+      pageName: pageWithInstagram.name
+    })
+
+    // Construir el cuerpo del mensaje
+    const messageBody: any = {
+      recipient: { id: recipient_id },
+      message: { text: message_text }
+    }
+
+    // Agregar reply_to si se proporciona
+    if (reply_to_message_id) {
+      messageBody.message.reply_to = { mid: reply_to_message_id }
+    }
+
+    console.log('📤 Enviando mensaje...')
+    console.log('🎯 URL:', `https://graph.facebook.com/v19.0/${pageId}/messages`)
+    console.log('💬 Cuerpo del mensaje:', JSON.stringify(messageBody, null, 2))
+
+    // Enviar mensaje usando Page ID y access token
+    const response = await fetch(`https://graph.facebook.com/v19.0/${pageId}/messages`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(messagePayload)
+      body: JSON.stringify({
+        ...messageBody,
+        access_token: accessToken
+      })
     })
 
     const responseData = await response.json()
-    
-    console.log('Instagram Graph API v23.0 response:', {
-      status: response.status,
-      ok: response.ok,
-      data: responseData
-    })
+    console.log('📨 Respuesta de Instagram:', JSON.stringify(responseData, null, 2))
 
-    if (!response.ok) {
-      console.error('Error enviando mensaje a Instagram Graph API v23.0:', responseData)
-      
-      let errorDescription = responseData.error?.message || 'Error enviando mensaje'
-      
-      if (responseData.error?.code === 190) {
-        errorDescription = 'Token de acceso inválido o expirado. Reconecta tu cuenta de Instagram y actualiza el token.'
-      } else if (responseData.error?.code === 200) {
-        errorDescription = 'Permisos insuficientes. Verifica la configuración de la app en Facebook Developers.'
-      }
-      
+    if (responseData.error) {
+      console.error('❌ Error enviando mensaje:', responseData.error)
       return new Response(
-        JSON.stringify({ 
-          error: responseData.error?.type || 'send_message_failed',
-          error_description: errorDescription,
-          token_invalid: responseData.error?.code === 190,
+        JSON.stringify({
+          error: 'send_message_failed',
+          message: 'Error enviando mensaje a Instagram',
           debug_info: {
-            response_status: response.status,
             instagram_error: responseData.error,
-            token_source: access_token ? 'request_body' : 'environment'
+            status: response.status,
+            pageId,
+            instagramAccountId
           }
         }),
-        { 
-          status: 400, 
+        {
+          status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
-    console.log('Mensaje enviado exitosamente via Instagram Graph API v23.0')
+    console.log('✅ Mensaje enviado exitosamente')
+    console.log('🆔 Message ID:', responseData.message_id)
 
     return new Response(
       JSON.stringify({
         success: true,
         message_id: responseData.message_id,
-        recipient_id: responseData.recipient_id
+        recipient_id: responseData.recipient_id || recipient_id,
+        debug_info: {
+          pageId,
+          instagramAccountId,
+          username: userData.username
+        }
       }),
-      { 
+      {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
 
   } catch (error) {
-    console.error('Error en edge function instagram-send-message:', error)
+    console.error('💥 Error general:', error)
     return new Response(
-      JSON.stringify({ 
-        error: 'internal_server_error',
-        error_description: 'Error interno del servidor',
-        debug_info: {
-          error_message: error.message
-        }
+      JSON.stringify({
+        error: 'internal_error',
+        message: error.message,
+        debug_info: { error: error.toString() }
       }),
-      { 
-        status: 500, 
+      {
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
