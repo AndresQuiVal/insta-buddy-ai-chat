@@ -4,18 +4,23 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import InstagramMessages from '@/components/InstagramMessages';
 import ProspectList from '@/components/ProspectList';
 import AutoresponderManager from '@/components/AutoresponderManager';
+import InstagramProfileManager from '@/components/InstagramProfileManager';
 
 const MyProspects = () => {
-  const [activeTab, setActiveTab] = useState('prospects');
+  const [activeTab, setActiveTab] = useState('profiles');
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="prospects" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="prospects">Mis Prospectos</TabsTrigger>
+      <Tabs defaultValue="profiles" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="profiles">Mis Perfiles</TabsTrigger>
+          <TabsTrigger value="prospects">Prospectos</TabsTrigger>
           <TabsTrigger value="messages">Mensajes</TabsTrigger>
           <TabsTrigger value="autoresponder">Autoresponder</TabsTrigger>
         </TabsList>
+        <TabsContent value="profiles" className="mt-6">
+          <InstagramProfileManager />
+        </TabsContent>
         <TabsContent value="prospects" className="mt-6">
           <ProspectList />
         </TabsContent>
