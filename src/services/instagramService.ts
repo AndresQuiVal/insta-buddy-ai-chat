@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -223,6 +224,11 @@ export const handleInstagramCallback = async (code: string) => {
         });
       } else {
         console.log("Usuario guardado en Supabase:", dbData);
+        
+        // Disparar evento personalizado para notificar que el usuario se conectó
+        window.dispatchEvent(new CustomEvent('instagram-auth-success', { 
+          detail: { user: dbData } 
+        }));
       }
     }
 

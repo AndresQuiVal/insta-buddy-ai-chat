@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { handleInstagramCallback } from '@/services/instagramService';
@@ -69,9 +70,10 @@ const InstagramCallback: React.FC = () => {
         setStatus('success');
         console.log('Callback procesado exitosamente, redirigiendo...');
         
+        // Redirección inmediata al dashboard
         setTimeout(() => {
-          navigate(result.redirectPath, { replace: true });
-        }, 2000);
+          navigate('/', { replace: true });
+        }, 1000);
       } else {
         setStatus('error');
         setTimeout(() => {

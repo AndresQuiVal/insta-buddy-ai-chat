@@ -47,6 +47,21 @@ const Index = () => {
     checkCurrentUser();
   }, []);
 
+  // Escuchar evento de autenticación exitosa
+  useEffect(() => {
+    const handleAuthSuccess = (event: CustomEvent) => {
+      console.log("🎉 Usuario autenticado exitosamente:", event.detail);
+      // Recargar el usuario actual
+      checkCurrentUser();
+    };
+
+    window.addEventListener('instagram-auth-success', handleAuthSuccess as EventListener);
+    
+    return () => {
+      window.removeEventListener('instagram-auth-success', handleAuthSuccess as EventListener);
+    };
+  }, [checkCurrentUser]);
+
   // Si está cargando, mostrar loading
   if (userLoading) {
     return (
