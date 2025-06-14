@@ -331,7 +331,7 @@ export const getInstagramPosts = async () => {
 };
 
 /**
- * Envía un mensaje de texto a través de Instagram usando la API oficial
+ * Envía un mensaje de texto a través de Instagram usando la nueva Graph API
  */
 export const sendInstagramMessage = async (
   messageText: string,
@@ -350,7 +350,7 @@ export const sendInstagramMessage = async (
       );
     }
 
-    // Llamar a la edge function en lugar de hacer la llamada directamente
+    // Llamar a la edge function actualizada
     console.log("🚀 Usando edge function para enviar mensaje...");
 
     const { data, error } = await supabase.functions.invoke(

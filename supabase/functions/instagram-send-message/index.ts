@@ -25,12 +25,12 @@ serve(async (req) => {
       )
     }
 
-    console.log('=== ENVIANDO MENSAJE A INSTAGRAM ===')
+    console.log('=== ENVIANDO MENSAJE A INSTAGRAM GRAPH API ===')
     console.log('Recipient ID:', recipient_id)
     console.log('Message:', message_text)
     console.log('Reply to:', reply_to_message_id)
 
-    // Obtener el token de acceso guardado (necesitarás implementar esto)
+    // Obtener el token de acceso
     const ACCESS_TOKEN = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
     
     if (!ACCESS_TOKEN) {
@@ -70,8 +70,8 @@ serve(async (req) => {
 
     console.log('Message payload:', JSON.stringify(messagePayload, null, 2))
 
-    // Enviar mensaje usando Instagram Graph API
-    const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${ACCESS_TOKEN}`, {
+    // NUEVO: Usar Instagram Graph API directamente (sin PAGE_ID)
+    const response = await fetch(`https://graph.instagram.com/v20.0/me/messages?access_token=${ACCESS_TOKEN}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -81,14 +81,14 @@ serve(async (req) => {
 
     const responseData = await response.json()
     
-    console.log('Instagram API response:', {
+    console.log('Instagram Graph API response:', {
       status: response.status,
       ok: response.ok,
       data: responseData
     })
 
     if (!response.ok) {
-      console.error('Error enviando mensaje a Instagram:', responseData)
+      console.error('Error enviando mensaje a Instagram Graph API:', responseData)
       
       let errorDescription = responseData.error?.message || 'Error enviando mensaje'
       
@@ -114,7 +114,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('Mensaje enviado exitosamente')
+    console.log('Mensaje enviado exitosamente via Instagram Graph API')
 
     return new Response(
       JSON.stringify({
