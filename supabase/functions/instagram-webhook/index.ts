@@ -307,13 +307,13 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       return
     }
 
-    // CORREGIR: Filtrar autoresponders que coincidan con palabras clave
+    // NUEVO: Filtrar autoresponders que coincidan con palabras clave
     const messageText = event.message?.text?.toLowerCase() || '';
     console.log('🔍 FILTRANDO POR PALABRAS CLAVE')
     console.log('📝 Mensaje recibido (lowercase):', messageText)
     
     let matchingAutoresponders = autoresponders.filter(ar => {
-      // CAMBIO CRÍTICO: Si no usa palabras clave O las palabras clave están vacías/null, siempre coincide
+      // Si no usa palabras clave, siempre coincide
       if (!ar.use_keywords || !ar.keywords || ar.keywords.length === 0) {
         console.log(`✅ Autoresponder "${ar.name}" no usa palabras clave - COINCIDE`)
         return true;
