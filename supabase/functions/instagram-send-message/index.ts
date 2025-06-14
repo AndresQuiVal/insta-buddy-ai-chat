@@ -25,7 +25,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('=== ENVIANDO MENSAJE A INSTAGRAM GRAPH API ===')
+    console.log('=== ENVIANDO MENSAJE A INSTAGRAM GRAPH API v23.0 ===')
     console.log('Recipient ID:', recipient_id)
     console.log('Message:', message_text)
     console.log('Reply to:', reply_to_message_id)
@@ -70,8 +70,8 @@ serve(async (req) => {
 
     console.log('Message payload:', JSON.stringify(messagePayload, null, 2))
 
-    // NUEVO: Usar Instagram Graph API directamente (sin PAGE_ID)
-    const response = await fetch(`https://graph.instagram.com/v20.0/me/messages?access_token=${ACCESS_TOKEN}`, {
+    // Usar Instagram Graph API v23.0
+    const response = await fetch(`https://graph.instagram.com/v23.0/me/messages?access_token=${ACCESS_TOKEN}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -81,14 +81,14 @@ serve(async (req) => {
 
     const responseData = await response.json()
     
-    console.log('Instagram Graph API response:', {
+    console.log('Instagram Graph API v23.0 response:', {
       status: response.status,
       ok: response.ok,
       data: responseData
     })
 
     if (!response.ok) {
-      console.error('Error enviando mensaje a Instagram Graph API:', responseData)
+      console.error('Error enviando mensaje a Instagram Graph API v23.0:', responseData)
       
       let errorDescription = responseData.error?.message || 'Error enviando mensaje'
       
@@ -114,7 +114,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('Mensaje enviado exitosamente via Instagram Graph API')
+    console.log('Mensaje enviado exitosamente via Instagram Graph API v23.0')
 
     return new Response(
       JSON.stringify({

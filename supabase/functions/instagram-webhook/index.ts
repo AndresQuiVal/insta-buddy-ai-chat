@@ -626,11 +626,11 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       }
     }
 
-    console.log('📤 ENVIANDO A INSTAGRAM GRAPH API:')
+    console.log('📤 ENVIANDO A INSTAGRAM GRAPH API v23.0:')
     console.log('📋 Payload:', JSON.stringify(messagePayload, null, 2))
 
-    // NUEVO: Usar Instagram Graph API directamente (sin PAGE_ID)
-    const apiUrl = `https://graph.instagram.com/v20.0/me/messages?access_token=${accessToken}`
+    // Usar Instagram Graph API v23.0
+    const apiUrl = `https://graph.instagram.com/v23.0/me/messages?access_token=${accessToken}`
     console.log('🌐 URL de API:', apiUrl.replace(accessToken, '[TOKEN_HIDDEN]'))
 
     const response = await fetch(apiUrl, {
@@ -641,7 +641,7 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
       body: JSON.stringify(messagePayload)
     })
 
-    console.log('📊 RESPUESTA DE INSTAGRAM:')
+    console.log('📊 RESPUESTA DE INSTAGRAM v23.0:')
     console.log('🔢 Status:', response.status)
     console.log('✅ OK:', response.ok)
 
@@ -649,12 +649,12 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     console.log('📋 Data:', JSON.stringify(responseData, null, 2))
     
     if (!response.ok) {
-      console.error('❌ ERROR EN INSTAGRAM GRAPH API:')
+      console.error('❌ ERROR EN INSTAGRAM GRAPH API v23.0:')
       console.error('📋 Error completo:', JSON.stringify(responseData, null, 2))
       return false
     }
 
-    console.log('✅ MENSAJE ENVIADO EXITOSAMENTE')
+    console.log('✅ MENSAJE ENVIADO EXITOSAMENTE via v23.0')
     return true
 
   } catch (error) {
