@@ -2,9 +2,9 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 // Configuración de Instagram Graph API (nueva API oficial)
-const INSTAGRAM_APP_ID = "1059372749433300"; // Instagram App ID principal
-const INSTAGRAM_REDIRECT_URI = window.location.origin + "/auth/instagram/callback";
-const INSTAGRAM_SCOPE = "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish"; // Nuevos permisos para Graph API
+const FACEBOOK_APP_ID = '2942884966099377'; // Facebook App ID principal
+const INSTAGRAM_REDIRECT_URI = window.location.origin + '/auth/instagram/callback';
+const INSTAGRAM_SCOPE = 'instagram_basic,pages_show_list,business_management'; // Nuevos permisos para Graph API
 
 export interface InstagramAuthConfig {
   clientId: string;
@@ -16,44 +16,44 @@ export interface InstagramAuthConfig {
  * Inicia el flujo de autenticación con Instagram Graph API
  */
 export const initiateInstagramAuth = (config: InstagramAuthConfig = {
-  clientId: INSTAGRAM_APP_ID,
+  clientId: FACEBOOK_APP_ID,
   redirectUri: INSTAGRAM_REDIRECT_URI,
   scope: INSTAGRAM_SCOPE
 }) => {
   try {
     console.log('Iniciando autenticación con Instagram Graph API...');
-    console.log('Instagram App ID:', config.clientId);
+    console.log('Facebook App ID:', config.clientId);
     console.log('Redirect URI:', config.redirectUri);
     console.log('Scope:', config.scope);
     console.log('Current domain:', window.location.origin);
     
     // Guardar la ruta actual para redirigir después de la autenticación
-    localStorage.setItem("hower-auth-redirect", window.location.pathname);
+    localStorage.setItem('hower-auth-redirect', window.location.pathname);
     
-    // Construir URL de autorización de Instagram Business
-    const authUrl = new URL("https://www.instagram.com/oauth/authorize");
-    authUrl.searchParams.append("client_id", config.clientId);
-    authUrl.searchParams.append("redirect_uri", config.redirectUri);
-    authUrl.searchParams.append("scope", config.scope);
-    authUrl.searchParams.append("response_type", "code");
-    authUrl.searchParams.append("state", "hower-state-" + Date.now()); // Seguridad
+    // Construir URL de autorización de Facebook/Instagram usando Graph API
+    const authUrl = new URL('https://www.facebook.com/v19.0/dialog/oauth');
+    authUrl.searchParams.append('client_id', config.clientId);
+    authUrl.searchParams.append('redirect_uri', config.redirectUri);
+    authUrl.searchParams.append('scope', config.scope);
+    authUrl.searchParams.append('response_type', 'code');
+    authUrl.searchParams.append('state', 'hower-state-' + Date.now()); // Agregar state para seguridad
     
-    console.log("URL de autorización construida:", authUrl.toString());
+    console.log('URL de autorización construida:', authUrl.toString());
     
     // Verificar que estamos en un dominio válido
     const currentDomain = window.location.hostname;
     if (currentDomain === 'localhost' || currentDomain.includes('lovableproject.com')) {
       console.log('Dominio válido para desarrollo/producción:', currentDomain);
     } else {
-      console.warn('Dominio no configurado en Instagram Developers:', currentDomain);
+      console.warn('Dominio no configurado en Facebook Developers:', currentDomain);
       toast({
         title: "Advertencia de configuración",
-        description: `Asegúrate de que ${currentDomain} esté configurado como URL válida en Instagram Developers`,
+        description: `Asegúrate de que ${currentDomain} esté configurado como URL válida en Facebook Developers`,
         variant: "destructive"
       });
     }
     
-    // Redirigir al usuario a Instagram para autorización
+    // Redirigir al usuario a Facebook para autorización
     window.location.href = authUrl.toString();
     
     return true;
@@ -72,8 +72,7 @@ export const initiateInstagramAuth = (config: InstagramAuthConfig = {
  * Verifica si hay una conexión activa a Instagram
  */
 export const checkInstagramConnection = (): boolean => {
-  const instagramToken = localStorage.getItem("hower-instagram-token");
-  const hasToken = !!instagramToken && instagramToken.length > 0 && instagramToken !== "undefined";
+  const hasToken = localStorage.getItem('hower-instagram-token') !== null;
   console.log('Verificando conexión Instagram:', hasToken);
   return hasToken;
 };
@@ -99,7 +98,7 @@ export const disconnectInstagram = () => {
 export const handleInstagramCallback = async (code: string) => {
   try {
     console.log('Procesando código de autorización:', code);
-    console.log('Usando Instagram App ID:', INSTAGRAM_APP_ID);
+    console.log('Usando Facebook App ID:', FACEBOOK_APP_ID);
     console.log('Redirect URI utilizada:', INSTAGRAM_REDIRECT_URI);
     
     // Llamar a Supabase Edge Function para intercambiar el código por token
@@ -117,13 +116,13 @@ export const handleInstagramCallback = async (code: string) => {
       if (error.message.includes('invalid_client')) {
         toast({
           title: "Error de configuración",
-          description: "App ID o Client Secret incorrectos. Verifica la configuración en Instagram Developers.",
+          description: "App ID o Client Secret incorrectos. Verifica la configuración en Facebook Developers.",
           variant: "destructive"
         });
       } else if (error.message.includes('redirect_uri')) {
         toast({
           title: "Error de URL",
-          description: `URL de redirección no válida. Configura ${INSTAGRAM_REDIRECT_URI} en Instagram Developers.`,
+          description: `URL de redirección no válida. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`,
           variant: "destructive"
         });
       } else {
@@ -138,15 +137,15 @@ export const handleInstagramCallback = async (code: string) => {
     }
 
     if (data.error) {
-      console.error('Error de Instagram API:', data.error);
+      console.error('Error de Graph API:', data.error);
       
-      // Manejo específico de errores de Instagram API
+      // Manejo específico de errores de Graph API
       let errorMessage = data.error_description || data.error;
       
       if (data.error === 'invalid_client') {
-        errorMessage = "App no válida. Verifica que la app esté configurada correctamente en Instagram Developers.";
+        errorMessage = "App no válida. Verifica que la app esté configurada correctamente en Facebook Developers.";
       } else if (data.error.includes('redirect_uri')) {
-        errorMessage = `URL de redirección no coincide. Configura ${INSTAGRAM_REDIRECT_URI} en Instagram Developers.`;
+        errorMessage = `URL de redirección no coincide. Configura ${INSTAGRAM_REDIRECT_URI} en Facebook Developers.`;
       } else if (data.error === 'access_denied') {
         errorMessage = "Acceso denegado por el usuario.";
       }
@@ -163,25 +162,25 @@ export const handleInstagramCallback = async (code: string) => {
     // Guardar token y datos del usuario
     localStorage.setItem('hower-instagram-token', data.access_token);
     
-    // Guardar datos del usuario de Instagram
+    // Guardar datos del usuario (Facebook + Instagram si está disponible)
     const userData = {
+      facebook: data.user,
       instagram: data.instagram_account
     };
-    localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
+    localStorage.setItem('hower-instagram-user', JSON.stringify(userData));
     
-    console.log("Token y datos de usuario guardados exitosamente");
-    console.log("Usuario conectado:", userData);
+    console.log('Token y datos de usuario guardados exitosamente');
+    console.log('Usuario conectado:', userData);
     
     // Determinar qué nombre mostrar
-    const instagramAccount = data.instagram_account;
-    const displayName = instagramAccount?.username
-      ? `@${instagramAccount.username}`
-      : instagramAccount?.name || "Usuario";
+    const displayName = data.instagram_account?.username 
+      ? `@${data.instagram_account.username}` 
+      : data.user?.name || 'Usuario';
     
     toast({
       title: "¡Conexión exitosa!",
       description: `Conectado como ${displayName}`,
-      variant: "default",
+      variant: "default"
     });
     
     // Redirección al estado guardado
@@ -206,15 +205,15 @@ export const handleInstagramCallback = async (code: string) => {
 };
 
 /**
- * Obtiene información del usuario conectado usando Instagram Graph API
+ * Obtiene información del usuario conectado usando Graph API
  */
 export const getInstagramUserInfo = async () => {
   const token = localStorage.getItem('hower-instagram-token');
   if (!token) return null;
   
   try {
-    // Obtener información del usuario de Instagram directamente
-    const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,media_count&access_token=${token}`);
+    // Primero obtenemos info básica del usuario de Facebook
+    const userResponse = await fetch(`https://graph.facebook.com/v19.0/me?fields=id,name&access_token=${token}`);
     
     if (!userResponse.ok) {
       throw new Error('Error obteniendo información del usuario');
@@ -222,8 +221,31 @@ export const getInstagramUserInfo = async () => {
     
     const userData = await userResponse.json();
     
+    // Intentamos obtener cuentas de Instagram
+    let instagramData = null;
+    try {
+      const accountsResponse = await fetch(`https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${token}`);
+      
+      if (accountsResponse.ok) {
+        const accountsData = await accountsResponse.json();
+        const pageWithInstagram = accountsData.data?.find(page => page.instagram_business_account);
+        
+        if (pageWithInstagram) {
+          const instagramAccountId = pageWithInstagram.instagram_business_account.id;
+          const instagramInfoResponse = await fetch(`https://graph.facebook.com/v19.0/${instagramAccountId}?fields=id,username,account_type,media_count&access_token=${token}`);
+          
+          if (instagramInfoResponse.ok) {
+            instagramData = await instagramInfoResponse.json();
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('No se pudo obtener información de Instagram:', error);
+    }
+    
     const combinedData = {
-      instagram: userData
+      facebook: userData,
+      instagram: instagramData
     };
     
     // Actualizar datos guardados
@@ -244,15 +266,25 @@ export const getInstagramUserInfo = async () => {
 };
 
 /**
- * Obtiene posts recientes del usuario usando Instagram Graph API
+ * Obtiene posts recientes del usuario usando Graph API
  */
 export const getInstagramPosts = async () => {
   const token = localStorage.getItem('hower-instagram-token');
   if (!token) return [];
   
   try {
-    // Obtener media de Instagram usando Graph API directo
-    const response = await fetch(`https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,timestamp&access_token=${token}`);
+    // Primero obtenemos el ID del usuario
+    const userInfo = await getInstagramUserInfo();
+    
+    if (!userInfo?.instagram?.id) {
+      console.warn('No hay cuenta de Instagram conectada');
+      return [];
+    }
+    
+    const instagramAccountId = userInfo.instagram.id;
+    
+    // Obtener media de Instagram usando Graph API
+    const response = await fetch(`https://graph.facebook.com/v19.0/${instagramAccountId}/media?fields=id,caption,media_type,media_url,timestamp&access_token=${token}`);
     
     if (!response.ok) {
       throw new Error('Error obteniendo posts');

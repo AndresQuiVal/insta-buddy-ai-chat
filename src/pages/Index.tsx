@@ -25,25 +25,28 @@ const Index = () => {
   const [openaiKey, setOpenaiKey] = useState('');
   const [instagramToken, setInstagramToken] = useState('');
   const [pageId, setPageId] = useState('');
-  const [isInstagramConnected, setIsInstagramConnected] = useState(false);
+  // TEMPORALMENTE SIEMPRE CONECTADO PARA PRUEBAS
+  const [isInstagramConnected, setIsInstagramConnected] = useState(true);
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
 
+  // Comentamos la verificación de conexión para pruebas
+  /*
   useEffect(() => {
-    // Check if Instagram is connected from localStorage
     const checkConnection = () => {
-      const instagramToken = localStorage.getItem("hower-instagram-token");
-      const isConnected =
-        !!instagramToken &&
-        instagramToken.length > 0 &&
-        instagramToken !== "undefined";
-      if (isConnected) setInstagramToken(instagramToken);
-      setIsInstagramConnected(isConnected);
+      console.log('🔍 Verificando conexión de Instagram...');
+      const connected = checkInstagramConnection();
+      console.log('Estado de conexión:', connected);
+      setIsInstagramConnected(connected);
       setIsCheckingConnection(false);
     };
 
-    setIsCheckingConnection(true);
     checkConnection();
+
+    // Verificar periodicamente si el usuario se conecta
+    const interval = setInterval(checkConnection, 2000);
+    return () => clearInterval(interval);
   }, []);
+  */
 
   // Si está verificando la conexión, mostrar loading
   if (isCheckingConnection) {
@@ -57,9 +60,12 @@ const Index = () => {
     );
   }
 
+  // COMENTAMOS ESTA VERIFICACIÓN PARA PRUEBAS
+  /*
   if (!isInstagramConnected) {
     return <InstagramLogin />;
   }
+  */
 
   const handleSaveToken = () => {
     if (!accessToken.trim()) {
