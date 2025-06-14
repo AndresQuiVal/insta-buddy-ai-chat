@@ -608,14 +608,19 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
 async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
   try {
     console.log('🔑 VERIFICANDO TOKEN DE INSTAGRAM...')
-    const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
+    
+    // CAMBIO CRÍTICO: Intentar obtener el token desde diferentes fuentes
+    let accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
     
     if (!accessToken) {
       console.error('❌ NO HAY TOKEN DE INSTAGRAM EN VARIABLES DE ENTORNO')
+      console.log('💡 Nota: El token debería estar configurado en las variables de entorno del servidor')
+      console.log('💡 Asegúrate de que el token se haya sincronizado desde el frontend')
       return false
     }
 
     console.log('✅ Token encontrado, longitud:', accessToken.length)
+    console.log('📝 Token preview:', accessToken.substring(0, 20) + '...')
 
     const messagePayload = {
       recipient: {
@@ -651,6 +656,17 @@ async function sendInstagramMessage(recipientId: string, messageText: string): P
     if (!response.ok) {
       console.error('❌ ERROR EN INSTAGRAM GRAPH API v23.0:')
       console.error('📋 Error completo:', JSON.stringify(responseData, null, 2))
+      
+      // Diagnóstico específico para errores comunes
+      if (responseData.error?.code === 190) {
+        console.error('🚨 TOKEN INVÁLIDO O EXPIRADO')
+        console.error('💡 Solución: Reconectar Instagram desde el frontend')
+        console.error('💡 El token necesita ser actualizado en las variables de entorno del servidor')
+      } else if (responseData.error?.code === 200) {
+        console.error('🚨 PERMISOS INSUFICIENTES')
+        console.error('💡 Solución: Verificar permisos en Facebook Developers')
+      }
+      
       return false
     }
 

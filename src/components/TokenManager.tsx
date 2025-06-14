@@ -161,7 +161,7 @@ const TokenManager: React.FC = () => {
     try {
       console.log('🚀 Actualizando token en servidor...');
 
-      // Actualizar en el servidor usando la edge function
+      // PASO 1: Validar y actualizar en el servidor usando la edge function
       const { data, error } = await supabase.functions.invoke('update-instagram-token', {
         body: { access_token: token }
       });
@@ -178,14 +178,41 @@ const TokenManager: React.FC = () => {
 
       console.log('✅ Respuesta del servidor:', data);
 
-      // Guardar localmente también
+      // PASO 2: Guardar localmente también
       localStorage.setItem('instagram_access_token', token);
       localStorage.setItem('hower-instagram-token', token);
 
-      toast({
-        title: "¡Token actualizado exitosamente!",
-        description: `Token guardado correctamente`,
-      });
+      // PASO 3: NUEVO - Actualizar la variable de entorno del servidor
+      console.log('🔧 Configurando token en variables de entorno del servidor...');
+      
+      try {
+        // Llamar a una nueva edge function para configurar la variable de entorno
+        const { data: envData, error: envError } = await supabase.functions.invoke('set-instagram-env-token', {
+          body: { access_token: token }
+        });
+
+        if (envError) {
+          console.warn('⚠️ No se pudo configurar automáticamente en el servidor:', envError);
+          toast({
+            title: "⚠️ Acción requerida",
+            description: "Token guardado localmente. Configura manualmente INSTAGRAM_ACCESS_TOKEN en Supabase > Settings > Functions",
+            variant: "default"
+          });
+        } else {
+          console.log('✅ Token configurado en el servidor:', envData);
+          toast({
+            title: "¡Token actualizado exitosamente!",
+            description: `Token guardado y configurado en el servidor`,
+          });
+        }
+      } catch (envConfigError) {
+        console.warn('⚠️ Error configurando variable de entorno:', envConfigError);
+        toast({
+          title: "⚠️ Configuración manual requerida",
+          description: "Ve a Supabase > Settings > Functions y configura INSTAGRAM_ACCESS_TOKEN",
+          variant: "default"
+        });
+      }
       
     } catch (error) {
       console.error('💥 Error actualizando token:', error);
