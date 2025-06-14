@@ -1,10 +1,9 @@
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// Configuración de Instagram Graph API (nueva API oficial)
+// Configuración de Instagram Graph API usando Supabase webhook
 const INSTAGRAM_APP_ID = "1059372749433300"; // Instagram App ID principal
-const INSTAGRAM_REDIRECT_URI =
-  window.location.origin + "/auth/instagram/callback";
+const INSTAGRAM_REDIRECT_URI = "https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/instagram-webhook";
 const INSTAGRAM_SCOPE =
   "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish"; // Nuevos permisos para Graph API
 
@@ -15,7 +14,7 @@ export interface InstagramAuthConfig {
 }
 
 /**
- * Inicia el flujo de autenticación con Instagram Graph API
+ * Inicia el flujo de autenticación con Instagram Graph API usando webhook de Supabase
  */
 export const initiateInstagramAuth = (
   config: InstagramAuthConfig = {
@@ -25,16 +24,15 @@ export const initiateInstagramAuth = (
   }
 ) => {
   try {
-    console.log("Iniciando autenticación con Instagram Graph API...");
+    console.log("Iniciando autenticación con Instagram Graph API usando Supabase webhook...");
     console.log("Instagram App ID:", config.clientId);
-    console.log("Redirect URI:", config.redirectUri);
+    console.log("Redirect URI (Supabase webhook):", config.redirectUri);
     console.log("Scope:", config.scope);
-    console.log("Current domain:", window.location.origin);
 
     // Guardar la ruta actual para redirigir después de la autenticación
     localStorage.setItem("hower-auth-redirect", window.location.pathname);
 
-    // Construir URL de autorización de Instagram Business
+    // Construir URL de autorización de Instagram Business usando webhook de Supabase
     const authUrl = new URL("https://www.instagram.com/oauth/authorize");
     authUrl.searchParams.append("client_id", config.clientId);
     authUrl.searchParams.append("redirect_uri", config.redirectUri);
@@ -44,26 +42,12 @@ export const initiateInstagramAuth = (
 
     console.log("URL de autorización construida:", authUrl.toString());
 
-    // Verificar que estamos en un dominio válido
-    const currentDomain = window.location.hostname;
-    if (
-      currentDomain === "localhost" ||
-      currentDomain.includes("lovableproject.com")
-    ) {
-      console.log("Dominio válido para desarrollo/producción:", currentDomain);
-    } else {
-      console.warn(
-        "Dominio no configurado en Facebook Developers:",
-        currentDomain
-      );
-      toast({
-        title: "Advertencia de configuración",
-        description: `Asegúrate de que ${currentDomain} esté configurado como URL válida en Facebook Developers`,
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Conectando con Instagram",
+      description: "Serás redirigido a Instagram para autorizar la aplicación",
+    });
 
-    // Redirigir al usuario a Facebook para autorización
+    // Redirigir al usuario a Instagram para autorización
     window.location.href = authUrl.toString();
 
     return true;
@@ -110,7 +94,7 @@ export const handleInstagramCallback = async (code: string) => {
   try {
     console.log("Procesando código de autorización:", code);
     console.log("Usando Facebook App ID:", INSTAGRAM_APP_ID);
-    console.log("Redirect URI utilizada:", INSTAGRAM_REDIRECT_URI);
+    console.log("Redirect URI utilizada (Supabase webhook):", INSTAGRAM_REDIRECT_URI);
 
     // Llamar a Supabase Edge Function para intercambiar el código por token
     const { data, error } = await supabase.functions.invoke(
