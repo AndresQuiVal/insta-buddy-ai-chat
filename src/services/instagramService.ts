@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,10 +25,19 @@ export const initiateInstagramAuth = (
   }
 ) => {
   try {
-    console.log("Iniciando autenticación con Instagram Graph API usando Supabase webhook...");
+    console.log("=== INICIANDO AUTENTICACIÓN INSTAGRAM ===");
     console.log("Instagram App ID:", config.clientId);
     console.log("Redirect URI (Supabase webhook):", config.redirectUri);
-    console.log("Scope:", config.scope);
+    console.log("Scope solicitado:", config.scope);
+
+    // Verificar que la configuración es correcta
+    if (config.clientId !== INSTAGRAM_APP_ID) {
+      console.error("❌ App ID no coincide:", config.clientId, "vs", INSTAGRAM_APP_ID);
+    }
+    
+    if (config.redirectUri !== INSTAGRAM_REDIRECT_URI) {
+      console.error("❌ Redirect URI no coincide:", config.redirectUri, "vs", INSTAGRAM_REDIRECT_URI);
+    }
 
     // Guardar la ruta actual para redirigir después de la autenticación
     localStorage.setItem("hower-auth-redirect", window.location.pathname);
@@ -40,19 +50,28 @@ export const initiateInstagramAuth = (
     authUrl.searchParams.append("response_type", "code");
     authUrl.searchParams.append("state", "hower-state-" + Date.now()); // Seguridad
 
-    console.log("URL de autorización construida:", authUrl.toString());
+    console.log("=== URL DE AUTORIZACIÓN CONSTRUIDA ===");
+    console.log("URL completa:", authUrl.toString());
+    console.log("Parámetros individuales:");
+    console.log("- client_id:", authUrl.searchParams.get("client_id"));
+    console.log("- redirect_uri:", authUrl.searchParams.get("redirect_uri"));
+    console.log("- scope:", authUrl.searchParams.get("scope"));
+    console.log("- response_type:", authUrl.searchParams.get("response_type"));
 
     toast({
       title: "Conectando con Instagram",
       description: "Serás redirigido a Instagram para autorizar la aplicación",
     });
 
+    // Mostrar la URL en consola para debugging
+    console.log("🚀 Redirigiendo a:", authUrl.toString());
+
     // Redirigir al usuario a Instagram para autorización
     window.location.href = authUrl.toString();
 
     return true;
   } catch (error) {
-    console.error("Error iniciando autenticación de Instagram:", error);
+    console.error("💥 Error iniciando autenticación de Instagram:", error);
     toast({
       title: "Error de conexión",
       description:
