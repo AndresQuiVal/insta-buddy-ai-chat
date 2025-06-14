@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -350,7 +351,21 @@ export const sendInstagramMessage = async (
       );
     }
 
-    // Llamar a la edge function actualizada
+    // NUEVO: Obtener token del localStorage
+    const accessToken = localStorage.getItem('hower-instagram-token');
+    
+    if (!accessToken) {
+      toast({
+        title: "Token no encontrado",
+        description: "Por favor reconecta tu cuenta de Instagram",
+        variant: "destructive"
+      });
+      throw new Error("No se encontró token de acceso. Reconecta tu cuenta de Instagram.");
+    }
+
+    console.log("✅ Token encontrado en localStorage, longitud:", accessToken.length);
+
+    // Llamar a la edge function con el token incluido
     console.log("🚀 Usando edge function para enviar mensaje...");
 
     const { data, error } = await supabase.functions.invoke(
@@ -360,6 +375,7 @@ export const sendInstagramMessage = async (
           recipient_id: recipientId,
           message_text: messageText,
           reply_to_message_id: replyToMessageId,
+          access_token: accessToken // NUEVO: Enviar token en el body
         },
       }
     );
@@ -397,11 +413,27 @@ export const sendInstagramMessage = async (
       let errorDescription =
         data.error_description || data.error || "Error enviando mensaje";
 
-      toast({
-        title: "Error enviando mensaje",
-        description: errorDescription,
-        variant: "destructive",
-      });
+      // Manejo específico de errores de token
+      if (data.error === 'send_message_failed' && data.debug_info?.instagram_error?.code === 190) {
+        errorDescription = "Token de Instagram expirado. Por favor reconecta tu cuenta.";
+        
+        // Limpiar token inválido del localStorage
+        localStorage.removeItem('hower-instagram-token');
+        localStorage.removeItem('hower-instagram-user');
+        
+        toast({
+          title: "Token expirado",
+          description: "Tu token de Instagram ha expirado. Reconecta tu cuenta.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error enviando mensaje",
+          description: errorDescription,
+          variant: "destructive",
+        });
+      }
+      
       throw new Error(errorDescription);
     }
 
@@ -429,7 +461,8 @@ export const sendInstagramMessage = async (
     // Solo mostrar toast si no se mostró antes
     if (
       !errorMessage.includes("Token de acceso") &&
-      !errorMessage.includes("Falló el envío")
+      !errorMessage.includes("Falló el envío") &&
+      !errorMessage.includes("Token expirado")
     ) {
       toast({
         title: "Error de envío",

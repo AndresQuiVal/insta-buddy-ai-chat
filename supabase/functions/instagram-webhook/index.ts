@@ -553,7 +553,9 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
     const autoresponderMessageId = autoresponderConfig.id
 
     console.log('📤 ENVIANDO MENSAJE:', messageToSend)
-    const success = await sendInstagramMessage(senderId, messageToSend)
+    
+    // CAMBIO CLAVE: Usar la edge function de envío directamente
+    const success = await sendInstagramMessageViaEdgeFunction(supabase, senderId, messageToSend)
 
     if (success) {
       console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
@@ -605,76 +607,44 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
   }
 }
 
-async function sendInstagramMessage(recipientId: string, messageText: string): Promise<boolean> {
+async function sendInstagramMessageViaEdgeFunction(supabase: any, recipientId: string, messageText: string): Promise<boolean> {
   try {
-    console.log('🔑 VERIFICANDO TOKEN DE INSTAGRAM...')
+    console.log('📤 ===== ENVIANDO MENSAJE VIA EDGE FUNCTION =====')
+    console.log('👤 Recipient:', recipientId)
+    console.log('💌 Message:', messageText)
     
-    // CAMBIO CRÍTICO: Intentar obtener el token desde diferentes fuentes
-    let accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
-    
-    if (!accessToken) {
-      console.error('❌ NO HAY TOKEN DE INSTAGRAM EN VARIABLES DE ENTORNO')
-      console.log('💡 Nota: El token debería estar configurado en las variables de entorno del servidor')
-      console.log('💡 Asegúrate de que el token se haya sincronizado desde el frontend')
-      return false
-    }
-
-    console.log('✅ Token encontrado, longitud:', accessToken.length)
-    console.log('📝 Token preview:', accessToken.substring(0, 20) + '...')
-
-    const messagePayload = {
-      recipient: {
-        id: recipientId
-      },
-      message: {
-        text: messageText
+    // Usar la edge function para enviar el mensaje
+    const { data, error } = await supabase.functions.invoke('instagram-send-message', {
+      body: {
+        recipient_id: recipientId,
+        message_text: messageText
       }
-    }
-
-    console.log('📤 ENVIANDO A INSTAGRAM GRAPH API v23.0:')
-    console.log('📋 Payload:', JSON.stringify(messagePayload, null, 2))
-
-    // Usar Instagram Graph API v23.0
-    const apiUrl = `https://graph.instagram.com/v23.0/me/messages?access_token=${accessToken}`
-    console.log('🌐 URL de API:', apiUrl.replace(accessToken, '[TOKEN_HIDDEN]'))
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(messagePayload)
     })
 
-    console.log('📊 RESPUESTA DE INSTAGRAM v23.0:')
-    console.log('🔢 Status:', response.status)
-    console.log('✅ OK:', response.ok)
+    console.log('📨 Respuesta de instagram-send-message:')
+    console.log('📋 Data:', JSON.stringify(data, null, 2))
+    console.log('📋 Error:', error)
 
-    const responseData = await response.json()
-    console.log('📋 Data:', JSON.stringify(responseData, null, 2))
-    
-    if (!response.ok) {
-      console.error('❌ ERROR EN INSTAGRAM GRAPH API v23.0:')
-      console.error('📋 Error completo:', JSON.stringify(responseData, null, 2))
-      
-      // Diagnóstico específico para errores comunes
-      if (responseData.error?.code === 190) {
-        console.error('🚨 TOKEN INVÁLIDO O EXPIRADO')
-        console.error('💡 Solución: Reconectar Instagram desde el frontend')
-        console.error('💡 El token necesita ser actualizado en las variables de entorno del servidor')
-      } else if (responseData.error?.code === 200) {
-        console.error('🚨 PERMISOS INSUFICIENTES')
-        console.error('💡 Solución: Verificar permisos en Facebook Developers')
-      }
-      
+    if (error) {
+      console.error('❌ Error enviando mensaje via edge function:', error)
       return false
     }
 
-    console.log('✅ MENSAJE ENVIADO EXITOSAMENTE via v23.0')
+    if (data?.error) {
+      console.error('❌ Error en respuesta de edge function:', data)
+      return false
+    }
+
+    if (!data?.success) {
+      console.error('❌ Mensaje no exitoso via edge function:', data)
+      return false
+    }
+
+    console.log('✅ ===== MENSAJE ENVIADO EXITOSAMENTE VIA EDGE FUNCTION =====')
     return true
 
   } catch (error) {
-    console.error('❌ ERROR CRÍTICO EN sendInstagramMessage:', error)
+    console.error('❌ Error crítico enviando mensaje via edge function:', error)
     return false
   }
 }

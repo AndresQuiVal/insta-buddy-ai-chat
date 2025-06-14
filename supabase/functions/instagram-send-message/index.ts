@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { recipient_id, message_text, reply_to_message_id } = await req.json()
+    const { recipient_id, message_text, reply_to_message_id, access_token } = await req.json()
 
     if (!recipient_id || !message_text) {
       return new Response(
@@ -30,15 +30,17 @@ serve(async (req) => {
     console.log('Message:', message_text)
     console.log('Reply to:', reply_to_message_id)
 
-    // Obtener el token de acceso
-    const ACCESS_TOKEN = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
+    // NUEVA LÓGICA: Priorizar token del request, luego variable de entorno
+    let ACCESS_TOKEN = access_token || Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
     
     if (!ACCESS_TOKEN) {
-      console.error('INSTAGRAM_ACCESS_TOKEN no está configurado')
+      console.error('❌ NO HAY TOKEN DE INSTAGRAM DISPONIBLE')
+      console.log('💡 Nota: Se requiere un token de acceso válido')
+      console.log('💡 Puede enviarse en el body del request o configurarse como variable de entorno')
       return new Response(
         JSON.stringify({ 
           error: 'access_token_missing', 
-          error_description: 'Token de acceso de Instagram no configurado' 
+          error_description: 'Token de acceso de Instagram requerido. Envíalo en el body del request o configúralo como variable de entorno.' 
         }),
         { 
           status: 500, 
@@ -46,6 +48,10 @@ serve(async (req) => {
         }
       )
     }
+
+    console.log('✅ Token encontrado, longitud:', ACCESS_TOKEN.length)
+    console.log('📝 Token preview:', ACCESS_TOKEN.substring(0, 20) + '...')
+    console.log('🔹 Fuente del token:', access_token ? 'request body' : 'environment variable')
 
     // Construir el payload del mensaje
     const messagePayload: any = {
@@ -93,7 +99,7 @@ serve(async (req) => {
       let errorDescription = responseData.error?.message || 'Error enviando mensaje'
       
       if (responseData.error?.code === 190) {
-        errorDescription = 'Token de acceso inválido o expirado. Reconecta tu cuenta de Instagram.'
+        errorDescription = 'Token de acceso inválido o expirado. Reconecta tu cuenta de Instagram y actualiza el token.'
       } else if (responseData.error?.code === 200) {
         errorDescription = 'Permisos insuficientes. Verifica la configuración de la app en Facebook Developers.'
       }
@@ -104,7 +110,8 @@ serve(async (req) => {
           error_description: errorDescription,
           debug_info: {
             response_status: response.status,
-            instagram_error: responseData.error
+            instagram_error: responseData.error,
+            token_source: access_token ? 'request_body' : 'environment'
           }
         }),
         { 
