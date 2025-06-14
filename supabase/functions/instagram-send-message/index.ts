@@ -40,10 +40,11 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'access_token_missing', 
-          error_description: 'Token de acceso de Instagram requerido. Envíalo en el body del request o configúralo como variable de entorno.' 
+          error_description: 'Token de acceso de Instagram requerido. Envíalo en el body del request o configúralo como variable de entorno.',
+          needs_token: true
         }),
         { 
-          status: 500, 
+          status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
@@ -108,6 +109,7 @@ serve(async (req) => {
         JSON.stringify({ 
           error: responseData.error?.type || 'send_message_failed',
           error_description: errorDescription,
+          token_invalid: responseData.error?.code === 190,
           debug_info: {
             response_status: response.status,
             instagram_error: responseData.error,

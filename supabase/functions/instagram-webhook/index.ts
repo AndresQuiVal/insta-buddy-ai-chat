@@ -338,7 +338,18 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
     if (shouldSendAutoresponder) {
       console.log('🚀 ENVIANDO AUTORESPONDER...')
-      await handleAutoresponder(supabase, event.sender.id, selectedAutoresponder)
+      
+      // CAMBIO CRÍTICO: NO podemos enviar token del localStorage desde el servidor
+      // El webhook del servidor debe funcionar con tokens de variables de entorno
+      console.log('⚠️ WEBHOOK DEL SERVIDOR: No se puede acceder al localStorage del cliente')
+      console.log('💡 Para autoresponders automáticos, configura INSTAGRAM_ACCESS_TOKEN en Supabase')
+      
+      const success = await sendInstagramMessageViaEdgeFunction(supabase, event.sender.id, selectedAutoresponder.message_text)
+      
+      if (!success) {
+        console.error('❌ ERROR ENVIANDO AUTORESPONDER')
+        console.log('💡 SOLUCIÓN: Configura una variable de entorno INSTAGRAM_ACCESS_TOKEN válida en Supabase')
+      }
     } else {
       console.log('⏭️ No enviando autoresponder según configuración')
     }
@@ -613,11 +624,13 @@ async function sendInstagramMessageViaEdgeFunction(supabase: any, recipientId: s
     console.log('👤 Recipient:', recipientId)
     console.log('💌 Message:', messageText)
     
-    // Usar la edge function para enviar el mensaje
+    // IMPORTANTE: El webhook del servidor NO puede pasar tokens del cliente
+    // Debe depender de variables de entorno del servidor
     const { data, error } = await supabase.functions.invoke('instagram-send-message', {
       body: {
         recipient_id: recipientId,
         message_text: messageText
+        // NO enviamos access_token - depende de variable de entorno
       }
     })
 
@@ -632,6 +645,11 @@ async function sendInstagramMessageViaEdgeFunction(supabase: any, recipientId: s
 
     if (data?.error) {
       console.error('❌ Error en respuesta de edge function:', data)
+      
+      if (data.needs_token || data.token_invalid) {
+        console.error('🔧 ACCIÓN REQUERIDA: Configura INSTAGRAM_ACCESS_TOKEN en variables de entorno de Supabase')
+      }
+      
       return false
     }
 
