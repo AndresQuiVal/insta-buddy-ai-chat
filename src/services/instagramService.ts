@@ -185,7 +185,7 @@ export const handleInstagramCallback = async (code: string) => {
     // Guardar datos del usuario (Facebook + Instagram si está disponible)
     const userData = {
       facebook: data.user,
-      instagram: data.instagram_account,
+      instagram: data.instagram_account ?? data.user,
     };
     localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
 
@@ -195,9 +195,7 @@ export const handleInstagramCallback = async (code: string) => {
     // Determinar qué nombre mostrar
     const displayName = userData.instagram?.username
       ? `@${userData.instagram.username}`
-      : userData.facebook?.username
-      ? `@${userData.facebook.username}`
-      : userData.instagram?.name ?? userData.facebook?.name ?? "Usuario";
+      : userData.instagram?.name ?? "Usuario";
 
     toast({
       title: "¡Conexión exitosa!",
