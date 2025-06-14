@@ -11,8 +11,8 @@ const InstagramCallback: React.FC = () => {
 
   useEffect(() => {
     const processCallback = async () => {
-      console.log('Iniciando procesamiento del callback de Instagram...');
-      console.log('URL params:', Object.fromEntries(searchParams.entries()));
+      console.log('🔄 Iniciando procesamiento del callback de Instagram...');
+      console.log('📋 URL params:', Object.fromEntries(searchParams.entries()));
       
       // Obtener el código de autorización de los parámetros de la URL
       const code = searchParams.get('code');
@@ -21,7 +21,7 @@ const InstagramCallback: React.FC = () => {
       const errorDescription = searchParams.get('error_description');
       
       if (error) {
-        console.error('Error en callback de Instagram:', {
+        console.error('❌ Error en callback de Instagram:', {
           error,
           errorReason,
           errorDescription
@@ -47,7 +47,7 @@ const InstagramCallback: React.FC = () => {
       }
       
       if (!code) {
-        console.error('No se recibió código de autorización');
+        console.error('❌ No se recibió código de autorización');
         setStatus('error');
         toast({
           title: "Error de autorización",
@@ -61,20 +61,27 @@ const InstagramCallback: React.FC = () => {
         return;
       }
       
-      console.log('Código recibido, procesando con API real...');
+      console.log('✅ Código recibido, procesando con API real...');
       
       // Procesar el código de autorización con la API real
       const result = await handleInstagramCallback(code);
       
       if (result.success) {
         setStatus('success');
-        console.log('Callback procesado exitosamente, redirigiendo...');
+        console.log('🎉 Callback procesado exitosamente, disparando evento y redirigiendo...');
         
-        // Redirección inmediata al dashboard
+        // Disparar evento inmediatamente
+        window.dispatchEvent(new CustomEvent('instagram-auth-success', { 
+          detail: { user: result.user } 
+        }));
+        
+        // Redirección rápida al dashboard
         setTimeout(() => {
+          console.log('🏠 Navegando al dashboard...');
           navigate('/', { replace: true });
-        }, 1000);
+        }, 500);
       } else {
+        console.error('❌ Error procesando callback:', result.error);
         setStatus('error');
         setTimeout(() => {
           navigate('/', { replace: true });

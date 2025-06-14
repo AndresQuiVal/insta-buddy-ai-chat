@@ -21,17 +21,18 @@ export const useInstagramUsers = () => {
   const [currentUser, setCurrentUser] = useState<InstagramUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    checkCurrentUser();
-  }, []);
-
   const checkCurrentUser = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Verificando usuario actual...');
       
-      // Obtener datos del usuario desde localStorage como fallback
+      // Obtener datos del usuario desde localStorage
       const savedUserData = localStorage.getItem('hower-instagram-user');
+      console.log('📱 Datos en localStorage:', savedUserData);
+      
       if (!savedUserData) {
+        console.log('❌ No hay datos en localStorage');
+        setCurrentUser(null);
         setLoading(false);
         return;
       }
@@ -39,34 +40,49 @@ export const useInstagramUsers = () => {
       const userData = JSON.parse(savedUserData);
       const instagramUserId = userData.instagram?.id || userData.facebook?.id;
       
+      console.log('🆔 Instagram User ID extraído:', instagramUserId);
+      
       if (!instagramUserId) {
+        console.log('❌ No se pudo extraer Instagram User ID');
+        setCurrentUser(null);
         setLoading(false);
         return;
       }
 
       // Buscar usuario en Supabase
+      console.log('🔎 Buscando en Supabase...');
       const { data, error } = await supabase
         .from('instagram_users')
         .select('*')
         .eq('instagram_user_id', instagramUserId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching user:', error);
+      if (error) {
+        console.error('❌ Error buscando usuario en Supabase:', error);
+        setCurrentUser(null);
         setLoading(false);
         return;
       }
 
       if (data) {
+        console.log('✅ Usuario encontrado en Supabase:', data);
         setCurrentUser(data);
+      } else {
+        console.log('⚠️ Usuario no encontrado en Supabase');
+        setCurrentUser(null);
       }
 
     } catch (error) {
-      console.error('Error checking current user:', error);
+      console.error('💥 Error en checkCurrentUser:', error);
+      setCurrentUser(null);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    checkCurrentUser();
+  }, []);
 
   const createOrUpdateUser = async (userData: {
     instagram_user_id: string;

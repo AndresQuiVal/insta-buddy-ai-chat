@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import InstagramDashboard, {
   DashboardDebugPanel,
@@ -42,28 +41,44 @@ const Index = () => {
   
   const { currentUser, loading: userLoading, checkCurrentUser } = useInstagramUsers();
 
-  // Verificar si hay usuario conectado
+  // Verificar si hay usuario conectado al inicializar
   useEffect(() => {
+    console.log('🚀 Inicializando Index, verificando usuario...');
     checkCurrentUser();
   }, []);
 
   // Escuchar evento de autenticación exitosa
   useEffect(() => {
     const handleAuthSuccess = (event: CustomEvent) => {
-      console.log("🎉 Usuario autenticado exitosamente:", event.detail);
-      // Recargar el usuario actual
-      checkCurrentUser();
+      console.log("🎉 Evento de autenticación recibido:", event.detail);
+      // Dar un pequeño delay para que se guarde en localStorage
+      setTimeout(() => {
+        console.log("🔄 Recargando usuario después de autenticación...");
+        checkCurrentUser();
+      }, 500);
     };
 
+    console.log('👂 Configurando listener para instagram-auth-success');
     window.addEventListener('instagram-auth-success', handleAuthSuccess as EventListener);
     
     return () => {
+      console.log('🚮 Limpiando listener para instagram-auth-success');
       window.removeEventListener('instagram-auth-success', handleAuthSuccess as EventListener);
     };
   }, [checkCurrentUser]);
 
+  // Debug: mostrar estado actual
+  useEffect(() => {
+    console.log('📊 Estado actual:', { 
+      userLoading, 
+      currentUser: currentUser ? 'Usuario encontrado' : 'No hay usuario',
+      username: currentUser?.username 
+    });
+  }, [userLoading, currentUser]);
+
   // Si está cargando, mostrar loading
   if (userLoading) {
+    console.log('⏳ Mostrando pantalla de carga...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -76,8 +91,11 @@ const Index = () => {
 
   // Si no hay usuario conectado, mostrar login de Instagram
   if (!currentUser) {
+    console.log('👤 No hay usuario, mostrando login...');
     return <InstagramLogin />;
   }
+
+  console.log('✅ Usuario autenticado, mostrando dashboard...');
 
   const handleSaveToken = () => {
     if (!accessToken.trim()) {
