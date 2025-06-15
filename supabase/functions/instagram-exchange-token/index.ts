@@ -72,7 +72,7 @@ serve(async (req) => {
     const tokenData = await tokenResponse.json()
     console.log('Token obtenido exitosamente')
 
-    // Obtener información del usuario
+    // Obtener información del usuario de Facebook/Instagram
     const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username&access_token=${tokenData.access_token}`)
     
     if (!userResponse.ok) {
@@ -80,22 +80,57 @@ serve(async (req) => {
     }
     
     const userData = await userResponse.json()
-    console.log('Datos de usuario obtenidos:', userData)
+    console.log('Datos de usuario básicos obtenidos:', userData)
 
-    // Guardar en Supabase usando el ID de Instagram como instagram_user_id
+    // Intentar obtener páginas de Facebook conectadas con Instagram Business
+    let instagramBusinessId = null
+    let pageId = null
+    
+    try {
+      console.log('🔍 Buscando cuentas de Instagram Business...')
+      const pagesResponse = await fetch(`https://graph.instagram.com/me/accounts?fields=id,name,instagram_business_account&access_token=${tokenData.access_token}`)
+      
+      if (pagesResponse.ok) {
+        const pagesData = await pagesResponse.json()
+        console.log('📄 Páginas encontradas:', pagesData)
+        
+        const pageWithInstagram = pagesData.data?.find(page => page.instagram_business_account)
+        
+        if (pageWithInstagram) {
+          instagramBusinessId = pageWithInstagram.instagram_business_account.id
+          pageId = pageWithInstagram.id
+          console.log('✅ Instagram Business ID encontrado:', instagramBusinessId)
+          console.log('✅ Page ID encontrado:', pageId)
+        } else {
+          console.log('⚠️ No se encontró Instagram Business Account conectado')
+        }
+      } else {
+        console.log('⚠️ No se pudieron obtener las páginas')
+      }
+    } catch (error) {
+      console.log('⚠️ Error obteniendo Instagram Business:', error)
+    }
+
+    // Usar Instagram Business ID si está disponible, de lo contrario usar el ID personal
+    const finalInstagramUserId = instagramBusinessId || userData.id
+    
+    console.log('🆔 ID final para guardar en Supabase:', finalInstagramUserId)
+    console.log('📝 Tipo de cuenta:', instagramBusinessId ? 'Instagram Business' : 'Instagram Personal')
+
+    // Guardar en Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
     console.log('💾 Guardando usuario en instagram_users...')
-    console.log('📝 Usando id como instagram_user_id:', userData.id)
     
     const { data: savedUser, error: saveError } = await supabase
       .from('instagram_users')
       .upsert({
-        instagram_user_id: userData.id, // Usar el id que viene de Instagram API
-        username: userData.username || `Usuario_${userData.id}`,
+        instagram_user_id: finalInstagramUserId, // Usar Instagram Business ID si está disponible
+        username: userData.username || `Usuario_${finalInstagramUserId}`,
         access_token: tokenData.access_token,
+        page_id: pageId, // Guardar page_id si está disponible
         is_active: true,
         updated_at: new Date().toISOString()
       }, {
@@ -112,9 +147,12 @@ serve(async (req) => {
       access_token: tokenData.access_token,
       user: userData,
       instagram_account: {
-        id: userData.id,
-        user_id: userData.id, // Incluir user_id igual al id para compatibilidad
-        username: userData.username
+        id: finalInstagramUserId, // Usar el ID correcto
+        user_id: finalInstagramUserId, // Para compatibilidad
+        username: userData.username,
+        instagram_business_id: instagramBusinessId,
+        page_id: pageId,
+        account_type: instagramBusinessId ? 'business' : 'personal'
       }
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
