@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import InstagramDashboard, {
   DashboardDebugPanel,
@@ -96,26 +97,6 @@ const Index = () => {
   }
 
   console.log('✅ Usuario autenticado, mostrando dashboard...');
-
-  const handleSaveToken = () => {
-    if (!accessToken.trim()) {
-      toast({
-        title: "Error",
-        description: "Por favor ingresa un token válido",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    localStorage.setItem("instagram_access_token", accessToken);
-    setIsTokenSaved(true);
-    setAccessToken("");
-
-    toast({
-      title: "¡Token guardado!",
-      description: "Tu token de Instagram se ha configurado correctamente",
-    });
-  };
 
   const handleLogout = () => {
     localStorage.removeItem("instagram_access_token");
