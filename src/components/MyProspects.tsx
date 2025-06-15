@@ -17,9 +17,6 @@ const MyProspects = () => {
           <TabsTrigger value="messages">Mensajes</TabsTrigger>
           <TabsTrigger value="autoresponder">Autoresponder</TabsTrigger>
         </TabsList>
-        <TabsContent value="profiles" className="mt-6">
-          <InstagramProfileManager />
-        </TabsContent>
         <TabsContent value="prospects" className="mt-6">
           <ProspectList />
         </TabsContent>
