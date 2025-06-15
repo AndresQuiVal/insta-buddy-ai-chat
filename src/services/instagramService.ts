@@ -177,27 +177,21 @@ export const handleInstagramCallback = async (code: string) => {
     }
 
     const token = data.access_token;
-    const instagramBusinessAccountId = data.instagram_business_account_id; // ✅ NUEVO: ID correcto para webhooks
 
     console.log("Token de acceso obtenido:", token);
-    console.log("Instagram Business Account ID:", instagramBusinessAccountId);
 
     // Guardar token y datos del usuario
     localStorage.setItem("hower-instagram-token", token);
 
-    // ✅ CORRECCIÓN: Guardar datos con el ID correcto para webhooks
+    // Guardar datos del usuario (Facebook + Instagram si está disponible)
     const userData = {
       facebook: data.user,
-      instagram: {
-        ...data.instagram_account,
-        business_account_id: instagramBusinessAccountId // ID que se usa en webhooks
-      }
+      instagram: data.instagram_account ?? data.user,
     };
     localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
 
     console.log("Token y datos de usuario guardados exitosamente");
     console.log("Usuario conectado:", userData);
-    console.log("Instagram Business Account ID para webhooks:", instagramBusinessAccountId);
 
     // Determinar qué nombre mostrar
     const displayName = userData.instagram?.username
@@ -218,7 +212,6 @@ export const handleInstagramCallback = async (code: string) => {
       success: true,
       redirectPath,
       user: userData,
-      instagramBusinessAccountId, // ✅ RETORNAR EL ID CORRECTO
     };
   } catch (error) {
     console.error("Error procesando callback de Instagram:", error);
@@ -241,9 +234,9 @@ export const getInstagramUserInfo = async () => {
   if (!token) return null;
 
   try {
-    // Usar Instagram Graph API
+    // Primero obtenemos info básica del usuario de Facebook
     const userResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token=${token}`
+      `https://graph.instagram.com/v23.0/me?fields=id,name&access_token=${token}`
     );
 
     if (!userResponse.ok) {
@@ -251,12 +244,45 @@ export const getInstagramUserInfo = async () => {
     }
 
     const userData = await userResponse.json();
-    console.log("Información del usuario obtenida:", userData);
+
+    // Intentamos obtener cuentas de Instagram
+    let instagramData = null;
+    try {
+      const accountsResponse = await fetch(
+        `https://graph.instagram.com/v23.0/me/accounts?fields=instagram_business_account&access_token=${token}`
+      );
+
+      if (accountsResponse.ok) {
+        const accountsData = await accountsResponse.json();
+        const pageWithInstagram = accountsData.data?.find(
+          (page) => page.instagram_business_account
+        );
+
+        if (pageWithInstagram) {
+          const instagramAccountId =
+            pageWithInstagram.instagram_business_account.id;
+          const instagramInfoResponse = await fetch(
+            `https://graph.instagram.com/v23.0/${instagramAccountId}?fields=id,username,account_type,media_count&access_token=${token}`
+          );
+
+          if (instagramInfoResponse.ok) {
+            instagramData = await instagramInfoResponse.json();
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("No se pudo obtener información de Instagram:", error);
+    }
+
+    const combinedData = {
+      facebook: userData,
+      instagram: instagramData,
+    };
 
     // Actualizar datos guardados
-    localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
+    localStorage.setItem("hower-instagram-user", JSON.stringify(combinedData));
 
-    return userData;
+    return combinedData;
   } catch (error) {
     console.error("Error obteniendo información del usuario:", error);
 
@@ -281,13 +307,16 @@ export const getInstagramPosts = async () => {
     // Primero obtenemos el ID del usuario
     const userInfo = await getInstagramUserInfo();
 
-    if (!userInfo?.id) {
-      console.warn("No hay ID de usuario disponible");
+    if (!userInfo?.instagram?.id) {
+      console.warn("No hay cuenta de Instagram conectada");
       return [];
     }
 
+    const instagramAccountId = userInfo.instagram.id;
+
+    // Obtener media de Instagram usando Graph API
     const response = await fetch(
-      `https://graph.instagram.com/${userInfo.id}/media?fields=id,caption,media_type,media_url,timestamp&access_token=${token}`
+      `https://graph.instagram.com/v23.0/${instagramAccountId}/media?fields=id,caption,media_type,media_url,timestamp&access_token=${token}`
     );
 
     if (!response.ok) {
@@ -422,9 +451,9 @@ export const sendInstagramMessage = async (
  */
 async function getConnectedPageInfo(accessToken: string) {
   try {
-    // Obtener información del usuario
+    // Obtener usuario autenticado (opcional, solo para debug)
     const userResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id,username&access_token=${accessToken}`
+      `https://graph.instagram.com/v23.0/me?access_token=${accessToken}`
     );
     const userData = await userResponse.json();
 
@@ -432,9 +461,33 @@ async function getConnectedPageInfo(accessToken: string) {
       throw new Error(`Error obteniendo usuario: ${userData.error?.message}`);
     }
 
+    // Obtener las páginas que administra el usuario
+    const pagesResponse = await fetch(
+      `https://graph.instagram.com/v23.0/me/accounts?fields=id,name,instagram_business_account,access_token&access_token=${accessToken}`
+    );
+    const pagesData = await pagesResponse.json();
+
+    if (!pagesResponse.ok) {
+      throw new Error(`Error obteniendo páginas: ${pagesData.error?.message}`);
+    }
+
+    // Buscar página con Instagram Business
+    const pageWithInstagram = pagesData.data?.find(
+      (page: any) => page.instagram_business_account
+    );
+
+    if (!pageWithInstagram) {
+      throw new Error(
+        "No se encontró página con cuenta de Instagram Business conectada"
+      );
+    }
+
     return {
       userId: userData.id,
-      username: userData.username,
+      pageId: pageWithInstagram.id,
+      pageName: pageWithInstagram.name,
+      instagramAccountId: pageWithInstagram.instagram_business_account?.id,
+      pageAccessToken: pageWithInstagram.access_token || accessToken,
     };
   } catch (error) {
     console.error("Error obteniendo información de página:", error);
