@@ -96,28 +96,58 @@ serve(async (req) => {
     const userData = await userResponse.json()
     console.log('👤 Datos de usuario básicos obtenidos:', userData)
 
-    // ✅ USAR INSTAGRAM ID DIRECTAMENTE COMO PREFIERES
-    const finalInstagramUserId = userData.id
+    // ✅ OBTENER EL ID DE FACEBOOK PAGES PARA ENCONTRAR INSTAGRAM BUSINESS
+    console.log('🔍 ===== BUSCANDO INSTAGRAM BUSINESS ACCOUNT =====')
+    
+    // Obtener páginas de Facebook conectadas
+    const pagesResponse = await fetch(`https://graph.facebook.com/me/accounts?fields=id,name,instagram_business_account&access_token=${finalAccessToken}`)
+    
+    let businessAccountId = userData.id; // Fallback al ID personal
+    let pageId = null;
+    
+    if (pagesResponse.ok) {
+      const pagesData = await pagesResponse.json()
+      console.log('📄 Páginas de Facebook encontradas:', pagesData)
+      
+      // Buscar página con Instagram Business Account
+      const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account)
+      
+      if (pageWithInstagram) {
+        businessAccountId = pageWithInstagram.instagram_business_account.id
+        pageId = pageWithInstagram.id
+        console.log('🏢 ===== INSTAGRAM BUSINESS ACCOUNT ENCONTRADO =====')
+        console.log('🆔 Business Account ID:', businessAccountId)
+        console.log('📄 Page ID:', pageId)
+        console.log('📋 Page Name:', pageWithInstagram.name)
+      } else {
+        console.log('⚠️ No se encontró Instagram Business Account, usando ID personal')
+      }
+    } else {
+      console.log('⚠️ No se pudieron obtener páginas de Facebook, usando ID personal')
+    }
+
+    const finalInstagramUserId = businessAccountId
     
     console.log('🆔 ===== ID FINAL PARA WEBHOOK =====')
     console.log('👤 Instagram ID que usaremos:', finalInstagramUserId)
     console.log('💾 Este ID se guardará en Supabase para el webhook')
+    console.log('📄 Page ID asociado:', pageId)
 
-    // ✅ GUARDAR EN SUPABASE CON EL INSTAGRAM ID
+    // ✅ GUARDAR EN SUPABASE CON EL BUSINESS ACCOUNT ID
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
-    console.log('💾 ===== GUARDANDO CON INSTAGRAM ID =====')
+    console.log('💾 ===== GUARDANDO CON BUSINESS ACCOUNT ID =====')
     console.log('🔑 Guardando con instagram_user_id:', finalInstagramUserId)
     
     const { data: savedUser, error: saveError } = await supabase
       .from('instagram_users')
       .upsert({
-        instagram_user_id: finalInstagramUserId, // ✅ INSTAGRAM ID DIRECTO
+        instagram_user_id: finalInstagramUserId, // ✅ BUSINESS ACCOUNT ID
         username: userData.username || `Usuario_${finalInstagramUserId}`,
         access_token: finalAccessToken,
-        page_id: null,
+        page_id: pageId, // ✅ GUARDAR PAGE ID TAMBIÉN
         is_active: true,
         updated_at: new Date().toISOString()
       }, {
@@ -147,11 +177,12 @@ serve(async (req) => {
       console.log('🆔 Usuario en BD con instagram_user_id:', verifyUser.instagram_user_id)
       console.log('👤 Username:', verifyUser.username)
       console.log('🔗 ID interno BD:', verifyUser.id)
+      console.log('📄 Page ID:', verifyUser.page_id)
     }
 
     console.log('🎯 ===== IMPORTANTE PARA EL WEBHOOK =====')
     console.log('🔍 El webhook debe recibir recipient_id:', finalInstagramUserId)
-    console.log('💡 Si el webhook recibe un ID diferente, el problema está en la configuración de Instagram')
+    console.log('💡 Ahora el ID guardado coincidirá con el ID del webhook')
 
     return new Response(JSON.stringify({
       access_token: finalAccessToken,
@@ -160,6 +191,10 @@ serve(async (req) => {
         id: finalInstagramUserId,
         user_id: finalInstagramUserId,
         username: userData.username
+      },
+      business_account: {
+        id: businessAccountId,
+        page_id: pageId
       }
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
