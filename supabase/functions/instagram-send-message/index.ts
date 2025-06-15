@@ -72,22 +72,17 @@ serve(async (req) => {
     console.log('✅ Token encontrado para usuario:', userData.username)
     console.log('🔑 Token length:', accessToken.length)
 
-    // Obtener información de las páginas del usuario
-    console.log('📋 Obteniendo páginas del usuario...')
-    const pagesResponse = await fetch(
-      `https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`
-    )
-    const pagesData = await pagesResponse.json()
+    // Obtener el ID de Instagram del usuario
+    const instagramResponse = await fetch(`https://graph.instagram.com/me?fields=id&access_token=${accessToken}`)
+    const instagramData = await instagramResponse.json()
 
-    console.log('📄 Respuesta de páginas:', JSON.stringify(pagesData, null, 2))
-
-    if (pagesData.error) {
-      console.error('❌ Error obteniendo páginas:', pagesData.error)
+    if (instagramData.error) {
+      console.error('❌ Error obteniendo ID de Instagram:', instagramData.error)
       return new Response(
         JSON.stringify({
-          error: 'facebook_api_error',
-          message: pagesData.error.message,
-          debug_info: { pagesData }
+          error: 'instagram_api_error',
+          message: 'Error obteniendo ID de Instagram',
+          debug_info: { instagramData }
         }),
         {
           status: 400,
@@ -96,32 +91,8 @@ serve(async (req) => {
       )
     }
 
-    // Buscar página con Instagram Business conectado
-    const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account)
-
-    if (!pageWithInstagram) {
-      console.error('❌ No se encontró página con Instagram Business')
-      return new Response(
-        JSON.stringify({
-          error: 'no_instagram_business_account',
-          message: 'No se encontró cuenta de Instagram Business conectada',
-          debug_info: { pagesData }
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    const pageId = pageWithInstagram.id
-    const instagramAccountId = pageWithInstagram.instagram_business_account.id
-
-    console.log('✅ Página encontrada:', {
-      pageId,
-      instagramAccountId,
-      pageName: pageWithInstagram.name
-    })
+    const instagramId = instagramData.id
+    console.log('✅ ID de Instagram obtenido:', instagramId)
 
     // Construir el cuerpo del mensaje
     const messageBody: any = {
@@ -135,19 +106,17 @@ serve(async (req) => {
     }
 
     console.log('📤 Enviando mensaje...')
-    console.log('🎯 URL:', `https://graph.facebook.com/v19.0/${pageId}/messages`)
+    console.log('🎯 URL:', `https://graph.instagram.com/v23.0/${instagramId}/messages`)
     console.log('💬 Cuerpo del mensaje:', JSON.stringify(messageBody, null, 2))
 
-    // Enviar mensaje usando Page ID y access token
-    const response = await fetch(`https://graph.facebook.com/v19.0/${pageId}/messages`, {
+    // Enviar mensaje usando la API de Instagram
+    const response = await fetch(`https://graph.instagram.com/v23.0/${instagramId}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
       },
-      body: JSON.stringify({
-        ...messageBody,
-        access_token: accessToken
-      })
+      body: JSON.stringify(messageBody)
     })
 
     const responseData = await response.json()
@@ -162,8 +131,7 @@ serve(async (req) => {
           debug_info: {
             instagram_error: responseData.error,
             status: response.status,
-            pageId,
-            instagramAccountId
+            instagramId
           }
         }),
         {
@@ -182,8 +150,7 @@ serve(async (req) => {
         message_id: responseData.message_id,
         recipient_id: responseData.recipient_id || recipient_id,
         debug_info: {
-          pageId,
-          instagramAccountId,
+          instagramId,
           username: userData.username
         }
       }),
