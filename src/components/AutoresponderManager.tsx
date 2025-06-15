@@ -533,7 +533,7 @@ const AutoresponderManager = () => {
       />
 
       {/* NUEVO: Verificar comentarios reales procesados */}
-      <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+      <div className="border border-green-200 rounded-lg p-4 bg-green-50" style={{display: 'none'}}>
         <h4 className="font-medium text-green-800 mb-3">✅ Verificar Comentarios Reales</h4>
         <p className="text-sm text-green-700 mb-3">
           Verifica si tu comentario real "pedrin" fue procesado y se envió el DM automáticamente.
@@ -548,7 +548,7 @@ const AutoresponderManager = () => {
       </div>
 
       {/* Test de comentario específico - BOTÓN PRINCIPAL EN AUTORESPONDER */}
-      <div className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+      <div className="border border-orange-200 rounded-lg p-4 bg-orange-50" style={{display: 'none'}}>
         <h4 className="font-medium text-orange-800 mb-3">🧪 Prueba de Comentario para Autoresponder</h4>
         <p className="text-sm text-orange-700 mb-3">
           Esta prueba usa automáticamente el POST ID y palabras clave de tu primer autoresponder de comentarios configurado.
