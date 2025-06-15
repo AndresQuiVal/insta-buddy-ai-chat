@@ -182,7 +182,47 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       return
     }
 
-    // PASO 2: Guardar el mensaje recibido en BD
+    // PASO 1.5: ENCONTRAR EL USUARIO DE INSTAGRAM CORRECTO
+    console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====')
+    console.log('📋 Recipient ID (Instagram Business Account):', event.recipient.id)
+    
+    // Buscar usuario por el instagram_user_id que corresponde al business account
+    const { data: instagramUser, error: userError } = await supabase
+      .from('instagram_users')
+      .select('*')
+      .or(`instagram_user_id.eq.${event.recipient.id},page_id.eq.${event.recipient.id}`)
+      .single()
+
+    if (userError || !instagramUser) {
+      console.error('❌ No se encontró usuario de Instagram:', userError)
+      console.log('💡 Intentando buscar por diferentes campos...')
+      
+      // Buscar en todos los usuarios para debug
+      const { data: allUsers } = await supabase
+        .from('instagram_users')
+        .select('*')
+      
+      console.log('📊 Todos los usuarios en BD:', allUsers)
+      console.log('🔍 Buscando match para recipient:', event.recipient.id)
+      
+      return
+    }
+
+    console.log('✅ Usuario encontrado:', instagramUser)
+
+    // PASO 2: DETECTAR TIPO DE MENSAJE
+    const messageText = event.message.text.toLowerCase()
+    const isInvitation = detectInvitation(messageText)
+    const isPresentation = detectPresentation(messageText)
+    const isInscription = detectInscription(messageText)
+    
+    console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
+    console.log('📝 Texto:', event.message.text)
+    console.log('🔗 Es invitación:', isInvitation)
+    console.log('📊 Es presentación:', isPresentation)
+    console.log('📝 Es inscripción:', isInscription)
+
+    // PASO 3: Guardar el mensaje recibido en BD
     const messageData = {
       instagram_message_id: event.message.mid,
       sender_id: event.sender.id,
@@ -191,10 +231,19 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       message_type: 'received',
       timestamp: new Date(event.timestamp).toISOString(),
       is_read: false,
+      is_invitation: isInvitation,
+      is_presentation: isPresentation,
+      is_inscription: isInscription,
+      instagram_user_id: instagramUser.id, // ✅ RELACIÓN CORRECTA
       raw_data: {
         webhook_data: event,
         received_at: new Date().toISOString(),
-        source: 'instagram_webhook'
+        source: 'instagram_webhook',
+        detected_types: {
+          invitation: isInvitation,
+          presentation: isPresentation,
+          inscription: isInscription
+        }
       }
     }
 
@@ -215,10 +264,11 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.error('❌ Error guardando mensaje:', insertError)
       // Continuar con autoresponder aunque falle el guardado
     } else {
-      console.log('✅ Mensaje guardado correctamente')
+      console.log('✅ Mensaje guardado correctamente con relación al usuario')
+      console.log('📊 Tipos detectados guardados:', { isInvitation, isPresentation, isInscription })
     }
 
-    // PASO 3: OBTENER AUTORESPONDERS DESDE NUESTRO ENDPOINT
+    // PASO 4: OBTENER AUTORESPONDERS DESDE NUESTRO ENDPOINT
     console.log('🔍 === OBTENIENDO AUTORESPONDERS ===')
     
     let autoresponders = [];
@@ -263,12 +313,8 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       return
     }
 
-    // NUEVO: Filtrar autoresponders que coincidan con palabras clave
-    const messageText = event.message?.text?.toLowerCase() || '';
-    console.log('🔍 FILTRANDO POR PALABRAS CLAVE')
-    console.log('📝 Mensaje recibido (lowercase):', messageText)
-    
-    let matchingAutoresponders = autoresponders.filter(ar => {
+    // FILTRAR autoresponders que coincidan con palabras clave
+    const matchingAutoresponders = autoresponders.filter(ar => {
       // Si no usa palabras clave, siempre coincide
       if (!ar.use_keywords || !ar.keywords || ar.keywords.length === 0) {
         console.log(`✅ Autoresponder "${ar.name}" no usa palabras clave - COINCIDE`)
@@ -309,7 +355,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     console.log('📋 Usa palabras clave:', selectedAutoresponder.use_keywords)
     console.log('📋 Palabras clave:', selectedAutoresponder.keywords)
 
-    // PASO 4: VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
+    // VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
     let shouldSendAutoresponder = true
 
     if (selectedAutoresponder.send_only_first_message) {
@@ -335,14 +381,9 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       console.log('🔄 CONFIGURADO PARA RESPONDER SIEMPRE - ENVIANDO')
     }
 
-    // PASO 5: ENVIAR AUTORESPONDER SI CORRESPONDE
+    // ENVIAR AUTORESPONDER SI CORRESPONDE
     if (shouldSendAutoresponder) {
       console.log('🚀 ENVIANDO AUTORESPONDER...')
-      
-      // CAMBIO CRÍTICO: NO podemos enviar token del localStorage desde el servidor
-      // El webhook del servidor debe funcionar con tokens de variables de entorno
-      console.log('⚠️ WEBHOOK DEL SERVIDOR: No se puede acceder al localStorage del cliente')
-      console.log('💡 Para autoresponders automáticos, configura INSTAGRAM_ACCESS_TOKEN en Supabase')
       
       const success = await sendInstagramMessageViaEdgeFunction(supabase, event.sender.id, selectedAutoresponder.message_text)
       
@@ -359,6 +400,93 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   } catch (error) {
     console.error('❌ Error en processMessagingEvent:', error)
   }
+}
+
+// ✅ FUNCIONES PARA DETECTAR TIPOS DE MENSAJE
+function detectInvitation(messageText: string): boolean {
+  const invitationPatterns = [
+    // Zoom links
+    /zoom\.us\/j\/\d+/i,
+    /zoom\.us\/meeting\/\d+/i,
+    /us\d+web\.zoom\.us/i,
+    
+    // Google Meet links
+    /meet\.google\.com\/[a-z-]+/i,
+    /g\.co\/meet\/[a-z-]+/i,
+    
+    // Microsoft Teams
+    /teams\.microsoft\.com/i,
+    /teams\.live\.com/i,
+    
+    // Generic video call indicators
+    /videollamada/i,
+    /video.*call/i,
+    /reunión.*virtual/i,
+    /meeting.*link/i,
+    /link.*reunión/i,
+    /enlace.*reunión/i,
+    
+    // Calendar links
+    /calendly\.com/i,
+    /calendar\.google\.com/i,
+    /outlook\.live\.com.*calendar/i,
+    
+    // Skype
+    /skype\.com/i,
+    /join\.skype\.com/i,
+    
+    // Other platforms
+    /whereby\.com/i,
+    /webex\.com/i,
+    /gotomeeting\.com/i,
+    /bluejeans\.com/i
+  ];
+  
+  return invitationPatterns.some(pattern => pattern.test(messageText));
+}
+
+function detectPresentation(messageText: string): boolean {
+  const presentationPatterns = [
+    /presentación/i,
+    /presentacion/i,
+    /demo/i,
+    /demostración/i,
+    /demostracion/i,
+    /mostrar.*producto/i,
+    /enseñar.*servicio/i,
+    /explicar.*como.*funciona/i,
+    /ver.*funcionamiento/i,
+    /tutorial/i,
+    /capacitación/i,
+    /entrenamiento/i,
+    /formación/i,
+    /webinar/i,
+    /seminario/i
+  ];
+  
+  return presentationPatterns.some(pattern => pattern.test(messageText));
+}
+
+function detectInscription(messageText: string): boolean {
+  const inscriptionPatterns = [
+    /inscripción/i,
+    /inscripcion/i,
+    /registro/i,
+    /registrar/i,
+    /apuntar/i,
+    /anotar/i,
+    /sign.*up/i,
+    /unir/i,
+    /participar/i,
+    /quiero.*participar/i,
+    /me.*apunto/i,
+    /me.*inscribo/i,
+    /formulario/i,
+    /llenar.*datos/i,
+    /completar.*información/i
+  ];
+  
+  return inscriptionPatterns.some(pattern => pattern.test(messageText));
 }
 
 async function processCommentEvent(supabase: any, change: ChangeEvent) {
