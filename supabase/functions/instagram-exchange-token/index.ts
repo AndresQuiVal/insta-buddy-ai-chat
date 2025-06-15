@@ -54,10 +54,9 @@ serve(async (req) => {
       );
     }
 
-    console.log("=== CONFIGURACIÓN DE INSTAGRAM GRAPH API ===");
+    console.log("=== INICIANDO PROCESO DE AUTENTICACIÓN ===");
     console.log("Instagram App ID:", INSTAGRAM_APP_ID);
     console.log("Redirect URI recibida:", redirect_uri);
-    console.log("Código recibido:", code.substring(0, 20) + "...");
 
     // Intercambiar código por token de acceso
     const tokenUrl = "https://api.instagram.com/oauth/access_token";
@@ -68,31 +67,20 @@ serve(async (req) => {
     formData.append("redirect_uri", redirect_uri);
     formData.append("code", code);
 
-    console.log("Enviando solicitud a Instagram API...");
+    console.log("🔄 Intercambiando código por token...");
     const tokenResponse = await fetch(tokenUrl, {
       method: "POST",
       body: formData,
     });
 
     const tokenData = await tokenResponse.json();
-    console.log("Respuesta de Instagram API:", {
-      status: tokenResponse.status,
-      ok: tokenResponse.ok,
-      hasError: !!tokenData.error,
-    });
 
     if (!tokenResponse.ok) {
-      console.error("Error detallado de Instagram API:", tokenData);
+      console.error("❌ Error de Instagram API:", tokenData);
       return new Response(
         JSON.stringify({
           error: tokenData.error?.type || "token_exchange_failed",
           error_description: tokenData.error?.message || "Error obteniendo token de Instagram",
-          debug_info: {
-            client_id_used: INSTAGRAM_APP_ID,
-            redirect_uri_used: redirect_uri,
-            response_status: tokenResponse.status,
-            instagram_error: tokenData.error,
-          },
         }),
         {
           status: 400,
@@ -104,112 +92,79 @@ serve(async (req) => {
       );
     }
 
-    console.log("Token obtenido exitosamente");
+    console.log("✅ Token obtenido exitosamente");
 
-    // 🔍 NUEVA LÓGICA MEJORADA PARA OBTENER INSTAGRAM BUSINESS ACCOUNT ID
+    // Obtener información del usuario usando el token corto
     let userData = null;
     let instagramBusinessAccountId = null;
     let pageId = null;
-    let debugInfo = {
-      facebook_user_id: null,
-      instagram_business_account_id: null,
-      page_id_found: null,
-      search_attempts: [],
-      final_id_used: null,
-    };
 
-    // Paso 1: Obtener información del usuario de Facebook
-    const userResponse = await fetch(
-      `https://graph.facebook.com/v23.0/me?access_token=${tokenData.access_token}`
-    );
+    try {
+      console.log("📋 Obteniendo información del usuario...");
+      const userResponse = await fetch(
+        `https://graph.facebook.com/v23.0/me?access_token=${tokenData.access_token}`
+      );
 
-    if (userResponse.ok) {
-      userData = await userResponse.json();
-      debugInfo.facebook_user_id = userData.id;
-      console.log("✅ Usuario de Facebook obtenido:", userData);
+      if (userResponse.ok) {
+        userData = await userResponse.json();
+        console.log("✅ Usuario obtenido:", userData.name);
 
-      // Paso 2: Buscar páginas del usuario para encontrar Instagram Business
-      try {
-        console.log("=== BUSCANDO INSTAGRAM BUSINESS ACCOUNT ===");
-        
+        // Buscar páginas con Instagram Business Account
+        console.log("🔍 Buscando Instagram Business Account...");
         const accountsResponse = await fetch(
-          `https://graph.facebook.com/v23.0/${userData.id}/accounts?fields=id,name,instagram_business_account,access_token,category&access_token=${tokenData.access_token}`
+          `https://graph.facebook.com/v23.0/${userData.id}/accounts?fields=id,name,instagram_business_account&access_token=${tokenData.access_token}`
         );
 
         if (accountsResponse.ok) {
           const accountsData = await accountsResponse.json();
-          console.log("Páginas encontradas:", accountsData.data?.length || 0);
+          console.log(`📄 Páginas encontradas: ${accountsData.data?.length || 0}`);
 
           // Buscar la primera página con Instagram Business Account
-          for (const page of accountsData.data || []) {
-            const attempt = {
-              page_id: page.id,
-              page_name: page.name,
-              has_instagram: !!page.instagram_business_account,
-              instagram_id: page.instagram_business_account?.id || null,
-            };
+          const pageWithInstagram = accountsData.data?.find(
+            (page: any) => page.instagram_business_account
+          );
 
-            debugInfo.search_attempts.push(attempt);
-            console.log(`📋 Página: ${page.name} - Instagram Business: ${attempt.has_instagram ? '✅' : '❌'}`);
-
-            if (page.instagram_business_account) {
-              // 🎯 ENCONTRAMOS EL INSTAGRAM BUSINESS ACCOUNT ID
-              instagramBusinessAccountId = page.instagram_business_account.id;
-              pageId = page.id;
-              
-              console.log("🎉 ¡INSTAGRAM BUSINESS ACCOUNT ENCONTRADO!");
-              console.log("Instagram Business Account ID:", instagramBusinessAccountId);
-              console.log("Page ID:", pageId);
-              
-              debugInfo.instagram_business_account_id = instagramBusinessAccountId;
-              debugInfo.page_id_found = pageId;
-              
-              // Guardar PAGE_ID en secretos de Supabase
-              try {
-                console.log("💾 Guardando PAGE_ID en secretos...");
-                // Aquí puedes agregar la lógica para guardar en secretos si es necesario
-                console.log("✅ PAGE_ID procesado correctamente");
-              } catch (error) {
-                console.warn("⚠️ No se pudo guardar PAGE_ID en secretos:", error);
-              }
-              
-              break; // Salir del loop una vez encontrado
-            }
+          if (pageWithInstagram) {
+            instagramBusinessAccountId = pageWithInstagram.instagram_business_account.id;
+            pageId = pageWithInstagram.id;
+            
+            console.log("🎯 Instagram Business Account encontrado:");
+            console.log("- Instagram Business ID:", instagramBusinessAccountId);
+            console.log("- Page ID:", pageId);
+          } else {
+            console.log("⚠️ No se encontró Instagram Business Account en las páginas");
           }
         } else {
-          console.error("Error obteniendo páginas:", await accountsResponse.text());
+          console.error("❌ Error obteniendo páginas:", await accountsResponse.text());
         }
-      } catch (error) {
-        console.error("Error en búsqueda de Instagram Business:", error);
-        debugInfo.search_attempts.push({
-          error: error.message,
-        });
+      } else {
+        console.error("❌ Error obteniendo usuario:", await userResponse.text());
       }
-    } else {
-      console.error("Error obteniendo usuario de Facebook:", await userResponse.text());
+    } catch (error) {
+      console.error("💥 Error en obtención de datos:", error);
     }
 
-    // 🚨 DECISIÓN CRÍTICA: ¿QUÉ ID USAR?
+    // Determinar el ID final a usar
     let finalInstagramUserId;
+    let username;
 
     if (instagramBusinessAccountId) {
-      // ✅ Caso ideal: Usar Instagram Business Account ID
+      // Usar Instagram Business Account ID si está disponible
       finalInstagramUserId = instagramBusinessAccountId;
-      debugInfo.final_id_used = "instagram_business_account_id";
+      username = userData?.name || "Usuario";
       console.log("✅ Usando Instagram Business Account ID:", finalInstagramUserId);
     } else {
-      // ⚠️ Fallback: Usar Facebook User ID si no hay Instagram Business
+      // Fallback a Facebook User ID
       finalInstagramUserId = userData?.id;
-      debugInfo.final_id_used = "facebook_user_id_fallback";
-      console.warn("⚠️ No se encontró Instagram Business, usando Facebook User ID:", finalInstagramUserId);
+      username = userData?.name || "Usuario";
+      console.log("⚠️ Usando Facebook User ID como fallback:", finalInstagramUserId);
     }
 
     if (!finalInstagramUserId) {
       return new Response(
         JSON.stringify({
           error: "no_instagram_account",
-          error_description: "No se pudo obtener información de la cuenta de Instagram",
-          debug_info: debugInfo,
+          error_description: "No se pudo obtener información de la cuenta",
         }),
         {
           status: 400,
@@ -221,35 +176,22 @@ serve(async (req) => {
       );
     }
 
-    console.log("🔑 ID FINAL para guardar en base de datos:", finalInstagramUserId);
-
-    // Preparar datos del usuario
-    const userDataToSave = {
-      facebook: userData,
-      instagram: {
-        id: finalInstagramUserId,
-        username: userData?.name || "Usuario",
-      },
-    };
-
-    // Preparar respuesta
+    // Preparar datos de respuesta
     const responseData = {
       access_token: tokenData.access_token,
       user: userData,
       instagram_account: {
         id: finalInstagramUserId,
-        username: userData?.name || "Usuario",
+        username: username,
       },
       page_id: pageId,
       debug_info: {
-        app_mode: "production",
-        client_id_used: INSTAGRAM_APP_ID,
-        api_version: "Graph API v23.0",
-        id_selection_debug: debugInfo,
+        has_instagram_business: !!instagramBusinessAccountId,
+        used_fallback: !instagramBusinessAccountId,
       },
     };
 
-    console.log("📤 Respuesta final enviada con Instagram User ID:", finalInstagramUserId);
+    console.log("📤 Respuesta enviada con ID:", finalInstagramUserId);
 
     return new Response(JSON.stringify(responseData), {
       headers: {
@@ -259,17 +201,14 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Error en edge function:", error);
+    console.error("💥 Error general:", error);
     return new Response(
       JSON.stringify({
         error: "internal_server_error",
         error_description: "Error interno del servidor",
-        debug_info: {
-          error_message: error.message,
-        },
       }),
       {
-      status: 500,
+        status: 500,
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
