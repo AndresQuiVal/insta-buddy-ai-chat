@@ -53,16 +53,25 @@ export const useNewProspects = () => {
 
       console.log('🔍 Obteniendo prospectos para Instagram User ID:', instagramUserId);
 
-      // Configurar el contexto para RLS
-      await supabase.rpc('set_config', {
-        parameter: 'app.current_instagram_user_id',
-        value: instagramUserId
-      });
+      // Buscar el usuario en la tabla instagram_users para obtener el UUID
+      const { data: instagramUser, error: userError } = await supabase
+        .from('instagram_users')
+        .select('id')
+        .eq('instagram_user_id', instagramUserId)
+        .single();
 
-      // Obtener prospectos ordenados por último mensaje
+      if (userError || !instagramUser) {
+        console.error('❌ Usuario no encontrado en instagram_users:', userError);
+        throw new Error('Usuario no encontrado en la base de datos');
+      }
+
+      console.log('✅ Usuario encontrado con UUID:', instagramUser.id);
+
+      // Obtener prospectos usando el UUID del usuario
       const { data: prospectsData, error: prospectsError } = await supabase
         .from('prospects')
         .select('*')
+        .eq('instagram_user_id', instagramUser.id)
         .order('last_message_date', { ascending: false });
 
       if (prospectsError) {
@@ -71,7 +80,14 @@ export const useNewProspects = () => {
       }
 
       console.log('✅ Prospectos obtenidos:', prospectsData?.length || 0);
-      setProspects(prospectsData || []);
+      
+      // Asegurar que el status tenga el tipo correcto
+      const typedProspects: Prospect[] = (prospectsData || []).map(prospect => ({
+        ...prospect,
+        status: prospect.status as 'esperando_respuesta' | 'en_seguimiento'
+      }));
+      
+      setProspects(typedProspects);
 
     } catch (error) {
       console.error('❌ Error en fetchProspects:', error);
