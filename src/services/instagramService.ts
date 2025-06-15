@@ -183,11 +183,27 @@ export const handleInstagramCallback = async (code: string) => {
     // Guardar token y datos del usuario
     localStorage.setItem("hower-instagram-token", token);
 
-    // Guardar datos del usuario (Facebook + Instagram si está disponible)
+    // ✅ USAR LOS DATOS CORRECTOS QUE DEVUELVE LA EDGE FUNCTION
+    console.log("📊 ===== DATOS RECIBIDOS DE EDGE FUNCTION =====");
+    console.log("🔍 User data:", data.user);
+    console.log("📱 Instagram account:", data.instagram_account);
+    console.log("🏢 Business account:", data.business_account);
+
+    // ✅ GUARDAR CON EL ID CORRECTO DE META DEVELOPERS
     const userData = {
       facebook: data.user,
-      instagram: data.instagram_account ?? data.user,
+      instagram: {
+        id: data.business_account?.id || data.instagram_account?.id || data.user.id, // ✅ USAR BUSINESS ACCOUNT ID
+        user_id: data.business_account?.id || data.instagram_account?.user_id || data.user.id,
+        username: data.instagram_account?.username || data.user.username || data.user.name
+      },
     };
+
+    console.log("💾 ===== GUARDANDO EN LOCALSTORAGE =====");
+    console.log("🆔 ID que se guardará:", userData.instagram.id);
+    console.log("👤 Username:", userData.instagram.username);
+    console.log("📊 Datos completos:", userData);
+
     localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
 
     console.log("Token y datos de usuario guardados exitosamente");
