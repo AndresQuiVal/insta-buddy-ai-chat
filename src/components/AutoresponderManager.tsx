@@ -6,6 +6,7 @@ import { Plus, Edit, Trash2, MessageCircle, Cloud, Key, ExternalLink, MessageSqu
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useInstagramProfiles } from '@/hooks/useInstagramProfiles';
 import AutoresponderForm from './AutoresponderForm';
 import AutoresponderTypeDialog from './AutoresponderTypeDialog';
 import InstagramPostSelector from './InstagramPostSelector';
@@ -62,19 +63,31 @@ const AutoresponderManager = () => {
   const [selectedPost, setSelectedPost] = useState<InstagramPost | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  
+  // Agregar hook de perfiles
+  const { profiles, activeProfile, loading: profilesLoading } = useInstagramProfiles();
 
   useEffect(() => {
-    loadMessages();
-  }, []);
+    if (!profilesLoading && activeProfile) {
+      loadMessages();
+    }
+  }, [activeProfile, profilesLoading]);
 
   const loadMessages = async () => {
+    if (!activeProfile) {
+      console.log('❌ No hay perfil activo seleccionado');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      console.log('📋 Cargando autoresponders desde AMBAS TABLAS...');
+      console.log('📋 Cargando autoresponders para perfil:', activeProfile.username);
       
-      // Cargar autoresponders normales
+      // Cargar autoresponders normales del perfil activo
       const { data: normalAutoresponders, error: normalError } = await supabase
         .from('autoresponder_messages')
         .select('*')
+        .eq('instagram_profile_id', activeProfile.id)
         .order('created_at', { ascending: false });
 
       if (normalError) {
@@ -82,10 +95,11 @@ const AutoresponderManager = () => {
         throw normalError;
       }
 
-      // Cargar autoresponders de comentarios
+      // Cargar autoresponders de comentarios del perfil activo
       const { data: commentAutoresponders, error: commentError } = await supabase
         .from('comment_autoresponders')
         .select('*')
+        .eq('instagram_profile_id', activeProfile.id)
         .order('created_at', { ascending: false });
 
       if (commentError) {
@@ -121,7 +135,8 @@ const AutoresponderManager = () => {
         }))
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
-      console.log('✅ Autoresponders cargados:', {
+      console.log('✅ Autoresponders cargados para perfil:', {
+        perfil: activeProfile.username,
         normales: normalAutoresponders?.length || 0,
         comentarios: commentAutoresponders?.length || 0,
         total: unifiedList.length
@@ -468,6 +483,34 @@ const AutoresponderManager = () => {
     }
   };
 
+  // Mostrar loading si los perfiles están cargando
+  if (profilesLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  // Mostrar mensaje si no hay perfil activo
+  if (!activeProfile) {
+    return (
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-blue-100 rounded-full flex items-center justify-center mb-6">
+            <MessageCircle className="w-10 h-10 text-purple-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">
+            No hay perfil de Instagram activo
+          </h3>
+          <p className="text-gray-600 text-center mb-6 max-w-md">
+            Primero debes configurar y activar un perfil de Instagram para usar autoresponders
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -507,7 +550,7 @@ const AutoresponderManager = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Autoresponder</h2>
           <div className="flex items-center gap-2 text-gray-600">
-            <p>Configura respuestas automáticas para nuevos prospectos</p>
+            <p>Configura respuestas automáticas para: <span className="font-semibold text-purple-600">@{activeProfile.username}</span></p>
             <Cloud className="w-4 h-4 text-green-500" />
           </div>
         </div>
@@ -590,10 +633,10 @@ const AutoresponderManager = () => {
                 <MessageCircle className="w-10 h-10 text-purple-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                No hay respuestas automáticas
+                No hay respuestas automáticas para @{activeProfile.username}
               </h3>
               <p className="text-gray-600 text-center mb-6 max-w-md">
-                Crea tu primera respuesta automática para nuevos prospectos
+                Crea tu primera respuesta automática para este perfil de Instagram
               </p>
               <Button 
                 onClick={handleNewAutoresponder}

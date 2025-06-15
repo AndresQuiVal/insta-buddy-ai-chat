@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useInstagramProfiles } from '@/hooks/useInstagramProfiles';
 import { X } from 'lucide-react';
 
 interface AutoresponderMessage {
@@ -35,6 +35,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const [newKeyword, setNewKeyword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { activeProfile } = useInstagramProfiles();
 
   useEffect(() => {
     if (message) {
@@ -75,6 +76,15 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!activeProfile) {
+      toast({
+        title: "Error",
+        description: "No hay perfil de Instagram activo seleccionado",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!name.trim() || !messageText.trim()) {
       toast({
         title: "Error",
@@ -96,7 +106,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     setIsLoading(true);
 
     try {
-      console.log('💾 Guardando autoresponder en BASE DE DATOS');
+      console.log('💾 Guardando autoresponder para perfil:', activeProfile.username);
 
       const messageData = {
         name: name.trim(),
@@ -105,7 +115,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         send_only_first_message: sendOnlyFirstMessage,
         use_keywords: useKeywords,
         keywords: useKeywords ? keywords : null,
-        user_id: null // Sin usuario específico por ahora
+        instagram_profile_id: activeProfile.id, // Asociar al perfil activo
+        user_id: null // Mantener por compatibilidad
       };
 
       let result;
@@ -119,7 +130,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
           .eq('id', message.id);
       } else {
         // Crear nuevo
-        console.log('➕ Creando nuevo autoresponder');
+        console.log('➕ Creando nuevo autoresponder para perfil:', activeProfile.username);
         result = await supabase
           .from('autoresponder_messages')
           .insert([messageData]);
@@ -130,11 +141,11 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         throw result.error;
       }
 
-      console.log('✅ AUTORESPONDER GUARDADO EN BASE DE DATOS');
+      console.log('✅ AUTORESPONDER GUARDADO PARA PERFIL:', activeProfile.username);
 
       toast({
         title: message ? "¡Actualizado!" : "¡Creado!",
-        description: "Respuesta automática guardada en la base de datos",
+        description: `Respuesta automática guardada para @${activeProfile.username}`,
       });
 
       onSubmit();
@@ -151,8 +162,23 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     }
   };
 
+  // Mostrar mensaje si no hay perfil activo
+  if (!activeProfile) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">No hay perfil de Instagram activo seleccionado</p>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+        <p className="text-sm text-purple-700">
+          <span className="font-medium">Perfil:</span> @{activeProfile.username}
+        </p>
+      </div>
+
       <div>
         <Label htmlFor="name">Nombre de la respuesta</Label>
         <Input

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useInstagramProfiles } from '@/hooks/useInstagramProfiles';
 import { InstagramPost, formatPostDate, truncateCaption } from '@/services/instagramPostsService';
 
 export interface CommentAutoresponderConfig {
@@ -33,6 +33,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   const [dmMessage, setDmMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { activeProfile } = useInstagramProfiles();
 
   const addKeyword = () => {
     if (newKeyword.trim() && !keywords.includes(newKeyword.trim().toLowerCase())) {
@@ -87,6 +88,15 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!activeProfile) {
+      toast({
+        title: "Error",
+        description: "No hay perfil de Instagram activo seleccionado",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!name.trim()) {
       toast({
         title: "Error",
@@ -117,34 +127,12 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     setIsSubmitting(true);
 
     try {
-      console.log('💾 Guardando autoresponder de comentarios...');
-
-      // Obtener información de la página usando el Page Access Token
-      let userId = 'temp-user-id'; // Fallback por defecto
-      
-      try {
-        const pageInfo = await getPageInfo();
-        // Usar el ID de la página como identificador único
-        userId = `page_${pageInfo.pageId}`;
-        console.log('✅ Página identificada:', {
-          userId,
-          pageName: pageInfo.pageName,
-          instagramAccountId: pageInfo.instagramAccountId
-        });
-      } catch (error) {
-        console.log('⚠️ Error obteniendo info de la página - usando ID temporal:', error);
-        // Usar token como identificador si no podemos obtener la info de la página
-        const token = localStorage.getItem('hower-instagram-token');
-        if (token) {
-          // Usar los primeros caracteres del token como identificador único
-          userId = `token_${token.substring(0, 20)}`;
-        }
-      }
+      console.log('💾 Guardando autoresponder de comentarios para perfil:', activeProfile.username);
 
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .insert({
-          user_id: userId,
+          instagram_profile_id: activeProfile.id, // Asociar al perfil activo
           post_id: selectedPost.id,
           post_url: selectedPost.permalink,
           post_caption: selectedPost.caption,
@@ -161,11 +149,11 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
         throw error;
       }
 
-      console.log('✅ Autoresponder guardado:', data);
+      console.log('✅ Autoresponder de comentarios guardado para perfil:', activeProfile.username);
 
       toast({
         title: "¡Autoresponder creado!",
-        description: `Se configuró para detectar comentarios en el post seleccionado`,
+        description: `Se configuró para detectar comentarios en @${activeProfile.username}`,
       });
 
       // Llamar callback de éxito
@@ -190,6 +178,21 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     }
   };
 
+  // Mostrar mensaje si no hay perfil activo
+  if (!activeProfile) {
+    return (
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <p className="text-gray-600">No hay perfil de Instagram activo seleccionado</p>
+          <Button variant="outline" onClick={onBack} className="mt-4">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
       <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50">
@@ -202,7 +205,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
               Configurar Autoresponder para Comentarios
             </CardTitle>
             <p className="text-sm text-purple-700 mt-1">
-              Detectar palabras clave en comentarios y enviar DM automático
+              Detectar palabras clave en comentarios de @{activeProfile.username} y enviar DM automático
             </p>
           </div>
         </div>
@@ -213,7 +216,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
             <MessageCircle className="w-4 h-4" />
-            Post Seleccionado
+            Post Seleccionado para @{activeProfile.username}
           </h3>
           <div className="flex gap-3">
             <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
