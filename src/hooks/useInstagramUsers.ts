@@ -38,7 +38,8 @@ export const useInstagramUsers = () => {
       }
 
       const userData = JSON.parse(savedUserData);
-      const instagramUserId = userData.instagram?.id || userData.facebook?.id;
+      // Usar user_id del objeto instagram como ID principal
+      const instagramUserId = userData.instagram?.user_id || userData.facebook?.id;
       
       console.log('🆔 Instagram User ID extraído:', instagramUserId);
       
