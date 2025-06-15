@@ -1,5 +1,4 @@
 
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -108,7 +107,7 @@ serve(async (req) => {
 
       if (userResponse.ok) {
         userData = await userResponse.json();
-        console.log("✅ Usuario obtenido:", userData.name);
+        console.log("✅ Usuario obtenido:", userData.name || userData.id);
 
         // Buscar páginas con Instagram Business Account
         console.log("🔍 Buscando Instagram Business Account...");
@@ -139,14 +138,28 @@ serve(async (req) => {
           console.error("❌ Error obteniendo páginas:", await accountsResponse.text());
         }
       } else {
-        console.error("❌ Error obteniendo usuario:", await userResponse.text());
-        // NO fallar aquí, continuar con datos básicos
-        userData = { id: "fallback_user_id", name: "Usuario" };
+        const errorText = await userResponse.text();
+        console.error("❌ Error obteniendo usuario:", errorText);
+        
+        // Solo usar fallback si realmente no se puede obtener información
+        if (userResponse.status === 190 || errorText.includes("Invalid OAuth")) {
+          console.log("⚠️ Token no válido para Graph API, usando datos básicos del token");
+          userData = { 
+            id: tokenData.user_id || "unknown_user_id", 
+            name: tokenData.user_id ? `Usuario_${tokenData.user_id}` : "Usuario" 
+          };
+        } else {
+          throw new Error(`Error HTTP ${userResponse.status}: ${errorText}`);
+        }
       }
     } catch (error) {
       console.error("💥 Error en obtención de datos:", error);
-      // NO fallar aquí, usar datos de fallback
-      userData = { id: "fallback_user_id", name: "Usuario" };
+      
+      // Solo usar fallback en caso de error real
+      userData = { 
+        id: tokenData.user_id || "fallback_user_id", 
+        name: tokenData.user_id ? `Usuario_${tokenData.user_id}` : "Usuario" 
+      };
     }
 
     // Determinar el ID final a usar
@@ -181,6 +194,7 @@ serve(async (req) => {
     };
 
     console.log("📤 Respuesta enviada con ID:", finalInstagramUserId);
+    console.log("👤 Username:", username);
 
     return new Response(JSON.stringify(responseData), {
       headers: {
@@ -206,4 +220,3 @@ serve(async (req) => {
     );
   }
 });
-
