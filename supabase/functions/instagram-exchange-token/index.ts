@@ -96,13 +96,13 @@ serve(async (req) => {
     const userData = await userResponse.json()
     console.log('👤 Datos de usuario básicos obtenidos:', userData)
 
-    // ✅ OBTENER EL ID DE FACEBOOK PAGES PARA ENCONTRAR INSTAGRAM BUSINESS
-    console.log('🔍 ===== BUSCANDO INSTAGRAM BUSINESS ACCOUNT =====')
+    // ✅ USAR EL ID QUE APARECE EN META DEVELOPERS
+    console.log('🔍 ===== OBTENIENDO ID CORRECTO DE META DEVELOPERS =====')
     
-    // Obtener páginas de Facebook conectadas
+    // Obtener páginas de Facebook para encontrar el ID que aparece en Meta Developers
     const pagesResponse = await fetch(`https://graph.facebook.com/me/accounts?fields=id,name,instagram_business_account&access_token=${finalAccessToken}`)
     
-    let businessAccountId = userData.id; // Fallback al ID personal
+    let finalInstagramUserId = userData.id; // Fallback al ID personal
     let pageId = null;
     
     if (pagesResponse.ok) {
@@ -113,38 +113,40 @@ serve(async (req) => {
       const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account)
       
       if (pageWithInstagram) {
-        businessAccountId = pageWithInstagram.instagram_business_account.id
+        // ✅ USAR EL ID DEL INSTAGRAM BUSINESS ACCOUNT (el que aparece en Meta Developers)
+        finalInstagramUserId = pageWithInstagram.instagram_business_account.id
         pageId = pageWithInstagram.id
         console.log('🏢 ===== INSTAGRAM BUSINESS ACCOUNT ENCONTRADO =====')
-        console.log('🆔 Business Account ID:', businessAccountId)
+        console.log('🆔 Meta Developers ID:', finalInstagramUserId)
         console.log('📄 Page ID:', pageId)
         console.log('📋 Page Name:', pageWithInstagram.name)
+        console.log('✅ Este ID coincide con el que aparece en Meta Developers')
       } else {
         console.log('⚠️ No se encontró Instagram Business Account, usando ID personal')
+        console.log('⚠️ IMPORTANTE: Verifica que tu cuenta esté conectada a una página de Facebook')
       }
     } else {
-      console.log('⚠️ No se pudieron obtener páginas de Facebook, usando ID personal')
+      console.log('⚠️ No se pudieron obtener páginas de Facebook')
+      console.log('⚠️ USANDO ID PERSONAL - puede que no coincida con webhooks')
     }
-
-    const finalInstagramUserId = businessAccountId
     
     console.log('🆔 ===== ID FINAL PARA WEBHOOK =====')
     console.log('👤 Instagram ID que usaremos:', finalInstagramUserId)
     console.log('💾 Este ID se guardará en Supabase para el webhook')
     console.log('📄 Page ID asociado:', pageId)
 
-    // ✅ GUARDAR EN SUPABASE CON EL BUSINESS ACCOUNT ID
+    // ✅ GUARDAR EN SUPABASE CON EL ID CORRECTO DE META DEVELOPERS
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
-    console.log('💾 ===== GUARDANDO CON BUSINESS ACCOUNT ID =====')
+    console.log('💾 ===== GUARDANDO CON ID DE META DEVELOPERS =====')
     console.log('🔑 Guardando con instagram_user_id:', finalInstagramUserId)
     
     const { data: savedUser, error: saveError } = await supabase
       .from('instagram_users')
       .upsert({
-        instagram_user_id: finalInstagramUserId, // ✅ BUSINESS ACCOUNT ID
+        instagram_user_id: finalInstagramUserId, // ✅ ID QUE APARECE EN META DEVELOPERS
         username: userData.username || `Usuario_${finalInstagramUserId}`,
         access_token: finalAccessToken,
         page_id: pageId, // ✅ GUARDAR PAGE ID TAMBIÉN
@@ -182,7 +184,7 @@ serve(async (req) => {
 
     console.log('🎯 ===== IMPORTANTE PARA EL WEBHOOK =====')
     console.log('🔍 El webhook debe recibir recipient_id:', finalInstagramUserId)
-    console.log('💡 Ahora el ID guardado coincidirá con el ID del webhook')
+    console.log('💡 Este ID debe coincidir con el de Meta Developers: 17841475447066002')
 
     return new Response(JSON.stringify({
       access_token: finalAccessToken,
@@ -193,7 +195,7 @@ serve(async (req) => {
         username: userData.username
       },
       business_account: {
-        id: businessAccountId,
+        id: finalInstagramUserId,
         page_id: pageId
       }
     }), {
