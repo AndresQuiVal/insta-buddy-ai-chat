@@ -93,21 +93,25 @@ serve(async (req) => {
     }
 
     console.log("✅ Token obtenido exitosamente");
+    console.log("🔍 Datos del token:", { user_id: tokenData.user_id });
 
-    // Obtener información del usuario usando el token corto
+    // Obtener información del usuario de Instagram directamente
     let userData = null;
     let instagramBusinessAccountId = null;
     let pageId = null;
+    let realUsername = null;
 
     try {
-      console.log("📋 Obteniendo información del usuario...");
+      console.log("📋 Obteniendo información del usuario con token...");
+      
+      // Primero intentar obtener info del usuario de Facebook
       const userResponse = await fetch(
         `https://graph.facebook.com/v23.0/me?access_token=${tokenData.access_token}`
       );
 
       if (userResponse.ok) {
         userData = await userResponse.json();
-        console.log("✅ Usuario obtenido:", userData.name || userData.id);
+        console.log("✅ Usuario de Facebook obtenido:", userData);
 
         // Buscar páginas con Instagram Business Account
         console.log("🔍 Buscando Instagram Business Account...");
@@ -119,7 +123,6 @@ serve(async (req) => {
           const accountsData = await accountsResponse.json();
           console.log(`📄 Páginas encontradas: ${accountsData.data?.length || 0}`);
 
-          // Buscar la primera página con Instagram Business Account
           const pageWithInstagram = accountsData.data?.find(
             (page: any) => page.instagram_business_account
           );
@@ -131,57 +134,53 @@ serve(async (req) => {
             console.log("🎯 Instagram Business Account encontrado:");
             console.log("- Instagram Business ID:", instagramBusinessAccountId);
             console.log("- Page ID:", pageId);
-          } else {
-            console.log("⚠️ No se encontró Instagram Business Account en las páginas");
+
+            // Obtener el username real de Instagram
+            try {
+              const instagramUserResponse = await fetch(
+                `https://graph.facebook.com/v23.0/${instagramBusinessAccountId}?fields=username&access_token=${tokenData.access_token}`
+              );
+              
+              if (instagramUserResponse.ok) {
+                const instagramUserData = await instagramUserResponse.json();
+                realUsername = instagramUserData.username;
+                console.log("✅ Username real de Instagram obtenido:", realUsername);
+              }
+            } catch (error) {
+              console.log("⚠️ No se pudo obtener username de Instagram Business:", error);
+            }
           }
-        } else {
-          console.error("❌ Error obteniendo páginas:", await accountsResponse.text());
-        }
-      } else {
-        const errorText = await userResponse.text();
-        console.error("❌ Error obteniendo usuario:", errorText);
-        
-        // Solo usar fallback si realmente no se puede obtener información
-        if (userResponse.status === 190 || errorText.includes("Invalid OAuth")) {
-          console.log("⚠️ Token no válido para Graph API, usando datos básicos del token");
-          userData = { 
-            id: tokenData.user_id || "unknown_user_id", 
-            name: tokenData.user_id ? `Usuario_${tokenData.user_id}` : "Usuario" 
-          };
-        } else {
-          throw new Error(`Error HTTP ${userResponse.status}: ${errorText}`);
         }
       }
     } catch (error) {
-      console.error("💥 Error en obtención de datos:", error);
-      
-      // Solo usar fallback en caso de error real
-      userData = { 
-        id: tokenData.user_id || "fallback_user_id", 
-        name: tokenData.user_id ? `Usuario_${tokenData.user_id}` : "Usuario" 
-      };
+      console.error("💥 Error obteniendo datos de usuario:", error);
     }
 
-    // Determinar el ID final a usar
+    // Determinar el ID y username finales
     let finalInstagramUserId;
     let username;
 
-    if (instagramBusinessAccountId) {
-      // Usar Instagram Business Account ID si está disponible
+    if (instagramBusinessAccountId && realUsername) {
+      // Usar Instagram Business Account ID y username real
       finalInstagramUserId = instagramBusinessAccountId;
-      username = userData?.name || "Usuario";
-      console.log("✅ Usando Instagram Business Account ID:", finalInstagramUserId);
+      username = realUsername;
+      console.log("✅ Usando Instagram Business Account:", { id: finalInstagramUserId, username });
+    } else if (userData?.id) {
+      // Fallback a Facebook User ID con nombre de Facebook
+      finalInstagramUserId = userData.id;
+      username = userData.name || `Usuario_${userData.id}`;
+      console.log("⚠️ Usando Facebook User ID como fallback:", { id: finalInstagramUserId, username });
     } else {
-      // Fallback a Facebook User ID
-      finalInstagramUserId = userData?.id || "fallback_user_id";
-      username = userData?.name || "Usuario";
-      console.log("⚠️ Usando Facebook User ID como fallback:", finalInstagramUserId);
+      // Último fallback usando datos del token
+      finalInstagramUserId = tokenData.user_id || "unknown_user";
+      username = `Usuario_${tokenData.user_id || "desconocido"}`;
+      console.log("⚠️ Usando datos básicos del token:", { id: finalInstagramUserId, username });
     }
 
     // Preparar datos de respuesta
     const responseData = {
       access_token: tokenData.access_token,
-      user: userData,
+      user: userData || { id: finalInstagramUserId, name: username },
       instagram_account: {
         id: finalInstagramUserId,
         username: username,
@@ -190,11 +189,14 @@ serve(async (req) => {
       debug_info: {
         has_instagram_business: !!instagramBusinessAccountId,
         used_fallback: !instagramBusinessAccountId,
+        real_username_found: !!realUsername,
       },
     };
 
-    console.log("📤 Respuesta enviada con ID:", finalInstagramUserId);
-    console.log("👤 Username:", username);
+    console.log("📤 Respuesta final enviada:");
+    console.log("- ID:", finalInstagramUserId);
+    console.log("- Username:", username);
+    console.log("- Es Instagram Business:", !!instagramBusinessAccountId);
 
     return new Response(JSON.stringify(responseData), {
       headers: {
