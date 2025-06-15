@@ -87,7 +87,7 @@ serve(async (req) => {
 
     // ✅ OBTENER INFORMACIÓN DEL USUARIO DE INSTAGRAM GRAPH API DIRECTAMENTE
     console.log('📋 Obteniendo información del usuario de Instagram Graph API...')
-    const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${finalAccessToken}`)
+    const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,instagram_business_account&access_token=${finalAccessToken}`)
     
     if (!userResponse.ok) {
       const errorData = await userResponse.json()
@@ -99,7 +99,7 @@ serve(async (req) => {
     console.log('👤 Datos de usuario de Instagram obtenidos:', userData)
 
     // ✅ USAR EL ID DE INSTAGRAM GRAPH API (ESTE ES EL CORRECTO PARA BUSINESS)
-    const finalInstagramUserId = userData.id; // Este es el ID correcto de Instagram Business
+    const finalInstagramUserId = userData.instagram_business_account; // Este es el ID correcto de Instagram Business
     
     console.log('🆔 ===== ID CORRECTO DE INSTAGRAM GRAPH API =====')
     console.log('👤 Instagram User ID (Graph API):', finalInstagramUserId)
