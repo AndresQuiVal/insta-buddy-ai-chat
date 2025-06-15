@@ -13,7 +13,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          instagram_profile_id: string | null
           instagram_user_id: string | null
           instagram_user_id_ref: string | null
           is_active: boolean
@@ -27,7 +26,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          instagram_profile_id?: string | null
           instagram_user_id?: string | null
           instagram_user_id_ref?: string | null
           is_active?: boolean
@@ -41,7 +39,6 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          instagram_profile_id?: string | null
           instagram_user_id?: string | null
           instagram_user_id_ref?: string | null
           is_active?: boolean
@@ -53,13 +50,6 @@ export type Database = {
           use_keywords?: boolean | null
         }
         Relationships: [
-          {
-            foreignKeyName: "autoresponder_messages_instagram_profile_id_fkey"
-            columns: ["instagram_profile_id"]
-            isOneToOne: false
-            referencedRelation: "instagram_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "autoresponder_messages_instagram_user_id_fkey"
             columns: ["instagram_user_id"]
@@ -141,7 +131,6 @@ export type Database = {
           created_at: string
           dm_message: string
           id: string
-          instagram_profile_id: string | null
           is_active: boolean
           keywords: string[]
           name: string
@@ -154,7 +143,6 @@ export type Database = {
           created_at?: string
           dm_message: string
           id?: string
-          instagram_profile_id?: string | null
           is_active?: boolean
           keywords?: string[]
           name: string
@@ -167,7 +155,6 @@ export type Database = {
           created_at?: string
           dm_message?: string
           id?: string
-          instagram_profile_id?: string | null
           is_active?: boolean
           keywords?: string[]
           name?: string
@@ -176,22 +163,13 @@ export type Database = {
           post_url?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "comment_autoresponders_instagram_profile_id_fkey"
-            columns: ["instagram_profile_id"]
-            isOneToOne: false
-            referencedRelation: "instagram_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       ideal_client_traits: {
         Row: {
           created_at: string
           enabled: boolean
           id: string
-          instagram_profile_id: string | null
           instagram_user_id: string | null
           instagram_user_id_ref: string | null
           position: number
@@ -202,7 +180,6 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
-          instagram_profile_id?: string | null
           instagram_user_id?: string | null
           instagram_user_id_ref?: string | null
           position?: number
@@ -213,7 +190,6 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
-          instagram_profile_id?: string | null
           instagram_user_id?: string | null
           instagram_user_id_ref?: string | null
           position?: number
@@ -221,13 +197,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "ideal_client_traits_instagram_profile_id_fkey"
-            columns: ["instagram_profile_id"]
-            isOneToOne: false
-            referencedRelation: "instagram_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "ideal_client_traits_instagram_user_id_fkey"
             columns: ["instagram_user_id"]
@@ -243,7 +212,6 @@ export type Database = {
           created_at: string
           id: string
           instagram_message_id: string
-          instagram_profile_id: string | null
           instagram_user_id: string | null
           is_inscription: boolean | null
           is_invitation: boolean | null
@@ -263,7 +231,6 @@ export type Database = {
           created_at?: string
           id?: string
           instagram_message_id: string
-          instagram_profile_id?: string | null
           instagram_user_id?: string | null
           is_inscription?: boolean | null
           is_invitation?: boolean | null
@@ -283,7 +250,6 @@ export type Database = {
           created_at?: string
           id?: string
           instagram_message_id?: string
-          instagram_profile_id?: string | null
           instagram_user_id?: string | null
           is_inscription?: boolean | null
           is_invitation?: boolean | null
@@ -300,13 +266,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "instagram_messages_instagram_profile_id_fkey"
-            columns: ["instagram_profile_id"]
-            isOneToOne: false
-            referencedRelation: "instagram_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "instagram_messages_instagram_user_id_fkey"
             columns: ["instagram_user_id"]
             isOneToOne: false
@@ -314,54 +273,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      instagram_profiles: {
-        Row: {
-          access_token: string
-          created_at: string
-          ia_persona: string | null
-          id: string
-          instagram_user_id: string
-          is_active: boolean
-          nuevos_prospectos_contactados: number
-          openai_api_key: string | null
-          page_id: string | null
-          token_expires_at: string | null
-          updated_at: string
-          user_id: string | null
-          username: string
-        }
-        Insert: {
-          access_token: string
-          created_at?: string
-          ia_persona?: string | null
-          id?: string
-          instagram_user_id: string
-          is_active?: boolean
-          nuevos_prospectos_contactados?: number
-          openai_api_key?: string | null
-          page_id?: string | null
-          token_expires_at?: string | null
-          updated_at?: string
-          user_id?: string | null
-          username: string
-        }
-        Update: {
-          access_token?: string
-          created_at?: string
-          ia_persona?: string | null
-          id?: string
-          instagram_user_id?: string
-          is_active?: boolean
-          nuevos_prospectos_contactados?: number
-          openai_api_key?: string | null
-          page_id?: string | null
-          token_expires_at?: string | null
-          updated_at?: string
-          user_id?: string | null
-          username?: string
-        }
-        Relationships: []
       }
       instagram_users: {
         Row: {
@@ -413,7 +324,6 @@ export type Database = {
           analysis_data: Json | null
           created_at: string
           id: string
-          instagram_profile_id: string | null
           last_analyzed_at: string | null
           match_points: number | null
           message_count: number | null
@@ -426,7 +336,6 @@ export type Database = {
           analysis_data?: Json | null
           created_at?: string
           id?: string
-          instagram_profile_id?: string | null
           last_analyzed_at?: string | null
           match_points?: number | null
           message_count?: number | null
@@ -439,7 +348,6 @@ export type Database = {
           analysis_data?: Json | null
           created_at?: string
           id?: string
-          instagram_profile_id?: string | null
           last_analyzed_at?: string | null
           match_points?: number | null
           message_count?: number | null
@@ -448,15 +356,7 @@ export type Database = {
           sender_id?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "prospect_analysis_instagram_profile_id_fkey"
-            columns: ["instagram_profile_id"]
-            isOneToOne: false
-            referencedRelation: "instagram_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       prospect_last_activity: {
         Row: {
@@ -571,39 +471,9 @@ export type Database = {
           last_message_date: string
         }[]
       }
-      calculate_advanced_metrics_by_profile: {
-        Args: { profile_id: string }
-        Returns: {
-          total_sent: number
-          total_responses: number
-          total_invitations: number
-          total_presentations: number
-          total_inscriptions: number
-          messages_per_response: number
-          messages_per_invitation: number
-          messages_per_presentation: number
-          invitations_per_presentation: number
-          messages_per_inscription: number
-          invitations_per_inscription: number
-          presentations_per_inscription: number
-          today_messages: number
-          response_rate_percentage: number
-          avg_response_time_seconds: number
-          last_message_date: string
-          nuevos_prospectos_contactados: number
-        }[]
-      }
-      get_active_instagram_token: {
-        Args: { profile_instagram_user_id: string }
-        Returns: string
-      }
       get_instagram_token_by_user_id: {
         Args: { user_instagram_id: string }
         Returns: string
-      }
-      increment_nuevos_prospectos: {
-        Args: { profile_id: string; increment_by?: number }
-        Returns: undefined
       }
       increment_nuevos_prospectos_by_instagram_id: {
         Args: { user_instagram_id: string; increment_by?: number }
@@ -612,10 +482,6 @@ export type Database = {
       reset_inactive_prospect_traits: {
         Args: Record<PropertyKey, never>
         Returns: number
-      }
-      reset_nuevos_prospectos: {
-        Args: { profile_id: string }
-        Returns: undefined
       }
       reset_nuevos_prospectos_by_instagram_id: {
         Args: { user_instagram_id: string }

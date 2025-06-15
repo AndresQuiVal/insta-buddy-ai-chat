@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useInstagramProfiles } from '@/hooks/useInstagramProfiles';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { X } from 'lucide-react';
 
 interface AutoresponderMessage {
@@ -35,7 +36,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const [newKeyword, setNewKeyword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { activeProfile } = useInstagramProfiles();
+  const { currentUser } = useInstagramUsers();
 
   useEffect(() => {
     if (message) {
@@ -76,10 +77,10 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!activeProfile) {
+    if (!currentUser) {
       toast({
         title: "Error",
-        description: "No hay perfil de Instagram activo seleccionado",
+        description: "No hay usuario de Instagram autenticado",
         variant: "destructive"
       });
       return;
@@ -106,7 +107,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     setIsLoading(true);
 
     try {
-      console.log('💾 Guardando autoresponder para perfil:', activeProfile.username);
+      console.log('💾 Guardando autoresponder para usuario:', currentUser.username);
 
       const messageData = {
         name: name.trim(),
@@ -115,8 +116,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         send_only_first_message: sendOnlyFirstMessage,
         use_keywords: useKeywords,
         keywords: useKeywords ? keywords : null,
-        instagram_profile_id: activeProfile.id, // Asociar al perfil activo
-        user_id: null // Mantener por compatibilidad
+        instagram_user_id_ref: currentUser.instagram_user_id, // Usar el ID del usuario actual
+        instagram_user_id: currentUser.id // Mantener referencia al UUID por compatibilidad
       };
 
       let result;
@@ -130,7 +131,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
           .eq('id', message.id);
       } else {
         // Crear nuevo
-        console.log('➕ Creando nuevo autoresponder para perfil:', activeProfile.username);
+        console.log('➕ Creando nuevo autoresponder para usuario:', currentUser.username);
         result = await supabase
           .from('autoresponder_messages')
           .insert([messageData]);
@@ -141,11 +142,11 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         throw result.error;
       }
 
-      console.log('✅ AUTORESPONDER GUARDADO PARA PERFIL:', activeProfile.username);
+      console.log('✅ AUTORESPONDER GUARDADO PARA USUARIO:', currentUser.username);
 
       toast({
         title: message ? "¡Actualizado!" : "¡Creado!",
-        description: `Respuesta automática guardada para @${activeProfile.username}`,
+        description: `Respuesta automática guardada para @${currentUser.username}`,
       });
 
       onSubmit();
@@ -162,11 +163,11 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     }
   };
 
-  // Mostrar mensaje si no hay perfil activo
-  if (!activeProfile) {
+  // Mostrar mensaje si no hay usuario autenticado
+  if (!currentUser) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-600">No hay perfil de Instagram activo seleccionado</p>
+        <p className="text-gray-600">No hay usuario de Instagram autenticado</p>
       </div>
     );
   }
@@ -175,7 +176,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
         <p className="text-sm text-purple-700">
-          <span className="font-medium">Perfil:</span> @{activeProfile.username}
+          <span className="font-medium">Usuario:</span> @{currentUser.username}
         </p>
       </div>
 
