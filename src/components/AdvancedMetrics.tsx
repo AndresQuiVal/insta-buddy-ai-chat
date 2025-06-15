@@ -12,6 +12,7 @@ import {
   BarChart3,
   MessageSquare
 } from 'lucide-react';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 
 interface AdvancedMetrics {
   total_sent: number;
@@ -35,19 +36,33 @@ interface AdvancedMetrics {
 const AdvancedMetrics: React.FC = () => {
   const [metrics, setMetrics] = useState<AdvancedMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const { currentUser } = useInstagramUsers();
 
   useEffect(() => {
-    loadAdvancedMetrics();
-  }, []);
+    if (currentUser?.instagram_user_id) {
+      loadAdvancedMetrics();
+    }
+  }, [currentUser?.instagram_user_id]);
 
   const loadAdvancedMetrics = async () => {
+    if (!currentUser?.instagram_user_id) {
+      console.log('❌ No hay usuario actual para cargar métricas avanzadas');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      console.log('🔍 Cargando métricas avanzadas para usuario:', currentUser.instagram_user_id);
 
-      const { data, error } = await supabase.rpc('calculate_advanced_metrics');
+      // Usar la función SQL que filtra por usuario específico
+      const { data, error } = await supabase.rpc(
+        'calculate_advanced_metrics_by_instagram_user',
+        { user_instagram_id: currentUser.instagram_user_id }
+      );
 
       if (error) {
-        console.error('Error loading advanced metrics:', error);
+        console.error('❌ Error loading advanced metrics:', error);
         toast({
           title: "Error",
           description: "No se pudieron cargar las métricas avanzadas",
@@ -58,11 +73,15 @@ const AdvancedMetrics: React.FC = () => {
 
       if (data && data.length > 0) {
         const metric = data[0];
+        console.log('✅ Métricas avanzadas cargadas:', metric);
         setMetrics(metric);
+      } else {
+        console.log('⚠️ No hay métricas avanzadas para este usuario');
+        setMetrics(null);
       }
 
     } catch (error) {
-      console.error('Error in loadAdvancedMetrics:', error);
+      console.error('💥 Error in loadAdvancedMetrics:', error);
     } finally {
       setLoading(false);
     }
@@ -115,6 +134,7 @@ const AdvancedMetrics: React.FC = () => {
         <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
         <h3 className="text-xl font-semibold text-gray-700 mb-2">No hay datos suficientes</h3>
         <p className="text-gray-500">Envía algunos mensajes para ver tus métricas avanzadas</p>
+        <p className="text-sm text-gray-400 mt-2">Usuario: @{currentUser?.username}</p>
       </div>
     );
   }
@@ -124,7 +144,7 @@ const AdvancedMetrics: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Saber tus Números</h2>
-          <p className="text-gray-600">Análisis detallado de tus métricas de prospección</p>
+          <p className="text-gray-600">Análisis detallado de @{currentUser?.username}</p>
         </div>
         <button
           onClick={loadAdvancedMetrics}

@@ -39,6 +39,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 
 interface DashboardStats {
   totalMessages: number;
@@ -94,9 +95,12 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
   ];
 
   const { isAnalyzing, analyzeAll, loadIdealTraits } = useAITraitAnalysis();
+  const { currentUser } = useInstagramUsers();
 
   useEffect(() => {
-    loadDashboardStats();
+    if (currentUser?.instagram_user_id) {
+      loadDashboardStats();
+    }
 
     // Subscribe to real-time updates
     const subscription = supabase
@@ -106,14 +110,16 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
         schema: 'public',
         table: 'instagram_messages'
       }, () => {
-        loadDashboardStats();
+        if (currentUser?.instagram_user_id) {
+          loadDashboardStats();
+        }
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [timeFilter]);
+  }, [timeFilter, currentUser?.instagram_user_id]);
 
   useEffect(() => {
     const traits = loadIdealTraits();
@@ -301,67 +307,61 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
   };
 
   const loadDashboardStats = async () => {
+    if (!currentUser?.instagram_user_id) {
+      console.log('❌ No hay usuario actual para cargar métricas');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const dateFilter = getDateFilter();
+      console.log('🔍 Cargando métricas para usuario:', currentUser.instagram_user_id);
 
-      // Construir query base
-      let messagesQuery = supabase.from('instagram_messages').select('*');
-      
-      if (dateFilter) {
-        messagesQuery = messagesQuery.gte('created_at', dateFilter);
-      }
+      // Usar la nueva función SQL que filtra por usuario específico
+      const { data: metricsData, error: metricsError } = await supabase.rpc(
+        'calculate_advanced_metrics_by_instagram_user',
+        { user_instagram_id: currentUser.instagram_user_id }
+      );
 
-      const { data: messages, error } = await messagesQuery;
-
-      if (error) {
-        console.error('Error loading messages:', error);
+      if (metricsError) {
+        console.error('❌ Error cargando métricas:', metricsError);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las métricas",
+          variant: "destructive"
+        });
         return;
       }
 
-      // Calcular estadísticas filtradas
-      const messagesSent = messages?.filter(m => m.message_type === 'sent').length || 0;
-      const messagesReceived = calculateUniqueResponses(messages || []);
-      const totalInvitations = messages?.filter(m => m.is_invitation).length || 0;
+      if (metricsData && metricsData.length > 0) {
+        const metrics = metricsData[0];
+        console.log('✅ Métricas cargadas para usuario:', metrics);
 
-      // NO calcular mensajes de hoy automáticamente - se mantendrá el valor actual
-      // const today = new Date();
-      // today.setHours(0, 0, 0, 0);
-      // const { data: todayData } = await supabase
-      //   .from('instagram_messages')
-      //   .select('*')
-      //   .eq('message_type', 'sent')
-      //   .gte('created_at', today.toISOString());
+        const dashboardStats = {
+          totalMessages: metrics.total_sent + metrics.total_responses,
+          totalConversations: 0,
+          messagesReceived: metrics.total_responses,
+          messagesSent: metrics.total_sent,
+          averageResponseTime: metrics.avg_response_time_seconds,
+          todayMessages: currentUser.nuevos_prospectos_contactados || 0, // Usar valor del usuario
+          totalInvitations: metrics.total_invitations,
+          responseRate: metrics.response_rate_percentage,
+          lastMessageDate: metrics.last_message_date
+        };
 
-      // const todayMessages = todayData?.length || 0;
-
-      // Calcular tiempo promedio de respuesta real
-      const averageResponseTime = calculateAverageResponseTime(messages || []);
-
-      // Calcular tasa de respuesta
-      const responseRate = messagesSent > 0 ? (messagesReceived / messagesSent) * 100 : 0;
-
-      // Fecha del último mensaje
-      const lastMessage = messages?.filter(m => m.message_type === 'sent')
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-
-      const dashboardStats = {
-        totalMessages: messagesSent + messagesReceived,
-        totalConversations: 0, // No se muestra en el dashboard
-        messagesReceived,
-        messagesSent,
-        averageResponseTime,
-        todayMessages: stats.todayMessages, // Mantener el valor actual, no actualizar automáticamente
-        totalInvitations,
-        responseRate,
-        lastMessageDate: lastMessage?.created_at || null
-      };
-
-      setStats(dashboardStats);
-      generateAIRecommendations(dashboardStats);
+        setStats(dashboardStats);
+        generateAIRecommendations(dashboardStats);
+      } else {
+        console.log('⚠️ No hay métricas para este usuario');
+        // Mantener valores por defecto si no hay datos
+        setStats(prev => ({
+          ...prev,
+          todayMessages: currentUser.nuevos_prospectos_contactados || 0
+        }));
+      }
 
     } catch (error) {
-      console.error('Error loading dashboard stats:', error);
+      console.error('💥 Error en loadDashboardStats:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar las estadísticas",
@@ -435,6 +435,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Dashboard Instagram</h2>
+          <p className="text-sm text-gray-600">Métricas específicas de @{currentUser?.username}</p>
         </div>
         
         <div className="flex gap-2">

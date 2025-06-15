@@ -15,6 +15,7 @@ export type Database = {
           id: string
           instagram_profile_id: string | null
           instagram_user_id: string | null
+          instagram_user_id_ref: string | null
           is_active: boolean
           keywords: string[] | null
           message_text: string
@@ -28,6 +29,7 @@ export type Database = {
           id?: string
           instagram_profile_id?: string | null
           instagram_user_id?: string | null
+          instagram_user_id_ref?: string | null
           is_active?: boolean
           keywords?: string[] | null
           message_text: string
@@ -41,6 +43,7 @@ export type Database = {
           id?: string
           instagram_profile_id?: string | null
           instagram_user_id?: string | null
+          instagram_user_id_ref?: string | null
           is_active?: boolean
           keywords?: string[] | null
           message_text?: string
@@ -190,6 +193,7 @@ export type Database = {
           id: string
           instagram_profile_id: string | null
           instagram_user_id: string | null
+          instagram_user_id_ref: string | null
           position: number
           trait: string
           updated_at: string
@@ -200,6 +204,7 @@ export type Database = {
           id?: string
           instagram_profile_id?: string | null
           instagram_user_id?: string | null
+          instagram_user_id_ref?: string | null
           position?: number
           trait: string
           updated_at?: string
@@ -210,6 +215,7 @@ export type Database = {
           id?: string
           instagram_profile_id?: string | null
           instagram_user_id?: string | null
+          instagram_user_id_ref?: string | null
           position?: number
           trait?: string
           updated_at?: string
@@ -525,6 +531,27 @@ export type Database = {
     Functions: {
       calculate_advanced_metrics: {
         Args: Record<PropertyKey, never>
+        Returns: {
+          total_sent: number
+          total_responses: number
+          total_invitations: number
+          total_presentations: number
+          total_inscriptions: number
+          messages_per_response: number
+          messages_per_invitation: number
+          messages_per_presentation: number
+          invitations_per_presentation: number
+          messages_per_inscription: number
+          invitations_per_inscription: number
+          presentations_per_inscription: number
+          today_messages: number
+          response_rate_percentage: number
+          avg_response_time_seconds: number
+          last_message_date: string
+        }[]
+      }
+      calculate_advanced_metrics_by_instagram_user: {
+        Args: { user_instagram_id: string }
         Returns: {
           total_sent: number
           total_responses: number
