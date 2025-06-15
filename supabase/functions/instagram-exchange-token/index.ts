@@ -74,7 +74,7 @@ serve(async (req) => {
 
     // Intercambiar por token de larga duración
     console.log('🔄 Intercambiando por token de larga duración...')
-    const longLivedTokenResponse = await fetch(`https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${instagramClientSecret}&access_token=${tokenData.access_token}`)
+    const longLivedTokenResponse = await fetch(`https://graph.facebook.com/access_token?grant_type=fb_exchange_token&client_id=${instagramAppId}&client_secret=${instagramClientSecret}&fb_exchange_token=${tokenData.access_token}`)
     
     let finalAccessToken = tokenData.access_token
     if (longLivedTokenResponse.ok) {
@@ -99,7 +99,7 @@ serve(async (req) => {
     console.log('📊 Páginas obtenidas:', pagesData)
 
     // Buscar página con Instagram Business Account
-    const pageWithInstagram = pagesData.data?.find(page => page.instagram_business_account)
+    const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account)
     
     if (!pageWithInstagram) {
       console.error('❌ No se encontró página con Instagram Business Account')
