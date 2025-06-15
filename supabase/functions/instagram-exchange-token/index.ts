@@ -16,9 +16,26 @@ serve(async (req) => {
     const { code, redirect_uri } = await req.json()
     
     console.log('=== CONFIGURACIÓN DE INSTAGRAM GRAPH API ===')
-    console.log('Instagram App ID:', Deno.env.get('INSTAGRAM_APP_ID'))
+    
+    // Verificar variables de entorno críticas
+    const instagramAppId = Deno.env.get('INSTAGRAM_APP_ID')
+    const instagramClientSecret = Deno.env.get('INSTAGRAM_CLIENT_SECRET')
+    
+    console.log('Instagram App ID:', instagramAppId ? 'Configurado ✓' : 'NO CONFIGURADO ❌')
+    console.log('Instagram Client Secret:', instagramClientSecret ? 'Configurado ✓' : 'NO CONFIGURADO ❌')
     console.log('Redirect URI recibida:', redirect_uri)
     console.log('Código recibido:', code.substring(0, 20) + '...')
+
+    if (!instagramAppId || !instagramClientSecret) {
+      console.error('❌ Variables de entorno faltantes')
+      return new Response(JSON.stringify({
+        error: 'configuration_error',
+        error_description: 'Instagram App ID o Client Secret no configurados en Supabase'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
+    }
 
     // Intercambiar código por token de acceso
     console.log('Enviando solicitud a Instagram API...')
@@ -29,8 +46,8 @@ serve(async (req) => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: Deno.env.get('INSTAGRAM_APP_ID')!,
-        client_secret: Deno.env.get('INSTAGRAM_CLIENT_SECRET')!,
+        client_id: instagramAppId,
+        client_secret: instagramClientSecret,
         grant_type: 'authorization_code',
         redirect_uri: redirect_uri,
         code: code,
