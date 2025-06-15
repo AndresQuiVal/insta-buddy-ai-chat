@@ -70,7 +70,7 @@ export const getInstagramConversations = async (): Promise<ConversationProspect[
 
     // Llamar a la API de conversaciones de Instagram
     const conversationsResponse = await fetch(
-      `https://graph.instagram.com/v19.0/me/conversations?platform=instagram&fields=id,updated_time,participants,messages{id,created_time,from,message,story_mention,attachments}&limit=10&access_token=${token}`
+      `https://graph.instagram.com/v23.0/me/conversations?platform=instagram&access_token=${token}`
     );
 
     if (!conversationsResponse.ok) {
