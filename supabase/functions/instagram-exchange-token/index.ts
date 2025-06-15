@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -106,87 +105,88 @@ serve(async (req) => {
 
     console.log("Token obtenido exitosamente");
 
-    // 🔍 NUEVA LÓGICA MEJORADA PARA OBTENER INSTAGRAM BUSINESS ACCOUNT ID
-    let userData = null;
+    // Obtener información del usuario de Facebook
+    const userResponse = await fetch(
+      `https://graph.facebook.com/v23.0/me?access_token=${tokenData.access_token}`
+    );
+
+    if (!userResponse.ok) {
+      console.error("Error obteniendo usuario de Facebook:", await userResponse.text());
+      return new Response(
+        JSON.stringify({
+          error: "user_fetch_failed",
+          error_description: "No se pudo obtener información del usuario",
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    const userData = await userResponse.json();
+    console.log("✅ Usuario de Facebook obtenido:", userData);
+
+    // 🔍 BUSCAR INSTAGRAM BUSINESS ACCOUNT ID CORRECTO
     let instagramBusinessAccountId = null;
     let pageId = null;
     let debugInfo = {
-      facebook_user_id: null,
+      facebook_user_id: userData.id,
       instagram_business_account_id: null,
       page_id_found: null,
       search_attempts: [],
       final_id_used: null,
     };
 
-    // Paso 1: Obtener información del usuario de Facebook
-    const userResponse = await fetch(
-      `https://graph.facebook.com/v23.0/me?access_token=${tokenData.access_token}`
-    );
+    console.log("=== BUSCANDO INSTAGRAM BUSINESS ACCOUNT ===");
+    
+    try {
+      const accountsResponse = await fetch(
+        `https://graph.facebook.com/v23.0/${userData.id}/accounts?fields=id,name,instagram_business_account,access_token,category&access_token=${tokenData.access_token}`
+      );
 
-    if (userResponse.ok) {
-      userData = await userResponse.json();
-      debugInfo.facebook_user_id = userData.id;
-      console.log("✅ Usuario de Facebook obtenido:", userData);
+      if (accountsResponse.ok) {
+        const accountsData = await accountsResponse.json();
+        console.log("Páginas encontradas:", accountsData.data?.length || 0);
 
-      // Paso 2: Buscar páginas del usuario para encontrar Instagram Business
-      try {
-        console.log("=== BUSCANDO INSTAGRAM BUSINESS ACCOUNT ===");
-        
-        const accountsResponse = await fetch(
-          `https://graph.facebook.com/v23.0/${userData.id}/accounts?fields=id,name,instagram_business_account,access_token,category&access_token=${tokenData.access_token}`
-        );
+        // Buscar la primera página con Instagram Business Account
+        for (const page of accountsData.data || []) {
+          const attempt = {
+            page_id: page.id,
+            page_name: page.name,
+            has_instagram: !!page.instagram_business_account,
+            instagram_id: page.instagram_business_account?.id || null,
+          };
 
-        if (accountsResponse.ok) {
-          const accountsData = await accountsResponse.json();
-          console.log("Páginas encontradas:", accountsData.data?.length || 0);
+          debugInfo.search_attempts.push(attempt);
+          console.log(`📋 Página: ${page.name} - Instagram Business: ${attempt.has_instagram ? '✅' : '❌'}`);
 
-          // Buscar la primera página con Instagram Business Account
-          for (const page of accountsData.data || []) {
-            const attempt = {
-              page_id: page.id,
-              page_name: page.name,
-              has_instagram: !!page.instagram_business_account,
-              instagram_id: page.instagram_business_account?.id || null,
-            };
-
-            debugInfo.search_attempts.push(attempt);
-            console.log(`📋 Página: ${page.name} - Instagram Business: ${attempt.has_instagram ? '✅' : '❌'}`);
-
-            if (page.instagram_business_account) {
-              // 🎯 ENCONTRAMOS EL INSTAGRAM BUSINESS ACCOUNT ID
-              instagramBusinessAccountId = page.instagram_business_account.id;
-              pageId = page.id;
-              
-              console.log("🎉 ¡INSTAGRAM BUSINESS ACCOUNT ENCONTRADO!");
-              console.log("Instagram Business Account ID:", instagramBusinessAccountId);
-              console.log("Page ID:", pageId);
-              
-              debugInfo.instagram_business_account_id = instagramBusinessAccountId;
-              debugInfo.page_id_found = pageId;
-              
-              // Guardar PAGE_ID en secretos de Supabase
-              try {
-                console.log("💾 Guardando PAGE_ID en secretos...");
-                // Aquí puedes agregar la lógica para guardar en secretos si es necesario
-                console.log("✅ PAGE_ID procesado correctamente");
-              } catch (error) {
-                console.warn("⚠️ No se pudo guardar PAGE_ID en secretos:", error);
-              }
-              
-              break; // Salir del loop una vez encontrado
-            }
+          if (page.instagram_business_account) {
+            // 🎯 ENCONTRAMOS EL INSTAGRAM BUSINESS ACCOUNT ID
+            instagramBusinessAccountId = page.instagram_business_account.id;
+            pageId = page.id;
+            
+            console.log("🎉 ¡INSTAGRAM BUSINESS ACCOUNT ENCONTRADO!");
+            console.log("Instagram Business Account ID:", instagramBusinessAccountId);
+            console.log("Page ID:", pageId);
+            
+            debugInfo.instagram_business_account_id = instagramBusinessAccountId;
+            debugInfo.page_id_found = pageId;
+            
+            break; // Salir del loop una vez encontrado
           }
-        } else {
-          console.error("Error obteniendo páginas:", await accountsResponse.text());
         }
-      } catch (error) {
-        console.error("Error en búsqueda de Instagram Business:", error);
-        debugInfo.search_attempts.push({
-          error: error.message,
-        });
+      } else {
+        console.error("Error obteniendo páginas:", await accountsResponse.text());
       }
-    } else {
-      console.error("Error obteniendo usuario de Facebook:", await userResponse.text());
+    } catch (error) {
+      console.error("Error en búsqueda de Instagram Business:", error);
+      debugInfo.search_attempts.push({
+        error: error.message,
+      });
     }
 
     // 🚨 DECISIÓN CRÍTICA: ¿QUÉ ID USAR?
@@ -198,10 +198,28 @@ serve(async (req) => {
       debugInfo.final_id_used = "instagram_business_account_id";
       console.log("✅ Usando Instagram Business Account ID:", finalInstagramUserId);
     } else {
-      // ⚠️ Fallback: Usar Facebook User ID si no hay Instagram Business
-      finalInstagramUserId = userData?.id;
-      debugInfo.final_id_used = "facebook_user_id_fallback";
-      console.warn("⚠️ No se encontró Instagram Business, usando Facebook User ID:", finalInstagramUserId);
+      // ⚠️ Fallback: NO usar Facebook User ID, sino buscar en user_id field
+      if (userData.user_id) {
+        finalInstagramUserId = userData.user_id;
+        debugInfo.final_id_used = "facebook_user_user_id_field";
+        console.log("⚠️ Usando user_id field de Facebook user:", finalInstagramUserId);
+      } else {
+        console.error("❌ No se encontró Instagram Business Account ID ni user_id field");
+        return new Response(
+          JSON.stringify({
+            error: "no_instagram_account",
+            error_description: "No se pudo obtener información de la cuenta de Instagram Business",
+            debug_info: debugInfo,
+          }),
+          {
+            status: 400,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
     }
 
     if (!finalInstagramUserId) {

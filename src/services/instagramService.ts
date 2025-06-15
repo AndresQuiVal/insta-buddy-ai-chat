@@ -186,74 +186,77 @@ export const handleInstagramCallback = async (code: string) => {
     const token = data.access_token;
     console.log("Token de acceso obtenido:", token);
 
-    // 🔍 PROCESAMIENTO MEJORADO DE LOS DATOS DEL USUARIO
+    // 🔍 PROCESAMIENTO CORRECTO DE LOS DATOS DEL USUARIO
     const userData = {
       facebook: data.user,
       instagram: data.instagram_account ?? data.user,
     };
 
-    // 🚨 DETERMINAR EL ID CORRECTO PARA USAR
-    let finalInstagramUserId;
-    let username;
+    // 🚨 USAR EL ID CORRECTO - Instagram Business Account ID
+    let finalInstagramUserId = data.instagram_account?.id;
+    let username = data.instagram_account?.username || data.user?.name || "Usuario";
 
-    if (data.instagram_account?.id) {
-      // ✅ Usar Instagram Business Account ID si está disponible
-      finalInstagramUserId = data.instagram_account.id;
-      username = data.instagram_account.username || data.user?.name || "Usuario";
-      console.log("✅ Usando Instagram Business Account ID:", finalInstagramUserId);
-    } else {
-      // ⚠️ Fallback a Facebook User ID
-      finalInstagramUserId = data.user?.id;
-      username = data.user?.name || "Usuario";
-      console.warn("⚠️ Usando Facebook User ID como fallback:", finalInstagramUserId);
+    if (!finalInstagramUserId) {
+      console.error("❌ No se pudo obtener Instagram Business Account ID válido");
+      toast({
+        title: "Error de cuenta",
+        description: "No se pudo obtener el ID de Instagram Business correcto.",
+        variant: "destructive",
+      });
+      throw new Error("ID de Instagram Business no encontrado");
     }
 
     console.log("🔑 ID FINAL para base de datos:", finalInstagramUserId);
     console.log("👤 Username:", username);
 
-    // Guardar datos del usuario en localStorage
-    localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
+    // Guardar datos del usuario en localStorage con estructura corregida
+    const userDataForStorage = {
+      facebook: data.user,
+      instagram: {
+        id: finalInstagramUserId, // Instagram Business Account ID
+        username: username,
+        user_id: data.user?.user_id || finalInstagramUserId
+      }
+    };
+    
+    localStorage.setItem("hower-instagram-user", JSON.stringify(userDataForStorage));
 
     // 🎯 CREAR O ACTUALIZAR USUARIO EN SUPABASE CON EL ID CORRECTO
-    if (finalInstagramUserId) {
-      console.log("💾 Guardando usuario en Supabase...");
-      console.log("- Instagram User ID:", finalInstagramUserId);
-      console.log("- Username:", username);
-      console.log("- Page ID:", data.page_id);
+    console.log("💾 Guardando usuario en Supabase...");
+    console.log("- Instagram User ID:", finalInstagramUserId);
+    console.log("- Username:", username);
+    console.log("- Page ID:", data.page_id);
 
-      const { data: dbData, error: dbError } = await supabase
-        .from('instagram_users')
-        .upsert({
-          instagram_user_id: finalInstagramUserId, // 🔑 ID CORRECTO AQUÍ
-          username: username,
-          access_token: token,
-          page_id: data.page_id,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'instagram_user_id'
-        })
-        .select()
-        .single();
+    const { data: dbData, error: dbError } = await supabase
+      .from('instagram_users')
+      .upsert({
+        instagram_user_id: finalInstagramUserId, // 🔑 Instagram Business Account ID CORRECTO
+        username: username,
+        access_token: token,
+        page_id: data.page_id,
+        is_active: true,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'instagram_user_id'
+      })
+      .select()
+      .single();
 
-      if (dbError) {
-        console.error("❌ Error guardando usuario en Supabase:", dbError);
-        toast({
-          title: "Error de base de datos",
-          description: "No se pudo guardar la información del usuario.",
-          variant: "destructive",
-        });
-      } else {
-        console.log("✅ Usuario guardado exitosamente en Supabase:", dbData);
-        console.log("✅ Instagram User ID en DB:", dbData.instagram_user_id);
-        
-        // Disparar evento personalizado
-        window.dispatchEvent(new CustomEvent('instagram-auth-success', { 
-          detail: { user: dbData } 
-        }));
-      }
+    if (dbError) {
+      console.error("❌ Error guardando usuario en Supabase:", dbError);
+      toast({
+        title: "Error de base de datos",
+        description: "No se pudo guardar la información del usuario.",
+        variant: "destructive",
+      });
     } else {
-      console.error("❌ No se pudo obtener un ID válido para el usuario");
+      console.log("✅ Usuario guardado exitosamente en Supabase:", dbData);
+      console.log("✅ Instagram User ID en DB:", dbData.instagram_user_id);
+      
+      // Disparar evento personalizado
+      window.dispatchEvent(new CustomEvent('instagram-auth-success', { 
+        detail: { user: dbData } 
+      }));
     }
 
     console.log("Token y datos de usuario guardados exitosamente");

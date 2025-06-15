@@ -38,9 +38,12 @@ export const useInstagramUsers = () => {
       }
 
       const userData = JSON.parse(savedUserData);
-      const instagramUserId = userData.instagram?.id || userData.facebook?.id;
+      
+      // 🔑 USAR EL ID CORRECTO - Instagram Business Account ID 
+      const instagramUserId = userData.instagram?.id;
       
       console.log('🆔 Instagram User ID extraído:', instagramUserId);
+      console.log('📊 Estructura completa:', userData);
       
       if (!instagramUserId) {
         console.log('❌ No se pudo extraer Instagram User ID');
@@ -68,7 +71,7 @@ export const useInstagramUsers = () => {
         console.log('✅ Usuario encontrado en Supabase:', data);
         setCurrentUser(data);
       } else {
-        console.log('⚠️ Usuario no encontrado en Supabase');
+        console.log('⚠️ Usuario no encontrado en Supabase para ID:', instagramUserId);
         setCurrentUser(null);
       }
 
