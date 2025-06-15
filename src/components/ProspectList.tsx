@@ -1,289 +1,123 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
+import React, { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { MessageCircle, RefreshCw, Search, Bot } from 'lucide-react';
+import { MessageCircle, RefreshCw, Search, Bot, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { analyzeInstagramMessage } from '@/services/instagramTraitAnalysis';
-
-interface InstagramMessage {
-  id: string;
-  instagram_message_id: string;
-  sender_id: string;
-  recipient_id: string;
-  message_text: string;
-  message_type: 'received' | 'sent';
-  timestamp: string;
-  raw_data: any;
-}
-
-interface Prospect {
-  sender_id: string;
-  messages: InstagramMessage[];
-  last_message: InstagramMessage;
-  message_count: number;
-  matchPoints?: number;
-  metTraits?: string[];
-}
+import { useNewProspects } from '@/hooks/useNewProspects';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProspectList: React.FC = () => {
-  const [prospects, setProspects] = useState<Prospect[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { prospects, loading, error, refetch } = useNewProspects();
   const [searchTerm, setSearchTerm] = useState('');
-  const [pageId, setPageId] = useState<string | null>(null);
+  const [suggestionLoading, setSuggestionLoading] = useState<string | null>(null);
+  const [suggestionDialog, setSuggestionDialog] = useState<{
+    open: boolean;
+    suggestion: string;
+    prospectUsername: string;
+  }>({
+    open: false,
+    suggestion: '',
+    prospectUsername: ''
+  });
 
-  useEffect(() => {
-    const storedPageId = localStorage.getItem('hower-page-id');
-    if (storedPageId) {
-      setPageId(storedPageId);
-    }
-    loadProspects();
-  }, []);
-
-  // Escuchar actualizaciones de conversaciones para refrescar la lista
-  useEffect(() => {
-    const handleConversationsUpdate = () => {
-      console.log("🔄 Actualizando lista de prospectos...");
-      loadProspectsFromStorage();
-    };
-
-    window.addEventListener('conversations-updated', handleConversationsUpdate);
-    window.addEventListener('storage', handleConversationsUpdate);
-    
-    return () => {
-      window.removeEventListener('conversations-updated', handleConversationsUpdate);
-      window.removeEventListener('storage', handleConversationsUpdate);
-    };
-  }, []);
-
-  const getUserDisplayName = (senderId: string) => {
-    if (senderId === 'hower_bot') return 'Hower Assistant';
-    if (senderId.length > 8) {
-      return `Usuario ${senderId.slice(-4)}`;
-    }
-    return `Usuario ${senderId}`;
-  };
-
-  const getProspectState = (prospect: Prospect) => {
-    const receivedMessages = prospect.messages.filter(msg => msg.message_type === 'received');
-    const sentMessages = prospect.messages.filter(msg => msg.message_type === 'sent');
-    
-    if (receivedMessages.length === 0) {
-      return 'Sin respuesta';
-    } else if (prospect.last_message.message_type === 'received') {
-      return 'Esperando respuesta';
-    } else {
-      return 'En seguimiento';
-    }
-  };
-
-  const handleAISuggestion = async (prospect: Prospect) => {
-    console.log("🤖 Generando sugerencia con IA para:", getUserDisplayName(prospect.sender_id));
-    
-    // Analizar mensajes del prospecto automáticamente
-    const userMessages = prospect.messages
-      .filter(msg => msg.message_type === 'received')
-      .map(msg => msg.message_text)
-      .join(' ');
-    
-    if (userMessages.trim()) {
-      try {
-        console.log("📊 Analizando mensajes del prospecto:", userMessages.substring(0, 100) + "...");
-        
-        await analyzeInstagramMessage(
-          prospect.sender_id,
-          userMessages,
-          getUserDisplayName(prospect.sender_id)
-        );
-        
-        toast({
-          title: "✅ Análisis completado",
-          description: `Características analizadas para ${getUserDisplayName(prospect.sender_id)}`
-        });
-        
-        // Refrescar la lista para mostrar los resultados
-        setTimeout(() => {
-          loadProspectsFromStorage();
-        }, 1000);
-        
-      } catch (error) {
-        console.error("❌ Error al analizar características:", error);
-        toast({
-          title: "Error en análisis",
-          description: "No se pudo completar el análisis con IA",
-          variant: "destructive"
-        });
-      }
-    }
-    
-    toast({
-      title: "Sugerencia con IA",
-      description: `Analizando perfil de ${getUserDisplayName(prospect.sender_id)}...`
-    });
-  };
-
-  const loadProspectsFromStorage = () => {
+  const handleAISuggestion = async (prospect: any) => {
     try {
-      const savedConversations = localStorage.getItem('hower-conversations');
-      if (savedConversations) {
-        const conversations = JSON.parse(savedConversations);
-        console.log("💾 Cargando prospectos desde localStorage:", conversations.length);
-        
-        // Convertir conversaciones guardadas a formato de prospects
-        const prospectsFromStorage = conversations.map((conv: any) => ({
-          sender_id: conv.id || conv.senderId,
-          messages: conv.messages || [
-            {
-              id: '1',
-              instagram_message_id: '1',
-              sender_id: conv.id || conv.senderId,
-              recipient_id: pageId || 'me',
-              message_text: conv.lastMessage || '',
-              message_type: 'received' as const,
-              timestamp: new Date().toISOString(),
-              raw_data: {}
-            }
-          ],
-          last_message: {
-            id: '1',
-            instagram_message_id: '1',
-            sender_id: conv.id || conv.senderId,
-            recipient_id: pageId || 'me',
-            message_text: conv.lastMessage || '',
-            message_type: 'received' as const,
-            timestamp: new Date().toISOString(),
-            raw_data: {}
-          },
-          message_count: conv.messages?.length || 1,
-          matchPoints: conv.matchPoints || 0,
-          metTraits: conv.metTraits || []
-        }));
-        
-        setProspects(prospectsFromStorage);
-        console.log("✅ Prospectos cargados desde localStorage:", prospectsFromStorage.length);
-      }
-    } catch (error) {
-      console.error("❌ Error al cargar desde localStorage:", error);
-    }
-  };
+      setSuggestionLoading(prospect.id);
+      console.log("🤖 Generando sugerencia con IA para:", prospect.username);
 
-  const loadProspects = async () => {
-    try {
-      setLoading(true);
-      
-      // Primero intentar cargar desde localStorage
-      loadProspectsFromStorage();
-      
-      const { data, error } = await supabase
-        .from('instagram_messages')
-        .select('*')
-        .order('timestamp', { ascending: false });
+      // Obtener datos del usuario de Instagram
+      const userDataString = localStorage.getItem('hower-instagram-user');
+      if (!userDataString) {
+        throw new Error('No hay información de usuario de Instagram disponible');
+      }
+
+      const userData = JSON.parse(userDataString);
+      const instagramUserId = userData.instagram?.id || userData.facebook?.id;
+
+      const { data, error } = await supabase.functions.invoke('ai-prospect-suggestion', {
+        body: {
+          prospect_id: prospect.id,
+          instagram_user_id: instagramUserId
+        }
+      });
 
       if (error) {
-        console.error('Error loading messages:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los prospectos",
-          variant: "destructive"
-        });
-        return;
+        console.error('❌ Error al generar sugerencia:', error);
+        throw new Error(error.message || 'Error al comunicarse con el servicio de IA');
       }
 
-      const realMessages = data?.filter((message: any) => {
-        return !message.sender_id.includes('webhook_') && 
-               !message.sender_id.includes('debug') && 
-               !message.sender_id.includes('error') &&
-               !message.message_text.includes('PAYLOAD COMPLETO') &&
-               !message.message_text.includes('ERROR:') &&
-               message.sender_id !== 'diagnostic_user';
-      }) || [];
-
-      const myPageId = pageId || localStorage.getItem('hower-page-id');
-      const prospectGroups: { [key: string]: InstagramMessage[] } = {};
-      
-      realMessages.forEach((message: any) => {
-        let prospectId = '';
-        let messageType: 'sent' | 'received' = 'received';
-        
-        if (myPageId) {
-          if (message.sender_id === myPageId) {
-            prospectId = message.recipient_id;
-            messageType = 'sent';
-          } else {
-            prospectId = message.sender_id;
-            messageType = 'received';
-          }
-        } else {
-          if (message.raw_data?.is_echo || message.message_type === 'sent') {
-            messageType = 'sent';
-            prospectId = message.recipient_id;
-          } else {
-            messageType = 'received';
-            prospectId = message.sender_id;
-          }
-        }
-        
-        if (!prospectGroups[prospectId]) {
-          prospectGroups[prospectId] = [];
-        }
-        
-        prospectGroups[prospectId].push({
-          ...message,
-          message_type: messageType
-        });
-      });
-
-      const prospectsArray = Object.entries(prospectGroups).map(([prospectId, messages]) => {
-        const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        
-        return {
-          sender_id: prospectId,
-          messages: sortedMessages,
-          last_message: sortedMessages[sortedMessages.length - 1],
-          message_count: sortedMessages.length,
-          matchPoints: 0,
-          metTraits: []
-        };
-      });
-
-      prospectsArray.sort((a, b) => 
-        new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
-      );
-
-      // Combinar con datos de localStorage para obtener matchPoints y metTraits
-      try {
-        const savedConversations = localStorage.getItem('hower-conversations');
-        if (savedConversations) {
-          const conversations = JSON.parse(savedConversations);
-          prospectsArray.forEach(prospect => {
-            const saved = conversations.find((conv: any) => 
-              conv.id === prospect.sender_id || conv.senderId === prospect.sender_id
-            );
-            if (saved) {
-              prospect.matchPoints = saved.matchPoints || 0;
-              prospect.metTraits = saved.metTraits || [];
-            }
+      if (data.error) {
+        if (data.needs_api_key) {
+          toast({
+            title: "API Key requerida",
+            description: "Necesitas configurar tu API Key de OpenAI en la configuración para usar las sugerencias con IA",
+            variant: "destructive"
           });
+          return;
         }
-      } catch (error) {
-        console.error("Error combinando datos:", error);
+        throw new Error(data.error);
       }
 
-      setProspects(prospectsArray);
-      
+      if (data.success && data.suggestion) {
+        setSuggestionDialog({
+          open: true,
+          suggestion: data.suggestion,
+          prospectUsername: data.prospect_username || prospect.username
+        });
+
+        toast({
+          title: "✅ Sugerencia generada",
+          description: `Sugerencia creada para ${prospect.username} analizando ${data.messages_analyzed} mensajes`
+        });
+      }
+
     } catch (error) {
-      console.error('Error in loadProspects:', error);
+      console.error("❌ Error al generar sugerencia:", error);
+      toast({
+        title: "Error en sugerencia",
+        description: error instanceof Error ? error.message : "No se pudo generar la sugerencia con IA",
+        variant: "destructive"
+      });
     } finally {
-      setLoading(false);
+      setSuggestionLoading(null);
+    }
+  };
+
+  const formatMessageTime = (timestamp: string): string => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 1) {
+      return 'Ahora';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes}m`;
+    } else if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60);
+      return `${hours}h`;
+    } else {
+      const days = Math.floor(diffInMinutes / 1440);
+      return `${days}d`;
+    }
+  };
+
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'esperando_respuesta':
+        return { text: 'Esperando respuesta', color: 'bg-red-100 text-red-800' };
+      case 'en_seguimiento':
+        return { text: 'En seguimiento', color: 'bg-green-100 text-green-800' };
+      default:
+        return { text: status, color: 'bg-gray-100 text-gray-800' };
     }
   };
 
   const filteredProspects = prospects.filter(prospect => {
-    const userName = getUserDisplayName(prospect.sender_id).toLowerCase();
-    const lastMessage = prospect.last_message.message_text.toLowerCase();
+    const username = prospect.username.toLowerCase();
     const search = searchTerm.toLowerCase();
-    
-    return userName.includes(search) || lastMessage.includes(search);
+    return username.includes(search);
   });
 
   if (loading) {
@@ -297,98 +131,168 @@ const ProspectList: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Error al cargar prospectos</h3>
+          <p className="text-gray-500 mb-4">{error}</p>
+          <Button onClick={refetch}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b border-purple-100">
-        <div>
-          <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
-            <MessageCircle className="w-6 h-6" /> Mis Prospectos
-          </h2>
-          <p className="text-sm text-gray-600">{filteredProspects.length} prospectos</p>
-        </div>
-        <button
-          onClick={loadProspects}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <RefreshCw className="w-5 h-5 text-gray-600" />
-        </button>
-      </div>
-
-      <div className="p-4 border-b border-purple-100">
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o mensaje..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-          />
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4">
-        {filteredProspects.length === 0 ? (
-          <div className="text-center py-8">
-            <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              {searchTerm ? 'No se encontraron prospectos' : 'No hay prospectos aún'}
-            </h3>
-            <p className="text-gray-500">
-              {searchTerm ? 'Intenta con otro término de búsqueda' : 'Los prospectos aparecerán aquí cuando lleguen mensajes'}
-            </p>
+    <>
+      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-purple-100">
+          <div>
+            <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
+              <MessageCircle className="w-6 h-6" /> Mis Prospectos
+            </h2>
+            <p className="text-sm text-gray-600">{filteredProspects.length} prospectos activos</p>
           </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Usuario</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProspects.map((prospect) => (
-                <TableRow key={prospect.sender_id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {getUserDisplayName(prospect.sender_id)}
-                      {prospect.matchPoints && prospect.matchPoints > 0 && (
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                          {prospect.matchPoints} ⭐
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      getProspectState(prospect) === 'Sin respuesta' 
-                        ? 'bg-red-100 text-red-800'
-                        : getProspectState(prospect) === 'Esperando respuesta'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {getProspectState(prospect)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAISuggestion(prospect)}
-                      className="flex items-center gap-2"
-                    >
-                      <Bot className="w-4 h-4" />
-                      Sugerencia con IA
-                    </Button>
-                  </TableCell>
+          <button
+            onClick={refetch}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            title="Actualizar prospectos"
+          >
+            <RefreshCw className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        <div className="p-4 border-b border-purple-100">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre de usuario..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {filteredProspects.length === 0 ? (
+            <div className="text-center py-8">
+              <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                {searchTerm ? 'No se encontraron prospectos' : 'No hay prospectos aún'}
+              </h3>
+              <p className="text-gray-500">
+                {searchTerm ? 'Intenta con otro término de búsqueda' : 'Los prospectos aparecerán aquí cuando el autoresponder responda a mensajes'}
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Usuario</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Último contacto</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+              </TableHeader>
+              <TableBody>
+                {filteredProspects.map((prospect) => {
+                  const statusDisplay = getStatusDisplay(prospect.status);
+                  return (
+                    <TableRow key={prospect.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {prospect.profile_picture_url ? (
+                            <img 
+                              src={prospect.profile_picture_url} 
+                              alt={prospect.username}
+                              className="w-8 h-8 rounded-full"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                              {prospect.username.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <span>@{prospect.username}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusDisplay.color}`}>
+                          {statusDisplay.text}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500">
+                        {formatMessageTime(prospect.last_message_date)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAISuggestion(prospect)}
+                          disabled={suggestionLoading === prospect.id}
+                          className="flex items-center gap-2"
+                        >
+                          {suggestionLoading === prospect.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Bot className="w-4 h-4" />
+                          )}
+                          Sugerencia con IA
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       </div>
-    </div>
+
+      <Dialog open={suggestionDialog.open} onOpenChange={(open) => setSuggestionDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="w-5 h-5 text-purple-600" />
+              Sugerencia de IA para @{suggestionDialog.prospectUsername}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-2">Mensaje sugerido:</h4>
+              <p className="text-gray-700 leading-relaxed">{suggestionDialog.suggestion}</p>
+            </div>
+            <div className="text-sm text-gray-500">
+              💡 Esta sugerencia fue generada analizando toda la conversación con el objetivo de agendar una reunión o obtener el número de teléfono del prospecto.
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setSuggestionDialog(prev => ({ ...prev, open: false }))}
+              >
+                Cerrar
+              </Button>
+              <Button 
+                onClick={() => {
+                  navigator.clipboard.writeText(suggestionDialog.suggestion);
+                  toast({
+                    title: "Copiado",
+                    description: "La sugerencia ha sido copiada al portapapeles"
+                  });
+                }}
+              >
+                Copiar mensaje
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
