@@ -79,6 +79,8 @@ export const getInstagramConversations = async (): Promise<ConversationProspect[
       throw new Error(errorData.error?.message || 'Error obteniendo conversaciones');
     }
 
+    console.log('🔍 Conversaciones obtenidas COMPLETO:', conversationsResponse);
+
     const conversationsData = await conversationsResponse.json();
     console.log('✅ Conversaciones obtenidas:', conversationsData);
 
