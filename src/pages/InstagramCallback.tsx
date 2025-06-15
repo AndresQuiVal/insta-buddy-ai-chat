@@ -14,7 +14,6 @@ const InstagramCallback: React.FC = () => {
       console.log('🔄 Iniciando procesamiento del callback de Instagram...');
       console.log('📋 URL params:', Object.fromEntries(searchParams.entries()));
       
-      // Obtener el código de autorización de los parámetros de la URL
       const code = searchParams.get('code');
       const error = searchParams.get('error');
       const errorReason = searchParams.get('error_reason');
@@ -61,21 +60,29 @@ const InstagramCallback: React.FC = () => {
         return;
       }
       
-      console.log('✅ Código recibido, procesando con API real...');
+      console.log('✅ Código recibido, procesando con API...');
       
-      // Procesar el código de autorización con la API real
       const result = await handleInstagramCallback(code);
       
       if (result.success) {
         setStatus('success');
-        console.log('🎉 Callback procesado exitosamente, disparando evento y redirigiendo...');
+        console.log('🎉 Callback procesado exitosamente');
+        
+        // 🔍 LOG DETALLADO DEL ID QUE SE ESTÁ GUARDANDO
+        const savedUserData = localStorage.getItem('hower-instagram-user');
+        if (savedUserData) {
+          const userData = JSON.parse(savedUserData);
+          console.log('📊 DATOS GUARDADOS EN LOCALSTORAGE:');
+          console.log('- Facebook ID:', userData.facebook?.id);
+          console.log('- Instagram ID:', userData.instagram?.id);
+          console.log('- Final ID usado:', userData.instagram?.id || userData.facebook?.id);
+        }
         
         // Disparar evento inmediatamente
         window.dispatchEvent(new CustomEvent('instagram-auth-success', { 
           detail: { user: result.user } 
         }));
         
-        // Redirección rápida al dashboard
         setTimeout(() => {
           console.log('🏠 Navegando al dashboard...');
           navigate('/', { replace: true });

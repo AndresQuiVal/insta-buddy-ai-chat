@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -118,7 +117,7 @@ export const disconnectInstagram = () => {
 export const handleInstagramCallback = async (code: string) => {
   try {
     console.log("Procesando código de autorización:", code);
-    console.log("Usando Facebook App ID:", INSTAGRAM_APP_ID);
+    console.log("Usando Instagram App ID:", INSTAGRAM_APP_ID);
     console.log("Redirect URI utilizada:", INSTAGRAM_REDIRECT_URI);
 
     // Llamar a Supabase Edge Function para intercambiar el código por token
@@ -161,7 +160,7 @@ export const handleInstagramCallback = async (code: string) => {
     }
 
     if (data.error) {
-      console.error("Error de Graph API:", data.error);
+      console.error("Error de Instagram API:", data.error);
 
       // Manejo específico de errores de Graph API
       let errorMessage = data.error_description || data.error;
@@ -185,25 +184,47 @@ export const handleInstagramCallback = async (code: string) => {
     }
 
     const token = data.access_token;
-
     console.log("Token de acceso obtenido:", token);
 
-    // Guardar datos del usuario (Facebook + Instagram si está disponible)
+    // 🔍 PROCESAMIENTO MEJORADO DE LOS DATOS DEL USUARIO
     const userData = {
       facebook: data.user,
       instagram: data.instagram_account ?? data.user,
     };
+
+    // 🚨 DETERMINAR EL ID CORRECTO PARA USAR
+    let finalInstagramUserId;
+    let username;
+
+    if (data.instagram_account?.id) {
+      // ✅ Usar Instagram Business Account ID si está disponible
+      finalInstagramUserId = data.instagram_account.id;
+      username = data.instagram_account.username || data.user?.name || "Usuario";
+      console.log("✅ Usando Instagram Business Account ID:", finalInstagramUserId);
+    } else {
+      // ⚠️ Fallback a Facebook User ID
+      finalInstagramUserId = data.user?.id;
+      username = data.user?.name || "Usuario";
+      console.warn("⚠️ Usando Facebook User ID como fallback:", finalInstagramUserId);
+    }
+
+    console.log("🔑 ID FINAL para base de datos:", finalInstagramUserId);
+    console.log("👤 Username:", username);
+
+    // Guardar datos del usuario en localStorage
     localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
 
-    // Crear o actualizar usuario en Supabase
-    const instagramUserId = userData.instagram?.id || userData.facebook?.id;
-    const username = userData.instagram?.username || userData.facebook?.name || "Usuario";
+    // 🎯 CREAR O ACTUALIZAR USUARIO EN SUPABASE CON EL ID CORRECTO
+    if (finalInstagramUserId) {
+      console.log("💾 Guardando usuario en Supabase...");
+      console.log("- Instagram User ID:", finalInstagramUserId);
+      console.log("- Username:", username);
+      console.log("- Page ID:", data.page_id);
 
-    if (instagramUserId) {
       const { data: dbData, error: dbError } = await supabase
         .from('instagram_users')
         .upsert({
-          instagram_user_id: instagramUserId,
+          instagram_user_id: finalInstagramUserId, // 🔑 ID CORRECTO AQUÍ
           username: username,
           access_token: token,
           page_id: data.page_id,
@@ -216,29 +237,29 @@ export const handleInstagramCallback = async (code: string) => {
         .single();
 
       if (dbError) {
-        console.error("Error guardando usuario en Supabase:", dbError);
+        console.error("❌ Error guardando usuario en Supabase:", dbError);
         toast({
           title: "Error de base de datos",
           description: "No se pudo guardar la información del usuario.",
           variant: "destructive",
         });
       } else {
-        console.log("Usuario guardado en Supabase:", dbData);
+        console.log("✅ Usuario guardado exitosamente en Supabase:", dbData);
+        console.log("✅ Instagram User ID en DB:", dbData.instagram_user_id);
         
-        // Disparar evento personalizado para notificar que el usuario se conectó
+        // Disparar evento personalizado
         window.dispatchEvent(new CustomEvent('instagram-auth-success', { 
           detail: { user: dbData } 
         }));
       }
+    } else {
+      console.error("❌ No se pudo obtener un ID válido para el usuario");
     }
 
     console.log("Token y datos de usuario guardados exitosamente");
-    console.log("Usuario conectado:", userData);
 
-    // Determinar qué nombre mostrar
-    const displayName = userData.instagram?.username
-      ? `@${userData.instagram.username}`
-      : userData.instagram?.name ?? "Usuario";
+    // Determinar nombre para mostrar
+    const displayName = username.startsWith('@') ? username : `@${username}`;
 
     toast({
       title: "¡Conexión exitosa!",
@@ -246,7 +267,7 @@ export const handleInstagramCallback = async (code: string) => {
       variant: "default",
     });
 
-    // Redirección al estado guardado
+    // Redirección
     const redirectPath = localStorage.getItem("hower-auth-redirect") || "/";
     localStorage.removeItem("hower-auth-redirect");
 
