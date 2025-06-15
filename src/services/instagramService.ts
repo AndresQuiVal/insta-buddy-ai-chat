@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -212,7 +211,7 @@ export const handleInstagramCallback = async (code: string) => {
     // Determinar qué nombre mostrar
     const displayName = userData.instagram?.username
       ? `@${userData.instagram.username}`
-      : userData.instagram?.name ?? "Usuario";
+      : userData.facebook?.name ?? "Usuario";
 
     toast({
       title: "¡Conexión exitosa!",
