@@ -186,16 +186,16 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====')
     console.log('📋 Recipient ID (Instagram Business Account):', event.recipient.id)
     
-    // Buscar usuario por el instagram_user_id que corresponde al business account
+    // CAMBIO CRÍTICO: Buscar SOLO por instagram_user_id que debe coincidir con recipient.id
     const { data: instagramUser, error: userError } = await supabase
       .from('instagram_users')
       .select('*')
-      .or(`instagram_user_id.eq.${event.recipient.id},page_id.eq.${event.recipient.id}`)
+      .eq('instagram_user_id', event.recipient.id)
       .single()
 
     if (userError || !instagramUser) {
-      console.error('❌ No se encontró usuario de Instagram:', userError)
-      console.log('💡 Intentando buscar por diferentes campos...')
+      console.error('❌ No se encontró usuario de Instagram para recipient ID:', event.recipient.id)
+      console.error('Error:', userError)
       
       // Buscar en todos los usuarios para debug
       const { data: allUsers } = await supabase
@@ -262,10 +262,39 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     const { error: insertError } = await supabase.from('instagram_messages').insert(messageData)
     if (insertError) {
       console.error('❌ Error guardando mensaje:', insertError)
-      // Continuar con autoresponder aunque falle el guardado
+      return
     } else {
       console.log('✅ Mensaje guardado correctamente con relación al usuario')
       console.log('📊 Tipos detectados guardados:', { isInvitation, isPresentation, isInscription })
+    }
+
+    // ✅ NUEVO: FORZAR ACTUALIZACIÓN DEL DASHBOARD
+    console.log('🔄 ===== NOTIFICANDO CAMBIOS AL DASHBOARD =====')
+    
+    // Emitir evento personalizado para notificar cambios
+    try {
+      const { error: notifyError } = await supabase
+        .channel('dashboard-updates')
+        .send({
+          type: 'broadcast',
+          event: 'message_received',
+          payload: {
+            user_id: instagramUser.instagram_user_id,
+            message_type: 'received',
+            is_invitation: isInvitation,
+            is_presentation: isPresentation,
+            is_inscription: isInscription,
+            timestamp: new Date().toISOString()
+          }
+        })
+      
+      if (notifyError) {
+        console.error('⚠️ Error notificando cambios:', notifyError)
+      } else {
+        console.log('✅ Cambios notificados al dashboard')
+      }
+    } catch (error) {
+      console.error('⚠️ Error en notificación:', error)
     }
 
     // PASO 4: OBTENER AUTORESPONDERS DESDE NUESTRO ENDPOINT

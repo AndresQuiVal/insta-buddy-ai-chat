@@ -102,21 +102,41 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
       loadDashboardStats();
     }
 
-    // Subscribe to real-time updates
+    // ✅ MEJORAR SUSCRIPCIÓN EN TIEMPO REAL
+    console.log('📡 Configurando suscripción en tiempo real mejorada...')
+    
     const subscription = supabase
       .channel('dashboard-updates')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'instagram_messages'
-      }, () => {
+      }, (payload) => {
+        console.log('📨 Cambio detectado en instagram_messages:', payload)
+        
+        // Solo recargar si el cambio afecta al usuario actual
         if (currentUser?.instagram_user_id) {
+          console.log('🔄 Recargando métricas por cambio en mensajes...')
+          setTimeout(() => {
+            loadDashboardStats();
+          }, 1000); // Delay para asegurar consistencia
+        }
+      })
+      .on('broadcast', { event: 'message_received' }, (payload) => {
+        console.log('📡 Mensaje recibido vía broadcast:', payload)
+        
+        // Verificar si es para el usuario actual
+        if (payload.payload?.user_id === currentUser?.instagram_user_id) {
+          console.log('🎯 Mensaje para usuario actual - recargando dashboard')
           loadDashboardStats();
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Estado de suscripción en tiempo real:', status)
+      });
 
     return () => {
+      console.log('🔌 Desconectando suscripción en tiempo real')
       supabase.removeChannel(subscription);
     };
   }, [timeFilter, currentUser?.instagram_user_id]);
@@ -317,7 +337,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
       setLoading(true);
       console.log('🔍 Cargando métricas para usuario:', currentUser.instagram_user_id);
 
-      // Usar la nueva función SQL que filtra por usuario específico
+      // ✅ USAR FUNCIÓN SQL CORRECTA
       const { data: metricsData, error: metricsError } = await supabase.rpc(
         'calculate_advanced_metrics_by_instagram_user',
         { user_instagram_id: currentUser.instagram_user_id }
@@ -335,7 +355,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
 
       if (metricsData && metricsData.length > 0) {
         const metrics = metricsData[0];
-        console.log('✅ Métricas cargadas para usuario:', metrics);
+        console.log('✅ Métricas cargadas:', metrics);
 
         const dashboardStats = {
           totalMessages: metrics.total_sent + metrics.total_responses,
@@ -343,12 +363,13 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           messagesReceived: metrics.total_responses,
           messagesSent: metrics.total_sent,
           averageResponseTime: metrics.avg_response_time_seconds,
-          todayMessages: currentUser.nuevos_prospectos_contactados || 0, // Usar valor del usuario
+          todayMessages: currentUser.nuevos_prospectos_contactados || 0,
           totalInvitations: metrics.total_invitations,
           responseRate: metrics.response_rate_percentage,
           lastMessageDate: metrics.last_message_date
         };
 
+        console.log('📊 Stats calculados:', dashboardStats);
         setStats(dashboardStats);
         generateAIRecommendations(dashboardStats);
       } else {
