@@ -7,11 +7,11 @@ import AutoresponderManager from '@/components/AutoresponderManager';
 import InstagramProfileManager from '@/components/InstagramProfileManager';
 
 const MyProspects = () => {
-  const [activeTab, setActiveTab] = useState('profiles');
+  const [activeTab, setActiveTab] = useState('autoresponder');
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="profiles" className="w-full">
+      <Tabs defaultValue="autoresponder" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="prospects">Prospectos</TabsTrigger>
           <TabsTrigger value="messages">Mensajes</TabsTrigger>
