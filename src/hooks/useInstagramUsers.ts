@@ -38,10 +38,13 @@ export const useInstagramUsers = () => {
       }
 
       const userData = JSON.parse(savedUserData);
-      // Usar user_id del objeto instagram como ID principal
-      const instagramUserId = userData.instagram?.user_id || userData.facebook?.id;
+      // ✅ CORRECCIÓN: Usar instagram.id en lugar de instagram.user_id
+      const instagramUserId = userData.instagram?.id || userData.facebook?.id;
       
       console.log('🆔 Instagram User ID extraído:', instagramUserId);
+      console.log('📊 Datos completos del usuario:', userData);
+      console.log('📋 Instagram data:', userData.instagram);
+      console.log('📋 Facebook data:', userData.facebook);
       
       if (!instagramUserId) {
         console.log('❌ No se pudo extraer Instagram User ID');
@@ -51,7 +54,7 @@ export const useInstagramUsers = () => {
       }
 
       // Buscar usuario en Supabase
-      console.log('🔎 Buscando en Supabase...');
+      console.log('🔎 Buscando en Supabase con ID:', instagramUserId);
       const { data, error } = await supabase
         .from('instagram_users')
         .select('*')
@@ -69,7 +72,15 @@ export const useInstagramUsers = () => {
         console.log('✅ Usuario encontrado en Supabase:', data);
         setCurrentUser(data);
       } else {
-        console.log('⚠️ Usuario no encontrado en Supabase');
+        console.log('⚠️ Usuario no encontrado en Supabase con ID:', instagramUserId);
+        console.log('🔍 Verificando todos los usuarios en BD...');
+        
+        // Debug: mostrar todos los usuarios
+        const { data: allUsers } = await supabase
+          .from('instagram_users')
+          .select('instagram_user_id, username');
+        console.log('📊 Usuarios en BD:', allUsers);
+        
         setCurrentUser(null);
       }
 
@@ -138,6 +149,10 @@ export const useInstagramUsers = () => {
   const getCurrentUserToken = () => {
     return currentUser?.access_token || null;
   };
+
+  useEffect(() => {
+    checkCurrentUser();
+  }, []);
 
   return {
     currentUser,
