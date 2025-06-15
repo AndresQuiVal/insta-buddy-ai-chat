@@ -414,7 +414,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     if (shouldSendAutoresponder) {
       console.log('🚀 ENVIANDO AUTORESPONDER...')
       
-      const success = await sendInstagramMessageViaEdgeFunction(supabase, event.sender.id, selectedAutoresponder.message_text)
+      const success = await sendInstagramMessageViaEdgeFunction(supabase, event.sender.id, selectedAutoresponder.message_text, instagramUser.instagram_user_id)
       
       if (!success) {
         console.error('❌ ERROR ENVIANDO AUTORESPONDER')
@@ -775,19 +775,18 @@ async function handleAutoresponder(supabase: any, senderId: string, autoresponde
   }
 }
 
-async function sendInstagramMessageViaEdgeFunction(supabase: any, recipientId: string, messageText: string): Promise<boolean> {
+async function sendInstagramMessageViaEdgeFunction(supabase: any, recipientId: string, messageText: string, instagramUserId: string): Promise<boolean> {
   try {
     console.log('📤 ===== ENVIANDO MENSAJE VIA EDGE FUNCTION =====')
     console.log('👤 Recipient:', recipientId)
     console.log('💌 Message:', messageText)
+    console.log('🆔 Instagram User ID:', instagramUserId)
     
-    // IMPORTANTE: El webhook del servidor NO puede pasar tokens del cliente
-    // Debe depender de variables de entorno del servidor
     const { data, error } = await supabase.functions.invoke('instagram-send-message', {
       body: {
         recipient_id: recipientId,
-        message_text: messageText
-        // NO enviamos access_token - depende de variable de entorno
+        message_text: messageText,
+        instagram_user_id: instagramUserId // ✅ AGREGAR EL PARÁMETRO REQUERIDO
       }
     })
 
