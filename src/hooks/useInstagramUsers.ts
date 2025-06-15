@@ -38,12 +38,9 @@ export const useInstagramUsers = () => {
       }
 
       const userData = JSON.parse(savedUserData);
-      
-      // Usar el ID principal que se guardó en localStorage
-      const instagramUserId = userData.instagram?.id;
+      const instagramUserId = userData.instagram?.id || userData.facebook?.id;
       
       console.log('🆔 Instagram User ID extraído:', instagramUserId);
-      console.log('📊 Estructura completa:', userData);
       
       if (!instagramUserId) {
         console.log('❌ No se pudo extraer Instagram User ID');
@@ -71,7 +68,7 @@ export const useInstagramUsers = () => {
         console.log('✅ Usuario encontrado en Supabase:', data);
         setCurrentUser(data);
       } else {
-        console.log('⚠️ Usuario no encontrado en Supabase para ID:', instagramUserId);
+        console.log('⚠️ Usuario no encontrado en Supabase');
         setCurrentUser(null);
       }
 
