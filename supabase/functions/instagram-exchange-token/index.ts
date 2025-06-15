@@ -72,17 +72,19 @@ serve(async (req) => {
     const tokenData = await tokenResponse.json()
     console.log('✅ Token de acceso obtenido exitosamente')
 
-    // Intercambiar por token de larga duración
-    console.log('🔄 Intercambiando por token de larga duración...')
-    const longLivedTokenResponse = await fetch(`https://graph.facebook.com/access_token?grant_type=fb_exchange_token&client_id=${instagramAppId}&client_secret=${instagramClientSecret}&fb_exchange_token=${tokenData.access_token}`)
+    // ✅ INTERCAMBIAR POR TOKEN DE LARGA DURACIÓN USANDO INSTAGRAM GRAPH API
+    console.log('🔄 Intercambiando por token de larga duración usando Instagram Graph API...')
+    const longLivedTokenResponse = await fetch(`https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${instagramClientSecret}&access_token=${tokenData.access_token}`)
     
     let finalAccessToken = tokenData.access_token
     if (longLivedTokenResponse.ok) {
       const longLivedTokenData = await longLivedTokenResponse.json()
       finalAccessToken = longLivedTokenData.access_token
-      console.log('✅ Token de larga duración obtenido')
+      console.log('✅ Token de larga duración obtenido con Instagram Graph API')
     } else {
       console.log('⚠️ No se pudo obtener token de larga duración, usando token normal')
+      const errorData = await longLivedTokenResponse.json()
+      console.log('Error intercambiando token:', errorData)
     }
 
     // ✅ OBTENER PÁGINAS DE FACEBOOK PARA ENCONTRAR INSTAGRAM BUSINESS
@@ -112,9 +114,9 @@ serve(async (req) => {
     console.log('📋 Página ID:', pageWithInstagram.id)
     console.log('📋 Nombre de página:', pageWithInstagram.name)
 
-    // ✅ OBTENER INFORMACIÓN DEL INSTAGRAM BUSINESS ACCOUNT
-    console.log('📋 Obteniendo información del Instagram Business Account...')
-    const instagramResponse = await fetch(`https://graph.facebook.com/${instagramBusinessAccountId}?fields=id,username,name,followers_count&access_token=${finalAccessToken}`)
+    // ✅ OBTENER INFORMACIÓN DEL INSTAGRAM BUSINESS ACCOUNT USANDO INSTAGRAM GRAPH API
+    console.log('📋 Obteniendo información del Instagram Business Account con Instagram Graph API...')
+    const instagramResponse = await fetch(`https://graph.instagram.com/${instagramBusinessAccountId}?fields=id,username,name,followers_count&access_token=${finalAccessToken}`)
     
     if (!instagramResponse.ok) {
       const errorData = await instagramResponse.json()
