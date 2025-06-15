@@ -385,6 +385,100 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_from_prospect: boolean
+          message_instagram_id: string
+          message_text: string | null
+          message_timestamp: string
+          message_type: string | null
+          prospect_id: string | null
+          raw_data: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_from_prospect: boolean
+          message_instagram_id: string
+          message_text?: string | null
+          message_timestamp: string
+          message_type?: string | null
+          prospect_id?: string | null
+          raw_data?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_from_prospect?: boolean
+          message_instagram_id?: string
+          message_text?: string | null
+          message_timestamp?: string
+          message_type?: string | null
+          prospect_id?: string | null
+          raw_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_messages_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospects: {
+        Row: {
+          created_at: string
+          first_contact_date: string
+          id: string
+          instagram_user_id: string | null
+          last_message_date: string
+          last_message_from_prospect: boolean
+          profile_picture_url: string | null
+          prospect_instagram_id: string
+          status: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          first_contact_date?: string
+          id?: string
+          instagram_user_id?: string | null
+          last_message_date?: string
+          last_message_from_prospect?: boolean
+          profile_picture_url?: string | null
+          prospect_instagram_id: string
+          status?: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          first_contact_date?: string
+          id?: string
+          instagram_user_id?: string | null
+          last_message_date?: string
+          last_message_from_prospect?: boolean
+          profile_picture_url?: string | null
+          prospect_instagram_id?: string
+          status?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_instagram_user_id_fkey"
+            columns: ["instagram_user_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_settings: {
         Row: {
           ai_delay: number | null
@@ -429,6 +523,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_prospect_message: {
+        Args: {
+          p_prospect_id: string
+          p_message_instagram_id: string
+          p_message_text: string
+          p_is_from_prospect: boolean
+          p_message_timestamp: string
+          p_message_type?: string
+          p_raw_data?: Json
+        }
+        Returns: string
+      }
       calculate_advanced_metrics: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -470,6 +576,15 @@ export type Database = {
           avg_response_time_seconds: number
           last_message_date: string
         }[]
+      }
+      create_or_update_prospect: {
+        Args: {
+          p_instagram_user_id: string
+          p_prospect_instagram_id: string
+          p_username: string
+          p_profile_picture_url?: string
+        }
+        Returns: string
       }
       get_instagram_token_by_user_id: {
         Args: { user_instagram_id: string }

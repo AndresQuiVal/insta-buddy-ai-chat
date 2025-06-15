@@ -222,7 +222,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
     console.log('📊 Es presentación:', isPresentation)
     console.log('📝 Es inscripción:', isInscription)
 
-    // PASO 3: Guardar el mensaje recibido en BD
+    // PASO 3: Guardar el mensaje recibido en BD (tabla antigua)
     const messageData = {
       instagram_message_id: event.message.mid,
       sender_id: event.sender.id,
@@ -234,7 +234,7 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       is_invitation: isInvitation,
       is_presentation: isPresentation,
       is_inscription: isInscription,
-      instagram_user_id: instagramUser.id, // ✅ RELACIÓN CORRECTA
+      instagram_user_id: instagramUser.id,
       raw_data: {
         webhook_data: event,
         received_at: new Date().toISOString(),
@@ -265,36 +265,6 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       return
     } else {
       console.log('✅ Mensaje guardado correctamente con relación al usuario')
-      console.log('📊 Tipos detectados guardados:', { isInvitation, isPresentation, isInscription })
-    }
-
-    // ✅ NUEVO: FORZAR ACTUALIZACIÓN DEL DASHBOARD
-    console.log('🔄 ===== NOTIFICANDO CAMBIOS AL DASHBOARD =====')
-    
-    // Emitir evento personalizado para notificar cambios
-    try {
-      const { error: notifyError } = await supabase
-        .channel('dashboard-updates')
-        .send({
-          type: 'broadcast',
-          event: 'message_received',
-          payload: {
-            user_id: instagramUser.instagram_user_id,
-            message_type: 'received',
-            is_invitation: isInvitation,
-            is_presentation: isPresentation,
-            is_inscription: isInscription,
-            timestamp: new Date().toISOString()
-          }
-        })
-      
-      if (notifyError) {
-        console.error('⚠️ Error notificando cambios:', notifyError)
-      } else {
-        console.log('✅ Cambios notificados al dashboard')
-      }
-    } catch (error) {
-      console.error('⚠️ Error en notificación:', error)
     }
 
     // PASO 4: OBTENER AUTORESPONDERS DESDE NUESTRO ENDPOINT
@@ -318,14 +288,6 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       if (autoresponderData?.success && autoresponderData?.autoresponders) {
         autoresponders = autoresponderData.autoresponders;
         console.log('✅ Autoresponders obtenidos:', autoresponders.length);
-        console.log('📋 Lista de autoresponders:', autoresponders.map(ar => ({
-          id: ar.id,
-          name: ar.name,
-          is_active: ar.is_active,
-          message_preview: ar.message_text?.substring(0, 30) + '...',
-          use_keywords: ar.use_keywords,
-          keywords: ar.keywords
-        })));
       } else {
         console.error('❌ Respuesta no exitosa del endpoint:', autoresponderData);
         return;
@@ -338,19 +300,16 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     if (!autoresponders || autoresponders.length === 0) {
       console.log('❌ NO HAY AUTORESPONDERS DISPONIBLES')
-      console.log('💡 Asegúrate de haber configurado autoresponders en la aplicación')
       return
     }
 
     // FILTRAR autoresponders que coincidan con palabras clave
     const matchingAutoresponders = autoresponders.filter(ar => {
-      // Si no usa palabras clave, siempre coincide
       if (!ar.use_keywords || !ar.keywords || ar.keywords.length === 0) {
         console.log(`✅ Autoresponder "${ar.name}" no usa palabras clave - COINCIDE`)
         return true;
       }
       
-      // Verificar si alguna palabra clave está en el mensaje
       const hasKeywordMatch = ar.keywords.some(keyword => {
         const keywordLower = keyword.toLowerCase();
         const matches = messageText.includes(keywordLower);
@@ -369,20 +328,13 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     if (matchingAutoresponders.length === 0) {
       console.log('❌ NO HAY AUTORESPONDERS QUE COINCIDAN CON LAS PALABRAS CLAVE')
-      console.log('💡 El mensaje no contiene ninguna palabra clave configurada')
       return;
     }
 
     // Usar el primer autoresponder que coincida
     const selectedAutoresponder = matchingAutoresponders[0];
     
-    console.log('🎯 AUTORESPONDER SELECCIONADO:')
-    console.log('📋 ID:', selectedAutoresponder.id)
-    console.log('📋 Nombre:', selectedAutoresponder.name)
-    console.log('📋 Mensaje:', selectedAutoresponder.message_text)
-    console.log('📋 Solo primer mensaje:', selectedAutoresponder.send_only_first_message)
-    console.log('📋 Usa palabras clave:', selectedAutoresponder.use_keywords)
-    console.log('📋 Palabras clave:', selectedAutoresponder.keywords)
+    console.log('🎯 AUTORESPONDER SELECCIONADO:', selectedAutoresponder.name)
 
     // VERIFICAR SI DEBE ENVIAR SEGÚN CONFIGURACIÓN
     let shouldSendAutoresponder = true
@@ -416,9 +368,134 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       
       const success = await sendInstagramMessageViaEdgeFunction(supabase, event.sender.id, selectedAutoresponder.message_text, instagramUser.instagram_user_id)
       
-      if (!success) {
+      if (success) {
+        console.log('✅ AUTORESPONDER ENVIADO - CREANDO PROSPECTO')
+
+        // 🆕 NUEVO: CREAR O ACTUALIZAR PROSPECTO AUTOMÁTICAMENTE
+        try {
+          console.log('👤 === CREANDO/ACTUALIZANDO PROSPECTO ===')
+          
+          // Extraer username del mensaje si es posible, sino usar sender_id
+          let username = event.sender.id.slice(-8); // fallback
+          
+          // Intentar obtener username de Instagram API si tenemos token
+          try {
+            const response = await fetch(
+              `https://graph.instagram.com/${event.sender.id}?fields=username&access_token=${instagramUser.access_token}`
+            );
+            if (response.ok) {
+              const userData = await response.json();
+              if (userData.username) {
+                username = userData.username;
+                console.log('✅ Username obtenido de Instagram API:', username);
+              }
+            }
+          } catch (error) {
+            console.log('⚠️ No se pudo obtener username de Instagram API, usando fallback');
+          }
+
+          // Crear o actualizar el prospecto
+          const { data: prospectId, error: prospectError } = await supabase.rpc('create_or_update_prospect', {
+            p_instagram_user_id: instagramUser.id,
+            p_prospect_instagram_id: event.sender.id,
+            p_username: username,
+            p_profile_picture_url: null
+          });
+
+          if (prospectError) {
+            console.error('❌ Error creando prospecto:', prospectError);
+          } else {
+            console.log('✅ Prospecto creado/actualizado con ID:', prospectId);
+
+            // Guardar el mensaje del prospecto en la nueva tabla
+            const { error: messageError1 } = await supabase.rpc('add_prospect_message', {
+              p_prospect_id: prospectId,
+              p_message_instagram_id: event.message.mid,
+              p_message_text: event.message.text,
+              p_is_from_prospect: true,
+              p_message_timestamp: new Date().toISOString(),
+              p_message_type: 'text',
+              p_raw_data: {
+                webhook_data: event,
+                source: 'instagram_webhook'
+              }
+            });
+
+            if (messageError1) {
+              console.error('❌ Error guardando mensaje del prospecto:', messageError1);
+            } else {
+              console.log('✅ Mensaje del prospecto guardado');
+            }
+
+            // Guardar la respuesta del autoresponder en la nueva tabla
+            const autoresponderMessageId = `autoresponder_${Date.now()}_${Math.random().toString().substring(2, 8)}`;
+            const { error: messageError2 } = await supabase.rpc('add_prospect_message', {
+              p_prospect_id: prospectId,
+              p_message_instagram_id: autoresponderMessageId,
+              p_message_text: selectedAutoresponder.message_text,
+              p_is_from_prospect: false,
+              p_message_timestamp: new Date().toISOString(),
+              p_message_type: 'text',
+              p_raw_data: {
+                autoresponder: true,
+                autoresponder_id: selectedAutoresponder.id,
+                source: 'autoresponder_system'
+              }
+            });
+
+            if (messageError2) {
+              console.error('❌ Error guardando respuesta del autoresponder:', messageError2);
+            } else {
+              console.log('✅ Respuesta del autoresponder guardada');
+            }
+          }
+
+        } catch (error) {
+          console.error('❌ Error en creación de prospecto:', error);
+        }
+
+        // Registrar en log si está configurado como "solo primer mensaje"
+        if (selectedAutoresponder.send_only_first_message) {
+          const { error: logError } = await supabase
+            .from('autoresponder_sent_log')
+            .insert({
+              sender_id: event.sender.id,
+              autoresponder_message_id: selectedAutoresponder.id
+            })
+
+          if (logError) {
+            console.error('⚠️ Error guardando log de autoresponder:', logError)
+          } else {
+            console.log('✅ Registrado en log para no enviar de nuevo')
+          }
+        }
+
+        // Guardar el mensaje enviado en el historial (tabla antigua)
+        const sentMessageData = {
+          instagram_message_id: `autoresponder_${Date.now()}_${Math.random().toString().substring(2, 8)}`,
+          sender_id: 'system',
+          recipient_id: event.sender.id,
+          message_text: selectedAutoresponder.message_text,
+          message_type: 'sent',
+          timestamp: new Date().toISOString(),
+          instagram_user_id: instagramUser.id,
+          raw_data: {
+            autoresponder: true,
+            autoresponder_id: selectedAutoresponder.id,
+            send_only_first_message: selectedAutoresponder.send_only_first_message,
+            source: 'autoresponder_system'
+          }
+        }
+
+        const { error: saveError } = await supabase.from('instagram_messages').insert(sentMessageData)
+        if (saveError) {
+          console.error('⚠️ Error guardando mensaje enviado:', saveError)
+        } else {
+          console.log('✅ AUTORESPONDER GUARDADO EN HISTORIAL')
+        }
+
+      } else {
         console.error('❌ ERROR ENVIANDO AUTORESPONDER')
-        console.log('💡 SOLUCIÓN: Configura una variable de entorno INSTAGRAM_ACCESS_TOKEN válida en Supabase')
       }
     } else {
       console.log('⏭️ No enviando autoresponder según configuración')
@@ -429,93 +506,6 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
   } catch (error) {
     console.error('❌ Error en processMessagingEvent:', error)
   }
-}
-
-// ✅ FUNCIONES PARA DETECTAR TIPOS DE MENSAJE
-function detectInvitation(messageText: string): boolean {
-  const invitationPatterns = [
-    // Zoom links
-    /zoom\.us\/j\/\d+/i,
-    /zoom\.us\/meeting\/\d+/i,
-    /us\d+web\.zoom\.us/i,
-    
-    // Google Meet links
-    /meet\.google\.com\/[a-z-]+/i,
-    /g\.co\/meet\/[a-z-]+/i,
-    
-    // Microsoft Teams
-    /teams\.microsoft\.com/i,
-    /teams\.live\.com/i,
-    
-    // Generic video call indicators
-    /videollamada/i,
-    /video.*call/i,
-    /reunión.*virtual/i,
-    /meeting.*link/i,
-    /link.*reunión/i,
-    /enlace.*reunión/i,
-    
-    // Calendar links
-    /calendly\.com/i,
-    /calendar\.google\.com/i,
-    /outlook\.live\.com.*calendar/i,
-    
-    // Skype
-    /skype\.com/i,
-    /join\.skype\.com/i,
-    
-    // Other platforms
-    /whereby\.com/i,
-    /webex\.com/i,
-    /gotomeeting\.com/i,
-    /bluejeans\.com/i
-  ];
-  
-  return invitationPatterns.some(pattern => pattern.test(messageText));
-}
-
-function detectPresentation(messageText: string): boolean {
-  const presentationPatterns = [
-    /presentación/i,
-    /presentacion/i,
-    /demo/i,
-    /demostración/i,
-    /demostracion/i,
-    /mostrar.*producto/i,
-    /enseñar.*servicio/i,
-    /explicar.*como.*funciona/i,
-    /ver.*funcionamiento/i,
-    /tutorial/i,
-    /capacitación/i,
-    /entrenamiento/i,
-    /formación/i,
-    /webinar/i,
-    /seminario/i
-  ];
-  
-  return presentationPatterns.some(pattern => pattern.test(messageText));
-}
-
-function detectInscription(messageText: string): boolean {
-  const inscriptionPatterns = [
-    /inscripción/i,
-    /inscripcion/i,
-    /registro/i,
-    /registrar/i,
-    /apuntar/i,
-    /anotar/i,
-    /sign.*up/i,
-    /unir/i,
-    /participar/i,
-    /quiero.*participar/i,
-    /me.*apunto/i,
-    /me.*inscribo/i,
-    /formulario/i,
-    /llenar.*datos/i,
-    /completar.*información/i
-  ];
-  
-  return inscriptionPatterns.some(pattern => pattern.test(messageText));
 }
 
 async function processCommentEvent(supabase: any, change: ChangeEvent) {
@@ -709,117 +699,6 @@ async function processAutoresponderMatch(supabase: any, autoresponder: any, comm
   } else {
     console.log(`❌ No hay coincidencias para autoresponder: "${autoresponder.name}"`)
     console.log(`💡 Palabras clave que no coincidieron: ${autoresponder.keywords.join(', ')}`)
-  }
-}
-
-async function handleAutoresponder(supabase: any, senderId: string, autoresponderConfig: any) {
-  try {
-    console.log('🤖 INICIANDO ENVÍO DE AUTORESPONDER')
-    console.log('👤 Para usuario:', senderId)
-
-    const messageToSend = autoresponderConfig.message_text
-    const autoresponderMessageId = autoresponderConfig.id
-
-    console.log('📤 ENVIANDO MENSAJE:', messageToSend)
-    
-    // CAMBIO CLAVE: Usar la edge function de envío directamente
-    const success = await sendInstagramMessageViaEdgeFunction(supabase, senderId, messageToSend)
-
-    if (success) {
-      console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
-
-      // Solo registrar en log si está configurado como "solo primer mensaje"
-      if (autoresponderConfig.send_only_first_message) {
-        const { error: logError } = await supabase
-          .from('autoresponder_sent_log')
-          .insert({
-            sender_id: senderId,
-            autoresponder_message_id: autoresponderMessageId
-          })
-
-        if (logError) {
-          console.error('⚠️ Error guardando log de autoresponder:', logError)
-        } else {
-          console.log('✅ Registrado en log para no enviar de nuevo')
-        }
-      }
-
-      // Guardar el mensaje enviado en el historial
-      const sentMessageData = {
-        instagram_message_id: `autoresponder_${Date.now()}_${Math.random().toString().substring(2, 8)}`,
-        sender_id: 'system',
-        recipient_id: senderId,
-        message_text: messageToSend,
-        message_type: 'sent',
-        timestamp: new Date().toISOString(),
-        raw_data: {
-          autoresponder: true,
-          autoresponder_id: autoresponderMessageId,
-          send_only_first_message: autoresponderConfig.send_only_first_message,
-          source: 'autoresponder_system'
-        }
-      }
-
-      const { error: saveError } = await supabase.from('instagram_messages').insert(sentMessageData)
-      if (saveError) {
-        console.error('⚠️ Error guardando mensaje enviado:', saveError)
-      } else {
-        console.log('✅ AUTORESPONDER GUARDADO EN HISTORIAL')
-      }
-    } else {
-      console.error('❌ ERROR ENVIANDO AUTORESPONDER')
-    }
-
-  } catch (error) {
-    console.error('❌ Error en handleAutoresponder:', error)
-  }
-}
-
-async function sendInstagramMessageViaEdgeFunction(supabase: any, recipientId: string, messageText: string, instagramUserId: string): Promise<boolean> {
-  try {
-    console.log('📤 ===== ENVIANDO MENSAJE VIA EDGE FUNCTION =====')
-    console.log('👤 Recipient:', recipientId)
-    console.log('💌 Message:', messageText)
-    console.log('🆔 Instagram User ID:', instagramUserId)
-    
-    const { data, error } = await supabase.functions.invoke('instagram-send-message', {
-      body: {
-        recipient_id: recipientId,
-        message_text: messageText,
-        instagram_user_id: instagramUserId // ✅ AGREGAR EL PARÁMETRO REQUERIDO
-      }
-    })
-
-    console.log('📨 Respuesta de instagram-send-message:')
-    console.log('📋 Data:', JSON.stringify(data, null, 2))
-    console.log('📋 Error:', error)
-
-    if (error) {
-      console.error('❌ Error enviando mensaje via edge function:', error)
-      return false
-    }
-
-    if (data?.error) {
-      console.error('❌ Error en respuesta de edge function:', data)
-      
-      if (data.needs_token || data.token_invalid) {
-        console.error('🔧 ACCIÓN REQUERIDA: Configura INSTAGRAM_ACCESS_TOKEN en variables de entorno de Supabase')
-      }
-      
-      return false
-    }
-
-    if (!data?.success) {
-      console.error('❌ Mensaje no exitoso via edge function:', data)
-      return false
-    }
-
-    console.log('✅ ===== MENSAJE ENVIADO EXITOSAMENTE VIA EDGE FUNCTION =====')
-    return true
-
-  } catch (error) {
-    console.error('❌ Error crítico enviando mensaje via edge function:', error)
-    return false
   }
 }
 
