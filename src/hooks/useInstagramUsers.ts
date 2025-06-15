@@ -38,13 +38,14 @@ export const useInstagramUsers = () => {
       }
 
       const userData = JSON.parse(savedUserData);
-      // ✅ CORRECCIÓN: Usar instagram.id en lugar de instagram.user_id
-      const instagramUserId = userData.instagram?.id || userData.facebook?.id;
       
-      console.log('🆔 Instagram User ID extraído:', instagramUserId);
+      // ✅ USAR EL ID CORRECTO: Primero Facebook ID, luego Instagram ID como fallback
+      const instagramUserId = userData.facebook?.id || userData.instagram?.id;
+      
+      console.log('🆔 Instagram User ID extraído (FACEBOOK ID):', instagramUserId);
       console.log('📊 Datos completos del usuario:', userData);
-      console.log('📋 Instagram data:', userData.instagram);
-      console.log('📋 Facebook data:', userData.facebook);
+      console.log('📋 Facebook ID:', userData.facebook?.id);
+      console.log('📋 Instagram ID:', userData.instagram?.id);
       
       if (!instagramUserId) {
         console.log('❌ No se pudo extraer Instagram User ID');
