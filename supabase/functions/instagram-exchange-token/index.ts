@@ -82,19 +82,19 @@ serve(async (req) => {
     const userData = await userResponse.json()
     console.log('Datos de usuario obtenidos:', userData)
 
-    // Guardar en Supabase usando user_id como instagram_user_id
+    // Guardar en Supabase usando el ID de Instagram como instagram_user_id
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
     console.log('💾 Guardando usuario en instagram_users...')
-    console.log('📝 Usando user_id como instagram_user_id:', userData.user_id)
+    console.log('📝 Usando id como instagram_user_id:', userData.id)
     
     const { data: savedUser, error: saveError } = await supabase
       .from('instagram_users')
       .upsert({
-        instagram_user_id: userData.user_id, // Usar user_id en lugar de id
-        username: userData.username || `Usuario_${userData.user_id}`,
+        instagram_user_id: userData.id, // Usar el id que viene de Instagram API
+        username: userData.username || `Usuario_${userData.id}`,
         access_token: tokenData.access_token,
         is_active: true,
         updated_at: new Date().toISOString()
@@ -113,7 +113,7 @@ serve(async (req) => {
       user: userData,
       instagram_account: {
         id: userData.id,
-        user_id: userData.user_id, // Incluir user_id en la respuesta
+        user_id: userData.id, // Incluir user_id igual al id para compatibilidad
         username: userData.username
       }
     }), {
