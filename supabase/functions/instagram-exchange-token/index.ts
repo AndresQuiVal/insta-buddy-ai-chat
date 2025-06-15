@@ -85,71 +85,43 @@ serve(async (req) => {
       console.log('⚠️ No se pudo obtener token de larga duración, usando token normal')
     }
 
-    // Obtener información básica del usuario
-    console.log('📋 Obteniendo información del usuario...')
-    const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username&access_token=${finalAccessToken}`)
+    // ✅ OBTENER INFORMACIÓN DEL USUARIO DE INSTAGRAM GRAPH API DIRECTAMENTE
+    console.log('📋 Obteniendo información del usuario de Instagram Graph API...')
+    const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${finalAccessToken}`)
     
     if (!userResponse.ok) {
-      throw new Error('Error obteniendo información del usuario')
+      const errorData = await userResponse.json()
+      console.error('❌ Error obteniendo información del usuario:', errorData)
+      throw new Error('Error obteniendo información del usuario de Instagram')
     }
     
     const userData = await userResponse.json()
-    console.log('👤 Datos de usuario básicos obtenidos:', userData)
+    console.log('👤 Datos de usuario de Instagram obtenidos:', userData)
 
-    // ✅ USAR EL ID QUE APARECE EN META DEVELOPERS
-    console.log('🔍 ===== OBTENIENDO ID CORRECTO DE META DEVELOPERS =====')
+    // ✅ USAR EL ID DE INSTAGRAM GRAPH API (ESTE ES EL CORRECTO PARA BUSINESS)
+    const finalInstagramUserId = userData.id; // Este es el ID correcto de Instagram Business
     
-    // Obtener páginas de Facebook para encontrar el ID que aparece en Meta Developers
-    const pagesResponse = await fetch(`https://graph.facebook.com/me/accounts?fields=id,name,instagram_business_account&access_token=${finalAccessToken}`)
-    
-    let finalInstagramUserId = userData.id; // Fallback al ID personal
-    let pageId = null;
-    
-    if (pagesResponse.ok) {
-      const pagesData = await pagesResponse.json()
-      console.log('📄 Páginas de Facebook encontradas:', pagesData)
-      
-      // Buscar página con Instagram Business Account
-      const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account)
-      
-      if (pageWithInstagram) {
-        // ✅ USAR EL ID DEL INSTAGRAM BUSINESS ACCOUNT (el que aparece en Meta Developers)
-        finalInstagramUserId = pageWithInstagram.instagram_business_account.id
-        pageId = pageWithInstagram.id
-        console.log('🏢 ===== INSTAGRAM BUSINESS ACCOUNT ENCONTRADO =====')
-        console.log('🆔 Meta Developers ID:', finalInstagramUserId)
-        console.log('📄 Page ID:', pageId)
-        console.log('📋 Page Name:', pageWithInstagram.name)
-        console.log('✅ Este ID coincide con el que aparece en Meta Developers')
-      } else {
-        console.log('⚠️ No se encontró Instagram Business Account, usando ID personal')
-        console.log('⚠️ IMPORTANTE: Verifica que tu cuenta esté conectada a una página de Facebook')
-      }
-    } else {
-      console.log('⚠️ No se pudieron obtener páginas de Facebook')
-      console.log('⚠️ USANDO ID PERSONAL - puede que no coincida con webhooks')
-    }
-    
-    console.log('🆔 ===== ID FINAL PARA WEBHOOK =====')
-    console.log('👤 Instagram ID que usaremos:', finalInstagramUserId)
-    console.log('💾 Este ID se guardará en Supabase para el webhook')
-    console.log('📄 Page ID asociado:', pageId)
+    console.log('🆔 ===== ID CORRECTO DE INSTAGRAM GRAPH API =====')
+    console.log('👤 Instagram User ID (Graph API):', finalInstagramUserId)
+    console.log('📋 Username:', userData.username)
+    console.log('🏢 Account Type:', userData.account_type)
+    console.log('✅ Este ID es el correcto para Instagram Business y webhooks')
 
-    // ✅ GUARDAR EN SUPABASE CON EL ID CORRECTO DE META DEVELOPERS
+    // ✅ GUARDAR EN SUPABASE CON EL ID CORRECTO DE INSTAGRAM GRAPH API
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
-    console.log('💾 ===== GUARDANDO CON ID DE META DEVELOPERS =====')
+    console.log('💾 ===== GUARDANDO CON ID DE INSTAGRAM GRAPH API =====')
     console.log('🔑 Guardando con instagram_user_id:', finalInstagramUserId)
     
     const { data: savedUser, error: saveError } = await supabase
       .from('instagram_users')
       .upsert({
-        instagram_user_id: finalInstagramUserId, // ✅ ID QUE APARECE EN META DEVELOPERS
+        instagram_user_id: finalInstagramUserId, // ✅ ID CORRECTO DE INSTAGRAM GRAPH API
         username: userData.username || `Usuario_${finalInstagramUserId}`,
         access_token: finalAccessToken,
-        page_id: pageId, // ✅ GUARDAR PAGE ID TAMBIÉN
+        page_id: null, // No necesario para Instagram Graph API directo
         is_active: true,
         updated_at: new Date().toISOString()
       }, {
@@ -179,12 +151,12 @@ serve(async (req) => {
       console.log('🆔 Usuario en BD con instagram_user_id:', verifyUser.instagram_user_id)
       console.log('👤 Username:', verifyUser.username)
       console.log('🔗 ID interno BD:', verifyUser.id)
-      console.log('📄 Page ID:', verifyUser.page_id)
+      console.log('🏢 Account Type:', userData.account_type)
     }
 
     console.log('🎯 ===== IMPORTANTE PARA EL WEBHOOK =====')
     console.log('🔍 El webhook debe recibir recipient_id:', finalInstagramUserId)
-    console.log('💡 Este ID debe coincidir con el de Meta Developers: 17841475447066002')
+    console.log('💡 Este ID es el correcto de Instagram Graph API para webhooks')
 
     return new Response(JSON.stringify({
       access_token: finalAccessToken,
@@ -196,7 +168,7 @@ serve(async (req) => {
       },
       business_account: {
         id: finalInstagramUserId,
-        page_id: pageId
+        page_id: null
       }
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
