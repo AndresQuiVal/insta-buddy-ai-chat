@@ -39,7 +39,7 @@ export const useInstagramUsers = () => {
 
       const userData = JSON.parse(savedUserData);
       
-      // 🔑 USAR EL ID CORRECTO - Instagram Business Account ID 
+      // Usar el ID principal que se guardó en localStorage
       const instagramUserId = userData.instagram?.id;
       
       console.log('🆔 Instagram User ID extraído:', instagramUserId);
