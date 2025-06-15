@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -240,9 +241,9 @@ export const getInstagramUserInfo = async () => {
   if (!token) return null;
 
   try {
-    // ✅ USAR FACEBOOK GRAPH API PARA INSTAGRAM BUSINESS
+    // Usar Instagram Graph API
     const userResponse = await fetch(
-      `https://graph.facebook.com/v19.0/me?fields=id,name&access_token=${token}`
+      `https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token=${token}`
     );
 
     if (!userResponse.ok) {
@@ -250,49 +251,12 @@ export const getInstagramUserInfo = async () => {
     }
 
     const userData = await userResponse.json();
-
-    // ✅ OBTENER INSTAGRAM BUSINESS ACCOUNT ID CORRECTO
-    let instagramData = null;
-    let instagramBusinessAccountId = null;
-    
-    try {
-      const accountsResponse = await fetch(
-        `https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${token}`
-      );
-
-      if (accountsResponse.ok) {
-        const accountsData = await accountsResponse.json();
-        const pageWithInstagram = accountsData.data?.find(
-          (page) => page.instagram_business_account
-        );
-
-        if (pageWithInstagram) {
-          instagramBusinessAccountId = pageWithInstagram.instagram_business_account.id;
-          
-          const instagramInfoResponse = await fetch(
-            `https://graph.facebook.com/v19.0/${instagramBusinessAccountId}?fields=id,username,account_type,media_count&access_token=${token}`
-          );
-
-          if (instagramInfoResponse.ok) {
-            instagramData = await instagramInfoResponse.json();
-            instagramData.business_account_id = instagramBusinessAccountId; // ✅ AGREGAR ID PARA WEBHOOKS
-          }
-        }
-      }
-    } catch (error) {
-      console.warn("No se pudo obtener información de Instagram:", error);
-    }
-
-    const combinedData = {
-      facebook: userData,
-      instagram: instagramData,
-      instagramBusinessAccountId, // ✅ ID CORRECTO PARA WEBHOOKS
-    };
+    console.log("Información del usuario obtenida:", userData);
 
     // Actualizar datos guardados
-    localStorage.setItem("hower-instagram-user", JSON.stringify(combinedData));
+    localStorage.setItem("hower-instagram-user", JSON.stringify(userData));
 
-    return combinedData;
+    return userData;
   } catch (error) {
     console.error("Error obteniendo información del usuario:", error);
 
@@ -317,16 +281,13 @@ export const getInstagramPosts = async () => {
     // Primero obtenemos el ID del usuario
     const userInfo = await getInstagramUserInfo();
 
-    if (!userInfo?.instagram?.id) {
-      console.warn("No hay cuenta de Instagram conectada");
+    if (!userInfo?.id) {
+      console.warn("No hay ID de usuario disponible");
       return [];
     }
 
-    const instagramAccountId = userInfo.instagram.id;
-
-    // ✅ USAR FACEBOOK GRAPH API PARA INSTAGRAM BUSINESS
     const response = await fetch(
-      `https://graph.facebook.com/v19.0/${instagramAccountId}/media?fields=id,caption,media_type,media_url,timestamp&access_token=${token}`
+      `https://graph.instagram.com/${userInfo.id}/media?fields=id,caption,media_type,media_url,timestamp&access_token=${token}`
     );
 
     if (!response.ok) {
@@ -461,9 +422,9 @@ export const sendInstagramMessage = async (
  */
 async function getConnectedPageInfo(accessToken: string) {
   try {
-    // ✅ USAR FACEBOOK GRAPH API CONSISTENTEMENTE
+    // Obtener información del usuario
     const userResponse = await fetch(
-      `https://graph.facebook.com/v19.0/me?access_token=${accessToken}`
+      `https://graph.instagram.com/me?fields=id,username&access_token=${accessToken}`
     );
     const userData = await userResponse.json();
 
@@ -471,33 +432,9 @@ async function getConnectedPageInfo(accessToken: string) {
       throw new Error(`Error obteniendo usuario: ${userData.error?.message}`);
     }
 
-    // Obtener las páginas que administra el usuario
-    const pagesResponse = await fetch(
-      `https://graph.facebook.com/v19.0/me/accounts?fields=id,name,instagram_business_account,access_token&access_token=${accessToken}`
-    );
-    const pagesData = await pagesResponse.json();
-
-    if (!pagesResponse.ok) {
-      throw new Error(`Error obteniendo páginas: ${pagesData.error?.message}`);
-    }
-
-    // Buscar página con Instagram Business
-    const pageWithInstagram = pagesData.data?.find(
-      (page: any) => page.instagram_business_account
-    );
-
-    if (!pageWithInstagram) {
-      throw new Error(
-        "No se encontró página con cuenta de Instagram Business conectada"
-      );
-    }
-
     return {
       userId: userData.id,
-      pageId: pageWithInstagram.id,
-      pageName: pageWithInstagram.name,
-      instagramAccountId: pageWithInstagram.instagram_business_account?.id,
-      pageAccessToken: pageWithInstagram.access_token || accessToken,
+      username: userData.username,
     };
   } catch (error) {
     console.error("Error obteniendo información de página:", error);
