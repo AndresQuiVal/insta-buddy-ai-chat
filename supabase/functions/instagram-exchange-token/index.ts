@@ -96,52 +96,28 @@ serve(async (req) => {
     const userData = await userResponse.json()
     console.log('👤 Datos de usuario básicos obtenidos:', userData)
 
-    // ✅ PASO CRÍTICO: OBTENER EL INSTAGRAM BUSINESS ACCOUNT ID REAL
-    console.log('🎯 ===== OBTENIENDO INSTAGRAM BUSINESS ACCOUNT ID =====')
-    
-    let instagramBusinessId = null
-    let pageId = null
-    
-    // Intentar obtener desde Graph API directamente
-    try {
-      const igAccountResponse = await fetch(`https://graph.instagram.com/me?fields=id,account_type&access_token=${finalAccessToken}`)
-      
-      if (igAccountResponse.ok) {
-        const igAccountData = await igAccountResponse.json()
-        console.log('📱 Datos de cuenta Instagram:', igAccountData)
-        
-        if (igAccountData.account_type === 'BUSINESS') {
-          instagramBusinessId = igAccountData.id
-          console.log('✅ Instagram Business Account ID encontrado:', instagramBusinessId)
-        }
-      }
-    } catch (error) {
-      console.log('⚠️ Error obteniendo Instagram Business Account:', error)
-    }
-
-    // ✅ ID FINAL PARA WEBHOOK: DEBE SER EL BUSINESS ACCOUNT ID
-    const finalInstagramUserId = instagramBusinessId || userData.id
+    // ✅ USAR INSTAGRAM ID DIRECTAMENTE COMO PREFIERES
+    const finalInstagramUserId = userData.id
     
     console.log('🆔 ===== ID FINAL PARA WEBHOOK =====')
-    console.log('👤 Instagram Personal ID:', userData.id)
-    console.log('🏢 Instagram Business ID:', instagramBusinessId || 'No encontrado')
-    console.log('💾 ID FINAL para Supabase (QUE USARÁ EL WEBHOOK):', finalInstagramUserId)
+    console.log('👤 Instagram ID que usaremos:', finalInstagramUserId)
+    console.log('💾 Este ID se guardará en Supabase para el webhook')
 
-    // ✅ GUARDAR EN SUPABASE CON EL ID CORRECTO
+    // ✅ GUARDAR EN SUPABASE CON EL INSTAGRAM ID
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
-    console.log('💾 ===== GUARDANDO CON ID CORRECTO =====')
+    console.log('💾 ===== GUARDANDO CON INSTAGRAM ID =====')
     console.log('🔑 Guardando con instagram_user_id:', finalInstagramUserId)
     
     const { data: savedUser, error: saveError } = await supabase
       .from('instagram_users')
       .upsert({
-        instagram_user_id: finalInstagramUserId, // ✅ ESTE ES EL ID QUE USARÁ EL WEBHOOK
+        instagram_user_id: finalInstagramUserId, // ✅ INSTAGRAM ID DIRECTO
         username: userData.username || `Usuario_${finalInstagramUserId}`,
         access_token: finalAccessToken,
-        page_id: pageId,
+        page_id: null,
         is_active: true,
         updated_at: new Date().toISOString()
       }, {
@@ -173,19 +149,17 @@ serve(async (req) => {
       console.log('🔗 ID interno BD:', verifyUser.id)
     }
 
-    console.log('🎯 ===== EL WEBHOOK BUSCARÁ POR =====')
-    console.log('🔍 recipient_id en webhook DEBE SER:', finalInstagramUserId)
+    console.log('🎯 ===== IMPORTANTE PARA EL WEBHOOK =====')
+    console.log('🔍 El webhook debe recibir recipient_id:', finalInstagramUserId)
+    console.log('💡 Si el webhook recibe un ID diferente, el problema está en la configuración de Instagram')
 
     return new Response(JSON.stringify({
       access_token: finalAccessToken,
       user: userData,
       instagram_account: {
         id: finalInstagramUserId,
-        user_id: finalInstagramUserId, // ✅ MISMO ID PARA COMPATIBILIDAD
-        username: userData.username,
-        instagram_business_id: instagramBusinessId,
-        page_id: pageId,
-        account_type: instagramBusinessId ? 'business' : 'personal'
+        user_id: finalInstagramUserId,
+        username: userData.username
       }
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

@@ -39,13 +39,13 @@ export const useInstagramUsers = () => {
 
       const userData = JSON.parse(savedUserData);
       
-      // ✅ USAR EL ID CORRECTO: Primero Facebook ID, luego Instagram ID como fallback
-      const instagramUserId = userData.facebook?.id || userData.instagram?.id;
+      // ✅ USAR INSTAGRAM ID COMO PREFIERES
+      const instagramUserId = userData.instagram?.id;
       
-      console.log('🆔 Instagram User ID extraído (FACEBOOK ID):', instagramUserId);
+      console.log('🆔 Instagram User ID extraído (INSTAGRAM ID):', instagramUserId);
       console.log('📊 Datos completos del usuario:', userData);
-      console.log('📋 Facebook ID:', userData.facebook?.id);
       console.log('📋 Instagram ID:', userData.instagram?.id);
+      console.log('📋 Facebook ID:', userData.facebook?.id);
       
       if (!instagramUserId) {
         console.log('❌ No se pudo extraer Instagram User ID');
