@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +7,11 @@ import { useToast } from '@/hooks/use-toast';
 import { InstagramPost, getInstagramPosts, formatPostDate, truncateCaption } from '@/services/instagramPostsService';
 
 interface InstagramPostSelectorProps {
-  onPostSelect: (post: InstagramPost) => void;
+  onPostSelected: (post: InstagramPost) => void;
   onBack: () => void;
 }
 
-const InstagramPostSelector = ({ onPostSelect, onBack }: InstagramPostSelectorProps) => {
+const InstagramPostSelector = ({ onPostSelected, onBack }: InstagramPostSelectorProps) => {
   const [posts, setPosts] = useState<InstagramPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<InstagramPost | null>(null);
@@ -56,7 +55,7 @@ const InstagramPostSelector = ({ onPostSelect, onBack }: InstagramPostSelectorPr
 
   const handlePostSelect = (post: InstagramPost) => {
     setSelectedPost(post);
-    onPostSelect(post);
+    onPostSelected(post);
   };
 
   const getMediaIcon = (mediaType: string) => {
