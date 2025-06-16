@@ -35,25 +35,30 @@ serve(async (req) => {
       )
     }
 
-    console.log('🤖 Generando sugerencia para:', prospect_name)
+    console.log('🎯 Generando sugerencia de ACCIÓN para:', prospect_name)
     console.log('📝 Conversación:', conversation)
     console.log('🎯 Características recibidas:', ideal_traits)
 
-    // Crear prompt específico basado en si hay características o no
-    let systemPrompt = `Eres un experto en ventas consultivas y generación de leads. Tu objetivo es analizar conversaciones de Instagram para sugerir el siguiente mensaje más efectivo.
+    // Crear prompt específico para ACCIONES ESTRATÉGICAS
+    let systemPrompt = `Eres un experto coach en ventas consultivas que ayuda a vendedores a decidir el siguiente paso estratégico con sus prospectos de Instagram.
 
-OBJETIVOS PRINCIPALES:
-1. Agendar una reunión de manera orgánica y conversacional
-2. Obtener el número de teléfono de la persona
-3. Mantener el interés y la confianza del prospecto
+TU TRABAJO: Analizar la conversación y sugerir QUÉ ACCIÓN debe tomar la persona para avanzar orgánicamente hacia una llamada o conseguir el WhatsApp.
 
-INSTRUCCIONES GENERALES:
-- Analiza la conversación completa para entender el contexto y el nivel de interés
-- Sugiere UN mensaje específico y directo que sea natural y no forzado
-- Adapta el tono al estilo de conversación que ya se estableció
-- Evita mensajes genéricos o que suenen a spam
-- El mensaje debe ser entre 1-3 líneas máximo
-- Usa un lenguaje natural y conversacional en español`;
+CONTEXTO IMPORTANTE:
+- NO generes mensajes exactos, sino ACCIONES/ESTRATEGIAS específicas
+- La conversación debe fluir de manera orgánica, sin presionar
+- El objetivo final es agendar una llamada o conseguir el número de WhatsApp
+- Cada acción debe ser un paso lógico hacia ese objetivo
+
+TIPOS DE ACCIONES QUE PUEDES SUGERIR:
+📱 "Envía un mensaje preguntando sobre [tema específico] para conocer mejor sus necesidades"
+🎯 "Comparte un caso de éxito similar a su situación para generar más interés"
+📊 "Haz una pregunta específica sobre [X] para calificar si es tu cliente ideal"
+⏰ "Es el momento perfecto para sugerir una llamada rápida de 15 minutos"
+💬 "Propón cambiar la conversación a WhatsApp para mayor comodidad"
+🔍 "Indaga más sobre [tema] antes de hacer cualquier propuesta"
+✋ "Dale espacio, ha mostrado interés pero necesita tiempo para procesar"
+🎁 "Ofrece valor adicional (recurso/tip) relacionado con lo que mencionó"`;
 
     // Si hay características configuradas, añadirlas al prompt
     if (ideal_traits && ideal_traits.length > 0) {
@@ -62,35 +67,46 @@ INSTRUCCIONES GENERALES:
       if (enabledTraits.length > 0) {
         systemPrompt += `
 
-🎯 CARACTERÍSTICAS DEL CLIENTE IDEAL (usar para dirigir la conversación):
+🎯 CARACTERÍSTICAS DEL CLIENTE IDEAL:
 ${enabledTraits.map((trait: any, index: number) => `${index + 1}. ${trait.trait}`).join('\n')}
 
-ESTRATEGIA ESPECÍFICA:
-- Si el prospecto muestra interés alto y cumple las características, sugiere agendar reunión
-- Si el prospecto muestra interés medio, sugiere intercambiar contactos
-- Si el prospecto muestra poco interés, sugiere valor adicional antes de pedir algo
-- Usa las características como guía para hacer preguntas estratégicas que califiquen al prospecto`;
+ESTRATEGIA CON CARACTERÍSTICAS:
+- Si cumple muchas características → Sugiere acción directa (llamada/WhatsApp)
+- Si cumple pocas → Sugiere acciones para descubrir más características
+- Si no has confirmado características → Sugiere preguntas estratégicas para evaluarlas
+- Prioriza acciones que te ayuden a calificar al prospecto según estas características`;
       }
     } else {
       systemPrompt += `
 
 ESTRATEGIA SIN CARACTERÍSTICAS ESPECÍFICAS:
-- Enfócate en generar interés y confianza
-- Si el prospecto muestra interés alto, sugiere agendar reunión o intercambiar WhatsApp
-- Si el prospecto muestra interés medio, ofrece valor adicional y sugiere continuar la conversación
-- Si el prospecto muestra poco interés, haz preguntas para entender mejor sus necesidades
-- Mantén la conversación orgánica mientras buscas oportunidades para agendar o conseguir contacto`;
+- Enfócate en construir interés y confianza gradualmente
+- Si muestra mucho interés → Sugiere llamada o WhatsApp
+- Si muestra interés medio → Sugiere compartir valor adicional
+- Si muestra poco interés → Sugiere hacer preguntas para entender necesidades
+- Siempre busca oportunidades para avanzar sin presionar`;
     }
 
     systemPrompt += `
 
-Responde SOLO con el mensaje sugerido, sin explicaciones adicionales.`;
+INSTRUCCIONES PARA TU RESPUESTA:
+1. Analiza el nivel de interés y engagement del prospecto
+2. Considera en qué etapa de la conversación están
+3. Sugiere UNA acción específica y práctica
+4. Explica brevemente POR QUÉ esa acción es la más adecuada ahora
+5. Tu respuesta debe ser directa y accionable
 
-    const userPrompt = `Analiza esta conversación con ${prospect_name} y sugiere el mejor próximo mensaje:
+FORMATO DE RESPUESTA:
+"ACCIÓN: [descripción específica de qué hacer]
+RAZÓN: [breve explicación de por qué es el mejor momento para esta acción]"
+
+Responde SOLO con la acción sugerida y su justificación, sin introducciones adicionales.`;
+
+    const userPrompt = `Analiza esta conversación con ${prospect_name} y sugiere la mejor ACCIÓN ESTRATÉGICA a tomar:
 
 ${conversation}
 
-Sugerencia de mensaje:`;
+¿Qué acción específica debe tomar el vendedor ahora?`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -104,7 +120,7 @@ Sugerencia de mensaje:`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        max_tokens: 150,
+        max_tokens: 200,
         temperature: 0.7,
       }),
     });
@@ -138,7 +154,7 @@ Sugerencia de mensaje:`;
       )
     }
 
-    console.log('✅ Sugerencia generada:', suggestion)
+    console.log('✅ Sugerencia de ACCIÓN generada:', suggestion)
 
     return new Response(
       JSON.stringify({ 
