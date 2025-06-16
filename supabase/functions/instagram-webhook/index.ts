@@ -73,6 +73,45 @@ serve(async (req) => {
               continue
             }
 
+            // ===== VERIFICAR LÓGICA DE 12 HORAS PARA NUEVAS RESPUESTAS =====
+            console.log('🕐 ===== VERIFICANDO LÓGICA DE 12 HORAS =====')
+            
+            // Buscar el último mensaje de este prospecto específico
+            const { data: lastMessage, error: lastMessageError } = await supabase
+              .from('instagram_messages')
+              .select('timestamp')
+              .eq('sender_id', senderId)
+              .eq('message_type', 'received')
+              .order('timestamp', { ascending: false })
+              .limit(1)
+              .single()
+
+            let isNewResponse = false
+            
+            if (lastMessageError && lastMessageError.code === 'PGRST116') {
+              // No hay mensajes previos de este prospecto
+              console.log(`✅ [${senderId.slice(-8)}] Primera vez que escribe - CUENTA como nueva respuesta`)
+              isNewResponse = true
+            } else if (lastMessage) {
+              // Calcular diferencia de tiempo
+              const lastMessageTime = new Date(lastMessage.timestamp)
+              const currentTime = new Date(messagingEvent.timestamp)
+              const hoursDifference = (currentTime.getTime() - lastMessageTime.getTime()) / (1000 * 60 * 60)
+              
+              console.log(`⏰ [${senderId.slice(-8)}] Último mensaje hace ${hoursDifference.toFixed(1)} horas`)
+              
+              if (hoursDifference >= 12) {
+                console.log(`✅ [${senderId.slice(-8)}] Más de 12 horas - CUENTA como nueva respuesta`)
+                isNewResponse = true
+              } else {
+                console.log(`❌ [${senderId.slice(-8)}] Menos de 12 horas - NO cuenta como nueva respuesta`)
+                isNewResponse = false
+              }
+            } else {
+              console.log(`✅ [${senderId.slice(-8)}] Sin mensaje previo detectado - CUENTA como nueva respuesta`)
+              isNewResponse = true
+            }
+
             // Actualizar actividad del prospecto
             console.log('🔄 Actualizando actividad del prospecto...')
             try {
@@ -105,6 +144,27 @@ serve(async (req) => {
             }
 
             console.log('✅ Usuario encontrado:', JSON.stringify(instagramUser, null, 2))
+
+            // ===== INCREMENTAR CONTADOR DE NUEVOS PROSPECTOS SOLO SI ES NUEVA RESPUESTA =====
+            if (isNewResponse) {
+              console.log('📈 ===== INCREMENTANDO CONTADOR DE NUEVAS RESPUESTAS =====')
+              try {
+                const { error: incrementError } = await supabase.rpc('increment_nuevos_prospectos_by_instagram_id', {
+                  user_instagram_id: recipientId,
+                  increment_by: 1
+                })
+                
+                if (incrementError) {
+                  console.error('❌ Error incrementando contador:', incrementError)
+                } else {
+                  console.log('✅ Contador de nuevas respuestas incrementado')
+                }
+              } catch (incrementErr) {
+                console.error('💥 Error incrementando contador:', incrementErr)
+              }
+            } else {
+              console.log('⏭️ NO se incrementa contador - mensaje dentro de las 12 horas')
+            }
 
             // ===== CREAR O ACTUALIZAR PROSPECTO =====
             console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
