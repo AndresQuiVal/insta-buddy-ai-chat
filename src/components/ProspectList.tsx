@@ -151,18 +151,11 @@ const ProspectList: React.FC = () => {
     try {
       setLoading(true);
       console.log('🔍 Cargando prospectos para usuario:', currentUser.username);
-      console.log('🆔 Usuario ID:', currentUser.id);
-      console.log('🆔 Instagram User ID:', currentUser.instagram_user_id);
+      console.log('🆔 Usuario ID (UUID):', currentUser.id);
+      console.log('🆔 Instagram User ID (string):', currentUser.instagram_user_id);
 
-      // DEPURACIÓN: Primero verificar qué hay en la tabla prospects
-      const { data: allProspects, error: allError } = await supabase
-        .from('prospects')
-        .select('*');
-
-      console.log('📊 TODOS los prospectos en la base de datos:', allProspects);
-      console.log('❌ Error al consultar todos los prospectos:', allError);
-
-      // Consulta principal usando el instagram_user_id como UUID para que coincida con el webhook
+      // ✅ FIXED: Usar el campo correcto para la consulta
+      // El webhook guarda con instagram_user_id = currentUser.id (UUID)
       const { data: prospectsData, error } = await supabase
         .from('prospects')
         .select(`
@@ -177,10 +170,10 @@ const ProspectList: React.FC = () => {
             raw_data
           )
         `)
-        .eq('instagram_user_id', currentUser.id)
+        .eq('instagram_user_id', currentUser.id) // ✅ Usar currentUser.id (UUID)
         .order('last_message_date', { ascending: false });
 
-      console.log('📋 Consulta con filtro por UUID instagram_user_id:', {
+      console.log('📋 Consulta corregida:', {
         filter: `instagram_user_id = ${currentUser.id}`,
         result: prospectsData,
         error: error
@@ -204,21 +197,11 @@ const ProspectList: React.FC = () => {
           username: p.username,
           instagram_user_id: p.instagram_user_id,
           prospect_instagram_id: p.prospect_instagram_id,
-          messages_count: p.prospect_messages?.length || 0
+          messages_count: p.prospect_messages?.length || 0,
+          status: p.status
         })));
       } else {
-        console.log('⚠️ No se encontraron prospectos. Verificando relación de datos...');
-        
-        // Verificar si el problema es la relación entre datos
-        console.log('🔍 Verificando si hay prospectos con este instagram_user_id:', currentUser.id);
-        
-        // También verificar por el string del instagram_user_id
-        const { data: prospectsWithStringId } = await supabase
-          .from('prospects')
-          .select('*')
-          .eq('prospect_instagram_id', currentUser.instagram_user_id);
-          
-        console.log('📊 Prospectos encontrados con string ID:', prospectsWithStringId);
+        console.log('⚠️ No se encontraron prospectos para este usuario');
       }
 
       setProspects(prospectsData || []);
@@ -313,7 +296,7 @@ const ProspectList: React.FC = () => {
                 <strong>Instagram ID (String):</strong> {currentUser.instagram_user_id}
               </p>
               <p className="text-xs text-blue-600 mt-2">
-                Revisa la consola del navegador (F12) para ver logs detallados de la consulta a la base de datos.
+                Haz clic en el botón de refrescar arriba para volver a cargar los prospectos.
               </p>
             </div>
           </div>
