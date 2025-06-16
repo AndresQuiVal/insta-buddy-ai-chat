@@ -63,7 +63,7 @@ const ProspectList: React.FC = () => {
       return;
     }
 
-    console.log("🎯 Generando sugerencia de ACCIÓN con IA para:", prospect.username);
+    console.log("🤖 Generando sugerencia con IA para:", prospect.username);
     
     setLoadingAI(prospect.id);
     
@@ -137,12 +137,12 @@ const ProspectList: React.FC = () => {
 
       if (aiResponse?.suggestion) {
         toast({
-          title: "🎯 Sugerencia de Acción",
+          title: "💡 Sugerencia de IA",
           description: aiResponse.suggestion,
-          duration: 15000,
+          duration: 10000,
         });
         
-        console.log("✅ Sugerencia de acción generada:", aiResponse.suggestion);
+        console.log("✅ Sugerencia generada:", aiResponse.suggestion);
       } else {
         toast({
           title: "Sin sugerencia",
@@ -420,7 +420,7 @@ const ProspectList: React.FC = () => {
                       ) : (
                         <>
                           <Bot className="w-4 h-4" />
-                          Siguiente Acción
+                          Sugerencia con IA
                         </>
                       )}
                     </Button>

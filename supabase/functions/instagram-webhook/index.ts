@@ -1,419 +1,376 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
   try {
-    if (req.method === 'GET') {
-      const url = new URL(req.url);
-      const mode = url.searchParams.get('hub.mode');
-      const token = url.searchParams.get('hub.verify_token');
-      const challenge = url.searchParams.get('hub.challenge');
-      
-      if (mode === 'subscribe' && token === 'hower_verification_token') {
-        console.log('✅ Webhook verification successful');
-        return new Response(challenge);
-      }
-      
-      return new Response('Unauthorized', { status: 401 });
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+    
+    const body = await req.json()
+    
+    console.log('📨 ===== NUEVO WEBHOOK RECIBIDO =====')
+    console.log('📋 Webhook completo:', JSON.stringify(body, null, 2))
+
+    if (body.object !== 'instagram') {
+      return new Response(
+        JSON.stringify({ message: 'Not an Instagram webhook' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    if (req.method === 'POST') {
-      const body = await req.json();
-      console.log('📨 ===== NUEVO WEBHOOK RECIBIDO =====');
-      console.log('📋 Webhook completo:', JSON.stringify(body, null, 2));
+    if (body.entry && Array.isArray(body.entry) && body.entry.length > 0) {
+      if (body.entry[0].id === '17841406338417419' && body.entry[0].time) {
+        console.log('✅ Webhook verificado')
+        return new Response(body.entry[0].id, { status: 200 })
+      }
+    }
 
-      if (body.object === 'instagram') {
-        for (const entry of body.entry) {
-          console.log('🔄 ===== PROCESANDO ENTRY =====');
-          console.log('📋 Entry ID:', entry.id);
+    if (body.entry && Array.isArray(body.entry)) {
+      for (const entry of body.entry) {
+        console.log('🔄 ===== PROCESANDO ENTRY =====')
+        console.log('📋 Entry ID:', entry.id)
 
-          if (entry.messaging) {
-            console.log('📝 PROCESANDO MENSAJES DIRECTOS');
-            
-            for (const event of entry.messaging) {
-              console.log('📝 Processing messaging event:', JSON.stringify(event, null, 2));
-
-              if (event.message && !event.message.is_echo) {
-                console.log('🚀 === PROCESANDO MENSAJE PARA AUTORESPONDER ===');
-                console.log('👤 SENDER ID:', event.sender.id);
-                console.log('💬 MENSAJE:', event.message.text);
-
-                const senderId = event.sender.id;
-                const recipientId = event.recipient.id;
-                const messageText = event.message.text;
-                const messageTimestamp = new Date(event.timestamp);
-
-                // 🔄 Actualizar actividad del prospecto
-                console.log('🔄 Actualizando actividad del prospecto...');
-                await updateProspectActivity(supabase, senderId);
-
-                // ===== BUSCAR USUARIO DE INSTAGRAM =====
-                console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====');
-                console.log('📋 Recipient ID (Instagram Business Account):', recipientId);
-
-                const { data: instagramUser, error: userError } = await supabase
-                  .from('instagram_users')
-                  .select('*')
-                  .eq('instagram_user_id', recipientId)
-                  .single();
-
-                if (userError || !instagramUser) {
-                  console.error('❌ Error finding Instagram user:', userError);
-                  return new Response('User not found', { status: 404 });
-                }
-
-                console.log('✅ Usuario encontrado:', instagramUser);
-
-                // ===== CREAR/ACTUALIZAR PROSPECTO =====
-                console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====');
-                console.log('📋 Parámetros para create_or_update_prospect:');
-                console.log('  - p_instagram_user_id (UUID):', instagramUser.id);
-                console.log('  - p_prospect_instagram_id (string):', senderId);
-                console.log('  - p_username:', `prospect_${senderId.slice(-8)}`);
-
-                const { data: prospectData, error: prospectError } = await supabase
-                  .rpc('create_or_update_prospect', {
-                    p_instagram_user_id: instagramUser.id,
-                    p_prospect_instagram_id: senderId,
-                    p_username: `prospect_${senderId.slice(-8)}`
-                  });
-
-                if (prospectError) {
-                  console.error('❌ Error creating/updating prospect:', prospectError);
-                  return new Response('Error creating prospect', { status: 500 });
-                }
-
-                console.log('✅ Prospecto creado/actualizado con ID:', prospectData);
-
-                // Verificar que el prospecto se guardó en la base de datos
-                console.log('🔍 Verificando que el prospecto se guardó en la base de datos...');
-                const { data: verifyProspect, error: verifyError } = await supabase
-                  .from('prospects')
-                  .select('*')
-                  .eq('id', prospectData)
-                  .single();
-
-                if (verifyError) {
-                  console.error('❌ Error verificando prospecto:', verifyError);
-                } else {
-                  console.log('✅ PROSPECTO VERIFICADO EN BD:', verifyProspect);
-                }
-
-                // ===== GUARDAR MENSAJE DEL PROSPECTO =====
-                const { error: messageError } = await supabase
-                  .from('prospect_messages')
-                  .insert({
-                    prospect_id: prospectData,
-                    message_instagram_id: event.message.mid,
-                    message_text: messageText,
-                    is_from_prospect: true,
-                    message_timestamp: messageTimestamp,
-                    message_type: 'text',
-                    raw_data: event
-                  });
-
-                if (messageError) {
-                  console.error('❌ Error saving prospect message:', messageError);
-                } else {
-                  console.log('✅ Mensaje del prospecto guardado en BD');
-                }
-
-                // ===== ANÁLISIS DEL MENSAJE =====
-                console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====');
-                console.log('📝 Texto:', messageText);
-
-                const messageTypes = await analyzeMessage(messageText);
-                console.log('📊 Tipos detectados guardados:', messageTypes);
-
-                // ===== GUARDAR EN TABLA instagram_messages PARA COMPATIBILIDAD =====
-                const { error: legacyMessageError } = await supabase
-                  .from('instagram_messages')
-                  .insert({
-                    instagram_message_id: event.message.mid,
-                    sender_id: senderId,
-                    recipient_id: recipientId,
-                    message_text: messageText,
-                    message_type: 'text',
-                    timestamp: messageTimestamp,
-                    instagram_user_id: instagramUser.id,
-                    is_invitation: messageTypes.isInvitation,
-                    is_presentation: messageTypes.isPresentation,
-                    is_inscription: messageTypes.isInscription,
-                    raw_data: event
-                  });
-
-                if (legacyMessageError) {
-                  console.error('❌ Error saving to instagram_messages:', legacyMessageError);
-                } else {
-                  console.log('✅ Mensaje guardado correctamente con relación al usuario');
-                }
-
-                // ===== NOTIFICAR CAMBIOS AL DASHBOARD =====
-                console.log('🔄 ===== NOTIFICANDO CAMBIOS AL DASHBOARD =====');
-                await notifyDashboard(supabase, instagramUser.id);
-                console.log('✅ Cambios notificados al dashboard');
-
-                // ===== OBTENER AUTORESPONDERS =====
-                console.log('🔍 === OBTENIENDO AUTORESPONDERS ===');
-                console.log('📡 Consultando autoresponders desde endpoint...');
-                
-                const autoresponders = await getAutoresponders(instagramUser.instagram_user_id);
-                
-                if (!autoresponders || autoresponders.length === 0) {
-                  console.log('⚠️ No hay autoresponders configurados');
-                  return new Response('No autoresponders found', { status: 200 });
-                }
-
-                console.log('✅ Autoresponders obtenidos:', autoresponders.length);
-                console.log('📋 Lista de autoresponders:', autoresponders.map(ar => ({
-                  id: ar.id,
-                  name: ar.name,
-                  is_active: ar.is_active,
-                  message_preview: ar.message_text.substring(0, 30) + "...",
-                  use_keywords: ar.use_keywords,
-                  keywords: ar.keywords
-                })));
-
-                // ===== SELECCIONAR AUTORESPONDER =====
-                let selectedAutoresponder = null;
-
-                for (const autoresponder of autoresponders) {
-                  if (!autoresponder.is_active) continue;
-
-                  let shouldSend = false;
-
-                  if (autoresponder.use_keywords && autoresponder.keywords && autoresponder.keywords.length > 0) {
-                    const messageTextLower = messageText.toLowerCase();
-                    
-                    for (const keyword of autoresponder.keywords) {
-                      console.log(`🔍 Verificando palabra clave "${keyword}" -> ${messageTextLower.includes(keyword.toLowerCase()) ? 'COINCIDE' : 'NO COINCIDE'}`);
-                      if (messageTextLower.includes(keyword.toLowerCase())) {
-                        shouldSend = true;
-                        break;
-                      }
-                    }
-                    
-                    if (shouldSend) {
-                      console.log(`✅ Autoresponder "${autoresponder.name}" tiene coincidencia de palabras clave - COINCIDE`);
-                      selectedAutoresponder = autoresponder;
-                      break;
-                    }
-                  } else {
-                    shouldSend = true;
-                    selectedAutoresponder = autoresponder;
-                    break;
-                  }
-                }
-
-                if (!selectedAutoresponder) {
-                  console.log('⚠️ Ningún autoresponder cumple las condiciones');
-                  return new Response('No matching autoresponder', { status: 200 });
-                }
-
-                console.log('🎯 AUTORESPONDER SELECCIONADO:');
-                console.log('📋 ID:', selectedAutoresponder.id);
-                console.log('📋 Nombre:', selectedAutoresponder.name);
-                console.log('📋 Mensaje:', selectedAutoresponder.message_text);
-                console.log('📋 Solo primer mensaje:', selectedAutoresponder.send_only_first_message);
-                console.log('📋 Usa palabras clave:', selectedAutoresponder.use_keywords);
-                console.log('📋 Palabras clave:', selectedAutoresponder.keywords);
-
-                // ===== VERIFICAR SI YA SE ENVIÓ AUTORESPONDER (NUEVA LÓGICA DE 12 HORAS) =====
-                console.log('🔍 Verificando si ya se le envió autoresponder a:', senderId);
-                
-                const { data: lastMessage, error: lastMessageError } = await supabase
-                  .from('prospect_messages')
-                  .select('message_timestamp')
-                  .eq('prospect_id', prospectData)
-                  .eq('is_from_prospect', true)
-                  .order('message_timestamp', { ascending: false })
-                  .limit(2);
-
-                if (lastMessageError) {
-                  console.error('❌ Error consultando últimos mensajes:', lastMessageError);
-                }
-
-                let shouldSendAutoresponder = true;
-
-                if (lastMessage && lastMessage.length >= 2) {
-                  // Hay al menos 2 mensajes del prospecto
-                  const currentMessageTime = new Date(messageTimestamp);
-                  const previousMessageTime = new Date(lastMessage[1].message_timestamp);
-                  const hoursDifference = (currentMessageTime.getTime() - previousMessageTime.getTime()) / (1000 * 60 * 60);
-                  
-                  console.log('⏰ Último mensaje anterior:', previousMessageTime);
-                  console.log('⏰ Mensaje actual:', currentMessageTime);
-                  console.log('⏰ Diferencia en horas:', hoursDifference);
-                  
-                  if (hoursDifference < 12) {
-                    shouldSendAutoresponder = false;
-                    console.log('⏰ NO ENVIAR - Menos de 12 horas desde el último mensaje');
-                  } else {
-                    console.log('✅ ENVIAR - Más de 12 horas desde el último mensaje');
-                  }
-                } else {
-                  console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO');
-                }
-
-                if (!shouldSendAutoresponder) {
-                  console.log('⏭️ Autoresponder no enviado por regla de 12 horas');
-                  return new Response('Autoresponder skipped - less than 12 hours', { status: 200 });
-                }
-
-                // ===== ENVIAR AUTORESPONDER =====
-                console.log('🚀 ENVIANDO AUTORESPONDER...');
-
-                const { data: sendResult, error: sendError } = await supabase.functions.invoke('instagram-send-message', {
-                  body: {
-                    recipient_id: senderId,
-                    message_text: selectedAutoresponder.message_text,
-                    instagram_user_id: recipientId
-                  }
-                });
-
-                console.log('📨 Respuesta de instagram-send-message:');
-                console.log('📋 Data:', sendResult);
-                console.log('📋 Error:', sendError);
-
-                if (sendError) {
-                  console.error('❌ Error enviando autoresponder:', sendError);
-                  return new Response('Error sending autoresponder', { status: 500 });
-                }
-
-                console.log('✅ ===== MENSAJE ENVIADO EXITOSAMENTE VIA EDGE FUNCTION =====');
-
-                // ===== GUARDAR LOG DEL AUTORESPONDER =====
-                const { error: logError } = await supabase
-                  .from('autoresponder_sent_log')
-                  .insert({
-                    autoresponder_message_id: selectedAutoresponder.id,
-                    sender_id: senderId
-                  });
-
-                if (logError) {
-                  console.error('❌ Error saving autoresponder log:', logError);
-                } else {
-                  console.log('✅ Autoresponder guardado en BD del prospecto');
-                }
-
-                // ===== GUARDAR AUTORESPONDER EN MENSAJES =====
-                const { error: autoresponderMessageError } = await supabase
-                  .from('prospect_messages')
-                  .insert({
-                    prospect_id: prospectData,
-                    message_instagram_id: sendResult?.message_id || `auto_${Date.now()}`,
-                    message_text: selectedAutoresponder.message_text,
-                    is_from_prospect: false,
-                    message_timestamp: new Date(),
-                    message_type: 'autoresponder',
-                    raw_data: { autoresponder_id: selectedAutoresponder.id }
-                  });
-
-                if (autoresponderMessageError) {
-                  console.error('❌ Error saving autoresponder message:', autoresponderMessageError);
-                } else {
-                  console.log('✅ Autoresponder guardado en prospect_messages');
-                }
-
-                console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE');
-              } else if (event.message && event.message.is_echo) {
-                console.log('⏭️ Mensaje no válido o es un echo - saltando');
-              }
-            }
+        if (entry.changes) {
+          console.log('🔄 ===== PROCESANDO CAMBIOS =====')
+          for (const change of entry.changes) {
+            console.log('🔄 ===== PROCESANDO CAMBIO =====')
+            console.log('📋 Change:', JSON.stringify(change, null, 2))
           }
         }
+
+        if (entry.messaging) {
+          console.log('📝 PROCESANDO MENSAJES DIRECTOS')
+          
+          for (const messagingEvent of entry.messaging) {
+            console.log('📝 Processing messaging event:', JSON.stringify(messagingEvent, null, 2))
+            
+            const senderId = messagingEvent.sender.id
+            const recipientId = messagingEvent.recipient.id
+            const messageText = messagingEvent.message?.text
+            const timestamp = new Date(messagingEvent.timestamp).toISOString()
+            const messageId = messagingEvent.message?.mid
+            const isEcho = messagingEvent.message?.is_echo === true
+
+            console.log('🚀 === PROCESANDO MENSAJE PARA AUTORESPONDER ===')
+            console.log('👤 SENDER ID:', senderId)
+            console.log('💬 MENSAJE:', messageText)
+
+            // Skip si es un echo (mensaje que yo envié)
+            if (isEcho) {
+              console.log('⏭️ Mensaje no válido o es un echo - saltando')
+              continue
+            }
+
+            // Actualizar actividad del prospecto
+            console.log('🔄 Actualizando actividad del prospecto...')
+            try {
+              const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
+                p_prospect_id: senderId 
+              })
+              
+              if (activityError) {
+                console.error('❌ Error actualizando actividad:', activityError)
+              } else {
+                console.log('✅ Actividad del prospecto actualizada')
+              }
+            } catch (activityErr) {
+              console.error('💥 Error en update_prospect_activity:', activityErr)
+            }
+
+            // ===== BUSCAR USUARIO DE INSTAGRAM =====
+            console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====')
+            console.log('📋 Recipient ID (Instagram Business Account):', recipientId)
+
+            const { data: instagramUser, error: userError } = await supabase
+              .from('instagram_users')
+              .select('*')
+              .eq('instagram_user_id', recipientId)
+              .single()
+
+            if (userError || !instagramUser) {
+              console.error('❌ Usuario de Instagram no encontrado:', userError)
+              continue
+            }
+
+            console.log('✅ Usuario encontrado:', JSON.stringify(instagramUser, null, 2))
+
+            // ===== CREAR O ACTUALIZAR PROSPECTO =====
+            console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
+            console.log('📋 Parámetros para create_or_update_prospect:')
+            console.log('  - p_instagram_user_id (UUID):', instagramUser.id)
+            console.log('  - p_prospect_instagram_id (string):', senderId)
+            console.log('  - p_username:', `prospect_${senderId.slice(-8)}`)
+            
+            let prospectId;
+            try {
+              const { data: prospectResult, error: prospectError } = await supabase.rpc('create_or_update_prospect', {
+                p_instagram_user_id: instagramUser.id,
+                p_prospect_instagram_id: senderId,
+                p_username: `prospect_${senderId.slice(-8)}`,
+                p_profile_picture_url: null
+              })
+
+              if (prospectError) {
+                console.error('❌ Error creando prospecto:', prospectError)
+                console.error('❌ Detalles del error:', JSON.stringify(prospectError, null, 2))
+                continue
+              }
+
+              prospectId = prospectResult
+              console.log('✅ Prospecto creado/actualizado con ID:', prospectId)
+              
+              // VERIFICAR QUE EL PROSPECTO SE GUARDÓ EN LA BASE DE DATOS
+              console.log('🔍 Verificando que el prospecto se guardó en la base de datos...')
+              const { data: verifyProspect, error: verifyError } = await supabase
+                .from('prospects')
+                .select('*')
+                .eq('id', prospectId)
+                .single()
+              
+              if (verifyError) {
+                console.error('❌ ERROR: No se pudo verificar el prospecto guardado:', verifyError)
+              } else if (verifyProspect) {
+                console.log('✅ PROSPECTO VERIFICADO EN BD:', JSON.stringify(verifyProspect, null, 2))
+              } else {
+                console.error('❌ ERROR: Prospecto no encontrado después de crearlo')
+              }
+              
+            } catch (prospectErr) {
+              console.error('💥 Error en create_or_update_prospect:', prospectErr)
+              continue
+            }
+
+            // ===== GUARDAR MENSAJE DEL PROSPECTO =====
+            try {
+              const { data: messageResult, error: messageError } = await supabase.rpc('add_prospect_message', {
+                p_prospect_id: prospectId,
+                p_message_instagram_id: messageId,
+                p_message_text: messageText,
+                p_is_from_prospect: true,
+                p_message_timestamp: timestamp,
+                p_message_type: 'text',
+                p_raw_data: messagingEvent
+              })
+
+              if (messageError) {
+                console.error('❌ Error guardando mensaje:', messageError)
+              } else {
+                console.log('✅ Mensaje del prospecto guardado en BD')
+              }
+            } catch (messageErr) {
+              console.error('💥 Error en add_prospect_message:', messageErr)
+            }
+
+            // ===== ANÁLISIS DEL MENSAJE =====
+            console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
+            console.log('📝 Texto:', messageText)
+
+            const isInvitation = messageText.toLowerCase().includes('invitacion') || messageText.toLowerCase().includes('invitación')
+            const isPresentation = messageText.toLowerCase().includes('presentacion') || messageText.toLowerCase().includes('presentación')
+            const isInscription = messageText.toLowerCase().includes('inscripcion') || messageText.toLowerCase().includes('inscripción')
+
+            // ===== GUARDAR MENSAJE EN INSTAGRAM_MESSAGES =====
+            const { error: saveError } = await supabase
+              .from('instagram_messages')
+              .insert({
+                instagram_user_id: instagramUser.id,
+                instagram_message_id: messageId,
+                sender_id: senderId,
+                recipient_id: recipientId,
+                message_text: messageText,
+                message_type: 'received',
+                timestamp: timestamp,
+                is_invitation: isInvitation,
+                is_presentation: isPresentation,
+                is_inscription: isInscription,
+                raw_data: messagingEvent
+              })
+
+            if (saveError) {
+              console.error('❌ Error guardando mensaje en instagram_messages:', saveError)
+            } else {
+              console.log('✅ Mensaje guardado correctamente con relación al usuario')
+            }
+
+            console.log('📊 Tipos detectados guardados:', { isInvitation: isInvitation, isPresentation: isPresentation, isInscription: isInscription })
+
+            // ===== NOTIFICAR CAMBIOS AL DASHBOARD =====
+            console.log('🔄 ===== NOTIFICANDO CAMBIOS AL DASHBOARD =====')
+            try {
+              await supabase.functions.invoke('dashboard-sync', {
+                body: { type: 'message_received', senderId, messageText }
+              })
+              console.log('✅ Cambios notificados al dashboard')
+            } catch (notifyError) {
+              console.log('⚠️ Error notificando al dashboard (no crítico):', notifyError)
+            }
+
+            // ===== OBTENER AUTORESPONDERS =====
+            console.log('🔍 === OBTENIENDO AUTORESPONDERS ===')
+            
+            console.log('📡 Consultando autoresponders desde endpoint...')
+            const { data: autoresponderResponse, error: autoresponderError } = await supabase.functions.invoke('get-autoresponders', {})
+            
+            console.log('📊 Respuesta del endpoint:', JSON.stringify(autoresponderResponse, null, 2))
+
+            if (autoresponderError || !autoresponderResponse?.success) {
+              console.error('❌ Error obteniendo autoresponders:', autoresponderError)
+              continue
+            }
+
+            const autoresponders = autoresponderResponse.autoresponders || []
+            console.log('✅ Autoresponders obtenidos:', autoresponders.length)
+
+            console.log('📋 Lista de autoresponders:', autoresponders.map(ar => ({
+              id: ar.id,
+              name: ar.name,
+              is_active: ar.is_active,
+              message_preview: ar.message_text?.substring(0, 30) + '...',
+              use_keywords: ar.use_keywords,
+              keywords: ar.keywords
+            })))
+
+            let selectedAutoresponder = null
+
+            for (const autoresponder of autoresponders) {
+              if (!autoresponder.use_keywords) {
+                selectedAutoresponder = autoresponder
+                break
+              }
+
+              const keywords = autoresponder.keywords || []
+              let hasMatch = false
+
+              for (const keyword of keywords) {
+                console.log(`🔍 Verificando palabra clave "${keyword}" -> ${messageText.toLowerCase().includes(keyword.toLowerCase()) ? 'COINCIDE' : 'NO COINCIDE'}`)
+                if (messageText.toLowerCase().includes(keyword.toLowerCase())) {
+                  hasMatch = true
+                  break
+                }
+              }
+
+              if (hasMatch) {
+                console.log(`✅ Autoresponder "${autoresponder.name}" tiene coincidencia de palabras clave - COINCIDE`)
+                selectedAutoresponder = autoresponder
+                break
+              } else {
+                console.log(`❌ Autoresponder "${autoresponder.name}" NO tiene coincidencia de palabras clave - NO COINCIDE`)
+              }
+            }
+
+            if (!selectedAutoresponder) {
+              console.log('❌ No se encontró autoresponder que coincida')
+              continue
+            }
+
+            console.log('🎯 AUTORESPONDER SELECCIONADO:')
+            console.log('📋 ID:', selectedAutoresponder.id)
+            console.log('📋 Nombre:', selectedAutoresponder.name)
+            console.log('📋 Mensaje:', selectedAutoresponder.message_text)
+            console.log('📋 Solo primer mensaje:', selectedAutoresponder.send_only_first_message)
+            console.log('📋 Usa palabras clave:', selectedAutoresponder.use_keywords)
+            console.log('📋 Palabras clave:', selectedAutoresponder.keywords)
+
+            // Verificar si ya se envió autoresponder - FIXED QUERY
+            console.log('🔍 Verificando si ya se le envió autoresponder a:', senderId)
+
+            const { data: alreadySent } = await supabase
+              .from('autoresponder_sent_log')
+              .select('*')
+              .eq('sender_id', senderId)
+              .eq('autoresponder_message_id', selectedAutoresponder.id)
+
+            if (selectedAutoresponder.send_only_first_message && alreadySent && alreadySent.length > 0) {
+              console.log('⏭️ Ya se envió este autoresponder - saltando')
+              continue
+            }
+
+            console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO')
+
+            // Enviar autoresponder
+            console.log('🚀 ENVIANDO AUTORESPONDER...')
+
+            console.log('📤 ===== ENVIANDO MENSAJE VIA EDGE FUNCTION =====')
+            console.log('👤 Recipient:', senderId)
+            console.log('💌 Message:', selectedAutoresponder.message_text)
+            console.log('🆔 Instagram User ID:', recipientId)
+
+            const { data, error } = await supabase.functions.invoke('instagram-send-message', {
+              body: {
+                recipient_id: senderId,
+                message_text: selectedAutoresponder.message_text,
+                instagram_user_id: recipientId
+              }
+            })
+
+            console.log('📨 Respuesta de instagram-send-message:')
+            console.log('📋 Data:', JSON.stringify(data, null, 2))
+            console.log('📋 Error:', error)
+
+            if (error) {
+              console.error('❌ Error enviando mensaje:', error)
+              continue
+            }
+
+            console.log('✅ ===== MENSAJE ENVIADO EXITOSAMENTE VIA EDGE FUNCTION =====')
+            console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
+
+            // Registrar envío en log
+            await supabase
+              .from('autoresponder_sent_log')
+              .insert({
+                autoresponder_message_id: selectedAutoresponder.id,
+                sender_id: senderId,
+                sent_at: new Date().toISOString()
+              })
+
+            console.log('✅ Autoresponder guardado en BD del prospecto')
+
+            // Guardar el autoresponder enviado también en prospect_messages
+            try {
+              await supabase.rpc('add_prospect_message', {
+                p_prospect_id: prospectId,
+                p_message_instagram_id: data?.message_id || `auto_${Date.now()}`,
+                p_message_text: selectedAutoresponder.message_text,
+                p_is_from_prospect: false,
+                p_message_timestamp: new Date().toISOString(),
+                p_message_type: 'autoresponder',
+                p_raw_data: { autoresponder_id: selectedAutoresponder.id, sent_via: 'webhook' }
+              })
+              console.log('✅ Autoresponder guardado en prospect_messages')
+            } catch (autoMsgError) {
+              console.error('⚠️ Error guardando autoresponder en prospect_messages (no crítico):', autoMsgError)
+            }
+
+            console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
+          }
+        } else {
+          console.log('❌ No hay changes en este entry')
+        }
       }
-
-      console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===');
-      return new Response('OK', { status: 200, headers: corsHeaders });
     }
 
-    return new Response('Method not allowed', { status: 405 });
-  } catch (error) {
-    console.error('❌ Error in webhook:', error);
-    return new Response('Internal server error', { status: 500, headers: corsHeaders });
-  }
-});
-
-async function updateProspectActivity(supabase: any, prospectId: string) {
-  const { error } = await supabase
-    .from('prospect_last_activity')
-    .upsert({
-      prospect_id: prospectId,
-      last_message_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: 'prospect_id'
-    });
-
-  if (error) {
-    console.error('Error updating prospect activity:', error);
-  } else {
-    console.log('✅ Actividad del prospecto actualizada');
-  }
-}
-
-async function analyzeMessage(messageText: string) {
-  const text = messageText.toLowerCase();
-  
-  return {
-    isInvitation: text.includes('invit') || text.includes('evento') || text.includes('reunión'),
-    isPresentation: text.includes('present') || text.includes('demostrar') || text.includes('mostrar'),
-    isInscription: text.includes('inscrib') || text.includes('registr') || text.includes('apunt')
-  };
-}
-
-async function notifyDashboard(supabase: any, instagramUserId: string) {
-  const { error } = await supabase
-    .from('instagram_users')
-    .update({ 
-      nuevos_prospectos_contactados: supabase.sql`nuevos_prospectos_contactados + 1`,
-      updated_at: new Date().toISOString()
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
-    .eq('id', instagramUserId);
 
-  if (error) {
-    console.error('Error notifying dashboard:', error);
-  }
-}
-
-async function getAutoresponders(instagramUserId: string) {
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const response = await fetch(`${supabaseUrl}/functions/v1/get-autoresponders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')!}`
-      },
-      body: JSON.stringify({
-        instagram_user_id: instagramUserId
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('📊 Respuesta del endpoint:', data);
-    
-    return data.autoresponders || [];
   } catch (error) {
-    console.error('❌ Error fetching autoresponders:', error);
-    return [];
+    console.error('💥 Error en webhook:', error)
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
-}
+})
