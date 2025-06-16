@@ -19,7 +19,15 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     if (req.method === 'POST') {
-      const body = await req.json()
+      let body;
+      try {
+        const text = await req.text()
+        body = text ? JSON.parse(text) : {}
+      } catch (parseError) {
+        console.log('⚠️ Error parsing request body, using empty object:', parseError)
+        body = {}
+      }
+      
       console.log('📨 Solicitud POST recibida:', JSON.stringify(body, null, 2))
       
       // Si viene con action store, almacenar autoresponders en la base de datos
