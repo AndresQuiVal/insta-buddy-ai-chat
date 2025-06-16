@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { conversation, prospect_name, openai_api_key } = await req.json()
+    const { conversation, prospect_name, openai_api_key, ideal_traits } = await req.json()
 
     if (!openai_api_key) {
       return new Response(
@@ -37,25 +37,52 @@ serve(async (req) => {
 
     console.log('🤖 Generando sugerencia para:', prospect_name)
     console.log('📝 Conversación:', conversation)
+    console.log('🎯 Características recibidas:', ideal_traits)
 
-    // Prompt específico para generar sugerencias de mensaje
-    const systemPrompt = `Eres un experto en ventas consultivas y generación de leads. Tu objetivo es analizar conversaciones de Instagram para sugerir el siguiente mensaje más efectivo.
+    // Crear prompt específico basado en si hay características o no
+    let systemPrompt = `Eres un experto en ventas consultivas y generación de leads. Tu objetivo es analizar conversaciones de Instagram para sugerir el siguiente mensaje más efectivo.
 
 OBJETIVOS PRINCIPALES:
 1. Agendar una reunión de manera orgánica y conversacional
 2. Obtener el número de teléfono de la persona
 3. Mantener el interés y la confianza del prospecto
 
-INSTRUCCIONES:
+INSTRUCCIONES GENERALES:
 - Analiza la conversación completa para entender el contexto y el nivel de interés
 - Sugiere UN mensaje específico y directo que sea natural y no forzado
 - Adapta el tono al estilo de conversación que ya se estableció
-- Si el prospecto muestra interés alto, sugiere agendar reunión
-- Si el prospecto muestra interés medio, sugiere intercambiar contactos
-- Si el prospecto muestra poco interés, sugiere valor adicional antes de pedir algo
 - Evita mensajes genéricos o que suenen a spam
 - El mensaje debe ser entre 1-3 líneas máximo
-- Usa un lenguaje natural y conversacional en español
+- Usa un lenguaje natural y conversacional en español`;
+
+    // Si hay características configuradas, añadirlas al prompt
+    if (ideal_traits && ideal_traits.length > 0) {
+      const enabledTraits = ideal_traits.filter((trait: any) => trait.enabled);
+      
+      if (enabledTraits.length > 0) {
+        systemPrompt += `
+
+🎯 CARACTERÍSTICAS DEL CLIENTE IDEAL (usar para dirigir la conversación):
+${enabledTraits.map((trait: any, index: number) => `${index + 1}. ${trait.trait}`).join('\n')}
+
+ESTRATEGIA ESPECÍFICA:
+- Si el prospecto muestra interés alto y cumple las características, sugiere agendar reunión
+- Si el prospecto muestra interés medio, sugiere intercambiar contactos
+- Si el prospecto muestra poco interés, sugiere valor adicional antes de pedir algo
+- Usa las características como guía para hacer preguntas estratégicas que califiquen al prospecto`;
+      }
+    } else {
+      systemPrompt += `
+
+ESTRATEGIA SIN CARACTERÍSTICAS ESPECÍFICAS:
+- Enfócate en generar interés y confianza
+- Si el prospecto muestra interés alto, sugiere agendar reunión o intercambiar WhatsApp
+- Si el prospecto muestra interés medio, ofrece valor adicional y sugiere continuar la conversación
+- Si el prospecto muestra poco interés, haz preguntas para entender mejor sus necesidades
+- Mantén la conversación orgánica mientras buscas oportunidades para agendar o conseguir contacto`;
+    }
+
+    systemPrompt += `
 
 Responde SOLO con el mensaje sugerido, sin explicaciones adicionales.`;
 

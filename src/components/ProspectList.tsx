@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -32,7 +33,7 @@ const ProspectList: React.FC = () => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loadingAI, setLoadingAI] = useState<string | null>(null); // Estado para controlar qué prospecto está cargando
+  const [loadingAI, setLoadingAI] = useState<string | null>(null);
   const { currentUser } = useInstagramUsers();
 
   useEffect(() => {
@@ -64,7 +65,6 @@ const ProspectList: React.FC = () => {
 
     console.log("🤖 Generando sugerencia con IA para:", prospect.username);
     
-    // Establecer estado de carga para este prospecto específico
     setLoadingAI(prospect.id);
     
     try {
@@ -94,6 +94,19 @@ const ProspectList: React.FC = () => {
         return;
       }
 
+      // Obtener características del cliente ideal
+      const { data: idealTraits, error: traitsError } = await supabase
+        .from('ideal_client_traits')
+        .select('*')
+        .eq('instagram_user_id', currentUser.id)
+        .order('position', { ascending: true });
+
+      if (traitsError) {
+        console.warn("Error obteniendo características:", traitsError);
+      }
+
+      console.log("🎯 Características obtenidas:", idealTraits);
+
       // Formatear la conversación para la IA
       const conversationText = messages.map(msg => {
         const sender = msg.is_from_prospect ? prospect.username : 'Yo';
@@ -107,7 +120,8 @@ const ProspectList: React.FC = () => {
         body: {
           conversation: conversationText,
           prospect_name: prospect.username,
-          openai_api_key: currentUser.openai_api_key
+          openai_api_key: currentUser.openai_api_key,
+          ideal_traits: idealTraits || []
         }
       });
 
@@ -122,11 +136,10 @@ const ProspectList: React.FC = () => {
       }
 
       if (aiResponse?.suggestion) {
-        // Mostrar la sugerencia en un toast más largo o modal
         toast({
           title: "💡 Sugerencia de IA",
           description: aiResponse.suggestion,
-          duration: 10000, // 10 segundos para leer
+          duration: 10000,
         });
         
         console.log("✅ Sugerencia generada:", aiResponse.suggestion);
@@ -146,7 +159,6 @@ const ProspectList: React.FC = () => {
         variant: "destructive"
       });
     } finally {
-      // Quitar estado de carga
       setLoadingAI(null);
     }
   };
