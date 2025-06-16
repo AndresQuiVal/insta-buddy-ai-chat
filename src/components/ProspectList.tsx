@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { MessageCircle, RefreshCw, Search, Bot } from 'lucide-react';
+import { MessageCircle, RefreshCw, Search, Bot, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
@@ -33,6 +32,7 @@ const ProspectList: React.FC = () => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loadingAI, setLoadingAI] = useState<string | null>(null); // Estado para controlar qué prospecto está cargando
   const { currentUser } = useInstagramUsers();
 
   useEffect(() => {
@@ -63,6 +63,9 @@ const ProspectList: React.FC = () => {
     }
 
     console.log("🤖 Generando sugerencia con IA para:", prospect.username);
+    
+    // Establecer estado de carga para este prospecto específico
+    setLoadingAI(prospect.id);
     
     try {
       // Obtener todas las conversaciones del prospecto
@@ -142,6 +145,9 @@ const ProspectList: React.FC = () => {
         description: "Ocurrió un error al generar la sugerencia",
         variant: "destructive"
       });
+    } finally {
+      // Quitar estado de carga
+      setLoadingAI(null);
     }
   };
 
@@ -391,10 +397,20 @@ const ProspectList: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleAISuggestion(prospect)}
+                      disabled={loadingAI === prospect.id}
                       className="flex items-center gap-2"
                     >
-                      <Bot className="w-4 h-4" />
-                      Sugerencia con IA
+                      {loadingAI === prospect.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Analizando...
+                        </>
+                      ) : (
+                        <>
+                          <Bot className="w-4 h-4" />
+                          Sugerencia con IA
+                        </>
+                      )}
                     </Button>
                   </TableCell>
                 </TableRow>
