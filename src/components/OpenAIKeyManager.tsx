@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ const OpenAIKeyManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const { toast } = useToast();
-  const { currentUser, refreshUsers } = useInstagramUsers();
+  const { currentUser, checkCurrentUser } = useInstagramUsers();
 
   useEffect(() => {
     if (currentUser?.openai_api_key) {
@@ -74,7 +73,7 @@ const OpenAIKeyManager: React.FC = () => {
       });
 
       // Refrescar datos del usuario
-      await refreshUsers();
+      await checkCurrentUser();
 
     } catch (error) {
       console.error('Error saving OpenAI key:', error);
@@ -116,7 +115,7 @@ const OpenAIKeyManager: React.FC = () => {
       });
 
       // Refrescar datos del usuario
-      await refreshUsers();
+      await checkCurrentUser();
 
     } catch (error) {
       console.error('Error removing OpenAI key:', error);
