@@ -1,126 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-
-interface SupabaseClient {
-  from: (table: string) => any;
-  functions: {
-    invoke: (name: string, options?: any) => Promise<any>;
-  };
-  rpc: (fn: string, params?: any) => Promise<any>;
-}
-
-const createSupabaseClient = (): SupabaseClient => {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  
-  const headers = {
-    'apikey': supabaseKey,
-    'Authorization': `Bearer ${supabaseKey}`,
-    'Content-Type': 'application/json',
-  };
-
-  return {
-    from: (table: string) => ({
-      select: (columns = '*') => ({
-        eq: (column: string, value: any) => ({
-          single: async () => {
-            const url = `${supabaseUrl}/rest/v1/${table}?select=${columns}&${column}=eq.${value}`;
-            const response = await fetch(url, { headers });
-            const data = await response.json();
-            return { data: data[0] || null, error: response.ok ? null : data };
-          },
-          async execute() {
-            const url = `${supabaseUrl}/rest/v1/${table}?select=${columns}&${column}=eq.${value}`;
-            const response = await fetch(url, { headers });
-            const data = await response.json();
-            return { data, error: response.ok ? null : data };
-          }
-        }),
-        async execute() {
-          const url = `${supabaseUrl}/rest/v1/${table}?select=${columns}`;
-          const response = await fetch(url, { headers });
-          const data = await response.json();
-          return { data, error: response.ok ? null : data };
-        }
-      }),
-      insert: (values: any) => ({
-        select: (columns = '*') => ({
-          single: async () => {
-            const url = `${supabaseUrl}/rest/v1/${table}`;
-            const response = await fetch(url, {
-              method: 'POST',
-              headers: { ...headers, 'Prefer': 'return=representation' },
-              body: JSON.stringify(values)
-            });
-            const data = await response.json();
-            return { data: data[0] || null, error: response.ok ? null : data };
-          }
-        })
-      }),
-      update: (values: any) => ({
-        eq: (column: string, value: any) => ({
-          select: (columns = '*') => ({
-            single: async () => {
-              const url = `${supabaseUrl}/rest/v1/${table}?${column}=eq.${value}`;
-              const response = await fetch(url, {
-                method: 'PATCH',
-                headers: { ...headers, 'Prefer': 'return=representation' },
-                body: JSON.stringify(values)
-              });
-              const data = await response.json();
-              return { data: data[0] || null, error: response.ok ? null : data };
-            }
-          })
-        })
-      })
-    }),
-    functions: {
-      invoke: async (name: string, options: any = {}) => {
-        const url = `${supabaseUrl}/functions/v1/${name}`;
-        const response = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(options.body || {})
-        });
-        const data = await response.json();
-        return { data, error: response.ok ? null : data };
-      }
-    },
-    rpc: async (fn: string, params: any = {}) => {
-      try {
-        const url = `${supabaseUrl}/rest/v1/rpc/${fn}`;
-        const response = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(params)
-        });
-        
-        const text = await response.text();
-        console.log(`📡 RPC ${fn} response text:`, text);
-        
-        let data;
-        if (text.trim() === '') {
-          // Handle empty response (void functions)
-          data = null;
-        } else {
-          try {
-            data = JSON.parse(text);
-          } catch (parseError) {
-            console.error(`❌ JSON Parse error for RPC ${fn}:`, parseError);
-            console.error(`📋 Response text:`, text);
-            throw new Error(`Invalid JSON response from RPC ${fn}: ${text}`);
-          }
-        }
-        
-        return { data, error: response.ok ? null : { message: `RPC ${fn} failed`, status: response.status } };
-      } catch (error) {
-        console.error(`💥 RPC ${fn} error:`, error);
-        return { data: null, error: error.message };
-      }
-    }
-  };
-};
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -133,7 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createSupabaseClient();
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+    
     const body = await req.json()
     
     console.log('📨 ===== NUEVO WEBHOOK RECIBIDO =====')
@@ -189,7 +73,7 @@ serve(async (req) => {
               continue
             }
 
-            // Actualizar actividad del prospecto - con manejo mejorado de errores
+            // Actualizar actividad del prospecto
             console.log('🔄 Actualizando actividad del prospecto...')
             try {
               const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
@@ -203,7 +87,6 @@ serve(async (req) => {
               }
             } catch (activityErr) {
               console.error('💥 Error en update_prospect_activity:', activityErr)
-              // Continue processing even if activity update fails
             }
 
             // ===== BUSCAR USUARIO DE INSTAGRAM =====
@@ -231,7 +114,7 @@ serve(async (req) => {
               const { data: prospectResult, error: prospectError } = await supabase.rpc('create_or_update_prospect', {
                 p_instagram_user_id: instagramUser.id,
                 p_prospect_instagram_id: senderId,
-                p_username: `prospect_${senderId.slice(-8)}`, // Username temporal
+                p_username: `prospect_${senderId.slice(-8)}`,
                 p_profile_picture_url: null
               })
 
@@ -378,7 +261,7 @@ serve(async (req) => {
             console.log('📋 Usa palabras clave:', selectedAutoresponder.use_keywords)
             console.log('📋 Palabras clave:', selectedAutoresponder.keywords)
 
-            // Verificar si ya se envió autoresponder
+            // Verificar si ya se envió autoresponder - FIXED QUERY
             console.log('🔍 Verificando si ya se le envió autoresponder a:', senderId)
 
             const { data: alreadySent } = await supabase
