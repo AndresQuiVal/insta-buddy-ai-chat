@@ -63,7 +63,7 @@ const ProspectList: React.FC = () => {
       return;
     }
 
-    console.log("🤖 Generando sugerencia con IA para:", prospect.username);
+    console.log("🤖 Generando sugerencia estratégica para:", prospect.username);
     
     setLoadingAI(prospect.id);
     
@@ -115,7 +115,7 @@ const ProspectList: React.FC = () => {
 
       console.log("📊 Conversación formateada:", conversationText);
 
-      // Llamar a la función de edge para generar sugerencia con IA
+      // Llamar a la función de edge para generar sugerencia estratégica con IA
       const { data: aiResponse, error: aiError } = await supabase.functions.invoke('ai-prospect-suggestion', {
         body: {
           conversation: conversationText,
@@ -129,7 +129,7 @@ const ProspectList: React.FC = () => {
         console.error("Error en sugerencia IA:", aiError);
         toast({
           title: "Error en IA",
-          description: "No se pudo generar la sugerencia con IA",
+          description: "No se pudo generar la sugerencia estratégica",
           variant: "destructive"
         });
         return;
@@ -137,25 +137,25 @@ const ProspectList: React.FC = () => {
 
       if (aiResponse?.suggestion) {
         toast({
-          title: "💡 Sugerencia de IA",
+          title: "🎯 Sugerencia Estratégica",
           description: aiResponse.suggestion,
-          duration: 10000,
+          duration: 15000,
         });
         
-        console.log("✅ Sugerencia generada:", aiResponse.suggestion);
+        console.log("✅ Sugerencia estratégica generada:", aiResponse.suggestion);
       } else {
         toast({
           title: "Sin sugerencia",
-          description: "La IA no pudo generar una sugerencia para esta conversación",
+          description: "La IA no pudo generar una sugerencia estratégica para esta conversación",
           variant: "destructive"
         });
       }
       
     } catch (error) {
-      console.error("❌ Error al generar sugerencia:", error);
+      console.error("❌ Error al generar sugerencia estratégica:", error);
       toast({
         title: "Error",
-        description: "Ocurrió un error al generar la sugerencia",
+        description: "Ocurrió un error al generar la sugerencia estratégica",
         variant: "destructive"
       });
     } finally {
@@ -420,7 +420,7 @@ const ProspectList: React.FC = () => {
                       ) : (
                         <>
                           <Bot className="w-4 h-4" />
-                          Sugerencia con IA
+                          Sugerencia Estratégica
                         </>
                       )}
                     </Button>
