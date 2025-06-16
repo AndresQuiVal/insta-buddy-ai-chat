@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -87,14 +88,36 @@ const createSupabaseClient = (): SupabaseClient => {
       }
     },
     rpc: async (fn: string, params: any = {}) => {
-      const url = `${supabaseUrl}/rest/v1/rpc/${fn}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(params)
-      });
-      const data = await response.json();
-      return { data, error: response.ok ? null : data };
+      try {
+        const url = `${supabaseUrl}/rest/v1/rpc/${fn}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(params)
+        });
+        
+        const text = await response.text();
+        console.log(`📡 RPC ${fn} response text:`, text);
+        
+        let data;
+        if (text.trim() === '') {
+          // Handle empty response (void functions)
+          data = null;
+        } else {
+          try {
+            data = JSON.parse(text);
+          } catch (parseError) {
+            console.error(`❌ JSON Parse error for RPC ${fn}:`, parseError);
+            console.error(`📋 Response text:`, text);
+            throw new Error(`Invalid JSON response from RPC ${fn}: ${text}`);
+          }
+        }
+        
+        return { data, error: response.ok ? null : { message: `RPC ${fn} failed`, status: response.status } };
+      } catch (error) {
+        console.error(`💥 RPC ${fn} error:`, error);
+        return { data: null, error: error.message };
+      }
     }
   };
 };
@@ -166,9 +189,22 @@ serve(async (req) => {
               continue
             }
 
-            // Actualizar actividad del prospecto
-            await supabase.rpc('update_prospect_activity', { p_prospect_id: senderId })
-            console.log('✅ Actividad del prospecto actualizada')
+            // Actualizar actividad del prospecto - con manejo mejorado de errores
+            console.log('🔄 Actualizando actividad del prospecto...')
+            try {
+              const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
+                p_prospect_id: senderId 
+              })
+              
+              if (activityError) {
+                console.error('❌ Error actualizando actividad:', activityError)
+              } else {
+                console.log('✅ Actividad del prospecto actualizada')
+              }
+            } catch (activityErr) {
+              console.error('💥 Error en update_prospect_activity:', activityErr)
+              // Continue processing even if activity update fails
+            }
 
             // ===== BUSCAR USUARIO DE INSTAGRAM =====
             console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====')
@@ -190,37 +226,47 @@ serve(async (req) => {
             // ===== CREAR O ACTUALIZAR PROSPECTO =====
             console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
             
-            const { data: prospectId, error: prospectError } = await supabase.rpc('create_or_update_prospect', {
-              p_instagram_user_id: instagramUser.id,
-              p_prospect_instagram_id: senderId,
-              p_username: `prospect_${senderId.slice(-8)}`, // Username temporal
-              p_profile_picture_url: null
-            })
+            let prospectId;
+            try {
+              const { data: prospectResult, error: prospectError } = await supabase.rpc('create_or_update_prospect', {
+                p_instagram_user_id: instagramUser.id,
+                p_prospect_instagram_id: senderId,
+                p_username: `prospect_${senderId.slice(-8)}`, // Username temporal
+                p_profile_picture_url: null
+              })
 
-            if (prospectError) {
-              console.error('❌ Error creando prospecto:', prospectError)
+              if (prospectError) {
+                console.error('❌ Error creando prospecto:', prospectError)
+                continue
+              }
+
+              prospectId = prospectResult
+              console.log('✅ Prospecto creado/actualizado:', prospectId)
+            } catch (prospectErr) {
+              console.error('💥 Error en create_or_update_prospect:', prospectErr)
               continue
             }
-
-            console.log('✅ Prospecto creado/actualizado:', prospectId)
 
             // ===== GUARDAR MENSAJE DEL PROSPECTO =====
-            const { data: messageResult, error: messageError } = await supabase.rpc('add_prospect_message', {
-              p_prospect_id: prospectId,
-              p_message_instagram_id: messageId,
-              p_message_text: messageText,
-              p_is_from_prospect: true,
-              p_message_timestamp: timestamp,
-              p_message_type: 'text',
-              p_raw_data: messagingEvent
-            })
+            try {
+              const { data: messageResult, error: messageError } = await supabase.rpc('add_prospect_message', {
+                p_prospect_id: prospectId,
+                p_message_instagram_id: messageId,
+                p_message_text: messageText,
+                p_is_from_prospect: true,
+                p_message_timestamp: timestamp,
+                p_message_type: 'text',
+                p_raw_data: messagingEvent
+              })
 
-            if (messageError) {
-              console.error('❌ Error guardando mensaje:', messageError)
-              continue
+              if (messageError) {
+                console.error('❌ Error guardando mensaje:', messageError)
+              } else {
+                console.log('✅ Mensaje del prospecto guardado en BD')
+              }
+            } catch (messageErr) {
+              console.error('💥 Error en add_prospect_message:', messageErr)
             }
-
-            console.log('✅ Mensaje del prospecto guardado en BD')
 
             // ===== ANÁLISIS DEL MENSAJE =====
             console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
@@ -388,15 +434,20 @@ serve(async (req) => {
             console.log('✅ Autoresponder guardado en BD del prospecto')
 
             // Guardar el autoresponder enviado también en prospect_messages
-            await supabase.rpc('add_prospect_message', {
-              p_prospect_id: prospectId,
-              p_message_instagram_id: data?.message_id || `auto_${Date.now()}`,
-              p_message_text: selectedAutoresponder.message_text,
-              p_is_from_prospect: false,
-              p_message_timestamp: new Date().toISOString(),
-              p_message_type: 'autoresponder',
-              p_raw_data: { autoresponder_id: selectedAutoresponder.id, sent_via: 'webhook' }
-            })
+            try {
+              await supabase.rpc('add_prospect_message', {
+                p_prospect_id: prospectId,
+                p_message_instagram_id: data?.message_id || `auto_${Date.now()}`,
+                p_message_text: selectedAutoresponder.message_text,
+                p_is_from_prospect: false,
+                p_message_timestamp: new Date().toISOString(),
+                p_message_type: 'autoresponder',
+                p_raw_data: { autoresponder_id: selectedAutoresponder.id, sent_via: 'webhook' }
+              })
+              console.log('✅ Autoresponder guardado en prospect_messages')
+            } catch (autoMsgError) {
+              console.error('⚠️ Error guardando autoresponder en prospect_messages (no crítico):', autoMsgError)
+            }
 
             console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
           }
