@@ -150,12 +150,25 @@ const ProspectList: React.FC = () => {
 
     try {
       setLoading(true);
-      console.log('🔍 Cargando prospectos para usuario:', currentUser.username);
-      console.log('🆔 Usuario ID (UUID):', currentUser.id);
-      console.log('🆔 Instagram User ID (string):', currentUser.instagram_user_id);
+      console.log('🔍 ===== CARGANDO PROSPECTOS =====');
+      console.log('👤 Usuario actual:', currentUser.username);
+      console.log('🆔 currentUser.id (UUID):', currentUser.id);
+      console.log('📱 currentUser.instagram_user_id (string):', currentUser.instagram_user_id);
 
-      // ✅ FIXED: Usar el campo correcto para la consulta
-      // El webhook guarda con instagram_user_id = currentUser.id (UUID)
+      // ===== DEBUG: VERIFICAR TODOS LOS PROSPECTOS =====
+      console.log('🔍 PASO 1: Verificando TODOS los prospectos en la tabla...');
+      const { data: allProspectsCheck, error: allError } = await supabase
+        .from('prospects')
+        .select('*');
+      
+      console.log('📊 Total prospectos en BD:', allProspectsCheck?.length || 0);
+      console.log('📋 Todos los prospectos:', allProspectsCheck);
+      console.log('❌ Error al consultar todos:', allError);
+
+      // ===== DEBUG: VERIFICAR CONSULTA ESPECÍFICA =====
+      console.log('🔍 PASO 2: Consultando prospectos para este usuario...');
+      console.log('🎯 Filtro que se usará: instagram_user_id =', currentUser.id);
+      
       const { data: prospectsData, error } = await supabase
         .from('prospects')
         .select(`
@@ -170,29 +183,55 @@ const ProspectList: React.FC = () => {
             raw_data
           )
         `)
-        .eq('instagram_user_id', currentUser.id) // ✅ Usar currentUser.id (UUID)
+        .eq('instagram_user_id', currentUser.id)
         .order('last_message_date', { ascending: false });
 
-      console.log('📋 Consulta corregida:', {
-        filter: `instagram_user_id = ${currentUser.id}`,
-        result: prospectsData,
-        error: error
-      });
+      console.log('📊 RESULTADO DE LA CONSULTA:');
+      console.log('✅ Datos obtenidos:', prospectsData);
+      console.log('❌ Error en consulta:', error);
+      console.log('📈 Número de prospectos encontrados:', prospectsData?.length || 0);
+
+      // ===== DEBUG: VERIFICAR RLS =====
+      console.log('🔍 PASO 3: Verificando si RLS está bloqueando...');
+      
+      // Intentar una consulta más específica para el prospecto que sabemos que existe
+      const { data: specificProspect, error: specificError } = await supabase
+        .from('prospects')
+        .select('*')
+        .eq('id', '48ff4aad-e772-4c50-b60e-2ab4241054f9')
+        .single();
+      
+      console.log('🎯 Consulta específica del prospecto conocido:');
+      console.log('📋 Resultado:', specificProspect);
+      console.log('❌ Error:', specificError);
+
+      // ===== DEBUG: VERIFICAR DIFERENTES FILTROS =====
+      console.log('🔍 PASO 4: Probando diferentes filtros...');
+      
+      // Probar con instagram_user_id como string
+      const { data: stringFilter, error: stringError } = await supabase
+        .from('prospects')
+        .select('*')
+        .eq('instagram_user_id', currentUser.instagram_user_id);
+      
+      console.log('📱 Filtro por string instagram_user_id:', currentUser.instagram_user_id);
+      console.log('📋 Resultado:', stringFilter);
+      console.log('❌ Error:', stringError);
 
       if (error) {
         console.error('❌ Error loading prospects:', error);
         toast({
           title: "Error",
-          description: "No se pudieron cargar los prospectos",
+          description: `Error al cargar prospectos: ${error.message}`,
           variant: "destructive"
         });
         return;
       }
 
-      console.log('✅ Prospectos cargados para este usuario:', prospectsData?.length || 0);
-      
+      console.log('🏁 RESULTADO FINAL:');
       if (prospectsData && prospectsData.length > 0) {
-        console.log('📝 Detalles de prospectos encontrados:', prospectsData.map(p => ({
+        console.log('✅ Prospectos encontrados:', prospectsData.length);
+        console.log('📝 Detalles:', prospectsData.map(p => ({
           id: p.id,
           username: p.username,
           instagram_user_id: p.instagram_user_id,
@@ -201,13 +240,22 @@ const ProspectList: React.FC = () => {
           status: p.status
         })));
       } else {
-        console.log('⚠️ No se encontraron prospectos para este usuario');
+        console.log('⚠️ NO SE ENCONTRARON PROSPECTOS');
+        console.log('🔧 Posibles causas:');
+        console.log('  1. RLS está bloqueando la consulta');
+        console.log('  2. El instagram_user_id no coincide');
+        console.log('  3. El usuario no tiene permisos para ver los datos');
       }
 
       setProspects(prospectsData || []);
       
     } catch (error) {
-      console.error('💥 Error in loadProspects:', error);
+      console.error('💥 Error completo en loadProspects:', error);
+      toast({
+        title: "Error",
+        description: "Error inesperado al cargar prospectos",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -288,15 +336,18 @@ const ProspectList: React.FC = () => {
             <p className="text-gray-500">
               {searchTerm ? 'Intenta con otro término de búsqueda' : 'Los prospectos aparecerán aquí cuando recibas mensajes'}
             </p>
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg text-left">
-              <h4 className="font-semibold text-blue-800 mb-2">🔍 Información de depuración:</h4>
-              <p className="text-sm text-blue-700">
-                <strong>Usuario actual:</strong> {currentUser.username}<br/>
-                <strong>Usuario ID (UUID):</strong> {currentUser.id}<br/>
-                <strong>Instagram ID (String):</strong> {currentUser.instagram_user_id}
-              </p>
-              <p className="text-xs text-blue-600 mt-2">
-                Haz clic en el botón de refrescar arriba para volver a cargar los prospectos.
+            <div className="mt-4 p-4 bg-red-50 rounded-lg text-left">
+              <h4 className="font-semibold text-red-800 mb-2">🚨 DEBUG: Información detallada</h4>
+              <div className="text-sm text-red-700 space-y-1">
+                <p><strong>Usuario actual:</strong> {currentUser.username}</p>
+                <p><strong>Usuario ID (UUID):</strong> {currentUser.id}</p>
+                <p><strong>Instagram ID (String):</strong> {currentUser.instagram_user_id}</p>
+                <p><strong>Prospectos cargados:</strong> {prospects.length}</p>
+              </div>
+              <p className="text-xs text-red-600 mt-2">
+                ⚠️ Abre la consola del navegador (F12) para ver los logs detallados de la consulta.
+                <br />
+                Si ves prospectos en los logs pero no aparecen aquí, es un problema de RLS.
               </p>
             </div>
           </div>
