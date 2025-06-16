@@ -151,7 +151,18 @@ const ProspectList: React.FC = () => {
     try {
       setLoading(true);
       console.log('🔍 Cargando prospectos para usuario:', currentUser.username);
+      console.log('🆔 Usuario ID:', currentUser.id);
+      console.log('🆔 Instagram User ID:', currentUser.instagram_user_id);
 
+      // DEPURACIÓN: Primero verificar qué hay en la tabla prospects
+      const { data: allProspects, error: allError } = await supabase
+        .from('prospects')
+        .select('*');
+
+      console.log('📊 TODOS los prospectos en la base de datos:', allProspects);
+      console.log('❌ Error al consultar todos los prospectos:', allError);
+
+      // Consulta principal con filtro por usuario
       const { data: prospectsData, error } = await supabase
         .from('prospects')
         .select(`
@@ -169,8 +180,14 @@ const ProspectList: React.FC = () => {
         .eq('instagram_user_id', currentUser.id)
         .order('last_message_date', { ascending: false });
 
+      console.log('📋 Consulta con filtro por usuario:', {
+        filter: `instagram_user_id = ${currentUser.id}`,
+        result: prospectsData,
+        error: error
+      });
+
       if (error) {
-        console.error('Error loading prospects:', error);
+        console.error('❌ Error loading prospects:', error);
         toast({
           title: "Error",
           description: "No se pudieron cargar los prospectos",
@@ -179,11 +196,22 @@ const ProspectList: React.FC = () => {
         return;
       }
 
-      console.log('✅ Prospectos cargados:', prospectsData?.length || 0);
+      console.log('✅ Prospectos cargados para este usuario:', prospectsData?.length || 0);
+      
+      if (prospectsData && prospectsData.length > 0) {
+        console.log('📝 Detalles de prospectos encontrados:', prospectsData.map(p => ({
+          id: p.id,
+          username: p.username,
+          instagram_user_id: p.instagram_user_id,
+          prospect_instagram_id: p.prospect_instagram_id,
+          messages_count: p.prospect_messages?.length || 0
+        })));
+      }
+
       setProspects(prospectsData || []);
       
     } catch (error) {
-      console.error('Error in loadProspects:', error);
+      console.error('💥 Error in loadProspects:', error);
     } finally {
       setLoading(false);
     }
@@ -231,6 +259,7 @@ const ProspectList: React.FC = () => {
             <MessageCircle className="w-6 h-6" /> Mis Prospectos
           </h2>
           <p className="text-sm text-gray-600">{filteredProspects.length} prospectos</p>
+          <p className="text-xs text-gray-500">Usuario: {currentUser.username}</p>
         </div>
         <button
           onClick={loadProspects}
@@ -263,6 +292,17 @@ const ProspectList: React.FC = () => {
             <p className="text-gray-500">
               {searchTerm ? 'Intenta con otro término de búsqueda' : 'Los prospectos aparecerán aquí cuando se envíen autoresponders'}
             </p>
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg text-left">
+              <h4 className="font-semibold text-blue-800 mb-2">🔍 Información de depuración:</h4>
+              <p className="text-sm text-blue-700">
+                <strong>Usuario actual:</strong> {currentUser.username}<br/>
+                <strong>Usuario ID:</strong> {currentUser.id}<br/>
+                <strong>Instagram ID:</strong> {currentUser.instagram_user_id}
+              </p>
+              <p className="text-xs text-blue-600 mt-2">
+                Revisa la consola del navegador (F12) para ver logs detallados de la consulta a la base de datos.
+              </p>
+            </div>
           </div>
         ) : (
           <Table>
