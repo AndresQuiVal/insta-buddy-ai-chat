@@ -108,6 +108,10 @@ serve(async (req) => {
 
             // ===== CREAR O ACTUALIZAR PROSPECTO =====
             console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
+            console.log('📋 Parámetros para create_or_update_prospect:')
+            console.log('  - p_instagram_user_id (UUID):', instagramUser.id)
+            console.log('  - p_prospect_instagram_id (string):', senderId)
+            console.log('  - p_username:', `prospect_${senderId.slice(-8)}`)
             
             let prospectId;
             try {
@@ -120,11 +124,29 @@ serve(async (req) => {
 
               if (prospectError) {
                 console.error('❌ Error creando prospecto:', prospectError)
+                console.error('❌ Detalles del error:', JSON.stringify(prospectError, null, 2))
                 continue
               }
 
               prospectId = prospectResult
-              console.log('✅ Prospecto creado/actualizado:', prospectId)
+              console.log('✅ Prospecto creado/actualizado con ID:', prospectId)
+              
+              // VERIFICAR QUE EL PROSPECTO SE GUARDÓ EN LA BASE DE DATOS
+              console.log('🔍 Verificando que el prospecto se guardó en la base de datos...')
+              const { data: verifyProspect, error: verifyError } = await supabase
+                .from('prospects')
+                .select('*')
+                .eq('id', prospectId)
+                .single()
+              
+              if (verifyError) {
+                console.error('❌ ERROR: No se pudo verificar el prospecto guardado:', verifyError)
+              } else if (verifyProspect) {
+                console.log('✅ PROSPECTO VERIFICADO EN BD:', JSON.stringify(verifyProspect, null, 2))
+              } else {
+                console.error('❌ ERROR: Prospecto no encontrado después de crearlo')
+              }
+              
             } catch (prospectErr) {
               console.error('💥 Error en create_or_update_prospect:', prospectErr)
               continue
