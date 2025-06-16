@@ -210,6 +210,51 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
 
     console.log('✅ Usuario encontrado:', instagramUser)
 
+    // ✅ NUEVO: Crear o actualizar prospecto en BD
+    let prospectId = null;
+    try {
+      const { data: newProspectId, error: prospectError } = await supabase
+        .rpc('create_or_update_prospect', {
+          p_instagram_user_id: instagramUser.id,
+          p_prospect_instagram_id: event.sender.id,
+          p_username: `Usuario ${event.sender.id.slice(-4)}`, // Nombre temporal
+          p_profile_picture_url: null
+        });
+
+      if (prospectError) {
+        console.error('⚠️ Error creando/actualizando prospecto:', prospectError);
+      } else {
+        prospectId = newProspectId;
+        console.log('✅ Prospecto creado/actualizado:', prospectId);
+      }
+    } catch (error) {
+      console.error('⚠️ Error en manejo de prospecto:', error);
+    }
+
+    // ✅ NUEVO: Guardar mensaje del prospecto en BD
+    if (prospectId) {
+      try {
+        const { error: messageError } = await supabase
+          .rpc('add_prospect_message', {
+            p_prospect_id: prospectId,
+            p_message_instagram_id: event.message.mid,
+            p_message_text: event.message.text,
+            p_is_from_prospect: true,
+            p_message_timestamp: new Date(event.timestamp).toISOString(),
+            p_message_type: 'text',
+            p_raw_data: event
+          });
+
+        if (messageError) {
+          console.error('⚠️ Error guardando mensaje del prospecto:', messageError);
+        } else {
+          console.log('✅ Mensaje del prospecto guardado en BD');
+        }
+      } catch (error) {
+        console.error('⚠️ Error en guardado de mensaje:', error);
+      }
+    }
+
     // PASO 2: DETECTAR TIPO DE MENSAJE
     const messageText = event.message.text.toLowerCase()
     const isInvitation = detectInvitation(messageText)
@@ -416,7 +461,36 @@ async function processMessagingEvent(supabase: any, event: MessagingEvent) {
       
       const success = await sendInstagramMessageViaEdgeFunction(supabase, event.sender.id, selectedAutoresponder.message_text, instagramUser.instagram_user_id)
       
-      if (!success) {
+      if (success) {
+        console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
+
+        // ✅ NUEVO: Guardar mensaje enviado en BD del prospecto
+        if (prospectId) {
+          try {
+            const { error: sentMessageError } = await supabase
+              .rpc('add_prospect_message', {
+                p_prospect_id: prospectId,
+                p_message_instagram_id: `autoresponder_${Date.now()}_${Math.random().toString().substring(2, 8)}`,
+                p_message_text: selectedAutoresponder.message_text,
+                p_is_from_prospect: false, // Es nuestro mensaje
+                p_message_timestamp: new Date().toISOString(),
+                p_message_type: 'autoresponder',
+                p_raw_data: {
+                  autoresponder_id: selectedAutoresponder.id,
+                  autoresponder_name: selectedAutoresponder.name
+                }
+              });
+
+            if (sentMessageError) {
+              console.error('⚠️ Error guardando autoresponder en BD:', sentMessageError);
+            } else {
+              console.log('✅ Autoresponder guardado en BD del prospecto');
+            }
+          } catch (error) {
+            console.error('⚠️ Error en guardado de autoresponder:', error);
+          }
+        }
+      } else {
         console.error('❌ ERROR ENVIANDO AUTORESPONDER')
         console.log('💡 SOLUCIÓN: Configura una variable de entorno INSTAGRAM_ACCESS_TOKEN válida en Supabase')
       }

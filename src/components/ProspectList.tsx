@@ -1,186 +1,176 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MessageCircle, RefreshCw, Search, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { analyzeInstagramMessage } from '@/services/instagramTraitAnalysis';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 
-interface InstagramMessage {
+interface ProspectMessage {
   id: string;
-  instagram_message_id: string;
-  sender_id: string;
-  recipient_id: string;
+  message_instagram_id: string;
   message_text: string;
-  message_type: 'received' | 'sent';
-  timestamp: string;
+  is_from_prospect: boolean;
+  message_timestamp: string;
+  message_type: string;
   raw_data: any;
 }
 
 interface Prospect {
-  sender_id: string;
-  messages: InstagramMessage[];
-  last_message: InstagramMessage;
-  message_count: number;
-  matchPoints?: number;
-  metTraits?: string[];
+  id: string;
+  prospect_instagram_id: string;
+  username: string;
+  profile_picture_url?: string;
+  first_contact_date: string;
+  last_message_date: string;
+  last_message_from_prospect: boolean;
+  status: string;
+  messages?: ProspectMessage[];
 }
 
 const ProspectList: React.FC = () => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [pageId, setPageId] = useState<string | null>(null);
+  const { currentUser } = useInstagramUsers();
 
   useEffect(() => {
-    const storedPageId = localStorage.getItem('hower-page-id');
-    if (storedPageId) {
-      setPageId(storedPageId);
+    if (currentUser) {
+      loadProspects();
     }
-    loadProspects();
-  }, []);
-
-  // Escuchar actualizaciones de conversaciones para refrescar la lista
-  useEffect(() => {
-    const handleConversationsUpdate = () => {
-      console.log("🔄 Actualizando lista de prospectos...");
-      loadProspectsFromStorage();
-    };
-
-    window.addEventListener('conversations-updated', handleConversationsUpdate);
-    window.addEventListener('storage', handleConversationsUpdate);
-    
-    return () => {
-      window.removeEventListener('conversations-updated', handleConversationsUpdate);
-      window.removeEventListener('storage', handleConversationsUpdate);
-    };
-  }, []);
-
-  const getUserDisplayName = (senderId: string) => {
-    if (senderId === 'hower_bot') return 'Hower Assistant';
-    if (senderId.length > 8) {
-      return `Usuario ${senderId.slice(-4)}`;
-    }
-    return `Usuario ${senderId}`;
-  };
+  }, [currentUser]);
 
   const getProspectState = (prospect: Prospect) => {
-    const receivedMessages = prospect.messages.filter(msg => msg.message_type === 'received');
-    const sentMessages = prospect.messages.filter(msg => msg.message_type === 'sent');
-    
-    if (receivedMessages.length === 0) {
-      return 'Sin respuesta';
-    } else if (prospect.last_message.message_type === 'received') {
+    if (prospect.status === 'esperando_respuesta') {
       return 'Esperando respuesta';
-    } else {
+    } else if (prospect.status === 'en_seguimiento') {
       return 'En seguimiento';
+    } else if (prospect.status === 'reunion_agendada') {
+      return 'Reunión agendada';
     }
+    return 'Sin respuesta';
   };
 
   const handleAISuggestion = async (prospect: Prospect) => {
-    console.log("🤖 Generando sugerencia con IA para:", getUserDisplayName(prospect.sender_id));
+    if (!currentUser?.openai_api_key) {
+      toast({
+        title: "API Key de OpenAI requerida",
+        description: "Por favor, configura tu API key de OpenAI en la configuración de tu cuenta",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log("🤖 Generando sugerencia con IA para:", prospect.username);
     
-    // Analizar mensajes del prospecto automáticamente
-    const userMessages = prospect.messages
-      .filter(msg => msg.message_type === 'received')
-      .map(msg => msg.message_text)
-      .join(' ');
-    
-    if (userMessages.trim()) {
-      try {
-        console.log("📊 Analizando mensajes del prospecto:", userMessages.substring(0, 100) + "...");
-        
-        await analyzeInstagramMessage(
-          prospect.sender_id,
-          userMessages,
-          getUserDisplayName(prospect.sender_id)
-        );
-        
+    try {
+      // Obtener todas las conversaciones del prospecto
+      const { data: messages, error: messagesError } = await supabase
+        .from('prospect_messages')
+        .select('*')
+        .eq('prospect_id', prospect.id)
+        .order('message_timestamp', { ascending: true });
+
+      if (messagesError) {
+        console.error("Error obteniendo mensajes:", messagesError);
         toast({
-          title: "✅ Análisis completado",
-          description: `Características analizadas para ${getUserDisplayName(prospect.sender_id)}`
+          title: "Error",
+          description: "No se pudieron obtener los mensajes de la conversación",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!messages || messages.length === 0) {
+        toast({
+          title: "Sin conversación",
+          description: "No hay mensajes suficientes para generar una sugerencia",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Formatear la conversación para la IA
+      const conversationText = messages.map(msg => {
+        const sender = msg.is_from_prospect ? prospect.username : 'Yo';
+        return `${sender}: ${msg.message_text}`;
+      }).join('\n');
+
+      console.log("📊 Conversación formateada:", conversationText);
+
+      // Llamar a la función de edge para generar sugerencia con IA
+      const { data: aiResponse, error: aiError } = await supabase.functions.invoke('ai-prospect-suggestion', {
+        body: {
+          conversation: conversationText,
+          prospect_name: prospect.username,
+          openai_api_key: currentUser.openai_api_key
+        }
+      });
+
+      if (aiError) {
+        console.error("Error en sugerencia IA:", aiError);
+        toast({
+          title: "Error en IA",
+          description: "No se pudo generar la sugerencia con IA",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (aiResponse?.suggestion) {
+        // Mostrar la sugerencia en un toast más largo o modal
+        toast({
+          title: "💡 Sugerencia de IA",
+          description: aiResponse.suggestion,
+          duration: 10000, // 10 segundos para leer
         });
         
-        // Refrescar la lista para mostrar los resultados
-        setTimeout(() => {
-          loadProspectsFromStorage();
-        }, 1000);
-        
-      } catch (error) {
-        console.error("❌ Error al analizar características:", error);
+        console.log("✅ Sugerencia generada:", aiResponse.suggestion);
+      } else {
         toast({
-          title: "Error en análisis",
-          description: "No se pudo completar el análisis con IA",
+          title: "Sin sugerencia",
+          description: "La IA no pudo generar una sugerencia para esta conversación",
           variant: "destructive"
         });
       }
-    }
-    
-    toast({
-      title: "Sugerencia con IA",
-      description: `Analizando perfil de ${getUserDisplayName(prospect.sender_id)}...`
-    });
-  };
-
-  const loadProspectsFromStorage = () => {
-    try {
-      const savedConversations = localStorage.getItem('hower-conversations');
-      if (savedConversations) {
-        const conversations = JSON.parse(savedConversations);
-        console.log("💾 Cargando prospectos desde localStorage:", conversations.length);
-        
-        // Convertir conversaciones guardadas a formato de prospects
-        const prospectsFromStorage = conversations.map((conv: any) => ({
-          sender_id: conv.id || conv.senderId,
-          messages: conv.messages || [
-            {
-              id: '1',
-              instagram_message_id: '1',
-              sender_id: conv.id || conv.senderId,
-              recipient_id: pageId || 'me',
-              message_text: conv.lastMessage || '',
-              message_type: 'received' as const,
-              timestamp: new Date().toISOString(),
-              raw_data: {}
-            }
-          ],
-          last_message: {
-            id: '1',
-            instagram_message_id: '1',
-            sender_id: conv.id || conv.senderId,
-            recipient_id: pageId || 'me',
-            message_text: conv.lastMessage || '',
-            message_type: 'received' as const,
-            timestamp: new Date().toISOString(),
-            raw_data: {}
-          },
-          message_count: conv.messages?.length || 1,
-          matchPoints: conv.matchPoints || 0,
-          metTraits: conv.metTraits || []
-        }));
-        
-        setProspects(prospectsFromStorage);
-        console.log("✅ Prospectos cargados desde localStorage:", prospectsFromStorage.length);
-      }
+      
     } catch (error) {
-      console.error("❌ Error al cargar desde localStorage:", error);
+      console.error("❌ Error al generar sugerencia:", error);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al generar la sugerencia",
+        variant: "destructive"
+      });
     }
   };
 
   const loadProspects = async () => {
+    if (!currentUser) return;
+
     try {
       setLoading(true);
-      
-      // Primero intentar cargar desde localStorage
-      loadProspectsFromStorage();
-      
-      const { data, error } = await supabase
-        .from('instagram_messages')
-        .select('*')
-        .order('timestamp', { ascending: false });
+      console.log('🔍 Cargando prospectos para usuario:', currentUser.username);
+
+      const { data: prospectsData, error } = await supabase
+        .from('prospects')
+        .select(`
+          *,
+          prospect_messages (
+            id,
+            message_instagram_id,
+            message_text,
+            is_from_prospect,
+            message_timestamp,
+            message_type,
+            raw_data
+          )
+        `)
+        .eq('instagram_user_id', currentUser.id)
+        .order('last_message_date', { ascending: false });
 
       if (error) {
-        console.error('Error loading messages:', error);
+        console.error('Error loading prospects:', error);
         toast({
           title: "Error",
           description: "No se pudieron cargar los prospectos",
@@ -189,87 +179,8 @@ const ProspectList: React.FC = () => {
         return;
       }
 
-      const realMessages = data?.filter((message: any) => {
-        return !message.sender_id.includes('webhook_') && 
-               !message.sender_id.includes('debug') && 
-               !message.sender_id.includes('error') &&
-               !message.message_text.includes('PAYLOAD COMPLETO') &&
-               !message.message_text.includes('ERROR:') &&
-               message.sender_id !== 'diagnostic_user';
-      }) || [];
-
-      const myPageId = pageId || localStorage.getItem('hower-page-id');
-      const prospectGroups: { [key: string]: InstagramMessage[] } = {};
-      
-      realMessages.forEach((message: any) => {
-        let prospectId = '';
-        let messageType: 'sent' | 'received' = 'received';
-        
-        if (myPageId) {
-          if (message.sender_id === myPageId) {
-            prospectId = message.recipient_id;
-            messageType = 'sent';
-          } else {
-            prospectId = message.sender_id;
-            messageType = 'received';
-          }
-        } else {
-          if (message.raw_data?.is_echo || message.message_type === 'sent') {
-            messageType = 'sent';
-            prospectId = message.recipient_id;
-          } else {
-            messageType = 'received';
-            prospectId = message.sender_id;
-          }
-        }
-        
-        if (!prospectGroups[prospectId]) {
-          prospectGroups[prospectId] = [];
-        }
-        
-        prospectGroups[prospectId].push({
-          ...message,
-          message_type: messageType
-        });
-      });
-
-      const prospectsArray = Object.entries(prospectGroups).map(([prospectId, messages]) => {
-        const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        
-        return {
-          sender_id: prospectId,
-          messages: sortedMessages,
-          last_message: sortedMessages[sortedMessages.length - 1],
-          message_count: sortedMessages.length,
-          matchPoints: 0,
-          metTraits: []
-        };
-      });
-
-      prospectsArray.sort((a, b) => 
-        new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime()
-      );
-
-      // Combinar con datos de localStorage para obtener matchPoints y metTraits
-      try {
-        const savedConversations = localStorage.getItem('hower-conversations');
-        if (savedConversations) {
-          const conversations = JSON.parse(savedConversations);
-          prospectsArray.forEach(prospect => {
-            const saved = conversations.find((conv: any) => 
-              conv.id === prospect.sender_id || conv.senderId === prospect.sender_id
-            );
-            if (saved) {
-              prospect.matchPoints = saved.matchPoints || 0;
-              prospect.metTraits = saved.metTraits || [];
-            }
-          });
-        }
-      } catch (error) {
-        console.error("Error combinando datos:", error);
-      }
-
-      setProspects(prospectsArray);
+      console.log('✅ Prospectos cargados:', prospectsData?.length || 0);
+      setProspects(prospectsData || []);
       
     } catch (error) {
       console.error('Error in loadProspects:', error);
@@ -279,12 +190,27 @@ const ProspectList: React.FC = () => {
   };
 
   const filteredProspects = prospects.filter(prospect => {
-    const userName = getUserDisplayName(prospect.sender_id).toLowerCase();
-    const lastMessage = prospect.last_message.message_text.toLowerCase();
+    const userName = prospect.username.toLowerCase();
     const search = searchTerm.toLowerCase();
     
-    return userName.includes(search) || lastMessage.includes(search);
+    return userName.includes(search);
   });
+
+  if (!currentUser) {
+    return (
+      <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-xl h-full flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+            No hay usuario de Instagram autenticado
+          </h3>
+          <p className="text-gray-500">
+            Debes conectar tu cuenta de Instagram para ver tus prospectos
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -319,7 +245,7 @@ const ProspectList: React.FC = () => {
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Buscar por nombre o mensaje..."
+            placeholder="Buscar por nombre..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
@@ -335,7 +261,7 @@ const ProspectList: React.FC = () => {
               {searchTerm ? 'No se encontraron prospectos' : 'No hay prospectos aún'}
             </h3>
             <p className="text-gray-500">
-              {searchTerm ? 'Intenta con otro término de búsqueda' : 'Los prospectos aparecerán aquí cuando lleguen mensajes'}
+              {searchTerm ? 'Intenta con otro término de búsqueda' : 'Los prospectos aparecerán aquí cuando se envíen autoresponders'}
             </p>
           </div>
         ) : (
@@ -349,24 +275,26 @@ const ProspectList: React.FC = () => {
             </TableHeader>
             <TableBody>
               {filteredProspects.map((prospect) => (
-                <TableRow key={prospect.sender_id}>
+                <TableRow key={prospect.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      {getUserDisplayName(prospect.sender_id)}
-                      {prospect.matchPoints && prospect.matchPoints > 0 && (
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                          {prospect.matchPoints} ⭐
-                        </span>
+                      {prospect.profile_picture_url && (
+                        <img 
+                          src={prospect.profile_picture_url} 
+                          alt={prospect.username}
+                          className="w-8 h-8 rounded-full"
+                        />
                       )}
+                      {prospect.username}
                     </div>
                   </TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      getProspectState(prospect) === 'Sin respuesta' 
-                        ? 'bg-red-100 text-red-800'
-                        : getProspectState(prospect) === 'Esperando respuesta'
+                      prospect.status === 'esperando_respuesta'
                         ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-green-100 text-green-800'
+                        : prospect.status === 'reunion_agendada'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-blue-100 text-blue-800'
                     }`}>
                       {getProspectState(prospect)}
                     </span>
