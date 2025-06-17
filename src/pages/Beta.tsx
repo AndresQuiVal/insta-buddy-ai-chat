@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,7 +121,7 @@ const Beta: React.FC = () => {
               </h1>
               <p className="text-xl text-gray-600 leading-relaxed">
                 Empieza a vender más con Inteligencia Artificial en Instagram. 
-                <span className="font-semibold text-purple-700"> La Inteligencia Artificial será tu mejor aliado.</span>
+                
               </p>
               
               <div className="flex flex-wrap gap-3">
@@ -144,8 +143,8 @@ const Beta: React.FC = () => {
                   <Brain className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">IA de Sugerencia de Conversación y Resumen</span>
-                  <p className="text-xs text-gray-600">Obtén resúmenes y sugerencias de próximos pasos de conversación.</p>
+                  <span className="text-sm font-semibold text-gray-800">IA de Conversación</span>
+                  <p className="text-xs text-gray-600">Resume conversaciones y sugiere próximos pasos para vender más.</p>
                 </div>
               </div>
               
@@ -154,8 +153,8 @@ const Beta: React.FC = () => {
                   <Zap className="w-5 h-5 text-pink-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Prospección Semi-Móvil</span>
-                  <p className="text-xs text-gray-600">Configura tus mensajes con el Hower que ya conoces desde el celular.</p>
+                  <span className="text-sm font-semibold text-gray-800">Móvil</span>
+                  <p className="text-xs text-gray-600">Configura mensajes desde tu celular, igual que en la web.</p>
                 </div>
               </div>
               
@@ -164,8 +163,8 @@ const Beta: React.FC = () => {
                   <TrendingUp className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Métricas en Tiempo Real</span>
-                  <p className="text-xs text-gray-600">Ve mensajes enviados e invitaciones en tiempo real.</p>
+                  <span className="text-sm font-semibold text-gray-800">Estadísticas</span>
+                  <p className="text-xs text-gray-600">Ve en tiempo real tus mensajes e invitaciones enviadas.</p>
                 </div>
               </div>
               
@@ -174,8 +173,8 @@ const Beta: React.FC = () => {
                   <MessageSquare className="w-5 h-5 text-pink-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Auto-Respondedor</span>
-                  <p className="text-xs text-gray-600">Responde automáticamente y crea nuevos leads.</p>
+                  <span className="text-sm font-semibold text-gray-800">Auto-Respuestas</span>
+                  <p className="text-xs text-gray-600">Responde automáticamente y genera nuevos clientes.</p>
                 </div>
               </div>
             </div>

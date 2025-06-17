@@ -58,11 +58,7 @@ const AutoresponderTypeDialog = ({ open, onOpenChange, onSelectType }: Autorespo
                     ✅ Enviar DM automático
                   </p>
                 </div>
-                <div className="px-4 py-2 bg-amber-50 rounded-lg">
-                  <p className="text-xs text-amber-700 font-medium">
-                    ⚠️ No responde al comentario (limitación de Instagram)
-                  </p>
-                </div>
+                
               </div>
             </CardContent>
           </Card>
