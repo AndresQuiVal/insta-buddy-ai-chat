@@ -144,8 +144,8 @@ const Beta: React.FC = () => {
                   <Brain className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">IA de Sugerencia de Seguimientos</span>
-                  <p className="text-xs text-gray-600">Sugiere perfiles para optimizar tu crecimiento.</p>
+                  <span className="text-sm font-semibold text-gray-800">IA de Sugerencia de Conversación y Resumen</span>
+                  <p className="text-xs text-gray-600">Obtén resúmenes y sugerencias de próximos pasos de conversación.</p>
                 </div>
               </div>
               
@@ -155,7 +155,7 @@ const Beta: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-gray-800">Prospección Semi-Móvil</span>
-                  <p className="text-xs text-gray-600">Gestiona prospectos desde cualquier dispositivo.</p>
+                  <p className="text-xs text-gray-600">Configura tus mensajes con el Hower que ya conoces desde el celular.</p>
                 </div>
               </div>
               
@@ -165,7 +165,7 @@ const Beta: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-gray-800">Métricas en Tiempo Real</span>
-                  <p className="text-xs text-gray-600">Analiza el rendimiento con reportes automáticos.</p>
+                  <p className="text-xs text-gray-600">Ve mensajes enviados e invitaciones en tiempo real.</p>
                 </div>
               </div>
               
