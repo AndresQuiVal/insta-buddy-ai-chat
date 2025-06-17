@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw } from 'lucide-react';
+import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, Gift } from 'lucide-react';
 
 const Beta: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -121,7 +121,7 @@ const Beta: React.FC = () => {
                 </span>
               </h1>
               <p className="text-xl text-gray-600 leading-relaxed">
-                4 procesos inteligentes filtrados con IA avanzada. 
+                Empieza a vender más con Inteligencia Artificial en Instagram. 
                 <span className="font-semibold text-purple-700"> La Inteligencia Artificial será tu mejor aliado.</span>
               </p>
               
@@ -137,7 +137,7 @@ const Beta: React.FC = () => {
               </div>
             </div>
 
-            {/* 4 Nuevas Funcionalidades */}
+            {/* 4 Nuevas Funcionalidades - Resumidas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
@@ -145,7 +145,7 @@ const Beta: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-gray-800">IA de Sugerencia de Seguimientos</span>
-                  <p className="text-xs text-gray-600">Sistema inteligente que sugiere los mejores perfiles para seguir y optimizar tu crecimiento.</p>
+                  <p className="text-xs text-gray-600">Sugiere perfiles para optimizar tu crecimiento.</p>
                 </div>
               </div>
               
@@ -155,7 +155,7 @@ const Beta: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-gray-800">Prospección Semi-Móvil</span>
-                  <p className="text-xs text-gray-600">Gestiona tus prospectos desde cualquier dispositivo con una experiencia optimizada.</p>
+                  <p className="text-xs text-gray-600">Gestiona prospectos desde cualquier dispositivo.</p>
                 </div>
               </div>
               
@@ -165,7 +165,7 @@ const Beta: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-gray-800">Métricas en Tiempo Real</span>
-                  <p className="text-xs text-gray-600">Monitorea el rendimiento de tu cuenta con análisis detallados y reportes automáticos.</p>
+                  <p className="text-xs text-gray-600">Analiza el rendimiento con reportes automáticos.</p>
                 </div>
               </div>
               
@@ -175,7 +175,7 @@ const Beta: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-gray-800">Auto-Respondedor</span>
-                  <p className="text-xs text-gray-600">Responde a mensajes como: "comenta la palabra CRUCERO y te mando.." y Hower Assistant responde en automático, creando nuevos leads.</p>
+                  <p className="text-xs text-gray-600">Responde automáticamente y crea nuevos leads.</p>
                 </div>
               </div>
             </div>
@@ -253,6 +253,25 @@ const Beta: React.FC = () => {
             </p>
             <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2">
               Migración gratuita incluida
+            </Badge>
+          </div>
+        </Card>
+      </div>
+
+      {/* Promoción de Referidos */}
+      <div className="container mx-auto px-4 py-12">
+        <Card className="max-w-4xl mx-auto p-8 border-0 bg-gradient-to-r from-green-50 to-emerald-50">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto">
+              <Gift className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">Programa de Referidos</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Si refieres a una persona hacia Hower Assistant o deseas adquirir más cuentas, 
+              <span className="font-semibold text-green-700"> ese $1 USD te lo llevarás tú.</span>
+            </p>
+            <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2">
+              Gana dinero refiriendo
             </Badge>
           </div>
         </Card>
