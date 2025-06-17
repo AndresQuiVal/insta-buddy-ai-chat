@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, Users, Smartphone, Brain, Filter, BarChart3 } from 'lucide-react';
+import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw } from 'lucide-react';
 
 const Beta: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -128,7 +128,7 @@ const Beta: React.FC = () => {
               <div className="flex flex-wrap gap-3">
                 <Badge variant="outline" className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Beta: Mediados de Junio
+                  Beta: 24 de Junio
                 </Badge>
                 <Badge variant="outline" className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
@@ -137,50 +137,125 @@ const Beta: React.FC = () => {
               </div>
             </div>
 
-            {/* 4 Beneficios Principales */}
+            {/* 4 Nuevas Funcionalidades */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Smartphone className="w-5 h-5 text-purple-600" />
+                  <Brain className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Prospección en tu celular</span>
-                  <p className="text-xs text-gray-600">Automatización móvil 24/7</p>
+                  <span className="text-sm font-semibold text-gray-800">IA de Sugerencia de Seguimientos</span>
+                  <p className="text-xs text-gray-600">Sistema inteligente que sugiere los mejores perfiles para seguir y optimizar tu crecimiento.</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
                 <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-pink-600" />
+                  <Zap className="w-5 h-5 text-pink-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Sugerencias con IA</span>
-                  <p className="text-xs text-gray-600">Recomendaciones inteligentes</p>
+                  <span className="text-sm font-semibold text-gray-800">Prospección Semi-Móvil</span>
+                  <p className="text-xs text-gray-600">Gestiona tus prospectos desde cualquier dispositivo con una experiencia optimizada.</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Filter className="w-5 h-5 text-purple-600" />
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Filtrar prospectos con IA</span>
-                  <p className="text-xs text-gray-600">Calificación automática</p>
+                  <span className="text-sm font-semibold text-gray-800">Métricas en Tiempo Real</span>
+                  <p className="text-xs text-gray-600">Monitorea el rendimiento de tu cuenta con análisis detallados y reportes automáticos.</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
                 <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-pink-600" />
+                  <MessageSquare className="w-5 h-5 text-pink-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Métricas automáticas</span>
-                  <p className="text-xs text-gray-600">Análisis predictivo</p>
+                  <span className="text-sm font-semibold text-gray-800">Auto-Respondedor</span>
+                  <p className="text-xs text-gray-600">Responde a mensajes como: "comenta la palabra CRUCERO y te mando.." y Hower Assistant responde en automático, creando nuevos leads.</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Características del Auto-Respondedor */}
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">¿Qué incluye el Auto-Respondedor?</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <MessageSquare className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">Responder a mensajes directos</h3>
+                  <p className="text-gray-600 text-sm">Automatiza respuestas a mensajes privados en Instagram</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <CheckCircle className="w-4 h-4 text-pink-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">Responder a comentarios</h3>
+                  <p className="text-gray-600 text-sm">Responde automáticamente: "Gracias! ya te envié la info al privado"</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <Zap className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">Envío automático al privado</h3>
+                  <p className="text-gray-600 text-sm">Enviará la información al privado una vez que comenten el post</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <Users className="w-4 h-4 text-pink-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">Saludo a nuevos seguidores</h3>
+                  <p className="text-gray-600 text-sm">Bienvenida automática personalizada para cada nuevo seguidor</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Migración desde otros sistemas */}
+      <div className="container mx-auto px-4 py-12">
+        <Card className="max-w-4xl mx-auto p-8 border-0 bg-gradient-to-r from-purple-50 to-pink-50">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto">
+              <RefreshCw className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">¿Ya tienes Manychat o Chatfuel?</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Si tienes ya un sistema como <span className="font-semibold">Manychat o Chatfuel</span>, nosotros hacemos la migración de tus respuestas automáticas de estos otros softwares a Hower Assistant (si así lo deseas), en las funcionalidades disponibles dentro de Hower.
+            </p>
+            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2">
+              Migración gratuita incluida
+            </Badge>
+          </div>
+        </Card>
       </div>
 
       {/* Botón de Registro Simplificado */}
@@ -191,7 +266,7 @@ const Beta: React.FC = () => {
               <h2 className="text-3xl font-bold text-gray-800">Asegura tu acceso a la Beta</h2>
               <p className="text-lg text-gray-600">Únete por solo $1 USD</p>
               <p className="text-sm text-gray-500">
-                Acceso completo a los 4 procesos inteligentes desde mediados de junio
+                Acceso completo a los 4 procesos inteligentes desde el 24 de junio
               </p>
             </div>
 
@@ -221,15 +296,15 @@ const Beta: React.FC = () => {
             <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
               <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Qué incluye la beta?</h3>
               <p className="text-gray-600">
-                Acceso completo a los 4 procesos inteligentes de Hower Assistant: prospección móvil, 
-                sugerencias con IA, filtrado de procesos y métricas automáticas con sugerencias.
+                Acceso completo a los 4 procesos inteligentes de Hower Assistant: IA de sugerencias de seguimientos, 
+                prospección semi-móvil, métricas en tiempo real y auto-respondedor completo.
               </p>
             </Card>
 
             <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
               <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Cuándo empezará la beta?</h3>
               <p className="text-gray-600">
-                La beta comenzará a mediados de junio de 2024. Te notificaremos por email con las 
+                La beta comenzará el 24 de junio de 2024. Te notificaremos por email con las 
                 instrucciones de acceso una vez que esté lista.
               </p>
             </Card>
