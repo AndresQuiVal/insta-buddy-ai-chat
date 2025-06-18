@@ -24,16 +24,28 @@ serve(async (req) => {
     console.log('📋 Webhook completo:', JSON.stringify(body, null, 2))
 
     if (body.object !== 'instagram') {
+      console.log('❌ No es webhook de Instagram, objeto:', body.object)
       return new Response(
         JSON.stringify({ message: 'Not an Instagram webhook' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    // Verificación de webhook de Facebook (solo responder con challenge)
     if (body.entry && Array.isArray(body.entry) && body.entry.length > 0) {
-      if (body.entry[0].id === '17841406338417419' && body.entry[0].time) {
-        console.log('✅ Webhook verificado')
-        return new Response(body.entry[0].id, { status: 200 })
+      const entryId = body.entry[0].id
+      console.log('📋 Entry ID recibido:', entryId)
+      
+      // Tu Instagram Business Account ID correcto
+      if (entryId === '17841468117944392' && body.entry[0].time) {
+        console.log('✅ Webhook verificado para cuenta principal')
+        return new Response(entryId, { status: 200 })
+      }
+      
+      // También aceptar el ID anterior por compatibilidad
+      if (entryId === '17841406338417419' && body.entry[0].time) {
+        console.log('✅ Webhook verificado para cuenta secundaria')
+        return new Response(entryId, { status: 200 })
       }
     }
 
@@ -41,6 +53,7 @@ serve(async (req) => {
       for (const entry of body.entry) {
         console.log('🔄 ===== PROCESANDO ENTRY =====')
         console.log('📋 Entry ID:', entry.id)
+        console.log('📋 Entry keys:', Object.keys(entry))
 
         if (entry.changes) {
           console.log('🔄 ===== PROCESANDO CAMBIOS =====')
@@ -65,6 +78,7 @@ serve(async (req) => {
 
             console.log('🚀 === PROCESANDO MENSAJE PARA AUTORESPONDER ===')
             console.log('👤 SENDER ID:', senderId)
+            console.log('🎯 RECIPIENT ID:', recipientId)
             console.log('💬 MENSAJE:', messageText)
 
             // Skip si es un echo (mensaje que yo envié)
@@ -101,10 +115,26 @@ serve(async (req) => {
 
             if (userError || !instagramUser) {
               console.error('❌ Usuario de Instagram no encontrado:', userError)
-              continue
+              console.log('🔍 Intentando buscar por otros IDs de cuenta...')
+              
+              // Intentar buscar por el ID principal conocido
+              const { data: fallbackUser, error: fallbackError } = await supabase
+                .from('instagram_users')
+                .select('*')
+                .eq('instagram_user_id', '17841468117944392')
+                .single()
+              
+              if (fallbackError || !fallbackUser) {
+                console.error('❌ No se encontró usuario de Instagram con ningún ID conocido')
+                continue
+              } else {
+                console.log('✅ Usuario encontrado con ID principal:', JSON.stringify(fallbackUser, null, 2))
+                // Usar el usuario encontrado
+                const instagramUser = fallbackUser
+              }
+            } else {
+              console.log('✅ Usuario encontrado:', JSON.stringify(instagramUser, null, 2))
             }
-
-            console.log('✅ Usuario encontrado:', JSON.stringify(instagramUser, null, 2))
 
             // ===== CREAR O ACTUALIZAR PROSPECTO =====
             console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
@@ -357,11 +387,13 @@ serve(async (req) => {
             console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
           }
         } else {
-          console.log('❌ No hay changes en este entry')
+          console.log('❌ No hay messaging ni changes en este entry')
+          console.log('📋 Entry structure:', JSON.stringify(entry, null, 2))
         }
       }
     }
 
+    console.log('✅ Webhook procesado exitosamente')
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
