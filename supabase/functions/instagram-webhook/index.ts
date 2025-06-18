@@ -31,22 +31,12 @@ serve(async (req) => {
       )
     }
 
-    // Verificación de webhook de Facebook (solo responder con challenge)
-    if (body.entry && Array.isArray(body.entry) && body.entry.length > 0) {
-      const entryId = body.entry[0].id
-      console.log('📋 Entry ID recibido:', entryId)
-      
-      // Tu Instagram Business Account ID correcto
-      if (entryId === '17841468117944392' && body.entry[0].time) {
-        console.log('✅ Webhook verificado para cuenta principal')
-        return new Response(entryId, { status: 200 })
-      }
-      
-      // También aceptar el ID anterior por compatibilidad
-      if (entryId === '17841406338417419' && body.entry[0].time) {
-        console.log('✅ Webhook verificado para cuenta secundaria')
-        return new Response(entryId, { status: 200 })
-      }
+    // Solo para verificación inicial de Facebook (hub.challenge)
+    const url = new URL(req.url)
+    const challenge = url.searchParams.get('hub.challenge')
+    if (challenge) {
+      console.log('🔐 Verificación de Facebook - respondiendo challenge')
+      return new Response(challenge, { status: 200 })
     }
 
     if (body.entry && Array.isArray(body.entry)) {
@@ -103,37 +93,37 @@ serve(async (req) => {
               console.error('💥 Error en update_prospect_activity:', activityErr)
             }
 
-            // ===== BUSCAR USUARIO DE INSTAGRAM =====
+            // ===== BUSCAR USUARIO DE INSTAGRAM (CUALQUIER ID) =====
             console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====')
             console.log('📋 Recipient ID (Instagram Business Account):', recipientId)
 
-            const { data: instagramUser, error: userError } = await supabase
+            // Primero intentar encontrar el usuario exacto
+            let { data: instagramUser, error: userError } = await supabase
               .from('instagram_users')
               .select('*')
               .eq('instagram_user_id', recipientId)
               .single()
 
+            // Si no se encuentra, tomar el primer usuario activo disponible
             if (userError || !instagramUser) {
-              console.error('❌ Usuario de Instagram no encontrado:', userError)
-              console.log('🔍 Intentando buscar por otros IDs de cuenta...')
+              console.log('⚠️ Usuario específico no encontrado, buscando cualquier usuario activo...')
               
-              // Intentar buscar por el ID principal conocido
               const { data: fallbackUser, error: fallbackError } = await supabase
                 .from('instagram_users')
                 .select('*')
-                .eq('instagram_user_id', '17841468117944392')
+                .eq('is_active', true)
+                .limit(1)
                 .single()
               
               if (fallbackError || !fallbackUser) {
-                console.error('❌ No se encontró usuario de Instagram con ningún ID conocido')
+                console.error('❌ No se encontró ningún usuario de Instagram activo')
                 continue
               } else {
-                console.log('✅ Usuario encontrado con ID principal:', JSON.stringify(fallbackUser, null, 2))
-                // Usar el usuario encontrado
-                const instagramUser = fallbackUser
+                console.log('✅ Usuario fallback encontrado:', JSON.stringify(fallbackUser, null, 2))
+                instagramUser = fallbackUser
               }
             } else {
-              console.log('✅ Usuario encontrado:', JSON.stringify(instagramUser, null, 2))
+              console.log('✅ Usuario específico encontrado:', JSON.stringify(instagramUser, null, 2))
             }
 
             // ===== CREAR O ACTUALIZAR PROSPECTO =====
