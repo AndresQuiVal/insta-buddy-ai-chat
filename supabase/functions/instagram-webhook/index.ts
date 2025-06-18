@@ -18,9 +18,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
     
+    // Verificación inicial de Facebook (hub.challenge)
+    const url = new URL(req.url)
+    const challenge = url.searchParams.get('hub.challenge')
+    if (challenge) {
+      console.log('🔐 Verificación de Facebook - respondiendo challenge:', challenge)
+      return new Response(challenge, { status: 200 })
+    }
+    
     const body = await req.json()
     
-    console.log('📨 ===== NUEVO WEBHOOK RECIBIDO =====')
+    console.log('📨 ===== WEBHOOK RECIBIDO =====')
     console.log('📋 Webhook completo:', JSON.stringify(body, null, 2))
 
     if (body.object !== 'instagram') {
@@ -31,33 +39,17 @@ serve(async (req) => {
       )
     }
 
-    // Solo para verificación inicial de Facebook (hub.challenge)
-    const url = new URL(req.url)
-    const challenge = url.searchParams.get('hub.challenge')
-    if (challenge) {
-      console.log('🔐 Verificación de Facebook - respondiendo challenge')
-      return new Response(challenge, { status: 200 })
-    }
-
     if (body.entry && Array.isArray(body.entry)) {
       for (const entry of body.entry) {
         console.log('🔄 ===== PROCESANDO ENTRY =====')
         console.log('📋 Entry ID:', entry.id)
-        console.log('📋 Entry keys:', Object.keys(entry))
-
-        if (entry.changes) {
-          console.log('🔄 ===== PROCESANDO CAMBIOS =====')
-          for (const change of entry.changes) {
-            console.log('🔄 ===== PROCESANDO CAMBIO =====')
-            console.log('📋 Change:', JSON.stringify(change, null, 2))
-          }
-        }
+        console.log('📋 Entry completo:', JSON.stringify(entry, null, 2))
 
         if (entry.messaging) {
           console.log('📝 PROCESANDO MENSAJES DIRECTOS')
           
           for (const messagingEvent of entry.messaging) {
-            console.log('📝 Processing messaging event:', JSON.stringify(messagingEvent, null, 2))
+            console.log('📝 Evento de mensaje:', JSON.stringify(messagingEvent, null, 2))
             
             const senderId = messagingEvent.sender.id
             const recipientId = messagingEvent.recipient.id
@@ -66,14 +58,15 @@ serve(async (req) => {
             const messageId = messagingEvent.message?.mid
             const isEcho = messagingEvent.message?.is_echo === true
 
-            console.log('🚀 === PROCESANDO MENSAJE PARA AUTORESPONDER ===')
+            console.log('🚀 === PROCESANDO MENSAJE ===')
             console.log('👤 SENDER ID:', senderId)
             console.log('🎯 RECIPIENT ID:', recipientId)
             console.log('💬 MENSAJE:', messageText)
+            console.log('🔔 ES ECHO:', isEcho)
 
             // Skip si es un echo (mensaje que yo envié)
             if (isEcho) {
-              console.log('⏭️ Mensaje no válido o es un echo - saltando')
+              console.log('⏭️ Es un echo - saltando')
               continue
             }
 
@@ -93,45 +86,26 @@ serve(async (req) => {
               console.error('💥 Error en update_prospect_activity:', activityErr)
             }
 
-            // ===== BUSCAR USUARIO DE INSTAGRAM (CUALQUIER ID) =====
+            // ===== BUSCAR USUARIO DE INSTAGRAM (CUALQUIER USUARIO ACTIVO) =====
             console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====')
-            console.log('📋 Recipient ID (Instagram Business Account):', recipientId)
 
-            // Primero intentar encontrar el usuario exacto
-            let { data: instagramUser, error: userError } = await supabase
+            // Tomar el primer usuario activo disponible (sin validaciones de ID)
+            const { data: instagramUser, error: userError } = await supabase
               .from('instagram_users')
               .select('*')
-              .eq('instagram_user_id', recipientId)
+              .eq('is_active', true)
+              .limit(1)
               .single()
 
-            // Si no se encuentra, tomar el primer usuario activo disponible
             if (userError || !instagramUser) {
-              console.log('⚠️ Usuario específico no encontrado, buscando cualquier usuario activo...')
-              
-              const { data: fallbackUser, error: fallbackError } = await supabase
-                .from('instagram_users')
-                .select('*')
-                .eq('is_active', true)
-                .limit(1)
-                .single()
-              
-              if (fallbackError || !fallbackUser) {
-                console.error('❌ No se encontró ningún usuario de Instagram activo')
-                continue
-              } else {
-                console.log('✅ Usuario fallback encontrado:', JSON.stringify(fallbackUser, null, 2))
-                instagramUser = fallbackUser
-              }
-            } else {
-              console.log('✅ Usuario específico encontrado:', JSON.stringify(instagramUser, null, 2))
+              console.error('❌ No se encontró ningún usuario de Instagram activo:', userError)
+              continue
             }
+
+            console.log('✅ Usuario de Instagram encontrado:', JSON.stringify(instagramUser, null, 2))
 
             // ===== CREAR O ACTUALIZAR PROSPECTO =====
             console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
-            console.log('📋 Parámetros para create_or_update_prospect:')
-            console.log('  - p_instagram_user_id (UUID):', instagramUser.id)
-            console.log('  - p_prospect_instagram_id (string):', senderId)
-            console.log('  - p_username:', `prospect_${senderId.slice(-8)}`)
             
             let prospectId;
             try {
@@ -144,28 +118,11 @@ serve(async (req) => {
 
               if (prospectError) {
                 console.error('❌ Error creando prospecto:', prospectError)
-                console.error('❌ Detalles del error:', JSON.stringify(prospectError, null, 2))
                 continue
               }
 
               prospectId = prospectResult
               console.log('✅ Prospecto creado/actualizado con ID:', prospectId)
-              
-              // VERIFICAR QUE EL PROSPECTO SE GUARDÓ EN LA BASE DE DATOS
-              console.log('🔍 Verificando que el prospecto se guardó en la base de datos...')
-              const { data: verifyProspect, error: verifyError } = await supabase
-                .from('prospects')
-                .select('*')
-                .eq('id', prospectId)
-                .single()
-              
-              if (verifyError) {
-                console.error('❌ ERROR: No se pudo verificar el prospecto guardado:', verifyError)
-              } else if (verifyProspect) {
-                console.log('✅ PROSPECTO VERIFICADO EN BD:', JSON.stringify(verifyProspect, null, 2))
-              } else {
-                console.error('❌ ERROR: Prospecto no encontrado después de crearlo')
-              }
               
             } catch (prospectErr) {
               console.error('💥 Error en create_or_update_prospect:', prospectErr)
@@ -197,9 +154,9 @@ serve(async (req) => {
             console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
             console.log('📝 Texto:', messageText)
 
-            const isInvitation = messageText.toLowerCase().includes('invitacion') || messageText.toLowerCase().includes('invitación')
-            const isPresentation = messageText.toLowerCase().includes('presentacion') || messageText.toLowerCase().includes('presentación')
-            const isInscription = messageText.toLowerCase().includes('inscripcion') || messageText.toLowerCase().includes('inscripción')
+            const isInvitation = messageText?.toLowerCase().includes('invitacion') || messageText?.toLowerCase().includes('invitación')
+            const isPresentation = messageText?.toLowerCase().includes('presentacion') || messageText?.toLowerCase().includes('presentación')
+            const isInscription = messageText?.toLowerCase().includes('inscripcion') || messageText?.toLowerCase().includes('inscripción')
 
             // ===== GUARDAR MENSAJE EN INSTAGRAM_MESSAGES =====
             const { error: saveError } = await supabase
@@ -209,7 +166,7 @@ serve(async (req) => {
                 instagram_message_id: messageId,
                 sender_id: senderId,
                 recipient_id: recipientId,
-                message_text: messageText,
+                message_text: messageText || '',
                 message_type: 'received',
                 timestamp: timestamp,
                 is_invitation: isInvitation,
@@ -221,29 +178,13 @@ serve(async (req) => {
             if (saveError) {
               console.error('❌ Error guardando mensaje en instagram_messages:', saveError)
             } else {
-              console.log('✅ Mensaje guardado correctamente con relación al usuario')
-            }
-
-            console.log('📊 Tipos detectados guardados:', { isInvitation: isInvitation, isPresentation: isPresentation, isInscription: isInscription })
-
-            // ===== NOTIFICAR CAMBIOS AL DASHBOARD =====
-            console.log('🔄 ===== NOTIFICANDO CAMBIOS AL DASHBOARD =====')
-            try {
-              await supabase.functions.invoke('dashboard-sync', {
-                body: { type: 'message_received', senderId, messageText }
-              })
-              console.log('✅ Cambios notificados al dashboard')
-            } catch (notifyError) {
-              console.log('⚠️ Error notificando al dashboard (no crítico):', notifyError)
+              console.log('✅ Mensaje guardado correctamente')
             }
 
             // ===== OBTENER AUTORESPONDERS =====
             console.log('🔍 === OBTENIENDO AUTORESPONDERS ===')
             
-            console.log('📡 Consultando autoresponders desde endpoint...')
             const { data: autoresponderResponse, error: autoresponderError } = await supabase.functions.invoke('get-autoresponders', {})
-            
-            console.log('📊 Respuesta del endpoint:', JSON.stringify(autoresponderResponse, null, 2))
 
             if (autoresponderError || !autoresponderResponse?.success) {
               console.error('❌ Error obteniendo autoresponders:', autoresponderError)
@@ -252,15 +193,6 @@ serve(async (req) => {
 
             const autoresponders = autoresponderResponse.autoresponders || []
             console.log('✅ Autoresponders obtenidos:', autoresponders.length)
-
-            console.log('📋 Lista de autoresponders:', autoresponders.map(ar => ({
-              id: ar.id,
-              name: ar.name,
-              is_active: ar.is_active,
-              message_preview: ar.message_text?.substring(0, 30) + '...',
-              use_keywords: ar.use_keywords,
-              keywords: ar.keywords
-            })))
 
             let selectedAutoresponder = null
 
@@ -274,19 +206,15 @@ serve(async (req) => {
               let hasMatch = false
 
               for (const keyword of keywords) {
-                console.log(`🔍 Verificando palabra clave "${keyword}" -> ${messageText.toLowerCase().includes(keyword.toLowerCase()) ? 'COINCIDE' : 'NO COINCIDE'}`)
-                if (messageText.toLowerCase().includes(keyword.toLowerCase())) {
+                if (messageText?.toLowerCase().includes(keyword.toLowerCase())) {
                   hasMatch = true
                   break
                 }
               }
 
               if (hasMatch) {
-                console.log(`✅ Autoresponder "${autoresponder.name}" tiene coincidencia de palabras clave - COINCIDE`)
                 selectedAutoresponder = autoresponder
                 break
-              } else {
-                console.log(`❌ Autoresponder "${autoresponder.name}" NO tiene coincidencia de palabras clave - NO COINCIDE`)
               }
             }
 
@@ -295,17 +223,9 @@ serve(async (req) => {
               continue
             }
 
-            console.log('🎯 AUTORESPONDER SELECCIONADO:')
-            console.log('📋 ID:', selectedAutoresponder.id)
-            console.log('📋 Nombre:', selectedAutoresponder.name)
-            console.log('📋 Mensaje:', selectedAutoresponder.message_text)
-            console.log('📋 Solo primer mensaje:', selectedAutoresponder.send_only_first_message)
-            console.log('📋 Usa palabras clave:', selectedAutoresponder.use_keywords)
-            console.log('📋 Palabras clave:', selectedAutoresponder.keywords)
+            console.log('🎯 AUTORESPONDER SELECCIONADO:', selectedAutoresponder.name)
 
-            // Verificar si ya se envió autoresponder - FIXED QUERY
-            console.log('🔍 Verificando si ya se le envió autoresponder a:', senderId)
-
+            // Verificar si ya se envió autoresponder
             const { data: alreadySent } = await supabase
               .from('autoresponder_sent_log')
               .select('*')
@@ -317,15 +237,8 @@ serve(async (req) => {
               continue
             }
 
-            console.log('🆕 PRIMERA VEZ QUE ESCRIBE - ENVIANDO')
-
             // Enviar autoresponder
             console.log('🚀 ENVIANDO AUTORESPONDER...')
-
-            console.log('📤 ===== ENVIANDO MENSAJE VIA EDGE FUNCTION =====')
-            console.log('👤 Recipient:', senderId)
-            console.log('💌 Message:', selectedAutoresponder.message_text)
-            console.log('🆔 Instagram User ID:', recipientId)
 
             const { data, error } = await supabase.functions.invoke('instagram-send-message', {
               body: {
@@ -335,16 +248,11 @@ serve(async (req) => {
               }
             })
 
-            console.log('📨 Respuesta de instagram-send-message:')
-            console.log('📋 Data:', JSON.stringify(data, null, 2))
-            console.log('📋 Error:', error)
-
             if (error) {
               console.error('❌ Error enviando mensaje:', error)
               continue
             }
 
-            console.log('✅ ===== MENSAJE ENVIADO EXITOSAMENTE VIA EDGE FUNCTION =====')
             console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
 
             // Registrar envío en log
@@ -355,8 +263,6 @@ serve(async (req) => {
                 sender_id: senderId,
                 sent_at: new Date().toISOString()
               })
-
-            console.log('✅ Autoresponder guardado en BD del prospecto')
 
             // Guardar el autoresponder enviado también en prospect_messages
             try {
@@ -371,13 +277,13 @@ serve(async (req) => {
               })
               console.log('✅ Autoresponder guardado en prospect_messages')
             } catch (autoMsgError) {
-              console.error('⚠️ Error guardando autoresponder en prospect_messages (no crítico):', autoMsgError)
+              console.error('⚠️ Error guardando autoresponder en prospect_messages:', autoMsgError)
             }
 
             console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
           }
         } else {
-          console.log('❌ No hay messaging ni changes en este entry')
+          console.log('❌ No hay messaging en este entry')
           console.log('📋 Entry structure:', JSON.stringify(entry, null, 2))
         }
       }
