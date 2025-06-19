@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, Gift } from 'lucide-react';
+import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, Gift, ArrowDown } from 'lucide-react';
 
 const Beta: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -26,6 +25,22 @@ const Beta: React.FC = () => {
     playerScript.async = true;
     document.head.appendChild(playerScript);
 
+    // Intersection Observer para animaciones
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-fade-in');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    // Observar todos los elementos con clase 'scroll-animate'
+    const animateElements = document.querySelectorAll('.scroll-animate');
+    animateElements.forEach((el) => observer.observe(el));
+
     return () => {
       // Cleanup
       if (document.head.contains(wistiaScript)) {
@@ -34,75 +49,148 @@ const Beta: React.FC = () => {
       if (document.head.contains(playerScript)) {
         document.head.removeChild(playerScript);
       }
+      observer.disconnect();
     };
   }, []);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
   const handleRegister = () => {
-    // Redirigir directamente a Stripe
     window.open('https://buy.stripe.com/cNi6oG9gYdRIf1HdFm3wQ0u', '_blank');
   };
 
-  const isFormValid = formData.name.trim() && formData.email.trim();
+  // Problemas/Preguntas de los usuarios
+  const problems = [
+    "¿Te cuesta trabajo responder todos los mensajes de Instagram?",
+    "¿Pierdes clientes potenciales porque no respondes rápido?",
+    "¿Quisieras automatizar tus respuestas sin perder el toque personal?",
+    "¿Te gustaría saber exactamente cuántos prospectos has contactado?",
+    "¿Usas Manychat pero quisieras algo más integrado?"
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-      {/* Header */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-light text-primary">Hower <span className="font-bold">Assistant</span></h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
+      {/* Header fijo */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <h1 className="text-xl font-light text-primary">Hower <span className="font-bold">Assistant</span></h1>
+            </div>
+            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+              Beta Exclusiva
+            </Badge>
           </div>
-          <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-            Beta Exclusiva
-          </Badge>
         </div>
       </div>
 
-      {/* Hero Section con Video */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Video Section */}
-          <div className="order-2 lg:order-1">
-            <div className="relative max-w-xs mx-auto lg:max-w-xs">
-              <div className="rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
+      {/* Sección 1: Problemas/Preguntas */}
+      <section className="min-h-screen flex items-center justify-center pt-20">
+        <div className="container mx-auto px-4 text-center">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <h1 className="text-6xl lg:text-8xl font-bold text-gray-900 mb-12 leading-tight">
+              ¿Te suena <br />
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                familiar?
+              </span>
+            </h1>
+            
+            <div className="max-w-4xl mx-auto space-y-8">
+              {problems.map((problem, index) => (
                 <div 
-                  className="wistia_responsive_padding" 
-                  style={{ padding: '56.25% 0 0 0', position: 'relative' }}
+                  key={index}
+                  className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000"
+                  style={{ animationDelay: `${index * 200}ms` }}
                 >
+                  <p className="text-xl lg:text-2xl text-gray-700 font-light leading-relaxed">
+                    {problem}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-16 animate-bounce">
+              <ArrowDown className="w-8 h-8 text-purple-500 mx-auto" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sección 2: Presentación */}
+      <section className="min-h-screen flex items-center justify-center">
+        <div className="container mx-auto px-4">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <div className="text-center space-y-8">
+              <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
+                Únete a la Beta de{' '}
+                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-800 bg-clip-text text-transparent">
+                  Hower Assistant
+                </span>
+              </h1>
+              
+              <p className="text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
+                Empieza a vender más con Inteligencia Artificial en Instagram
+              </p>
+              
+              <div className="flex flex-wrap justify-center gap-4 mt-8">
+                <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4">
+                  <Calendar className="w-5 h-5" />
+                  Beta: 24 de Junio
+                </Badge>
+                <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4">
+                  <Users className="w-5 h-5" />
+                  Lanzamiento: 1 de Julio
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sección 3: Video explicativo */}
+      <section className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-900 to-pink-900">
+        <div className="container mx-auto px-4">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <div className="max-w-4xl mx-auto text-center">
+              <h2 className="text-4xl lg:text-6xl font-bold text-white mb-8">
+                Mira cómo funciona
+              </h2>
+              <p className="text-xl text-purple-100 mb-12">
+                Descubre el poder de la automatización inteligente
+              </p>
+              
+              <div className="relative max-w-2xl mx-auto">
+                <div className="rounded-3xl overflow-hidden shadow-2xl bg-black">
                   <div 
-                    className="wistia_responsive_wrapper" 
-                    style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}
+                    className="wistia_responsive_padding" 
+                    style={{ padding: '56.25% 0 0 0', position: 'relative' }}
                   >
                     <div 
-                      className="wistia_embed wistia_async_6ux3509b4n videoFoam=true" 
-                      style={{ height: '100%', position: 'relative', width: '100%' }}
+                      className="wistia_responsive_wrapper" 
+                      style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}
                     >
                       <div 
-                        className="wistia_swatch" 
-                        style={{
-                          height: '100%',
-                          left: 0,
-                          opacity: 0,
-                          overflow: 'hidden',
-                          position: 'absolute',
-                          top: 0,
-                          transition: 'opacity 200ms',
-                          width: '100%'
-                        }}
+                        className="wistia_embed wistia_async_6ux3509b4n videoFoam=true autoPlay=true" 
+                        style={{ height: '100%', position: 'relative', width: '100%' }}
                       >
-                        <img 
-                          src="https://fast.wistia.com/embed/medias/6ux3509b4n/swatch" 
-                          style={{ filter: 'blur(5px)', height: '100%', objectFit: 'contain', width: '100%' }} 
-                          alt=""
-                          aria-hidden="true"
-                        />
+                        <div 
+                          className="wistia_swatch" 
+                          style={{
+                            height: '100%',
+                            left: 0,
+                            opacity: 0,
+                            overflow: 'hidden',
+                            position: 'absolute',
+                            top: 0,
+                            transition: 'opacity 200ms',
+                            width: '100%'
+                          }}
+                        >
+                          <img 
+                            src="https://fast.wistia.com/embed/medias/6ux3509b4n/swatch" 
+                            style={{ filter: 'blur(5px)', height: '100%', objectFit: 'contain', width: '100%' }} 
+                            alt=""
+                            aria-hidden="true"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -110,249 +198,261 @@ const Beta: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Content Section */}
-          <div className="order-1 lg:order-2 space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-                Únete a la Beta de{' '}
-                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-800 bg-clip-text text-transparent">
-                  Hower Assistant
-                </span>
-              </h1>
-              <p className="text-xl text-gray-600 leading-relaxed">
-                Empieza a vender más con Inteligencia Artificial en Instagram. 
-                
+      {/* Sección 4: Descripción - Funcionalidades */}
+      <section className="py-32">
+        <div className="container mx-auto px-4">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <div className="text-center mb-20">
+              <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+                4 Procesos Inteligentes
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Descubre las funcionalidades que transformarán tu negocio en Instagram
               </p>
-              
-              <div className="flex flex-wrap gap-3">
-                <Badge variant="outline" className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Beta: 24 de Junio
-                </Badge>
-                <Badge variant="outline" className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Lanzamiento: 1 de Julio
-                </Badge>
-              </div>
             </div>
 
-            {/* 4 Nuevas Funcionalidades - Actualizadas */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <span className="text-sm font-semibold text-gray-800">Sugerencias con IA</span>
-                  <p className="text-xs text-gray-600">Resume conversaciones y sugiere próximos pasos para vender más.</p>
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+              <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+                <Card className="p-8 h-full border-0 bg-gradient-to-br from-purple-50 to-purple-100">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <Brain className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Sugerencias con IA</h3>
+                      <p className="text-gray-700 text-lg leading-relaxed">
+                        Resume conversaciones y sugiere próximos pasos para vender más.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
               </div>
-              
-              <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
-                <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-pink-600" />
-                </div>
-                <div>
-                  <span className="text-sm font-semibold text-gray-800">Móvil</span>
-                  <p className="text-xs text-gray-600">Configura los mensajes desde tu celular, y prospecta desde el Hower que ya conoces.</p>
-                </div>
+
+              <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+                <Card className="p-8 h-full border-0 bg-gradient-to-br from-pink-50 to-pink-100">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <Zap className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Móvil</h3>
+                      <p className="text-gray-700 text-lg leading-relaxed">
+                        Configura los mensajes desde tu celular, y prospecta desde el Hower que ya conoces.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
               </div>
-              
-              <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <span className="text-sm font-semibold text-gray-800">Tus números</span>
-                  <p className="text-xs text-gray-600">¿Sigues anotando en el cuaderno tus prospectos contactados? La IA te dará esos números y recomendaciones en automático por ti!</p>
-                </div>
+
+              <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+                <Card className="p-8 h-full border-0 bg-gradient-to-br from-purple-50 to-purple-100">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Tus números</h3>
+                      <p className="text-gray-700 text-lg leading-relaxed">
+                        ¿Sigues anotando en el cuaderno tus prospectos contactados? La IA te dará esos números y recomendaciones en automático por ti!
+                      </p>
+                    </div>
+                  </div>
+                </Card>
               </div>
-              
-              <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
-                <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-pink-600" />
-                </div>
-                <div>
-                  <span className="text-sm font-semibold text-gray-800">Manychat</span>
-                  <p className="text-xs text-gray-600">¿Usas Manychat? Hower Assistant lo tiene! responde a tus seguidores y convierte.</p>
-                </div>
+
+              <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+                <Card className="p-8 h-full border-0 bg-gradient-to-br from-pink-50 to-pink-100">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <MessageSquare className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Manychat</h3>
+                      <p className="text-gray-700 text-lg leading-relaxed">
+                        ¿Usas Manychat? Hower Assistant lo tiene! responde a tus seguidores y convierte.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Características del Auto-Respondedor */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">¿Qué incluye el Auto-Respondedor?</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <MessageSquare className="w-4 h-4 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-2">Responder a mensajes directos</h3>
-                  <p className="text-gray-600 text-sm">Automatiza respuestas a mensajes privados en Instagram</p>
-                </div>
+      {/* Auto-respondedor */}
+      <section className="py-32 bg-gradient-to-r from-gray-50 to-purple-50">
+        <div className="container mx-auto px-4">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="text-4xl lg:text-5xl font-bold text-center mb-16 text-gray-800">
+                ¿Qué incluye el Auto-Respondedor?
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {[
+                  {
+                    icon: MessageSquare,
+                    title: "Responder a mensajes directos",
+                    description: "Automatiza respuestas a mensajes privados en Instagram"
+                  },
+                  {
+                    icon: CheckCircle,
+                    title: "Responder a comentarios",
+                    description: 'Responde automáticamente: "Gracias! ya te envié la info al privado"'
+                  },
+                  {
+                    icon: Zap,
+                    title: "Envío automático al privado",
+                    description: "Enviará la información al privado una vez que comenten el post"
+                  },
+                  {
+                    icon: Users,
+                    title: "Saludo a nuevos seguidores",
+                    description: "Bienvenida automática personalizada para cada nuevo seguidor"
+                  }
+                ].map((feature, index) => (
+                  <Card key={index} className="p-8 border-0 bg-white/80 backdrop-blur-sm">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <feature.icon className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">{feature.title}</h3>
+                        <p className="text-gray-600">{feature.description}</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
-            </Card>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <CheckCircle className="w-4 h-4 text-pink-600" />
+      {/* Migración */}
+      <section className="py-32">
+        <div className="container mx-auto px-4">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <Card className="max-w-4xl mx-auto p-12 border-0 bg-gradient-to-r from-purple-50 to-pink-50">
+              <div className="text-center space-y-6">
+                <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto">
+                  <RefreshCw className="w-10 h-10 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-2">Responder a comentarios</h3>
-                  <p className="text-gray-600 text-sm">Responde automáticamente: "Gracias! ya te envié la info al privado"</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <Zap className="w-4 h-4 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-2">Envío automático al privado</h3>
-                  <p className="text-gray-600 text-sm">Enviará la información al privado una vez que comenten el post</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <Users className="w-4 h-4 text-pink-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-2">Saludo a nuevos seguidores</h3>
-                  <p className="text-gray-600 text-sm">Bienvenida automática personalizada para cada nuevo seguidor</p>
-                </div>
+                <h2 className="text-3xl font-bold text-gray-800">¿Ya tienes Manychat o Chatfuel?</h2>
+                <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                  Si tienes ya un sistema como <span className="font-semibold">Manychat o Chatfuel</span>, nosotros hacemos la migración de tus respuestas automáticas de estos otros softwares a Hower Assistant (si así lo deseas), en las funcionalidades disponibles dentro de Hower.
+                </p>
+                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 text-lg">
+                  Migración gratuita incluida
+                </Badge>
               </div>
             </Card>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Migración desde otros sistemas */}
-      <div className="container mx-auto px-4 py-12">
-        <Card className="max-w-4xl mx-auto p-8 border-0 bg-gradient-to-r from-purple-50 to-pink-50">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto">
-              <RefreshCw className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800">¿Ya tienes Manychat o Chatfuel?</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Si tienes ya un sistema como <span className="font-semibold">Manychat o Chatfuel</span>, nosotros hacemos la migración de tus respuestas automáticas de estos otros softwares a Hower Assistant (si así lo deseas), en las funcionalidades disponibles dentro de Hower.
-            </p>
-            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2">
-              Migración gratuita incluida
-            </Badge>
+      {/* Programa de Referidos */}
+      <section className="py-32 bg-gradient-to-r from-green-50 to-emerald-50">
+        <div className="container mx-auto px-4">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <Card className="max-w-4xl mx-auto p-12 border-0 bg-white/80 backdrop-blur-sm">
+              <div className="text-center space-y-6">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto">
+                  <Gift className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-gray-800">Programa de Referidos</h2>
+                <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                  Si refieres a una persona hacia Hower Assistant o deseas adquirir más cuentas, 
+                  <span className="font-semibold text-green-700"> ese $1 USD te lo llevarás tú.</span>
+                </p>
+                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 text-lg">
+                  Gana dinero refiriendo
+                </Badge>
+              </div>
+            </Card>
           </div>
-        </Card>
-      </div>
+        </div>
+      </section>
 
-      {/* Promoción de Referidos */}
-      <div className="container mx-auto px-4 py-12">
-        <Card className="max-w-4xl mx-auto p-8 border-0 bg-gradient-to-r from-green-50 to-emerald-50">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto">
-              <Gift className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800">Programa de Referidos</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Si refieres a una persona hacia Hower Assistant o deseas adquirir más cuentas, 
-              <span className="font-semibold text-green-700"> ese $1 USD te lo llevarás tú.</span>
-            </p>
-            <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2">
-              Gana dinero refiriendo
-            </Badge>
-          </div>
-        </Card>
-      </div>
+      {/* Sección 5: Call to Action Principal */}
+      <section className="py-32 bg-gradient-to-r from-purple-900 to-pink-900">
+        <div className="container mx-auto px-4">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <div className="max-w-4xl mx-auto text-center space-y-12">
+              <div className="space-y-6">
+                <h2 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
+                  Asegura tu acceso
+                </h2>
+                <p className="text-2xl text-purple-100 leading-relaxed">
+                  Únete por solo $1 USD y obtén acceso completo desde el 24 de junio
+                </p>
+              </div>
 
-      {/* Botón de Registro Simplificado */}
-      <div className="container mx-auto px-4 py-12">
-        <Card className="max-w-lg mx-auto p-8 shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <div className="space-y-6 text-center">
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold text-gray-800">Asegura tu acceso a la Beta</h2>
-              <p className="text-lg text-gray-600">Únete por solo $1 USD</p>
-              <p className="text-sm text-gray-500">
-                Acceso completo a los 4 procesos inteligentes desde el 24 de junio
-              </p>
-            </div>
+              <Button
+                onClick={handleRegister}
+                className="bg-white text-purple-900 hover:bg-gray-100 font-bold py-6 px-12 text-2xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                size="lg"
+              >
+                Registrarse por $1 USD
+              </Button>
 
-            <Button
-              onClick={handleRegister}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-4 text-xl"
-              size="lg"
-            >
-              Registrarse por $1 USD
-            </Button>
-
-            <div className="text-center">
-              <p className="text-sm text-gray-500">
+              <p className="text-purple-200 text-lg">
                 Al hacer clic serás redirigido a Stripe para completar el pago seguro
               </p>
             </div>
           </div>
-        </Card>
-      </div>
+        </div>
+      </section>
 
-      {/* FAQ Section */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Preguntas Frecuentes</h2>
-          
-          <div className="space-y-6">
-            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
-              <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Qué incluye la beta?</h3>
-              <p className="text-gray-600">
-                Acceso completo a los 4 procesos inteligentes de Hower Assistant: IA de sugerencias de seguimientos, 
-                prospección semi-móvil, métricas en tiempo real y auto-respondedor completo.
-              </p>
-            </Card>
-
-            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
-              <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Cuándo empezará la beta?</h3>
-              <p className="text-gray-600">
-                La beta comenzará el 24 de junio de 2024. Te notificaremos por email con las 
-                instrucciones de acceso una vez que esté lista.
-              </p>
-            </Card>
-
-            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
-              <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Por qué $1 USD?</h3>
-              <p className="text-gray-600">
-                El pago simbólico de $1 nos ayuda a confirmar tu interés real en participar en la beta 
-                y garantiza que recibirás todas las actualizaciones importantes.
-              </p>
-            </Card>
-
-            <Card className="p-6 border-0 bg-white/60 backdrop-blur-sm">
-              <h3 className="font-semibold text-lg text-gray-800 mb-2">¿Qué pasa después del lanzamiento oficial?</h3>
-              <p className="text-gray-600">
-                Los participantes de la beta tendrán acceso a precios especiales y características 
-                exclusivas cuando lancemos oficialmente el 1 de julio de 2024.
-              </p>
-            </Card>
+      {/* FAQ */}
+      <section className="py-32">
+        <div className="container mx-auto px-4">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-4xl font-bold text-center mb-16 text-gray-800">Preguntas Frecuentes</h2>
+              
+              <div className="space-y-8">
+                {[
+                  {
+                    question: "¿Qué incluye la beta?",
+                    answer: "Acceso completo a los 4 procesos inteligentes de Hower Assistant: IA de sugerencias de seguimientos, prospección semi-móvil, métricas en tiempo real y auto-respondedor completo."
+                  },
+                  {
+                    question: "¿Cuándo empezará la beta?",
+                    answer: "La beta comenzará el 24 de junio de 2024. Te notificaremos por email con las instrucciones de acceso una vez que esté lista."
+                  },
+                  {
+                    question: "¿Por qué $1 USD?",
+                    answer: "El pago simbólico de $1 nos ayuda a confirmar tu interés real en participar en la beta y garantiza que recibirás todas las actualizaciones importantes."
+                  },
+                  {
+                    question: "¿Qué pasa después del lanzamiento oficial?",
+                    answer: "Los participantes de la beta tendrán acceso a precios especiales y características exclusivas cuando lancemos oficialmente el 1 de julio de 2024."
+                  }
+                ].map((faq, index) => (
+                  <Card key={index} className="p-8 border-0 bg-white/60 backdrop-blur-sm">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-3">{faq.question}</h3>
+                    <p className="text-gray-600 text-lg leading-relaxed">{faq.answer}</p>
+                  </Card>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
-      <div className="container mx-auto px-4 py-8 text-center border-t border-gray-200">
-        <p className="text-gray-500">
-          © 2024 Hower Assistant. La IA será tu mejor aliado en Instagram.
-        </p>
-      </div>
+      <footer className="py-12 border-t border-gray-200">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-gray-500 text-lg">
+            © 2024 Hower Assistant. La IA será tu mejor aliado en Instagram.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
