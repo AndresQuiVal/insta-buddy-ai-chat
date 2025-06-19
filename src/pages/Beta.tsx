@@ -120,8 +120,8 @@ const Beta: React.FC = () => {
       <section className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-900 to-pink-900">
         <div className="container mx-auto px-4">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <div className="max-w-4xl mx-auto text-center space-y-12">
-              <h1 className="text-4xl lg:text-6xl font-bold leading-tight text-white">
+            <div className="max-w-4xl mx-auto text-center space-y-16">
+              <h1 className="text-4xl lg:text-6xl font-bold leading-tight text-white mb-8">
                 Hower Assistant es para ti{' '}
                 <span className="relative">
                   <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-2xl lg:text-3xl px-6 py-2 font-bold shadow-lg">
@@ -131,7 +131,7 @@ const Beta: React.FC = () => {
               </h1>
               
               {/* Video explicativo */}
-              <div className="relative max-w-2xl mx-auto">
+              <div className="relative max-w-2xl mx-auto mb-12">
                 <div className="rounded-3xl overflow-hidden shadow-2xl bg-black">
                   <div 
                     className="wistia_responsive_padding" 
@@ -171,7 +171,7 @@ const Beta: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-2xl text-purple-100 leading-relaxed">
+              <p className="text-2xl text-purple-100 leading-relaxed mb-8">
                 Empieza a vender más con Inteligencia Artificial en Instagram
               </p>
               
