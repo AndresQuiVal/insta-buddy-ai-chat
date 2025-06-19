@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -13,9 +12,9 @@ const Beta: React.FC = () => {
   });
 
   useEffect(() => {
-    // Script principal de Wistia
+    // Script principal de Wistia para el video principal
     const wistiaScript = document.createElement('script');
-    wistiaScript.src = 'https://fast.wistia.com/embed/medias/6ux3509b4n.jsonp';
+    wistiaScript.src = 'https://fast.wistia.com/embed/medias/sxdw3ixmlk.jsonp';
     wistiaScript.async = true;
     document.head.appendChild(wistiaScript);
 
@@ -33,6 +32,7 @@ const Beta: React.FC = () => {
 
     // Scripts específicos para cada video
     const videoScripts = [
+      'https://fast.wistia.com/embed/sxdw3ixmlk.js',
       'https://fast.wistia.com/embed/f9mwa4wrl9.js',
       'https://fast.wistia.com/embed/fe270kwf7n.js', 
       'https://fast.wistia.com/embed/x6zybq0h5n.js',
@@ -51,6 +51,12 @@ const Beta: React.FC = () => {
     // Styles para los videos
     const style = document.createElement('style');
     style.textContent = `
+      wistia-player[media-id='sxdw3ixmlk']:not(:defined) { 
+        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/sxdw3ixmlk/swatch'); 
+        display: block; 
+        filter: blur(5px); 
+        padding-top: 135.83%; 
+      }
       wistia-player[media-id='f9mwa4wrl9']:not(:defined) { 
         background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/f9mwa4wrl9/swatch'); 
         display: block; 
@@ -207,7 +213,7 @@ const Beta: React.FC = () => {
                       style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}
                     >
                       <div 
-                        className="wistia_embed wistia_async_6ux3509b4n videoFoam=true autoPlay=true loop=true" 
+                        className="wistia_embed wistia_async_sxdw3ixmlk videoFoam=true autoPlay=true loop=true" 
                         style={{ height: '100%', position: 'relative', width: '100%' }}
                       >
                         <div 
@@ -224,7 +230,7 @@ const Beta: React.FC = () => {
                           }}
                         >
                           <img 
-                            src="https://fast.wistia.com/embed/medias/6ux3509b4n/swatch" 
+                            src="https://fast.wistia.com/embed/medias/sxdw3ixmlk/swatch" 
                             style={{ filter: 'blur(5px)', height: '100%', objectFit: 'contain', width: '100%' }} 
                             alt=""
                             aria-hidden="true"
