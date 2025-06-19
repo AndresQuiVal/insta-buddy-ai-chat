@@ -278,8 +278,8 @@ const Beta: React.FC = () => {
               {/* Fila 1: Video Sugerencias + Texto */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="rounded-3xl overflow-hidden shadow-2xl">
-                    <wistia-player media-id="fe270kwf7n" aspect="0.7361963190184049"></wistia-player>
+                  <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
+                    <wistia-player media-id="fe270kwf7n" aspect="0.7361963190184049" autoplay="true" loop="true"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
@@ -298,8 +298,8 @@ const Beta: React.FC = () => {
               {/* Fila 2: Texto + Video Móvil */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
-                  <div className="rounded-3xl overflow-hidden shadow-2xl">
-                    <wistia-player media-id="f9mwa4wrl9" aspect="0.7361963190184049"></wistia-player>
+                  <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
+                    <wistia-player media-id="f9mwa4wrl9" aspect="0.7361963190184049" autoplay="true" loop="true"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
@@ -318,8 +318,8 @@ const Beta: React.FC = () => {
               {/* Fila 3: Video Métricas + Texto */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="rounded-3xl overflow-hidden shadow-2xl">
-                    <wistia-player media-id="x6zybq0h5n" aspect="0.6153846153846154"></wistia-player>
+                  <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
+                    <wistia-player media-id="x6zybq0h5n" aspect="0.6153846153846154" autoplay="true" loop="true"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
@@ -338,8 +338,8 @@ const Beta: React.FC = () => {
               {/* Fila 4: Texto + Video Autoresponder */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
-                  <div className="rounded-3xl overflow-hidden shadow-2xl">
-                    <wistia-player media-id="ihs01ndhd7" aspect="0.6153846153846154"></wistia-player>
+                  <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
+                    <wistia-player media-id="ihs01ndhd7" aspect="0.6153846153846154" autoplay="true" loop="true"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
