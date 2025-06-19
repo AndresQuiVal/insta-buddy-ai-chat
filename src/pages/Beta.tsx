@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -58,10 +59,10 @@ const Beta: React.FC = () => {
 
   // Problemas/Preguntas de los usuarios
   const problems = [
-    "Sigo anotando a mis prospectos en mi cuaderno, para que no se me olvide...",
-    "No se que hacer cuando mis prospectos me responden a mis mensajes!",
-    "Subo y subo contenido pero no logro ganar nuevos seguidores y no consigo venderles",
-    "No me gusta trabajar en la computadora, prefiero en el celular"
+    <>Sigo anotando a mis prospectos en mi cuaderno, <strong>para que no se me olvide...</strong></>,
+    <><strong>No se que hacer</strong> cuando mis prospectos me responden a mis mensajes!</>,
+    <>Subo y subo contenido pero <strong>no logro ganar nuevos seguidores, ni venderles</strong></>,
+    <><strong>No me gusta trabajar en la computadora</strong>, prefiero en el celular</>
   ];
 
   return (
