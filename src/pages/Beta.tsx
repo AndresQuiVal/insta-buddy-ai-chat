@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, Gift, ArrowDown } from 'lucide-react';
+import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, ArrowDown } from 'lucide-react';
 
 const Beta: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -59,11 +58,10 @@ const Beta: React.FC = () => {
 
   // Problemas/Preguntas de los usuarios
   const problems = [
-    "¿Te cuesta trabajo responder todos los mensajes de Instagram?",
-    "¿Pierdes clientes potenciales porque no respondes rápido?",
-    "¿Quisieras automatizar tus respuestas sin perder el toque personal?",
-    "¿Te gustaría saber exactamente cuántos prospectos has contactado?",
-    "¿Usas Manychat pero quisieras algo más integrado?"
+    "Sigo anotando a mis prospectos en mi cuaderno, para que no se me olvide...",
+    "No se que hacer cuando mis prospectos me responden a mis mensajes!",
+    "Subo y subo contenido pero no logro ganar nuevos seguidores y no consigo venderles",
+    "No me gusta trabajar en la computadora, prefiero en el celular"
   ];
 
   return (
@@ -87,9 +85,9 @@ const Beta: React.FC = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 mb-32">
             <h1 className="text-6xl lg:text-8xl font-bold text-gray-900 mb-24 leading-tight">
-              ¿Te suena <br />
+              Networker, <br />
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                familiar?
+                ¿con cuántas te identificas?
               </span>
             </h1>
           </div>
@@ -350,29 +348,6 @@ const Beta: React.FC = () => {
                 </p>
                 <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 text-lg">
                   Migración gratuita incluida
-                </Badge>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Programa de Referidos */}
-      <section className="py-32 bg-gradient-to-r from-green-50 to-emerald-50">
-        <div className="container mx-auto px-4">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <Card className="max-w-4xl mx-auto p-12 border-0 bg-white/80 backdrop-blur-sm">
-              <div className="text-center space-y-6">
-                <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto">
-                  <Gift className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-800">Programa de Referidos</h2>
-                <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                  Si refieres a una persona hacia Hower Assistant o deseas adquirir más cuentas, 
-                  <span className="font-semibold text-green-700"> ese $1 USD te lo llevarás tú.</span>
-                </p>
-                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 text-lg">
-                  Gana dinero refiriendo
                 </Badge>
               </div>
             </Card>
