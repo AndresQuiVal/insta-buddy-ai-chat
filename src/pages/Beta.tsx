@@ -25,6 +25,59 @@ const Beta: React.FC = () => {
     playerScript.async = true;
     document.head.appendChild(playerScript);
 
+    // Scripts para los nuevos videos
+    const wistiaPlayerScript = document.createElement('script');
+    wistiaPlayerScript.src = 'https://fast.wistia.com/player.js';
+    wistiaPlayerScript.async = true;
+    document.head.appendChild(wistiaPlayerScript);
+
+    // Scripts específicos para cada video
+    const videoScripts = [
+      'https://fast.wistia.com/embed/f9mwa4wrl9.js',
+      'https://fast.wistia.com/embed/fe270kwf7n.js', 
+      'https://fast.wistia.com/embed/x6zybq0h5n.js',
+      'https://fast.wistia.com/embed/ihs01ndhd7.js'
+    ];
+
+    const scriptElements = videoScripts.map(src => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.type = 'module';
+      document.head.appendChild(script);
+      return script;
+    });
+
+    // Styles para los videos
+    const style = document.createElement('style');
+    style.textContent = `
+      wistia-player[media-id='f9mwa4wrl9']:not(:defined) { 
+        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/f9mwa4wrl9/swatch'); 
+        display: block; 
+        filter: blur(5px); 
+        padding-top: 135.83%; 
+      }
+      wistia-player[media-id='fe270kwf7n']:not(:defined) { 
+        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/fe270kwf7n/swatch'); 
+        display: block; 
+        filter: blur(5px); 
+        padding-top: 135.83%; 
+      }
+      wistia-player[media-id='x6zybq0h5n']:not(:defined) { 
+        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/x6zybq0h5n/swatch'); 
+        display: block; 
+        filter: blur(5px); 
+        padding-top: 162.5%; 
+      }
+      wistia-player[media-id='ihs01ndhd7']:not(:defined) { 
+        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/ihs01ndhd7/swatch'); 
+        display: block; 
+        filter: blur(5px); 
+        padding-top: 162.5%; 
+      }
+    `;
+    document.head.appendChild(style);
+
     // Intersection Observer para animaciones
     const observer = new IntersectionObserver(
       (entries) => {
@@ -48,6 +101,17 @@ const Beta: React.FC = () => {
       }
       if (document.head.contains(playerScript)) {
         document.head.removeChild(playerScript);
+      }
+      if (document.head.contains(wistiaPlayerScript)) {
+        document.head.removeChild(wistiaPlayerScript);
+      }
+      scriptElements.forEach(script => {
+        if (document.head.contains(script)) {
+          document.head.removeChild(script);
+        }
+      });
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
       }
       observer.disconnect();
     };
@@ -205,14 +269,11 @@ const Beta: React.FC = () => {
             </div>
 
             <div className="max-w-7xl mx-auto space-y-24">
-              {/* Fila 1: GIF + Texto */}
+              {/* Fila 1: Video Sugerencias + Texto */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-3xl p-8 h-80 flex items-center justify-center">
-                    <div className="text-center">
-                      <Brain className="w-20 h-20 text-purple-600 mx-auto mb-4" />
-                      <p className="text-purple-700 font-semibold">GIF de Sugerencias IA</p>
-                    </div>
+                  <div className="rounded-3xl overflow-hidden shadow-2xl">
+                    <wistia-player media-id="fe270kwf7n" aspect="0.7361963190184049"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
@@ -228,14 +289,11 @@ const Beta: React.FC = () => {
                 </div>
               </div>
 
-              {/* Fila 2: Texto + GIF */}
+              {/* Fila 2: Texto + Video Móvil */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
-                  <div className="bg-gradient-to-br from-pink-100 to-pink-200 rounded-3xl p-8 h-80 flex items-center justify-center">
-                    <div className="text-center">
-                      <Zap className="w-20 h-20 text-pink-600 mx-auto mb-4" />
-                      <p className="text-pink-700 font-semibold">GIF de Móvil</p>
-                    </div>
+                  <div className="rounded-3xl overflow-hidden shadow-2xl">
+                    <wistia-player media-id="f9mwa4wrl9" aspect="0.7361963190184049"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
@@ -251,14 +309,11 @@ const Beta: React.FC = () => {
                 </div>
               </div>
 
-              {/* Fila 3: GIF + Texto */}
+              {/* Fila 3: Video Métricas + Texto */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-3xl p-8 h-80 flex items-center justify-center">
-                    <div className="text-center">
-                      <TrendingUp className="w-20 h-20 text-purple-600 mx-auto mb-4" />
-                      <p className="text-purple-700 font-semibold">GIF de Métricas</p>
-                    </div>
+                  <div className="rounded-3xl overflow-hidden shadow-2xl">
+                    <wistia-player media-id="x6zybq0h5n" aspect="0.6153846153846154"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
@@ -274,14 +329,11 @@ const Beta: React.FC = () => {
                 </div>
               </div>
 
-              {/* Fila 4: Texto + GIF */}
+              {/* Fila 4: Texto + Video Autoresponder */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
-                  <div className="bg-gradient-to-br from-pink-100 to-pink-200 rounded-3xl p-8 h-80 flex items-center justify-center">
-                    <div className="text-center">
-                      <MessageSquare className="w-20 h-20 text-pink-600 mx-auto mb-4" />
-                      <p className="text-pink-700 font-semibold">GIF de Manychat</p>
-                    </div>
+                  <div className="rounded-3xl overflow-hidden shadow-2xl">
+                    <wistia-player media-id="ihs01ndhd7" aspect="0.6153846153846154"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
