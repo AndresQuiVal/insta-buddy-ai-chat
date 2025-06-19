@@ -210,76 +210,104 @@ const Beta: React.FC = () => {
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="text-center mb-20">
               <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
-                4 Procesos Inteligentes
+                4 funcionalidades, que ninguno otro tiene para ti
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Descubre las funcionalidades que transformarán tu negocio en Instagram
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
-              <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                <Card className="p-8 h-full border-0 bg-gradient-to-br from-purple-50 to-purple-100">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <div className="max-w-7xl mx-auto space-y-24">
+              {/* Fila 1: GIF + Texto */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+                  <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-3xl p-8 h-80 flex items-center justify-center">
+                    <div className="text-center">
+                      <Brain className="w-20 h-20 text-purple-600 mx-auto mb-4" />
+                      <p className="text-purple-700 font-semibold">GIF de Sugerencias IA</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+                  <div className="space-y-6">
+                    <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center">
                       <Brain className="w-8 h-8 text-white" />
                     </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Sugerencias con IA</h3>
-                      <p className="text-gray-700 text-lg leading-relaxed">
-                        Resume conversaciones y sugiere próximos pasos para vender más.
-                      </p>
-                    </div>
+                    <h3 className="text-3xl font-bold text-gray-900">Sugerencias con IA</h3>
+                    <p className="text-xl text-gray-700 leading-relaxed">
+                      Resume conversaciones y sugiere próximos pasos para vender más.
+                    </p>
                   </div>
-                </Card>
+                </div>
               </div>
 
-              <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                <Card className="p-8 h-full border-0 bg-gradient-to-br from-pink-50 to-pink-100">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+              {/* Fila 2: Texto + GIF */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
+                  <div className="bg-gradient-to-br from-pink-100 to-pink-200 rounded-3xl p-8 h-80 flex items-center justify-center">
+                    <div className="text-center">
+                      <Zap className="w-20 h-20 text-pink-600 mx-auto mb-4" />
+                      <p className="text-pink-700 font-semibold">GIF de Móvil</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
+                  <div className="space-y-6">
+                    <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center">
                       <Zap className="w-8 h-8 text-white" />
                     </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Móvil</h3>
-                      <p className="text-gray-700 text-lg leading-relaxed">
-                        Configura mensajes desde tu celular, igual que en la web.
-                      </p>
-                    </div>
+                    <h3 className="text-3xl font-bold text-gray-900">Móvil</h3>
+                    <p className="text-xl text-gray-700 leading-relaxed">
+                      Configura mensajes desde tu celular, igual que en la web.
+                    </p>
                   </div>
-                </Card>
+                </div>
               </div>
 
-              <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                <Card className="p-8 h-full border-0 bg-gradient-to-br from-purple-50 to-purple-100">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+              {/* Fila 3: GIF + Texto */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+                  <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-3xl p-8 h-80 flex items-center justify-center">
+                    <div className="text-center">
+                      <TrendingUp className="w-20 h-20 text-purple-600 mx-auto mb-4" />
+                      <p className="text-purple-700 font-semibold">GIF de Métricas</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+                  <div className="space-y-6">
+                    <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center">
                       <TrendingUp className="w-8 h-8 text-white" />
                     </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Tus números</h3>
-                      <p className="text-gray-700 text-lg leading-relaxed">
-                        ¿Sigues anotando en el cuaderno tus prospectos contactados? La IA te dará esos números y recomendaciones en automático por ti!
-                      </p>
-                    </div>
+                    <h3 className="text-3xl font-bold text-gray-900">Tus números</h3>
+                    <p className="text-xl text-gray-700 leading-relaxed">
+                      ¿Sigues anotando en el cuaderno tus prospectos contactados? La IA te dará esos números y recomendaciones en automático por ti!
+                    </p>
                   </div>
-                </Card>
+                </div>
               </div>
 
-              <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                <Card className="p-8 h-full border-0 bg-gradient-to-br from-pink-50 to-pink-100">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center flex-shrink-0">
-                      <MessageSquare className="w-8 h-8 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Manychat</h3>
-                      <p className="text-gray-700 text-lg leading-relaxed">
-                        ¿Usas Manychat? Hower Assistant lo tiene! responde a tus seguidores y convierte.
-                      </p>
+              {/* Fila 4: Texto + GIF */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
+                  <div className="bg-gradient-to-br from-pink-100 to-pink-200 rounded-3xl p-8 h-80 flex items-center justify-center">
+                    <div className="text-center">
+                      <MessageSquare className="w-20 h-20 text-pink-600 mx-auto mb-4" />
+                      <p className="text-pink-700 font-semibold">GIF de Manychat</p>
                     </div>
                   </div>
-                </Card>
+                </div>
+                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
+                  <div className="space-y-6">
+                    <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center">
+                      <MessageSquare className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-3xl font-bold text-gray-900">Manychat</h3>
+                    <p className="text-xl text-gray-700 leading-relaxed">
+                      ¿Usas Manychat? Hower Assistant lo tiene! responde a tus seguidores y convierte.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -295,10 +323,20 @@ const Beta: React.FC = () => {
                 ¿Qué incluye el Manychat de Hower?
               </h2>
               
-              <div className="text-center mb-12">
+              <div className="text-center mb-12 space-y-6">
                 <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 text-xl font-bold">
-                  CONTACTOS ILIMITADOS!
+                  CONTACTOS ILIMITADOS
                 </Badge>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <div className="flex items-center bg-white rounded-full px-6 py-3 shadow-lg">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    <span className="text-gray-700 font-semibold">Nada de cobrar por más contactos</span>
+                  </div>
+                  <div className="flex items-center bg-white rounded-full px-6 py-3 shadow-lg">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    <span className="text-gray-700 font-semibold">Un solo plan</span>
+                  </div>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
