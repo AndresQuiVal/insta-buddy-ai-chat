@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -83,13 +84,15 @@ const Beta: React.FC = () => {
       {/* Sección 1: Problemas/Preguntas - Cada pregunta en su propia sección */}
       <section className="pt-20">
         <div className="container mx-auto px-4 text-center">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 mb-32">
-            <h1 className="text-6xl lg:text-8xl font-bold text-gray-900 mb-24 leading-tight">
-              Networker, <br />
-              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                ¿con cuántas te identificas?
-              </span>
-            </h1>
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+              <h1 className="text-6xl lg:text-8xl font-bold text-gray-900 mb-24 leading-tight">
+                Networker, <br />
+                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  ¿con cuántas te identificas?
+                </span>
+              </h1>
+            </div>
           </div>
           
           {problems.map((problem, index) => (
@@ -289,8 +292,14 @@ const Beta: React.FC = () => {
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="max-w-6xl mx-auto">
               <h2 className="text-4xl lg:text-5xl font-bold text-center mb-16 text-gray-800">
-                ¿Qué incluye el Auto-Respondedor?
+                ¿Qué incluye el Manychat de Hower?
               </h2>
+              
+              <div className="text-center mb-12">
+                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 text-xl font-bold">
+                  CONTACTOS ILIMITADOS!
+                </Badge>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {[
@@ -311,8 +320,8 @@ const Beta: React.FC = () => {
                   },
                   {
                     icon: Users,
-                    title: "Saludo a nuevos seguidores",
-                    description: "Bienvenida automática personalizada para cada nuevo seguidor"
+                    title: "Organización inteligente con IA",
+                    description: "Organiza automáticamente las personas contactadas en Nuevos contactos, Invitados, etc."
                   }
                 ].map((feature, index) => (
                   <Card key={index} className="p-8 border-0 bg-white/80 backdrop-blur-sm">
