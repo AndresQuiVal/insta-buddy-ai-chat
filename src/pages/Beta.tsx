@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -121,7 +122,7 @@ const Beta: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="max-w-4xl mx-auto text-center space-y-16">
-              <h1 className="text-4xl lg:text-6xl font-bold leading-tight text-white mb-8">
+              <h1 className="text-4xl lg:text-6xl font-bold leading-tight text-white mt-8 mb-16">
                 Hower Assistant es para ti{' '}
                 <span className="relative">
                   <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-2xl lg:text-3xl px-6 py-2 font-bold shadow-lg">
@@ -131,7 +132,7 @@ const Beta: React.FC = () => {
               </h1>
               
               {/* Video explicativo */}
-              <div className="relative max-w-2xl mx-auto mb-12">
+              <div className="relative max-w-2xl mx-auto mb-16">
                 <div className="rounded-3xl overflow-hidden shadow-2xl bg-black">
                   <div 
                     className="wistia_responsive_padding" 
@@ -171,11 +172,11 @@ const Beta: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-2xl text-purple-100 leading-relaxed mb-8">
+              <p className="text-2xl text-purple-100 leading-relaxed mb-12">
                 Empieza a vender más con Inteligencia Artificial en Instagram
               </p>
               
-              <div className="flex flex-wrap justify-center gap-4">
+              <div className="flex flex-wrap justify-center gap-4 mt-8">
                 <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4 bg-white/10 border-white/20 text-white">
                   <Calendar className="w-5 h-5" />
                   Beta: 24 de Junio
