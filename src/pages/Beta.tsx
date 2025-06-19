@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -136,14 +137,14 @@ const Beta: React.FC = () => {
               </div>
             </div>
 
-            {/* 4 Nuevas Funcionalidades - Resumidas */}
+            {/* 4 Nuevas Funcionalidades - Actualizadas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                   <Brain className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">IA de Conversación</span>
+                  <span className="text-sm font-semibold text-gray-800">Sugerencias con IA</span>
                   <p className="text-xs text-gray-600">Resume conversaciones y sugiere próximos pasos para vender más.</p>
                 </div>
               </div>
@@ -154,7 +155,7 @@ const Beta: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-gray-800">Móvil</span>
-                  <p className="text-xs text-gray-600">Configura mensajes desde tu celular, igual que en la web.</p>
+                  <p className="text-xs text-gray-600">Configura los mensajes desde tu celular, y prospecta desde el Hower que ya conoces.</p>
                 </div>
               </div>
               
@@ -163,8 +164,8 @@ const Beta: React.FC = () => {
                   <TrendingUp className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Estadísticas</span>
-                  <p className="text-xs text-gray-600">Ve en tiempo real tus mensajes e invitaciones enviadas.</p>
+                  <span className="text-sm font-semibold text-gray-800">Tus números</span>
+                  <p className="text-xs text-gray-600">¿Sigues anotando en el cuaderno tus prospectos contactados? La IA te dará esos números y recomendaciones en automático por ti!</p>
                 </div>
               </div>
               
@@ -173,8 +174,8 @@ const Beta: React.FC = () => {
                   <MessageSquare className="w-5 h-5 text-pink-600" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-gray-800">Auto-Respuestas</span>
-                  <p className="text-xs text-gray-600">Responde automáticamente y genera nuevos clientes.</p>
+                  <span className="text-sm font-semibold text-gray-800">Manychat</span>
+                  <p className="text-xs text-gray-600">¿Usas Manychat? Hower Assistant lo tiene! responde a tus seguidores y convierte.</p>
                 </div>
               </div>
             </div>
