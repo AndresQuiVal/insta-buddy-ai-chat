@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -176,7 +175,7 @@ const Beta: React.FC = () => {
                 Empieza a vender más con Inteligencia Artificial en Instagram
               </p>
               
-              <div className="flex flex-wrap justify-center gap-4 mt-8 mb-24">
+              <div className="flex flex-wrap justify-center gap-4 mt-8 mb-32">
                 <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4 bg-white/10 border-white/20 text-white">
                   <Calendar className="w-5 h-5" />
                   Beta: 24 de Junio
