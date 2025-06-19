@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -117,7 +118,7 @@ const Beta: React.FC = () => {
       </section>
 
       {/* Sección 2: Presentación con Video primero */}
-      <section className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-900 to-pink-900">
+      <section className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-900 to-pink-900 pb-32">
         <div className="container mx-auto px-4">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="max-w-4xl mx-auto text-center space-y-16">
