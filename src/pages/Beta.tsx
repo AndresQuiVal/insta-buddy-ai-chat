@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -117,49 +116,21 @@ const Beta: React.FC = () => {
         </div>
       </section>
 
-      {/* Sección 2: Presentación */}
-      <section className="min-h-screen flex items-center justify-center">
-        <div className="container mx-auto px-4">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <div className="text-center space-y-8">
-              <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                Únete a la Beta de{' '}
-                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-800 bg-clip-text text-transparent">
-                  Hower Assistant
-                </span>
-              </h1>
-              
-              <p className="text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
-                Empieza a vender más con Inteligencia Artificial en Instagram
-              </p>
-              
-              <div className="flex flex-wrap justify-center gap-4 mt-8">
-                <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4">
-                  <Calendar className="w-5 h-5" />
-                  Beta: 24 de Junio
-                </Badge>
-                <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4">
-                  <Users className="w-5 h-5" />
-                  Lanzamiento: 1 de Julio
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Sección 3: Video explicativo */}
+      {/* Sección 2: Presentación con Video primero */}
       <section className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-900 to-pink-900">
         <div className="container mx-auto px-4">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-4xl lg:text-6xl font-bold text-white mb-8">
-                Mira cómo funciona
-              </h2>
-              <p className="text-xl text-purple-100 mb-12">
-                Descubre el poder de la automatización inteligente
-              </p>
+            <div className="max-w-4xl mx-auto text-center space-y-12">
+              <h1 className="text-4xl lg:text-6xl font-bold leading-tight text-white">
+                Hower Assistant es para ti{' '}
+                <span className="relative">
+                  <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-2xl lg:text-3xl px-6 py-2 font-bold shadow-lg">
+                    BETA
+                  </Badge>
+                </span>
+              </h1>
               
+              {/* Video explicativo */}
               <div className="relative max-w-2xl mx-auto">
                 <div className="rounded-3xl overflow-hidden shadow-2xl bg-black">
                   <div 
@@ -198,6 +169,21 @@ const Beta: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <p className="text-2xl text-purple-100 leading-relaxed">
+                Empieza a vender más con Inteligencia Artificial en Instagram
+              </p>
+              
+              <div className="flex flex-wrap justify-center gap-4">
+                <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4 bg-white/10 border-white/20 text-white">
+                  <Calendar className="w-5 h-5" />
+                  Beta: 24 de Junio
+                </Badge>
+                <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4 bg-white/10 border-white/20 text-white">
+                  <Users className="w-5 h-5" />
+                  Lanzamiento: 1 de Julio
+                </Badge>
               </div>
             </div>
           </div>
@@ -314,7 +300,7 @@ const Beta: React.FC = () => {
         </div>
       </section>
 
-      {/* Auto-respondedor */}
+      {/* Manychat */}
       <section className="py-32 bg-gradient-to-r from-gray-50 to-purple-50">
         <div className="container mx-auto px-4">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
