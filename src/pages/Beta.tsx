@@ -82,33 +82,35 @@ const Beta: React.FC = () => {
         </div>
       </div>
 
-      {/* Sección 1: Problemas/Preguntas */}
-      <section className="min-h-screen flex items-center justify-center pt-20">
+      {/* Sección 1: Problemas/Preguntas - Cada pregunta en su propia sección */}
+      <section className="pt-20">
         <div className="container mx-auto px-4 text-center">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <h1 className="text-6xl lg:text-8xl font-bold text-gray-900 mb-12 leading-tight">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 mb-32">
+            <h1 className="text-6xl lg:text-8xl font-bold text-gray-900 mb-24 leading-tight">
               ¿Te suena <br />
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 familiar?
               </span>
             </h1>
-            
-            <div className="max-w-4xl mx-auto space-y-8">
-              {problems.map((problem, index) => (
-                <div 
-                  key={index}
-                  className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000"
-                  style={{ animationDelay: `${index * 200}ms` }}
-                >
-                  <p className="text-xl lg:text-2xl text-gray-700 font-light leading-relaxed">
-                    {problem}
-                  </p>
-                </div>
-              ))}
+          </div>
+          
+          {problems.map((problem, index) => (
+            <div key={index} className="min-h-screen flex items-center justify-center">
+              <div 
+                className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 max-w-4xl mx-auto"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <p className="text-3xl lg:text-5xl text-gray-700 font-light leading-relaxed text-center">
+                  {problem}
+                </p>
+              </div>
             </div>
-
-            <div className="mt-16 animate-bounce">
-              <ArrowDown className="w-8 h-8 text-purple-500 mx-auto" />
+          ))}
+          
+          {/* Arrow down después de todas las preguntas */}
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-bounce">
+              <ArrowDown className="w-12 h-12 text-purple-500 mx-auto" />
             </div>
           </div>
         </div>
@@ -168,7 +170,7 @@ const Beta: React.FC = () => {
                       style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}
                     >
                       <div 
-                        className="wistia_embed wistia_async_6ux3509b4n videoFoam=true autoPlay=true" 
+                        className="wistia_embed wistia_async_6ux3509b4n videoFoam=true autoPlay=true loop=true" 
                         style={{ height: '100%', position: 'relative', width: '100%' }}
                       >
                         <div 
@@ -240,7 +242,7 @@ const Beta: React.FC = () => {
                     <div>
                       <h3 className="text-2xl font-bold text-gray-900 mb-4">Móvil</h3>
                       <p className="text-gray-700 text-lg leading-relaxed">
-                        Configura los mensajes desde tu celular, y prospecta desde el Hower que ya conoces.
+                        Configura mensajes desde tu celular, igual que en la web.
                       </p>
                     </div>
                   </div>
