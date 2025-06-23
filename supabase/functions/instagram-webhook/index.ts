@@ -446,6 +446,36 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
+  // ===== 🆕 RESPONDER PÚBLICAMENTE AL COMENTARIO =====
+  console.log('💬 ENVIANDO REPLY PÚBLICO AL COMENTARIO...')
+  
+  const publicReplyMessage = "Graciasss! te mandé por privado! 📩"
+  
+  try {
+    const replyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${instagramUser.access_token}`
+      },
+      body: JSON.stringify({
+        message: publicReplyMessage
+      })
+    })
+
+    const replyData = await replyResponse.json()
+    console.log('📨 Respuesta del reply público:', JSON.stringify(replyData, null, 2))
+
+    if (replyData.error) {
+      console.error('❌ Error enviando reply público:', replyData.error)
+    } else {
+      console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE')
+      console.log('🆔 Reply ID:', replyData.id)
+    }
+  } catch (replyError) {
+    console.error('💥 Error en reply público:', replyError)
+  }
+
   // ===== ENVIAR DM AUTOMÁTICO USANDO GRAPH.INSTAGRAM.COM =====
   console.log('🚀 ENVIANDO DM AUTOMÁTICO POR COMENTARIO...')
 
@@ -476,6 +506,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         comment_id: commentId,
         media_id: mediaId,
         commenter_username: commenterUsername,
+        public_reply_sent: publicReplyMessage,
         processed_at: new Date().toISOString()
       }
     })
