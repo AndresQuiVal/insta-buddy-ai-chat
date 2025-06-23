@@ -435,41 +435,28 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  console.log('✅ Usuario de Instagram encontrado')
-  console.log('🔑 Token disponible:', instagramUser.access_token ? 'SÍ' : 'NO')
-  console.log('📄 Page ID:', instagramUser.page_id)
-
   // ===== 🆕 RESPONDER PÚBLICAMENTE AL COMENTARIO (SIEMPRE) =====
   console.log('💬 ENVIANDO REPLY PÚBLICO AL COMENTARIO...')
   
   const publicReplyMessage = "Graciasss! te mandé por privado! 📩"
   
   try {
-    // Usar el Page Access Token en lugar del User Access Token
-    const replyUrl = `https://graph.instagram.com/v19.0/${commentId}/replies`
-    console.log('🌐 URL del reply:', replyUrl)
-    console.log('📝 Mensaje a enviar:', publicReplyMessage)
-    
-    const replyResponse = await fetch(replyUrl, {
+    const replyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${instagramUser.access_token}`
       },
       body: JSON.stringify({
-        message: publicReplyMessage,
-        access_token: instagramUser.access_token
+        message: publicReplyMessage
       })
     })
 
     const replyData = await replyResponse.json()
-    console.log('📨 Status del reply:', replyResponse.status)
     console.log('📨 Respuesta del reply público:', JSON.stringify(replyData, null, 2))
 
     if (replyData.error) {
       console.error('❌ Error enviando reply público:', replyData.error)
-      console.error('📊 Código de error:', replyData.error.code)
-      console.error('📊 Tipo de error:', replyData.error.type)
-      console.error('📊 Mensaje de error:', replyData.error.message)
     } else {
       console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE')
       console.log('🆔 Reply ID:', replyData.id)
