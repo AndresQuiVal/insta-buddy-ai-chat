@@ -101,10 +101,13 @@ serve(async (req) => {
       message: { text: message_text }
     }
 
-    // 🆕 NUEVO: Agregar referencia al comentario si está disponible
+    // 🆕 NUEVO: Para DMs referenciados a comentarios, usar un formato diferente
     if (reference_comment_id) {
       console.log('💬 Enviando DM referenciado al comentario:', reference_comment_id)
-      messageBody.message.reply_to = { comment_id: reference_comment_id }
+      // Intentar con el formato correcto para comentarios referenciados
+      messageBody.context = {
+        comment_id: reference_comment_id
+      }
     }
     // Agregar reply_to si se proporciona (para reply a mensajes normales)
     else if (reply_to_message_id) {
@@ -138,7 +141,8 @@ serve(async (req) => {
             instagram_error: responseData.error,
             status: response.status,
             instagramId,
-            reference_comment_id: reference_comment_id || null
+            reference_comment_id: reference_comment_id || null,
+            message_body_sent: messageBody
           }
         }),
         {
