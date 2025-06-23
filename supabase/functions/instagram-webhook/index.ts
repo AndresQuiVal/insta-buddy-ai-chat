@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -438,7 +437,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   // ===== 🆕 RESPONDER PÚBLICAMENTE AL COMENTARIO (SIEMPRE) =====
   console.log('💬 ENVIANDO REPLY PÚBLICO AL COMENTARIO...')
   
-  const publicReplyMessage = "Graciasss! te mandé por privado! 📩"
+  const publicReplyMessage = "¡Perfecto! Te escribo por privado con más info 📩"
   
   try {
     const replyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
@@ -477,15 +476,17 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  // ===== ENVIAR DM AUTOMÁTICO CON MEJOR MANEJO DE ERRORES =====
-  console.log('🚀 ENVIANDO DM AUTOMÁTICO POR COMENTARIO...')
+  // ===== 🚀 ENVIAR DM REFERENCIANDO EL COMENTARIO =====
+  console.log('🚀 ENVIANDO DM REFERENCIADO AL COMENTARIO...')
 
   try {
     const { data: dmResponse, error: dmError } = await supabase.functions.invoke('instagram-send-message', {
       body: {
         recipient_id: commenterId,
         message_text: selectedAutoresponder.dm_message,
-        instagram_user_id: instagramAccountId
+        instagram_user_id: instagramAccountId,
+        // 🆕 NUEVO: Referenciar el comentario específico
+        reference_comment_id: commentId
       }
     })
 
@@ -494,7 +495,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
       
       // 🆕 MANEJAR ERROR ESPECÍFICO DE VENTANA DE TIEMPO
       if (dmError.message && dmError.message.includes('outside of allowed window')) {
-        console.log('⏰ ERROR DE VENTANA DE TIEMPO - Usuario no ha interactuado recientemente')
+        console.log('⏰ ERROR DE VENTANA DE TIEMPO - Pero el DM referenciado podría funcionar')
         
         // Registrar el intento fallido pero continuar
         await supabase
@@ -509,7 +510,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
               media_id: mediaId,
               commenter_username: commenterUsername,
               public_reply_sent: publicReplyMessage,
-              error_type: 'outside_allowed_window',
+              error_type: 'outside_allowed_window_referenced',
               processed_at: new Date().toISOString()
             }
           })
@@ -539,7 +540,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
       return
     }
 
-    console.log('✅ DM AUTOMÁTICO ENVIADO POR COMENTARIO')
+    console.log('✅ DM REFERENCIADO AL COMENTARIO ENVIADO EXITOSAMENTE')
 
     // ===== REGISTRAR EN LOG (ÉXITO) =====
     await supabase
@@ -555,6 +556,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           commenter_username: commenterUsername,
           public_reply_sent: publicReplyMessage,
           dm_success: true,
+          comment_referenced: true,
           processed_at: new Date().toISOString()
         }
       })
@@ -582,237 +584,4 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   }
 
   console.log('✅ === COMENTARIO PROCESADO COMPLETAMENTE ===')
-}
-
-async function processMessage(messagingEvent: any, supabase: any, source: string) {
-  console.log(`📝 Procesando mensaje desde ${source}:`, JSON.stringify(messagingEvent, null, 2))
-  
-  const senderId = messagingEvent.sender?.id
-  const recipientId = messagingEvent.recipient?.id
-  const messageText = messagingEvent.message?.text
-  const timestamp = messagingEvent.timestamp ? new Date(parseInt(messagingEvent.timestamp) * 1000).toISOString() : new Date().toISOString()
-  const messageId = messagingEvent.message?.mid || `msg_${Date.now()}_${Math.random()}`
-  const isEcho = messagingEvent.message?.is_echo === true
-
-  console.log('🚀 === PROCESANDO MENSAJE ===')
-  console.log('👤 SENDER ID:', senderId)
-  console.log('🎯 RECIPIENT ID:', recipientId)
-  console.log('💬 MENSAJE:', messageText)
-  console.log('🔔 ES ECHO:', isEcho)
-  console.log('⏰ TIMESTAMP:', timestamp)
-  console.log('🆔 MESSAGE ID:', messageId)
-
-  if (!senderId || !recipientId || !messageText) {
-    console.log('❌ Datos insuficientes para procesar mensaje')
-    return
-  }
-
-  if (isEcho) {
-    console.log('⏭️ Es un echo - saltando')
-    return
-  }
-
-  console.log('🔄 Actualizando actividad del prospecto...')
-  try {
-    const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
-      p_prospect_id: senderId 
-    })
-    
-    if (activityError) {
-      console.error('❌ Error actualizando actividad:', activityError)
-    } else {
-      console.log('✅ Actividad del prospecto actualizada')
-    }
-  } catch (activityErr) {
-    console.error('💥 Error en update_prospect_activity:', activityErr)
-  }
-
-  console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====')
-
-  const { data: instagramUser, error: userError } = await supabase
-    .from('instagram_users')
-    .select('*')
-    .eq('is_active', true)
-    .limit(1)
-    .single()
-
-  if (userError || !instagramUser) {
-    console.error('❌ No se encontró ningún usuario de Instagram activo:', userError)
-    return
-  }
-
-  console.log('✅ Usuario de Instagram encontrado:', JSON.stringify(instagramUser, null, 2))
-
-  console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
-  
-  let prospectId;
-  try {
-    const { data: prospectResult, error: prospectError } = await supabase.rpc('create_or_update_prospect', {
-      p_instagram_user_id: instagramUser.id,
-      p_prospect_instagram_id: senderId,
-      p_username: `prospect_${senderId.slice(-8)}`,
-      p_profile_picture_url: null
-    })
-
-    if (prospectError) {
-      console.error('❌ Error creando prospecto:', prospectError)
-      return
-    }
-
-    prospectId = prospectResult
-    console.log('✅ Prospecto creado/actualizado con ID:', prospectId)
-    
-  } catch (prospectErr) {
-    console.error('💥 Error en create_or_update_prospect:', prospectErr)
-    return
-  }
-
-  try {
-    const { data: messageResult, error: messageError } = await supabase.rpc('add_prospect_message', {
-      p_prospect_id: prospectId,
-      p_message_instagram_id: messageId,
-      p_message_text: messageText,
-      p_is_from_prospect: true,
-      p_message_timestamp: timestamp,
-      p_message_type: 'text',
-      p_raw_data: messagingEvent
-    })
-
-    if (messageError) {
-      console.error('❌ Error guardando mensaje:', messageError)
-    } else {
-      console.log('✅ Mensaje del prospecto guardado en BD')
-    }
-  } catch (messageErr) {
-    console.error('💥 Error en add_prospect_message:', messageErr)
-  }
-
-  console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
-  console.log('📝 Texto:', messageText)
-
-  const isInvitation = messageText?.toLowerCase().includes('invitacion') || messageText?.toLowerCase().includes('invitación')
-  const isPresentation = messageText?.toLowerCase().includes('presentacion') || messageText?.toLowerCase().includes('presentación')
-  const isInscription = messageText?.toLowerCase().includes('inscripcion') || messageText?.toLowerCase().includes('inscripción')
-
-  const { error: saveError } = await supabase
-    .from('instagram_messages')
-    .insert({
-      instagram_user_id: instagramUser.id,
-      instagram_message_id: messageId,
-      sender_id: senderId,
-      recipient_id: recipientId,
-      message_text: messageText || '',
-      message_type: 'received',
-      timestamp: timestamp,
-      is_invitation: isInvitation,
-      is_presentation: isPresentation,
-      is_inscription: isInscription,
-      raw_data: {
-        ...messagingEvent,
-        webhook_source: source,
-        processed_at: new Date().toISOString()
-      }
-    })
-
-  if (saveError) {
-    console.error('❌ Error guardando mensaje en instagram_messages:', saveError)
-  } else {
-    console.log('✅ Mensaje guardado correctamente')
-  }
-
-  console.log('🔍 === OBTENIENDO AUTORESPONDERS ===')
-  
-  const { data: autoresponderResponse, error: autoresponderError } = await supabase.functions.invoke('get-autoresponders', {})
-
-  if (autoresponderError || !autoresponderResponse?.success) {
-    console.error('❌ Error obteniendo autoresponders:', autoresponderError)
-    return
-  }
-
-  const autoresponders = autoresponderResponse.autoresponders || []
-  console.log('✅ Autoresponders obtenidos:', autoresponders.length)
-
-  let selectedAutoresponder = null
-
-  for (const autoresponder of autoresponders) {
-    if (!autoresponder.use_keywords) {
-      selectedAutoresponder = autoresponder
-      break
-    }
-
-    const keywords = autoresponder.keywords || []
-    let hasMatch = false
-
-    for (const keyword of keywords) {
-      if (messageText?.toLowerCase().includes(keyword.toLowerCase())) {
-        hasMatch = true
-        break
-      }
-    }
-
-    if (hasMatch) {
-      selectedAutoresponder = autoresponder
-      break
-    }
-  }
-
-  if (!selectedAutoresponder) {
-    console.log('❌ No se encontró autoresponder que coincida')
-    return
-  }
-
-  console.log('🎯 AUTORESPONDER SELECCIONADO:', selectedAutoresponder.name)
-
-  const { data: alreadySent } = await supabase
-    .from('autoresponder_sent_log')
-    .select('*')
-    .eq('sender_id', senderId)
-    .eq('autoresponder_message_id', selectedAutoresponder.id)
-
-  if (selectedAutoresponder.send_only_first_message && alreadySent && alreadySent.length > 0) {
-    console.log('⏭️ Ya se envió este autoresponder - saltando')
-    return
-  }
-
-  console.log('🚀 ENVIANDO AUTORESPONDER...')
-
-  const { data, error } = await supabase.functions.invoke('instagram-send-message', {
-    body: {
-      recipient_id: senderId,
-      message_text: selectedAutoresponder.message_text,
-      instagram_user_id: recipientId
-    }
-  })
-
-  if (error) {
-    console.error('❌ Error enviando mensaje:', error)
-    return
-  }
-
-  console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
-
-  await supabase
-    .from('autoresponder_sent_log')
-    .insert({
-      autoresponder_message_id: selectedAutoresponder.id,
-      sender_id: senderId,
-      sent_at: new Date().toISOString()
-    })
-
-  try {
-    await supabase.rpc('add_prospect_message', {
-      p_prospect_id: prospectId,
-      p_message_instagram_id: data?.message_id || `auto_${Date.now()}`,
-      p_message_text: selectedAutoresponder.message_text,
-      p_is_from_prospect: false,
-      p_message_timestamp: new Date().toISOString(),
-      p_message_type: 'autoresponder',
-      p_raw_data: { autoresponder_id: selectedAutoresponder.id, sent_via: 'webhook' }
-    })
-    console.log('✅ Autoresponder guardado en prospect_messages')
-  } catch (autoMsgError) {
-    console.error('⚠️ Error guardando autoresponder en prospect_messages:', autoMsgError)
-  }
-
-  console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
 }
