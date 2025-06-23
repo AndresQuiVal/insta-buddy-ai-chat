@@ -279,17 +279,16 @@ const Beta: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
                   <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
-                    <wistia-player media-id="fe270kwf7n" aspect="0.7361963190184049" autoplay="true" loop="true"></wistia-player>
+                    <wistia-player media-id="fe270kwf7n" aspect="0.7361963190184049"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="space-y-6">
-                    <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center">
-                      <Brain className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-900">Sugerencias con IA</h3>
-                    <p className="text-xl text-gray-700 leading-relaxed">
-                      Resume conversaciones y sugiere próximos pasos para vender más.
+                  <div className="text-center lg:text-left">
+                    <h3 className="text-3xl font-bold text-gray-800 mb-6">
+                      🎯 Sugerencias de IA para cada prospecto
+                    </h3>
+                    <p className="text-lg text-gray-600 leading-relaxed">
+                      Nuestra IA analiza cada conversación y te sugiere exactamente qué decir para aumentar tus posibilidades de cerrar la venta.
                     </p>
                   </div>
                 </div>
@@ -299,17 +298,16 @@ const Beta: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
                   <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
-                    <wistia-player media-id="f9mwa4wrl9" aspect="0.7361963190184049" autoplay="true" loop="true"></wistia-player>
+                    <wistia-player media-id="f9mwa4wrl9" aspect="0.7361963190184049"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
-                  <div className="space-y-6">
-                    <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center">
-                      <Zap className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-900">Móvil</h3>
-                    <p className="text-xl text-gray-700 leading-relaxed">
-                      Configura mensajes desde tu celular, igual que en la web.
+                  <div className="text-center lg:text-left">
+                    <h3 className="text-3xl font-bold text-gray-800 mb-6">
+                      📱 Gestiona todo desde tu móvil
+                    </h3>
+                    <p className="text-lg text-gray-600 leading-relaxed">
+                      Accede a todas las funciones desde cualquier dispositivo. Responde mensajes, gestiona prospectos y monitorea métricas estés donde estés.
                     </p>
                   </div>
                 </div>
@@ -319,17 +317,16 @@ const Beta: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
                   <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
-                    <wistia-player media-id="x6zybq0h5n" aspect="0.6153846153846154" autoplay="true" loop="true"></wistia-player>
+                    <wistia-player media-id="x6zybq0h5n" aspect="0.6153846153846154"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="space-y-6">
-                    <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center">
-                      <TrendingUp className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-900">Tus números</h3>
-                    <p className="text-xl text-gray-700 leading-relaxed">
-                      ¿Sigues anotando en el cuaderno tus prospectos contactados? La IA te dará esos números y recomendaciones en automático por ti!
+                  <div className="text-center lg:text-left">
+                    <h3 className="text-3xl font-bold text-gray-800 mb-6">
+                      📊 Métricas que importan
+                    </h3>
+                    <p className="text-lg text-gray-600 leading-relaxed">
+                      Analiza tu rendimiento con métricas claras: tasa de respuesta, tiempo promedio de respuesta, conversiones por etapa y más.
                     </p>
                   </div>
                 </div>
@@ -339,17 +336,16 @@ const Beta: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
                   <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
-                    <wistia-player media-id="ihs01ndhd7" aspect="0.6153846153846154" autoplay="true" loop="true"></wistia-player>
+                    <wistia-player media-id="ihs01ndhd7" aspect="0.6153846153846154"></wistia-player>
                   </div>
                 </div>
                 <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
-                  <div className="space-y-6">
-                    <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center">
-                      <MessageSquare className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-900">Manychat</h3>
-                    <p className="text-xl text-gray-700 leading-relaxed">
-                      ¿Usas Manychat? Hower Assistant lo tiene! responde a tus seguidores y convierte.
+                  <div className="text-center lg:text-left">
+                    <h3 className="text-3xl font-bold text-gray-800 mb-6">
+                      🤖 Autoresponder inteligente
+                    </h3>
+                    <p className="text-lg text-gray-600 leading-relaxed">
+                      Configura respuestas automáticas personalizadas que se envían cuando alguien te escribe por primera vez, ahorrándote tiempo valioso.
                     </p>
                   </div>
                 </div>
