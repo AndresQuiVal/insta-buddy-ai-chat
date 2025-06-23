@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -421,18 +422,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
   console.log('🎯 AUTORESPONDER DE COMENTARIO SELECCIONADO:', selectedAutoresponder.name)
 
-  // ===== VERIFICAR SI YA SE ENVIÓ DM A ESTE USUARIO =====
-  const { data: alreadySent } = await supabase
-    .from('comment_autoresponder_log')
-    .select('*')
-    .eq('commenter_instagram_id', commenterId)
-    .eq('comment_autoresponder_id', selectedAutoresponder.id)
-
-  if (alreadySent && alreadySent.length > 0) {
-    console.log('⏭️ Ya se envió DM a este usuario para este autoresponder - saltando')
-    return
-  }
-
   // ===== BUSCAR USUARIO DE INSTAGRAM ACTIVO =====
   const { data: instagramUser, error: userError } = await supabase
     .from('instagram_users')
@@ -446,7 +435,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  // ===== 🆕 RESPONDER PÚBLICAMENTE AL COMENTARIO =====
+  // ===== 🆕 RESPONDER PÚBLICAMENTE AL COMENTARIO (SIEMPRE) =====
   console.log('💬 ENVIANDO REPLY PÚBLICO AL COMENTARIO...')
   
   const publicReplyMessage = "Graciasss! te mandé por privado! 📩"
@@ -474,6 +463,18 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     }
   } catch (replyError) {
     console.error('💥 Error en reply público:', replyError)
+  }
+
+  // ===== VERIFICAR SI YA SE ENVIÓ DM A ESTE USUARIO =====
+  const { data: alreadySent } = await supabase
+    .from('comment_autoresponder_log')
+    .select('*')
+    .eq('commenter_instagram_id', commenterId)
+    .eq('comment_autoresponder_id', selectedAutoresponder.id)
+
+  if (alreadySent && alreadySent.length > 0) {
+    console.log('⏭️ Ya se envió DM a este usuario para este autoresponder - saltando')
+    return
   }
 
   // ===== ENVIAR DM AUTOMÁTICO USANDO GRAPH.INSTAGRAM.COM =====
