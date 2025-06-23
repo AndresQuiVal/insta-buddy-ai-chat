@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -74,8 +73,8 @@ serve(async (req) => {
           for (const change of entry.changes) {
             console.log('📋 Change:', JSON.stringify(change, null, 2))
             
+            // PROCESAR MENSAJES DIRECTOS
             if (change.field === 'messages' && change.value) {
-              // Convertir el formato de change a formato messaging
               const messagingEvent = {
                 sender: change.value.sender,
                 recipient: change.value.recipient,
@@ -84,6 +83,11 @@ serve(async (req) => {
               }
               
               await processMessage(messagingEvent, supabase, 'changes')
+            }
+            // 🆕 PROCESAR COMENTARIOS
+            else if (change.field === 'comments' && change.value) {
+              console.log('💬 PROCESANDO COMENTARIO')
+              await processComment(change.value, supabase, entry.id)
             }
           }
         }
@@ -126,19 +130,16 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   console.log('⏰ TIMESTAMP:', timestamp)
   console.log('🆔 MESSAGE ID:', messageId)
 
-  // Validar datos mínimos
   if (!senderId || !recipientId || !messageText) {
     console.log('❌ Datos insuficientes para procesar mensaje')
     return
   }
 
-  // Skip si es un echo (mensaje que yo envié)
   if (isEcho) {
     console.log('⏭️ Es un echo - saltando')
     return
   }
 
-  // Actualizar actividad del prospecto
   console.log('🔄 Actualizando actividad del prospecto...')
   try {
     const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
@@ -154,10 +155,8 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.error('💥 Error en update_prospect_activity:', activityErr)
   }
 
-  // ===== BUSCAR USUARIO DE INSTAGRAM (CUALQUIER USUARIO ACTIVO) =====
   console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====')
 
-  // Tomar el primer usuario activo disponible (sin validaciones de ID)
   const { data: instagramUser, error: userError } = await supabase
     .from('instagram_users')
     .select('*')
@@ -172,7 +171,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
 
   console.log('✅ Usuario de Instagram encontrado:', JSON.stringify(instagramUser, null, 2))
 
-  // ===== CREAR O ACTUALIZAR PROSPECTO =====
   console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
   
   let prospectId;
@@ -197,7 +195,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     return
   }
 
-  // ===== GUARDAR MENSAJE DEL PROSPECTO =====
   try {
     const { data: messageResult, error: messageError } = await supabase.rpc('add_prospect_message', {
       p_prospect_id: prospectId,
@@ -218,7 +215,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.error('💥 Error en add_prospect_message:', messageErr)
   }
 
-  // ===== ANÁLISIS DEL MENSAJE =====
   console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
   console.log('📝 Texto:', messageText)
 
@@ -226,7 +222,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   const isPresentation = messageText?.toLowerCase().includes('presentacion') || messageText?.toLowerCase().includes('presentación')
   const isInscription = messageText?.toLowerCase().includes('inscripcion') || messageText?.toLowerCase().includes('inscripción')
 
-  // ===== GUARDAR MENSAJE EN INSTAGRAM_MESSAGES =====
   const { error: saveError } = await supabase
     .from('instagram_messages')
     .insert({
@@ -253,7 +248,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.log('✅ Mensaje guardado correctamente')
   }
 
-  // ===== OBTENER AUTORESPONDERS =====
   console.log('🔍 === OBTENIENDO AUTORESPONDERS ===')
   
   const { data: autoresponderResponse, error: autoresponderError } = await supabase.functions.invoke('get-autoresponders', {})
@@ -297,7 +291,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
 
   console.log('🎯 AUTORESPONDER SELECCIONADO:', selectedAutoresponder.name)
 
-  // Verificar si ya se envió autoresponder
   const { data: alreadySent } = await supabase
     .from('autoresponder_sent_log')
     .select('*')
@@ -309,7 +302,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     return
   }
 
-  // Enviar autoresponder
   console.log('🚀 ENVIANDO AUTORESPONDER...')
 
   const { data, error } = await supabase.functions.invoke('instagram-send-message', {
@@ -327,7 +319,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
 
   console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
 
-  // Registrar envío en log
   await supabase
     .from('autoresponder_sent_log')
     .insert({
@@ -336,7 +327,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
       sent_at: new Date().toISOString()
     })
 
-  // Guardar el autoresponder enviado también en prospect_messages
   try {
     await supabase.rpc('add_prospect_message', {
       p_prospect_id: prospectId,
@@ -353,4 +343,142 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   }
 
   console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
+}
+
+async function processComment(commentData: any, supabase: any, instagramAccountId: string) {
+  console.log('💬 ===== PROCESANDO COMENTARIO =====')
+  console.log('📋 Datos del comentario:', JSON.stringify(commentData, null, 2))
+
+  const commenterId = commentData.from?.id
+  const commenterUsername = commentData.from?.username
+  const commentText = commentData.text
+  const mediaId = commentData.media?.id
+  const commentId = commentData.id
+
+  console.log('👤 COMMENTER ID:', commenterId)
+  console.log('👤 COMMENTER USERNAME:', commenterUsername)
+  console.log('💬 COMMENT TEXT:', commentText)
+  console.log('📱 MEDIA ID:', mediaId)
+  console.log('🆔 COMMENT ID:', commentId)
+
+  if (!commenterId || !commentText || !mediaId) {
+    console.log('❌ Datos insuficientes para procesar comentario')
+    return
+  }
+
+  // ===== BUSCAR AUTORESPONDER DE COMENTARIOS QUE COINCIDA =====
+  console.log('🔍 ===== BUSCANDO AUTORESPONDER DE COMENTARIOS =====')
+
+  const { data: commentAutoresponders, error: autoresponderError } = await supabase
+    .from('comment_autoresponders')
+    .select('*')
+    .eq('is_active', true)
+    .eq('post_id', mediaId)
+
+  if (autoresponderError) {
+    console.error('❌ Error obteniendo comment autoresponders:', autoresponderError)
+    return
+  }
+
+  if (!commentAutoresponders || commentAutoresponders.length === 0) {
+    console.log('❌ No hay autoresponders de comentarios configurados para este post')
+    return
+  }
+
+  console.log('✅ Autoresponders encontrados:', commentAutoresponders.length)
+
+  // Buscar coincidencia con palabras clave
+  let selectedAutoresponder = null
+
+  for (const autoresponder of commentAutoresponders) {
+    const keywords = autoresponder.keywords || []
+    
+    // Si no tiene keywords, se aplica a todos los comentarios del post
+    if (keywords.length === 0) {
+      selectedAutoresponder = autoresponder
+      break
+    }
+
+    // Verificar coincidencia con keywords
+    let hasMatch = false
+    for (const keyword of keywords) {
+      if (commentText.toLowerCase().includes(keyword.toLowerCase())) {
+        hasMatch = true
+        break
+      }
+    }
+
+    if (hasMatch) {
+      selectedAutoresponder = autoresponder
+      break
+    }
+  }
+
+  if (!selectedAutoresponder) {
+    console.log('❌ No se encontró autoresponder que coincida con las palabras clave')
+    return
+  }
+
+  console.log('🎯 AUTORESPONDER DE COMENTARIO SELECCIONADO:', selectedAutoresponder.name)
+
+  // ===== VERIFICAR SI YA SE ENVIÓ DM A ESTE USUARIO =====
+  const { data: alreadySent } = await supabase
+    .from('comment_autoresponder_log')
+    .select('*')
+    .eq('commenter_instagram_id', commenterId)
+    .eq('comment_autoresponder_id', selectedAutoresponder.id)
+
+  if (alreadySent && alreadySent.length > 0) {
+    console.log('⏭️ Ya se envió DM a este usuario para este autoresponder - saltando')
+    return
+  }
+
+  // ===== BUSCAR USUARIO DE INSTAGRAM ACTIVO =====
+  const { data: instagramUser, error: userError } = await supabase
+    .from('instagram_users')
+    .select('*')
+    .eq('is_active', true)
+    .limit(1)
+    .single()
+
+  if (userError || !instagramUser) {
+    console.error('❌ No se encontró usuario de Instagram activo:', userError)
+    return
+  }
+
+  // ===== ENVIAR DM AUTOMÁTICO USANDO GRAPH.INSTAGRAM.COM =====
+  console.log('🚀 ENVIANDO DM AUTOMÁTICO POR COMENTARIO...')
+
+  const { data: dmResponse, error: dmError } = await supabase.functions.invoke('instagram-send-message', {
+    body: {
+      recipient_id: commenterId,
+      message_text: selectedAutoresponder.dm_message,
+      instagram_user_id: instagramAccountId
+    }
+  })
+
+  if (dmError) {
+    console.error('❌ Error enviando DM automático:', dmError)
+    return
+  }
+
+  console.log('✅ DM AUTOMÁTICO ENVIADO POR COMENTARIO')
+
+  // ===== REGISTRAR EN LOG =====
+  await supabase
+    .from('comment_autoresponder_log')
+    .insert({
+      comment_autoresponder_id: selectedAutoresponder.id,
+      commenter_instagram_id: commenterId,
+      comment_text: commentText,
+      dm_message_sent: selectedAutoresponder.dm_message,
+      webhook_data: {
+        comment_id: commentId,
+        media_id: mediaId,
+        commenter_username: commenterUsername,
+        processed_at: new Date().toISOString()
+      }
+    })
+
+  console.log('✅ === COMENTARIO PROCESADO COMPLETAMENTE ===')
 }
