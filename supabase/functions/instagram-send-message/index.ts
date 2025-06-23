@@ -59,8 +59,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           error: 'token_not_found',
-          message: 'No se encontró token para este usuario de Instagram',
-          debug_info: { userError, instagram_user_id }
+          message: 'No se encontró token para este usuario de Instagram'
         }),
         {
           status: 404,
@@ -71,46 +70,38 @@ serve(async (req) => {
 
     const accessToken = userData.access_token
     console.log('✅ Token encontrado para usuario:', userData.username)
-    console.log('🔑 Token length:', accessToken.length)
 
-    // Obtener el ID de Instagram del usuario
-    const instagramResponse = await fetch(`https://graph.instagram.com/me?fields=id&access_token=${accessToken}`)
-    const instagramData = await instagramResponse.json()
+    // Verificar validez del token antes de usar
+    console.log('🔍 Verificando validez del token...')
+    const tokenTestResponse = await fetch(`https://graph.instagram.com/me?access_token=${accessToken}`)
+    const tokenTestData = await tokenTestResponse.json()
 
-    if (instagramData.error) {
-      console.error('❌ Error obteniendo ID de Instagram:', instagramData.error)
+    if (tokenTestData.error) {
+      console.error('❌ Token inválido:', tokenTestData.error)
       return new Response(
         JSON.stringify({
-          error: 'instagram_api_error',
-          message: 'Error obteniendo ID de Instagram',
-          debug_info: { instagramData }
+          error: 'invalid_token',
+          message: 'Token de Instagram inválido o expirado',
+          debug_info: { token_error: tokenTestData.error }
         }),
         {
-          status: 400,
+          status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
-    const instagramId = instagramData.id
-    console.log('✅ ID de Instagram obtenido:', instagramId)
+    const instagramId = tokenTestData.id
+    console.log('✅ Token válido - ID:', instagramId)
 
-    // Construir el cuerpo del mensaje
-    const messageBody: any = {
+    // Construir el cuerpo del mensaje (FORMATO SIMPLE)
+    const messageBody = {
       recipient: { id: recipient_id },
       message: { text: message_text }
     }
 
-    // 🆕 NUEVO: Para DMs referenciados a comentarios, usar un formato diferente
-    if (reference_comment_id) {
-      console.log('💬 Enviando DM referenciado al comentario:', reference_comment_id)
-      // Intentar con el formato correcto para comentarios referenciados
-      messageBody.context = {
-        comment_id: reference_comment_id
-      }
-    }
-    // Agregar reply_to si se proporciona (para reply a mensajes normales)
-    else if (reply_to_message_id) {
+    // Solo agregar reply_to para mensajes normales (no comentarios)
+    if (reply_to_message_id && !reference_comment_id) {
       messageBody.message.reply_to = { mid: reply_to_message_id }
     }
 
@@ -133,6 +124,26 @@ serve(async (req) => {
 
     if (responseData.error) {
       console.error('❌ Error enviando mensaje:', responseData.error)
+      
+      // Manejar error específico de ventana de tiempo
+      if (responseData.error.message && responseData.error.message.includes('outside of allowed window')) {
+        console.log('⏰ Mensaje fuera de ventana permitida - es normal para DMs automáticos')
+        return new Response(
+          JSON.stringify({
+            error: 'outside_allowed_window',
+            message: 'Mensaje fuera de ventana de 24h - Instagram no permite DMs automáticos fuera de este período',
+            debug_info: {
+              instagram_error: responseData.error,
+              can_send_via_comment_reference: reference_comment_id ? true : false
+            }
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+      
       return new Response(
         JSON.stringify({
           error: 'send_message_failed',
@@ -141,7 +152,6 @@ serve(async (req) => {
             instagram_error: responseData.error,
             status: response.status,
             instagramId,
-            reference_comment_id: reference_comment_id || null,
             message_body_sent: messageBody
           }
         }),
@@ -154,16 +164,12 @@ serve(async (req) => {
 
     console.log('✅ Mensaje enviado exitosamente')
     console.log('🆔 Message ID:', responseData.message_id)
-    if (reference_comment_id) {
-      console.log('🔗 Referenciado al comentario:', reference_comment_id)
-    }
 
     return new Response(
       JSON.stringify({
         success: true,
         message_id: responseData.message_id,
         recipient_id: responseData.recipient_id || recipient_id,
-        referenced_comment: reference_comment_id || null,
         debug_info: {
           instagramId,
           username: userData.username
@@ -180,8 +186,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: 'internal_error',
-        message: error.message,
-        debug_info: { error: error.toString() }
+        message: error.message
       }),
       {
         status: 500,

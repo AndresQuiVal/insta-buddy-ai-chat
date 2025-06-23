@@ -434,34 +434,42 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  // ===== 🆕 RESPONDER PÚBLICAMENTE AL COMENTARIO (SIEMPRE) =====
-  console.log('💬 ENVIANDO REPLY PÚBLICO AL COMENTARIO...')
-  
-  const publicReplyMessage = "¡Perfecto! Te escribo por privado con más info 📩"
-  
+  console.log('✅ Usuario encontrado:', instagramUser.username)
+
+  // ===== VERIFICAR TOKEN ANTES DE USAR =====
+  console.log('🔍 Verificando validez del token...')
   try {
-    const replyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${instagramUser.access_token}`
-      },
-      body: JSON.stringify({
-        message: publicReplyMessage
-      })
-    })
-
-    const replyData = await replyResponse.json()
-    console.log('📨 Respuesta del reply público:', JSON.stringify(replyData, null, 2))
-
-    if (replyData.error) {
-      console.error('❌ Error enviando reply público:', replyData.error)
-    } else {
-      console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE')
-      console.log('🆔 Reply ID:', replyData.id)
+    const tokenTestResponse = await fetch(`https://graph.instagram.com/me?access_token=${instagramUser.access_token}`)
+    const tokenTestData = await tokenTestResponse.json()
+    
+    if (tokenTestData.error) {
+      console.error('❌ Token inválido:', tokenTestData.error)
+      console.log('⚠️ Saltando procesamiento por token inválido')
+      
+      // Registrar el error pero continuar
+      await supabase
+        .from('comment_autoresponder_log')
+        .insert({
+          comment_autoresponder_id: selectedAutoresponder.id,
+          commenter_instagram_id: commenterId,
+          comment_text: commentText,
+          dm_message_sent: `TOKEN_ERROR: ${tokenTestData.error.message}`,
+          webhook_data: {
+            comment_id: commentId,
+            media_id: mediaId,
+            commenter_username: commenterUsername,
+            error_type: 'invalid_token',
+            processed_at: new Date().toISOString()
+          }
+        })
+      
+      return
     }
-  } catch (replyError) {
-    console.error('💥 Error en reply público:', replyError)
+    
+    console.log('✅ Token válido para usuario:', tokenTestData.name || tokenTestData.id)
+  } catch (tokenError) {
+    console.error('❌ Error verificando token:', tokenError)
+    return
   }
 
   // ===== VERIFICAR SI YA SE ENVIÓ DM A ESTE USUARIO =====
@@ -476,8 +484,8 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  // ===== 🚀 ENVIAR DM REFERENCIANDO EL COMENTARIO =====
-  console.log('🚀 ENVIANDO DM REFERENCIADO AL COMENTARIO...')
+  // ===== ENVIAR SOLO DM (SIN REPLY PÚBLICO) =====
+  console.log('🚀 ENVIANDO SOLO DM PRIVADO...')
 
   try {
     const { data: dmResponse, error: dmError } = await supabase.functions.invoke('instagram-send-message', {
@@ -485,41 +493,15 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         recipient_id: commenterId,
         message_text: selectedAutoresponder.dm_message,
         instagram_user_id: instagramAccountId,
-        // 🆕 NUEVO: Referenciar el comentario específico
-        reference_comment_id: commentId
+        // 🆕 INTENTAR SIN REFERENCIA AL COMENTARIO PRIMERO
+        // reference_comment_id: commentId
       }
     })
 
     if (dmError) {
-      console.error('❌ Error enviando DM automático:', dmError)
+      console.error('❌ Error enviando DM:', dmError)
       
-      // 🆕 MANEJAR ERROR ESPECÍFICO DE VENTANA DE TIEMPO
-      if (dmError.message && dmError.message.includes('outside of allowed window')) {
-        console.log('⏰ ERROR DE VENTANA DE TIEMPO - Pero el DM referenciado podría funcionar')
-        
-        // Registrar el intento fallido pero continuar
-        await supabase
-          .from('comment_autoresponder_log')
-          .insert({
-            comment_autoresponder_id: selectedAutoresponder.id,
-            commenter_instagram_id: commenterId,
-            comment_text: commentText,
-            dm_message_sent: `ERROR: ${dmError.message}`,
-            webhook_data: {
-              comment_id: commentId,
-              media_id: mediaId,
-              commenter_username: commenterUsername,
-              public_reply_sent: publicReplyMessage,
-              error_type: 'outside_allowed_window_referenced',
-              processed_at: new Date().toISOString()
-            }
-          })
-        
-        console.log('📊 Error registrado - el proceso continúa normalmente')
-        return
-      }
-      
-      // Para otros errores, también registrar pero continuar
+      // Registrar el error
       await supabase
         .from('comment_autoresponder_log')
         .insert({
@@ -531,7 +513,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
             comment_id: commentId,
             media_id: mediaId,
             commenter_username: commenterUsername,
-            public_reply_sent: publicReplyMessage,
             error_type: 'dm_send_failed',
             processed_at: new Date().toISOString()
           }
@@ -540,7 +521,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
       return
     }
 
-    console.log('✅ DM REFERENCIADO AL COMENTARIO ENVIADO EXITOSAMENTE')
+    console.log('✅ DM ENVIADO EXITOSAMENTE (SIN REFERENCIA)')
 
     // ===== REGISTRAR EN LOG (ÉXITO) =====
     await supabase
@@ -554,9 +535,8 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           comment_id: commentId,
           media_id: mediaId,
           commenter_username: commenterUsername,
-          public_reply_sent: publicReplyMessage,
           dm_success: true,
-          comment_referenced: true,
+          comment_referenced: false,
           processed_at: new Date().toISOString()
         }
       })
@@ -564,7 +544,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   } catch (dmException) {
     console.error('💥 Excepción enviando DM:', dmException)
     
-    // Registrar la excepción también
+    // Registrar la excepción
     await supabase
       .from('comment_autoresponder_log')
       .insert({
@@ -576,7 +556,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           comment_id: commentId,
           media_id: mediaId,
           commenter_username: commenterUsername,
-          public_reply_sent: publicReplyMessage,
           error_type: 'dm_exception',
           processed_at: new Date().toISOString()
         }
