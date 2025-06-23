@@ -13,14 +13,15 @@ serve(async (req) => {
   }
 
   try {
-    const { recipient_id, message_text, reply_to_message_id, instagram_user_id } = await req.json()
+    const { recipient_id, message_text, reply_to_message_id, instagram_user_id, reference_comment_id } = await req.json()
 
     console.log('🚀 Instagram Send Message Edge Function iniciada')
     console.log('📝 Parámetros recibidos:', {
       recipient_id,
       message_text: message_text?.substring(0, 50) + '...',
       reply_to_message_id,
-      instagram_user_id
+      instagram_user_id,
+      reference_comment_id
     })
 
     // Validar parámetros requeridos
@@ -100,8 +101,13 @@ serve(async (req) => {
       message: { text: message_text }
     }
 
-    // Agregar reply_to si se proporciona
-    if (reply_to_message_id) {
+    // 🆕 NUEVO: Agregar referencia al comentario si está disponible
+    if (reference_comment_id) {
+      console.log('💬 Enviando DM referenciado al comentario:', reference_comment_id)
+      messageBody.message.reply_to = { comment_id: reference_comment_id }
+    }
+    // Agregar reply_to si se proporciona (para reply a mensajes normales)
+    else if (reply_to_message_id) {
       messageBody.message.reply_to = { mid: reply_to_message_id }
     }
 
@@ -131,7 +137,8 @@ serve(async (req) => {
           debug_info: {
             instagram_error: responseData.error,
             status: response.status,
-            instagramId
+            instagramId,
+            reference_comment_id: reference_comment_id || null
           }
         }),
         {
@@ -143,12 +150,16 @@ serve(async (req) => {
 
     console.log('✅ Mensaje enviado exitosamente')
     console.log('🆔 Message ID:', responseData.message_id)
+    if (reference_comment_id) {
+      console.log('🔗 Referenciado al comentario:', reference_comment_id)
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         message_id: responseData.message_id,
         recipient_id: responseData.recipient_id || recipient_id,
+        referenced_comment: reference_comment_id || null,
         debug_info: {
           instagramId,
           username: userData.username
