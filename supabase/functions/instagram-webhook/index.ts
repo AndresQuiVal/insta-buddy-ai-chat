@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -460,10 +461,10 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
-    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/v17.0/${commentId}/replies`)
+    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/v23.0/${commentId}/replies`)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/v17.0/${commentId}/replies?message=${encodeURIComponent(publicReplyMessage)}&access_token=${accessToken}`, {
+    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies?message=${encodeURIComponent(publicReplyMessage)}&access_token=${accessToken}`, {
       method: 'POST'
     })
 
