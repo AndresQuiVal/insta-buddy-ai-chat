@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -461,28 +460,65 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
-    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/v23.0/${commentId}/replies`)
+    // PRIMER INTENTO: Instagram API con POST body
+    console.log('🎯 URL Reply Público (Instagram):', `https://graph.instagram.com/v23.0/${commentId}/replies`)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies?message=${encodeURIComponent(publicReplyMessage)}&access_token=${accessToken}`, {
-      method: 'POST'
+    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: publicReplyMessage,
+        access_token: accessToken
+      })
     })
 
     const publicReplyData = await publicReplyResponse.json()
-    console.log('📨 Respuesta Reply Público:', JSON.stringify(publicReplyData, null, 2))
+    console.log('📨 Respuesta Reply Público (Instagram):', JSON.stringify(publicReplyData, null, 2))
 
     if (publicReplyData.error) {
-      console.log('⚠️ No se pudo enviar reply público (permisos insuficientes):', publicReplyData.error.message)
-      publicReplyError = publicReplyData.error
+      console.log('⚠️ Fallo Instagram API, intentando con Facebook API...')
+      
+      // SEGUNDO INTENTO: Facebook API con POST body
+      console.log('🎯 URL Reply Público (Facebook):', `https://graph.facebook.com/v23.0/${commentId}/replies`)
+      
+      const facebookReplyResponse = await fetch(`https://graph.facebook.com/v23.0/${commentId}/replies`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: publicReplyMessage,
+          access_token: accessToken
+        })
+      })
+
+      const facebookReplyData = await facebookReplyResponse.json()
+      console.log('📨 Respuesta Reply Público (Facebook):', JSON.stringify(facebookReplyData, null, 2))
+
+      if (facebookReplyData.error) {
+        console.log('⚠️ Ambos APIs fallaron - continuando con private reply')
+        publicReplyError = {
+          instagram_error: publicReplyData.error,
+          facebook_error: facebookReplyData.error
+        }
+      } else {
+        console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE (Facebook API)')
+        console.log('🆔 Reply ID:', facebookReplyData.id)
+        publicReplySuccess = true
+        publicReplyId = facebookReplyData.id
+      }
     } else {
-      console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE')
+      console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE (Instagram API)')
       console.log('🆔 Reply ID:', publicReplyData.id)
       publicReplySuccess = true
       publicReplyId = publicReplyData.id
     }
 
   } catch (publicException) {
-    console.log('⚠️ Excepción en reply público (continuando con private reply):', publicException.message)
+    console.log('⚠️ Excepción en reply público:', publicException.message)
     publicReplyError = { message: publicException.message }
   }
 
@@ -556,7 +592,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     if (publicReplySuccess) {
       console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados')
     } else {
-      console.log('⚠️ PROCESAMIENTO PARCIAL: Solo private reply enviado (public reply falló por permisos)')
+      console.log('⚠️ PROCESAMIENTO PARCIAL: Solo private reply enviado (public reply falló)')
     }
 
   } catch (replyException) {
