@@ -80,31 +80,36 @@ export const initiateInstagramAuth = (
 };
 
 /**
- * Suscribe la app a webhooks de Instagram
+ * Suscribe la app a webhooks de Instagram usando Supabase Edge Function
  */
 export const subscribeToInstagramWebhooks = async (instagramUserId: string, accessToken: string) => {
   try {
-    console.log("🔔 Suscribiendo a webhooks de Instagram...");
+    console.log("🔔 Suscribiendo a webhooks de Instagram usando Edge Function...");
     console.log("Instagram User ID:", instagramUserId);
     
-    const response = await fetch(`https://graph.instagram.com/v22.0/${instagramUserId}/subscribed_apps`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: new URLSearchParams({
-        'subscribed_fields': 'messages,comments'
-      })
-    });
+    // Llamar a Supabase Edge Function para suscribir webhooks
+    const { data, error } = await supabase.functions.invoke(
+      "instagram-subscribe-webhooks",
+      {
+        body: {
+          instagram_user_id: instagramUserId,
+          access_token: accessToken,
+        },
+      }
+    );
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("❌ Error suscribiendo a webhooks:", errorData);
-      throw new Error(errorData.error?.message || "Error suscribiendo a webhooks");
+    console.log("📨 Respuesta de edge function:", { data, error });
+
+    if (error) {
+      console.error("❌ Error desde edge function:", error);
+      throw new Error(error.message || "Error suscribiendo a webhooks");
     }
 
-    const data = await response.json();
+    if (data?.error || !data?.success) {
+      console.error("❌ Error en respuesta de edge function:", data);
+      throw new Error(data?.error || "Error suscribiendo a webhooks");
+    }
+
     console.log("✅ Suscripción a webhooks exitosa:", data);
     
     toast({
@@ -112,7 +117,7 @@ export const subscribeToInstagramWebhooks = async (instagramUserId: string, acce
       description: "Tu cuenta está configurada para recibir notificaciones en tiempo real",
     });
 
-    return { success: true, data };
+    return { success: true, data: data.data };
   } catch (error) {
     console.error("💥 Error en subscribeToInstagramWebhooks:", error);
     const errorMessage = error instanceof Error ? error.message : "Error desconocido";
