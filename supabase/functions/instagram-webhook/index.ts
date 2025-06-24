@@ -483,7 +483,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     formData.append('message', publicReplyMessage)
     formData.append('access_token', accessToken)
 
-    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/v23.0/${commentId}/replies`)
+    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/${commentId}/replies`)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
     console.log('🔑 Access Token presente:', accessToken ? 'SÍ' : 'NO')
     console.log('🔑 Access Token (primeros 20 chars):', accessToken ? accessToken.substring(0, 20) + '...' : 'NO')
@@ -494,7 +494,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
       console.log(`  ${key}: ${key === 'access_token' ? value.substring(0, 20) + '...' : value}`)
     }
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
+    const publicReplyResponse = await fetch(`https://graph.instagram.com/${commentId}/replies`, {
       method: 'POST',
       body: formData,
       // NO establecer Content-Type manualmente - dejar que FormData lo maneje
@@ -532,10 +532,10 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
       params.append('message', publicReplyMessage)
       params.append('access_token', accessToken)
 
-      console.log('🎯 URL Reply Público (alternativa):', `https://graph.instagram.com/v23.0/${commentId}/replies`)
+      console.log('🎯 URL Reply Público (alternativa):', `https://graph.instagram.com/${commentId}/replies`)
       console.log('📋 Parámetros:', params.toString().replace(accessToken, accessToken.substring(0, 20) + '...'))
 
-      const alternativeResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
+      const alternativeResponse = await fetch(`https://graph.instagram.com/${commentId}/replies`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -585,11 +585,11 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         ''
       ].join('\r\n')
 
-      console.log('🎯 URL Reply Público (curl exacto):', `https://graph.instagram.com/v23.0/${commentId}/replies`)
+      console.log('🎯 URL Reply Público (curl exacto):', `https://graph.instagram.com/${commentId}/replies`)
       console.log('📋 Boundary:', boundary)
       console.log('📋 Body length:', body.length)
 
-      const curlExactResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
+      const curlExactResponse = await fetch(`https://graph.instagram.com/${commentId}/replies`, {
         method: 'POST',
         headers: {
           'Content-Type': `multipart/form-data; boundary=${boundary}`,
