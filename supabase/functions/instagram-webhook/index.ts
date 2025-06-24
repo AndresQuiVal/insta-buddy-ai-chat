@@ -462,7 +462,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   try {
     const replyUrl = `https://graph.facebook.com/v17.0/${commentId}/replies?message=${encodeURIComponent(publicReplyMessage)}&access_token=${accessToken}`
     
-    console.log('🎯 URL Reply Público:', replyUrl)
+    console.log('🎯 URL Reply Público (CORREGIDA):', replyUrl)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
 
     const publicReplyResponse = await fetch(replyUrl, {
