@@ -80,6 +80,54 @@ export const initiateInstagramAuth = (
 };
 
 /**
+ * Suscribe la app a webhooks de Instagram
+ */
+export const subscribeToInstagramWebhooks = async (instagramUserId: string, accessToken: string) => {
+  try {
+    console.log("🔔 Suscribiendo a webhooks de Instagram...");
+    console.log("Instagram User ID:", instagramUserId);
+    
+    const response = await fetch(`https://graph.instagram.com/v22.0/${instagramUserId}/subscribed_apps`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: new URLSearchParams({
+        'subscribed_fields': 'messages,comments'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("❌ Error suscribiendo a webhooks:", errorData);
+      throw new Error(errorData.error?.message || "Error suscribiendo a webhooks");
+    }
+
+    const data = await response.json();
+    console.log("✅ Suscripción a webhooks exitosa:", data);
+    
+    toast({
+      title: "¡Webhooks activados!",
+      description: "Tu cuenta está configurada para recibir notificaciones en tiempo real",
+    });
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("💥 Error en subscribeToInstagramWebhooks:", error);
+    const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+    
+    toast({
+      title: "Error configurando webhooks",
+      description: errorMessage,
+      variant: "destructive",
+    });
+
+    return { success: false, error: errorMessage };
+  }
+};
+
+/**
  * Verifica si hay una conexión activa a Instagram
  */
 export const checkInstagramConnection = (): boolean => {
@@ -207,6 +255,15 @@ export const handleInstagramCallback = async (code: string) => {
 
     console.log("Token y datos de usuario guardados exitosamente");
     console.log("Usuario conectado:", userData);
+
+    // 🔔 SUSCRIBIR A WEBHOOKS DESPUÉS DE AUTENTICACIÓN EXITOSA
+    const instagramUserId = userData.instagram.id;
+    if (instagramUserId && token) {
+      console.log("🔔 Iniciando suscripción a webhooks...");
+      await subscribeToInstagramWebhooks(instagramUserId, token);
+    } else {
+      console.warn("⚠️ No se pudo suscribir a webhooks: falta ID o token");
+    }
 
     // Determinar qué nombre mostrar
     const displayName = userData.instagram?.username
