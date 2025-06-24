@@ -70,7 +70,9 @@ const AutoresponderManager: React.FC = () => {
     try {
       setLoading(true);
       console.log('🔍 Cargando autoresponders para usuario:', currentUser.username);
+      console.log('🔍 Instagram User ID del usuario actual:', currentUser.instagram_user_id);
 
+      // CORREGIDO: Filtrar por instagram_user_id_ref que coincida con el usuario actual
       const { data, error } = await supabase
         .from('autoresponder_messages')
         .select('*')
@@ -82,7 +84,13 @@ const AutoresponderManager: React.FC = () => {
         throw error;
       }
 
-      console.log('✅ Autoresponders cargados:', data?.length || 0);
+      console.log('✅ Autoresponders cargados para usuario específico:', data?.length || 0);
+      console.log('📊 Detalle de autoresponders del usuario:', data?.map(ar => ({
+        id: ar.id,
+        name: ar.name,
+        instagram_user_id_ref: ar.instagram_user_id_ref
+      })));
+      
       setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -100,8 +108,9 @@ const AutoresponderManager: React.FC = () => {
     if (!currentUser) return;
     
     try {
-      console.log('🔍 Cargando autoresponders de comentarios');
+      console.log('🔍 Cargando autoresponders de comentarios para usuario:', currentUser.username);
 
+      // TODO: Agregar filtrado por usuario cuando se implemente la columna correspondiente
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .select('*')
