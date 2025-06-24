@@ -6,7 +6,7 @@ const INSTAGRAM_APP_ID = "1059372749433300"; // Instagram App ID principal
 const INSTAGRAM_REDIRECT_URI =
   window.location.origin + "/auth/instagram/callback";
 const INSTAGRAM_SCOPE =
-  "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish"; // Nuevos permisos para Graph API
+  "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments"; // Permisos sin content_publish
 
 export interface InstagramAuthConfig {
   clientId: string;
