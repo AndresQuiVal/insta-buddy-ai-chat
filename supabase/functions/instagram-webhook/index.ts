@@ -456,61 +456,32 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   let publicReplyId = null
   let publicReplyError = null
 
-  // ===== 🆕 INTENTAR ENVIAR REPLY PÚBLICO AL COMENTARIO =====
+  // ===== 🆕 ENVIAR REPLY PÚBLICO CON FORM DATA =====
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
-    // PRIMER INTENTO: Instagram API con formato correcto según documentación
-    console.log('🎯 URL Reply Público (Instagram):', `https://graph.instagram.com/v23.0/${commentId}/replies?access_token=${accessToken}`)
-    console.log('💬 Mensaje Reply:', publicReplyMessage)
+    // Crear FormData para enviar como form data (como en tu curl exitoso)
+    const formData = new FormData()
+    formData.append('message', publicReplyMessage)
+    formData.append('access_token', accessToken)
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies?message=holaa&access_token=${accessToken}`, {
+    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/v23.0/${commentId}/replies`)
+    console.log('💬 Mensaje Reply:', publicReplyMessage)
+    console.log('🔑 Access Token presente:', accessToken ? 'SÍ' : 'NO')
+
+    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: "holaa",
-        access_token: accessToken
-      })
+      body: formData
     })
 
     const publicReplyData = await publicReplyResponse.json()
-    console.log('📨 Respuesta Reply Público (Instagram):', JSON.stringify(publicReplyData, null, 2))
+    console.log('📨 Respuesta Reply Público:', JSON.stringify(publicReplyData, null, 2))
 
     if (publicReplyData.error) {
-      console.log('⚠️ Fallo Instagram API, intentando con Facebook API...')
-      
-      // SEGUNDO INTENTO: Facebook API con mismo formato
-      console.log('🎯 URL Reply Público (Facebook):', `https://graph.facebook.com/v23.0/${commentId}/replies?access_token=${accessToken}`)
-      
-      const facebookReplyResponse = await fetch(`https://graph.facebook.com/v23.0/${commentId}/replies?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: publicReplyMessage
-        })
-      })
-
-      const facebookReplyData = await facebookReplyResponse.json()
-      console.log('📨 Respuesta Reply Público (Facebook):', JSON.stringify(facebookReplyData, null, 2))
-
-      if (facebookReplyData.error) {
-        console.log('⚠️ Ambos APIs fallaron - continuando con private reply')
-        publicReplyError = {
-          instagram_error: publicReplyData.error,
-          facebook_error: facebookReplyData.error
-        }
-      } else {
-        console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE (Facebook API)')
-        console.log('🆔 Reply ID:', facebookReplyData.id)
-        publicReplySuccess = true
-        publicReplyId = facebookReplyData.id
-      }
+      console.log('⚠️ Error en reply público:', publicReplyData.error)
+      publicReplyError = publicReplyData.error
     } else {
-      console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE (Instagram API)')
+      console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE')
       console.log('🆔 Reply ID:', publicReplyData.id)
       publicReplySuccess = true
       publicReplyId = publicReplyData.id
