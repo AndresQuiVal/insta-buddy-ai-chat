@@ -460,14 +460,11 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
-    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/${commentId}/replies`)
+    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/v17.0/${commentId}/replies`)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/${commentId}/replies?message=${encodeURIComponent(publicReplyMessage)}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+    const publicReplyResponse = await fetch(`https://graph.instagram.com/v17.0/${commentId}/replies?message=${encodeURIComponent(publicReplyMessage)}&access_token=${accessToken}`, {
+      method: 'POST'
     })
 
     const publicReplyData = await publicReplyResponse.json()
