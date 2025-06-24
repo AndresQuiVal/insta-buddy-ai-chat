@@ -3,48 +3,32 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 
 const AutoresponderDebug: React.FC = () => {
-  const [userData, setUserData] = useState<any>(null);
+  const { currentUser } = useInstagramUsers();
   const [autoresponders, setAutoresponders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const checkUserAutoresponders = async () => {
+    if (!currentUser) {
+      setError('No hay usuario autenticado');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     
     try {
-      console.log('🔍 Buscando usuario: qroz.fitness');
-      
-      // Buscar usuario por username
-      const { data: user, error: userError } = await supabase
-        .from('instagram_users')
-        .select('*')
-        .eq('username', 'qroz.fitness')
-        .single();
+      console.log('🔍 Buscando autoresponders para usuario:', currentUser.username);
+      console.log('🔍 Instagram User ID del usuario actual:', currentUser.instagram_user_id);
 
-      if (userError) {
-        console.error('❌ Error buscando usuario:', userError);
-        setError(`Error buscando usuario: ${userError.message}`);
-        return;
-      }
-
-      if (!user) {
-        setError('Usuario qroz.fitness no encontrado');
-        return;
-      }
-
-      console.log('✅ Usuario encontrado:', user);
-      setUserData(user);
-
-      // Buscar autoresponders del usuario
-      console.log('🔍 Buscando autoresponders para instagram_user_id:', user.instagram_user_id);
-      
+      // CORREGIDO: Buscar autoresponders por instagram_user_id_ref que coincida con el usuario actual
       const { data: userAutoresponders, error: autoresponderError } = await supabase
         .from('autoresponder_messages')
         .select('*')
-        .eq('instagram_user_id_ref', user.instagram_user_id)
+        .eq('instagram_user_id_ref', currentUser.instagram_user_id)
         .order('created_at', { ascending: false });
 
       if (autoresponderError) {
@@ -65,14 +49,31 @@ const AutoresponderDebug: React.FC = () => {
   };
 
   useEffect(() => {
-    checkUserAutoresponders();
-  }, []);
+    if (currentUser) {
+      checkUserAutoresponders();
+    }
+  }, [currentUser]);
+
+  if (!currentUser) {
+    return (
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No hay usuario de Instagram autenticado
+          </h3>
+          <p className="text-gray-600 text-center">
+            Debes conectar tu cuenta de Instagram para ver los autoresponders
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Debug: Autoresponders de qroz.fitness</CardTitle>
+          <CardTitle>Debug: Autoresponders de {currentUser.username}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={checkUserAutoresponders} disabled={loading}>
@@ -85,18 +86,16 @@ const AutoresponderDebug: React.FC = () => {
             </div>
           )}
 
-          {userData && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Datos del Usuario:</h3>
-              <div className="bg-gray-100 p-3 rounded text-sm">
-                <p><strong>ID:</strong> {userData.id}</p>
-                <p><strong>Username:</strong> {userData.username}</p>
-                <p><strong>Instagram User ID:</strong> {userData.instagram_user_id}</p>
-                <p><strong>Is Active:</strong> {userData.is_active ? 'Sí' : 'No'}</p>
-                <p><strong>Created:</strong> {new Date(userData.created_at).toLocaleString()}</p>
-              </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Datos del Usuario Actual:</h3>
+            <div className="bg-gray-100 p-3 rounded text-sm">
+              <p><strong>ID:</strong> {currentUser.id}</p>
+              <p><strong>Username:</strong> {currentUser.username}</p>
+              <p><strong>Instagram User ID:</strong> {currentUser.instagram_user_id}</p>
+              <p><strong>Is Active:</strong> {currentUser.is_active ? 'Sí' : 'No'}</p>
+              <p><strong>Created:</strong> {new Date(currentUser.created_at).toLocaleString()}</p>
             </div>
-          )}
+          </div>
 
           <div className="space-y-2">
             <h3 className="text-lg font-semibold">
