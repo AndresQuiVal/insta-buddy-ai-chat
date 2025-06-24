@@ -456,8 +456,8 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   let publicReplyId = null
   let publicReplyError = null
 
-  // ===== 🆕 ENVIAR REPLY PÚBLICO CON MEDIA ID EN LA URL =====
-  console.log('📢 INTENTANDO REPLY PÚBLICO al media:', mediaId)
+  // ===== 🆕 ENVIAR REPLY PÚBLICO CON FORM DATA =====
+  console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
     // Crear FormData para enviar como form data (como en tu curl exitoso)
@@ -465,11 +465,11 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     formData.append('message', publicReplyMessage)
     formData.append('access_token', accessToken)
 
-    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/v23.0/${mediaId}/replies`)
+    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/v23.0/${commentId}/replies`)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
     console.log('🔑 Access Token presente:', accessToken ? 'SÍ' : 'NO')
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${mediaId}/replies`, {
+    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
       method: 'POST',
       body: formData
     })
