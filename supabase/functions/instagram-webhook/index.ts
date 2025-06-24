@@ -460,21 +460,20 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
-    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/${commentId}/replies`)
+    const replyUrl = `https://graph.facebook.com/v17.0/${commentId}/replies?message=${encodeURIComponent(publicReplyMessage)}&access_token=${accessToken}`
+    
+    console.log('🎯 URL Reply Público:', replyUrl)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/${commentId}/replies?message=${encodeURIComponent(publicReplyMessage)}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+    const publicReplyResponse = await fetch(replyUrl, {
+      method: 'POST'
     })
 
     const publicReplyData = await publicReplyResponse.json()
     console.log('📨 Respuesta Reply Público:', JSON.stringify(publicReplyData, null, 2))
 
     if (publicReplyData.error) {
-      console.log('⚠️ No se pudo enviar reply público (permisos insuficientes):', publicReplyData.error.message)
+      console.log('⚠️ No se pudo enviar reply público:', publicReplyData.error.message)
       publicReplyError = publicReplyData.error
     } else {
       console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE')
@@ -558,7 +557,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     if (publicReplySuccess) {
       console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados')
     } else {
-      console.log('⚠️ PROCESAMIENTO PARCIAL: Solo private reply enviado (public reply falló por permisos)')
+      console.log('⚠️ PROCESAMIENTO PARCIAL: Solo private reply enviado (public reply falló)')
     }
 
   } catch (replyException) {
