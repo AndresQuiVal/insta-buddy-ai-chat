@@ -460,18 +460,17 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
-    // PRIMER INTENTO: Instagram API con POST body
-    console.log('🎯 URL Reply Público (Instagram):', `https://graph.instagram.com/v23.0/${commentId}/replies`)
+    // PRIMER INTENTO: Instagram API con formato correcto según documentación
+    console.log('🎯 URL Reply Público (Instagram):', `https://graph.instagram.com/v23.0/${commentId}/replies?access_token=${accessToken}`)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
+    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies?access_token=${accessToken}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: publicReplyMessage,
-        access_token: accessToken
+        message: publicReplyMessage
       })
     })
 
@@ -481,17 +480,16 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     if (publicReplyData.error) {
       console.log('⚠️ Fallo Instagram API, intentando con Facebook API...')
       
-      // SEGUNDO INTENTO: Facebook API con POST body
-      console.log('🎯 URL Reply Público (Facebook):', `https://graph.facebook.com/v23.0/${commentId}/replies`)
+      // SEGUNDO INTENTO: Facebook API con mismo formato
+      console.log('🎯 URL Reply Público (Facebook):', `https://graph.facebook.com/v23.0/${commentId}/replies?access_token=${accessToken}`)
       
-      const facebookReplyResponse = await fetch(`https://graph.facebook.com/v23.0/${commentId}/replies`, {
+      const facebookReplyResponse = await fetch(`https://graph.facebook.com/v23.0/${commentId}/replies?access_token=${accessToken}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          message: publicReplyMessage,
-          access_token: accessToken
+          message: publicReplyMessage
         })
       })
 
