@@ -70,7 +70,7 @@ serve(async (req) => {
             message_text: ar.message_text,
             is_active: ar.is_active,
             send_only_first_message: ar.send_only_first_message || false,
-            user_id: null // Sin usuario específico por ahora
+            instagram_user_id_ref: ar.instagram_user_id_ref || null
           }))
 
           console.log('📋 Datos a insertar:', JSON.stringify(autoresponderData, null, 2))
@@ -109,43 +109,88 @@ serve(async (req) => {
       }
       
       // Si no tiene action store, es una consulta desde el webhook
-      console.log('🔍 Consultando autoresponders desde base de datos para webhook')
+      // Verificar si viene con instagram_user_id para filtrar por usuario específico
+      const instagramUserId = body.instagram_user_id
       
-      // Obtener autoresponders activos de la base de datos
-      const { data: autoresponders, error } = await supabase
-        .from('autoresponder_messages')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-      
-      if (error) {
-        console.error('❌ Error consultando autoresponders:', error)
+      if (instagramUserId) {
+        console.log('🔍 Consultando autoresponders para usuario específico:', instagramUserId)
+        
+        // Obtener autoresponders activos del usuario específico
+        const { data: autoresponders, error } = await supabase
+          .from('autoresponder_messages')
+          .select('*')
+          .eq('instagram_user_id_ref', instagramUserId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+        
+        if (error) {
+          console.error('❌ Error consultando autoresponders del usuario:', error)
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          })
+        }
+        
+        console.log('✅ Autoresponders activos encontrados para usuario:', autoresponders?.length || 0)
+        console.log('📊 Detalle de autoresponders del usuario:', autoresponders?.map(ar => ({
+          id: ar.id,
+          name: ar.name,
+          is_active: ar.is_active,
+          send_only_first_message: ar.send_only_first_message,
+          message_text: ar.message_text?.substring(0, 50) + '...'
+        })))
+        
         return new Response(JSON.stringify({ 
-          success: false, 
-          error: error.message 
+          success: true, 
+          autoresponders: autoresponders || [],
+          total_active: autoresponders?.length || 0,
+          user_id: instagramUserId
         }), {
-          status: 500,
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        })
+      } else {
+        console.log('🔍 Consultando autoresponders desde base de datos para webhook (sin filtro de usuario)')
+        
+        // Obtener autoresponders activos de la base de datos (comportamiento anterior)
+        const { data: autoresponders, error } = await supabase
+          .from('autoresponder_messages')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+        
+        if (error) {
+          console.error('❌ Error consultando autoresponders:', error)
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          })
+        }
+        
+        console.log('✅ Autoresponders activos encontrados:', autoresponders?.length || 0)
+        console.log('📊 Detalle de autoresponders activos:', autoresponders?.map(ar => ({
+          id: ar.id,
+          name: ar.name,
+          is_active: ar.is_active,
+          send_only_first_message: ar.send_only_first_message,
+          message_text: ar.message_text?.substring(0, 50) + '...'
+        })))
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          autoresponders: autoresponders || [],
+          total_active: autoresponders?.length || 0
+        }), {
+          status: 200,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         })
       }
-      
-      console.log('✅ Autoresponders activos encontrados:', autoresponders?.length || 0)
-      console.log('📊 Detalle de autoresponders activos:', autoresponders?.map(ar => ({
-        id: ar.id,
-        name: ar.name,
-        is_active: ar.is_active,
-        send_only_first_message: ar.send_only_first_message,
-        message_text: ar.message_text?.substring(0, 50) + '...'
-      })))
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        autoresponders: autoresponders || [],
-        total_active: autoresponders?.length || 0
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      })
     }
 
     if (req.method === 'GET') {
@@ -174,7 +219,7 @@ serve(async (req) => {
         autoresponders: autoresponders || [],
         total_active: autoresponders?.length || 0
       }), {
-        status: 200,
+      status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       })
     }

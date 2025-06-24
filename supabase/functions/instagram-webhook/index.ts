@@ -63,7 +63,7 @@ serve(async (req) => {
           console.log('📝 PROCESANDO MENSAJES DIRECTOS (FORMATO PRODUCCIÓN)')
           
           for (const messagingEvent of entry.messaging) {
-            await processMessage(messagingEvent, supabase, 'messaging')
+            await processMessage(messagingEvent, supabase, 'messaging', entry.id)
           }
         }
         // FORMATO DE PRODUCCIÓN ALTERNATIVO: entry.changes
@@ -82,7 +82,7 @@ serve(async (req) => {
                 message: change.value.message
               }
               
-              await processMessage(messagingEvent, supabase, 'changes')
+              await processMessage(messagingEvent, supabase, 'changes', entry.id)
             }
             // 🆕 PROCESAR COMENTARIOS
             else if (change.field === 'comments' && change.value) {
@@ -112,7 +112,7 @@ serve(async (req) => {
   }
 })
 
-async function processMessage(messagingEvent: any, supabase: any, source: string) {
+async function processMessage(messagingEvent: any, supabase: any, source: string, instagramAccountId: string) {
   console.log(`📝 Procesando mensaje desde ${source}:`, JSON.stringify(messagingEvent, null, 2))
   
   const senderId = messagingEvent.sender?.id
@@ -155,17 +155,20 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.error('💥 Error en update_prospect_activity:', activityErr)
   }
 
-  console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM =====')
+  console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM POR RECIPIENT ID =====')
+  console.log('🎯 Buscando usuario con instagram_user_id:', recipientId)
 
+  // CORREGIDO: Buscar usuario específico por recipientId (quien recibe el mensaje)
   const { data: instagramUser, error: userError } = await supabase
     .from('instagram_users')
     .select('*')
+    .eq('instagram_user_id', recipientId)
     .eq('is_active', true)
-    .limit(1)
     .single()
 
   if (userError || !instagramUser) {
-    console.error('❌ No se encontró ningún usuario de Instagram activo:', userError)
+    console.error('❌ No se encontró usuario de Instagram con ID:', recipientId, userError)
+    console.log('❌ No hay usuario configurado para recibir este mensaje - NO SE ENVIARÁ AUTORESPONDER')
     return
   }
 
@@ -248,17 +251,34 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.log('✅ Mensaje guardado correctamente')
   }
 
-  console.log('🔍 === OBTENIENDO AUTORESPONDERS ===')
+  console.log('🔍 === OBTENIENDO AUTORESPONDERS DEL USUARIO ESPECÍFICO ===')
+  console.log('👤 Buscando autoresponders para usuario:', instagramUser.username, 'con instagram_user_id_ref:', recipientId)
   
-  const { data: autoresponderResponse, error: autoresponderError } = await supabase.functions.invoke('get-autoresponders', {})
+  // CORREGIDO: Buscar autoresponders solo del usuario específico
+  const { data: autoresponders, error: autoresponderError } = await supabase
+    .from('autoresponder_messages')
+    .select('*')
+    .eq('instagram_user_id_ref', recipientId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
 
-  if (autoresponderError || !autoresponderResponse?.success) {
+  if (autoresponderError) {
     console.error('❌ Error obteniendo autoresponders:', autoresponderError)
     return
   }
 
-  const autoresponders = autoresponderResponse.autoresponders || []
-  console.log('✅ Autoresponders obtenidos:', autoresponders.length)
+  if (!autoresponders || autoresponders.length === 0) {
+    console.log('❌ No se encontraron autoresponders activos para este usuario - NO SE ENVIARÁ AUTORESPONDER')
+    return
+  }
+
+  console.log('✅ Autoresponders encontrados para el usuario:', autoresponders.length)
+  console.log('📊 Detalle de autoresponders:', autoresponders.map(ar => ({
+    id: ar.id,
+    name: ar.name,
+    use_keywords: ar.use_keywords,
+    keywords: ar.keywords
+  })))
 
   let selectedAutoresponder = null
 
@@ -285,7 +305,7 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   }
 
   if (!selectedAutoresponder) {
-    console.log('❌ No se encontró autoresponder que coincida')
+    console.log('❌ No se encontró autoresponder que coincida con las palabras clave')
     return
   }
 
