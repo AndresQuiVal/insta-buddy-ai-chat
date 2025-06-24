@@ -456,6 +456,24 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   let publicReplyId = null
   let publicReplyError = null
 
+  // ===== VALIDACIONES PREVIAS =====
+  console.log('🔍 ===== VALIDACIONES PREVIAS =====')
+  console.log('🔑 Access Token length:', accessToken ? accessToken.length : 'NO TOKEN')
+  console.log('🔑 Access Token starts with:', accessToken ? accessToken.substring(0, 10) : 'NO TOKEN')
+  console.log('💬 Comment ID:', commentId)
+  console.log('💬 Comment ID type:', typeof commentId)
+  console.log('💬 Message length:', publicReplyMessage.length)
+  
+  if (!accessToken) {
+    console.log('❌ NO HAY ACCESS TOKEN - ABORTANDO')
+    return
+  }
+  
+  if (!commentId) {
+    console.log('❌ NO HAY COMMENT ID - ABORTANDO')
+    return
+  }
+
   // ===== 🆕 ENVIAR REPLY PÚBLICO CON FORM DATA =====
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
@@ -468,11 +486,23 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     console.log('🎯 URL Reply Público:', `https://graph.instagram.com/v23.0/${commentId}/replies`)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
     console.log('🔑 Access Token presente:', accessToken ? 'SÍ' : 'NO')
+    console.log('🔑 Access Token (primeros 20 chars):', accessToken ? accessToken.substring(0, 20) + '...' : 'NO')
+
+    // Debug: mostrar el contenido del FormData
+    console.log('📋 FormData entries:')
+    for (const [key, value] of formData.entries()) {
+      console.log(`  ${key}: ${key === 'access_token' ? value.substring(0, 20) + '...' : value}`)
+    }
 
     const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      // NO establecer Content-Type manualmente - dejar que FormData lo maneje
     })
+
+    console.log('📨 Status Code:', publicReplyResponse.status)
+    console.log('📨 Status Text:', publicReplyResponse.statusText)
+    console.log('📨 Headers:', Object.fromEntries(publicReplyResponse.headers.entries()))
 
     const publicReplyData = await publicReplyResponse.json()
     console.log('📨 Respuesta Reply Público:', JSON.stringify(publicReplyData, null, 2))
@@ -489,7 +519,104 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
   } catch (publicException) {
     console.log('⚠️ Excepción en reply público:', publicException.message)
+    console.log('⚠️ Stack trace:', publicException.stack)
     publicReplyError = { message: publicException.message }
+  }
+
+  // ===== ALTERNATIVA: INTENTAR CON URLSearchParams SI FormData FALLA =====
+  if (!publicReplySuccess) {
+    console.log('🔄 INTENTANDO ALTERNATIVA CON URLSearchParams...')
+    
+    try {
+      const params = new URLSearchParams()
+      params.append('message', publicReplyMessage)
+      params.append('access_token', accessToken)
+
+      console.log('🎯 URL Reply Público (alternativa):', `https://graph.instagram.com/v23.0/${commentId}/replies`)
+      console.log('📋 Parámetros:', params.toString().replace(accessToken, accessToken.substring(0, 20) + '...'))
+
+      const alternativeResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params
+      })
+
+      console.log('📨 Status Code (alternativa):', alternativeResponse.status)
+      console.log('📨 Status Text (alternativa):', alternativeResponse.statusText)
+
+      const alternativeData = await alternativeResponse.json()
+      console.log('📨 Respuesta Reply Público (alternativa):', JSON.stringify(alternativeData, null, 2))
+
+      if (alternativeData.error) {
+        console.log('⚠️ Error en reply público (alternativa):', alternativeData.error)
+        publicReplyError = alternativeData.error
+      } else {
+        console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE (alternativa)')
+        console.log('🆔 Reply ID:', alternativeData.id)
+        publicReplySuccess = true
+        publicReplyId = alternativeData.id
+      }
+
+    } catch (alternativeException) {
+      console.log('⚠️ Excepción en reply público (alternativa):', alternativeException.message)
+      publicReplyError = { message: alternativeException.message }
+    }
+  }
+
+  // ===== TERCERA ALTERNATIVA: SIMULAR CURL EXACTO =====
+  if (!publicReplySuccess) {
+    console.log('🔄 INTENTANDO TERCERA ALTERNATIVA (CURL EXACTO)...')
+    
+    try {
+      // Construir el body exactamente como curl -F
+      const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2)
+      const body = [
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="message"',
+        '',
+        publicReplyMessage,
+        `--${boundary}`,
+        'Content-Disposition: form-data; name="access_token"',
+        '',
+        accessToken,
+        `--${boundary}--`,
+        ''
+      ].join('\r\n')
+
+      console.log('🎯 URL Reply Público (curl exacto):', `https://graph.instagram.com/v23.0/${commentId}/replies`)
+      console.log('📋 Boundary:', boundary)
+      console.log('📋 Body length:', body.length)
+
+      const curlExactResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        },
+        body: body
+      })
+
+      console.log('📨 Status Code (curl exacto):', curlExactResponse.status)
+      console.log('📨 Status Text (curl exacto):', curlExactResponse.statusText)
+
+      const curlExactData = await curlExactResponse.json()
+      console.log('📨 Respuesta Reply Público (curl exacto):', JSON.stringify(curlExactData, null, 2))
+
+      if (curlExactData.error) {
+        console.log('⚠️ Error en reply público (curl exacto):', curlExactData.error)
+        publicReplyError = curlExactData.error
+      } else {
+        console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE (curl exacto)')
+        console.log('🆔 Reply ID:', curlExactData.id)
+        publicReplySuccess = true
+        publicReplyId = curlExactData.id
+      }
+
+    } catch (curlExactException) {
+      console.log('⚠️ Excepción en reply público (curl exacto):', curlExactException.message)
+      publicReplyError = { message: curlExactException.message }
+    }
   }
 
   // ===== ENVIAR PRIVATE REPLY USANDO COMMENT_ID (SIEMPRE INTENTAR) =====
