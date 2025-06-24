@@ -1,10 +1,10 @@
+
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 // Configuración de Instagram Graph API (nueva API oficial)
 const INSTAGRAM_APP_ID = "1059372749433300"; // Instagram App ID principal
-const INSTAGRAM_REDIRECT_URI =
-  window.location.origin + "/auth/instagram/callback";
+const INSTAGRAM_REDIRECT_URI = "https://insta-buddy-ai-chat.lovable.app/auth/instagram/callback"; // URL exacta configurada en Meta
 const INSTAGRAM_SCOPE =
   "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish"; // Nuevos permisos para Graph API
 
@@ -48,7 +48,8 @@ export const initiateInstagramAuth = (
     const currentDomain = window.location.hostname;
     if (
       currentDomain === "localhost" ||
-      currentDomain.includes("lovableproject.com")
+      currentDomain.includes("lovableproject.com") ||
+      currentDomain.includes("lovable.app")
     ) {
       console.log("Dominio válido para desarrollo/producción:", currentDomain);
     } else {
