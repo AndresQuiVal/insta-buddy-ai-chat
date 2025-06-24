@@ -464,13 +464,14 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     console.log('🎯 URL Reply Público (Instagram):', `https://graph.instagram.com/v23.0/${commentId}/replies?access_token=${accessToken}`)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies?access_token=${accessToken}`, {
+    const publicReplyResponse = await fetch(`https://graph.instagram.com/v23.0/${commentId}/replies?message=holaa&access_token=${accessToken}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: publicReplyMessage
+        message: "holaa",
+        access_token: accessToken
       })
     })
 
