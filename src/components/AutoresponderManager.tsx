@@ -110,10 +110,13 @@ const AutoresponderManager: React.FC = () => {
     try {
       console.log('🔍 Cargando autoresponders de comentarios para usuario:', currentUser.username);
 
-      // TODO: Agregar filtrado por usuario cuando se implemente la columna correspondiente
+      // CORREGIDO: Filtrar por usuario actual (cuando se agregue la columna correspondiente)
+      // Por ahora todos los comment autoresponders se muestran, pero deberían filtrarse por usuario
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .select('*')
+        // TODO: Agregar filtrado por usuario cuando se implemente la columna correspondiente
+        // .eq('instagram_user_id_ref', currentUser.instagram_user_id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -122,6 +125,7 @@ const AutoresponderManager: React.FC = () => {
       }
 
       console.log('✅ Autoresponders de comentarios cargados:', data?.length || 0);
+      // TEMPORAL: Por ahora mostramos todos, pero debería filtrarse por usuario
       setCommentAutoresponders(data || []);
     } catch (error) {
       console.error('Error fetching comment autoresponders:', error);
@@ -461,10 +465,13 @@ const AutoresponderManager: React.FC = () => {
         </div>
       )}
 
-      {/* Lista de autoresponders de comentarios */}
+      {/* Lista de autoresponders de comentarios - TEMPORAL: mostrando todos hasta filtrar por usuario */}
       {commentAutoresponders.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-800">Comentarios de Posts</h3>
+          <h3 className="text-lg font-medium text-gray-800">
+            Comentarios de Posts 
+            <span className="text-sm text-orange-600 ml-2">(TEMPORAL: mostrando todos los usuarios)</span>
+          </h3>
           <div className="grid gap-4">
             {commentAutoresponders.map((autoresponder) => (
               <Card key={autoresponder.id} className="border-orange-100">
