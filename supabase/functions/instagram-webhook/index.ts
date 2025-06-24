@@ -448,14 +448,18 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  // ===== 🆕 ENVIAR REPLY PÚBLICO AL COMENTARIO =====
-  console.log('📢 ENVIANDO REPLY PÚBLICO al comentario:', commentId)
-
   const accessToken = instagramUser.access_token
   const publicReplyMessage = "¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊"
+  
+  // Variables para tracking
+  let publicReplySuccess = false
+  let publicReplyId = null
+  let publicReplyError = null
+
+  // ===== 🆕 INTENTAR ENVIAR REPLY PÚBLICO AL COMENTARIO =====
+  console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
-    // Enviar reply público usando la API de Instagram
     console.log('🎯 URL Reply Público:', `https://graph.instagram.com/${commentId}/replies`)
     console.log('💬 Mensaje Reply:', publicReplyMessage)
 
@@ -470,15 +474,24 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     console.log('📨 Respuesta Reply Público:', JSON.stringify(publicReplyData, null, 2))
 
     if (publicReplyData.error) {
-      console.error('❌ Error enviando reply público:', publicReplyData.error)
+      console.log('⚠️ No se pudo enviar reply público (permisos insuficientes):', publicReplyData.error.message)
+      publicReplyError = publicReplyData.error
     } else {
       console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE')
       console.log('🆔 Reply ID:', publicReplyData.id)
+      publicReplySuccess = true
+      publicReplyId = publicReplyData.id
     }
 
-    // ===== ENVIAR PRIVATE REPLY USANDO COMMENT_ID (COMO ANTES) =====
-    console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
+  } catch (publicException) {
+    console.log('⚠️ Excepción en reply público (continuando con private reply):', publicException.message)
+    publicReplyError = { message: publicException.message }
+  }
 
+  // ===== ENVIAR PRIVATE REPLY USANDO COMMENT_ID (SIEMPRE INTENTAR) =====
+  console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
+
+  try {
     const { data: replyResponse, error: replyError } = await supabase.functions.invoke('instagram-send-message', {
       body: {
         message_text: selectedAutoresponder.dm_message,
@@ -490,7 +503,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     if (replyError) {
       console.error('❌ Error enviando private reply:', replyError)
       
-      // Registrar el error
+      // Registrar el error (incluyendo info del public reply)
       await supabase
         .from('comment_autoresponder_log')
         .insert({
@@ -503,8 +516,10 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
             media_id: mediaId,
             commenter_username: commenterUsername,
             error_type: 'private_reply_failed',
-            public_reply_id: publicReplyData.id || null,
-            public_reply_success: !publicReplyData.error,
+            public_reply_attempted: true,
+            public_reply_success: publicReplySuccess,
+            public_reply_error: publicReplyError,
+            public_reply_id: publicReplyId,
             processed_at: new Date().toISOString()
           }
         })
@@ -515,7 +530,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     console.log('✅ PRIVATE REPLY ENVIADO EXITOSAMENTE')
     console.log('📨 Respuesta:', JSON.stringify(replyResponse, null, 2))
 
-    // ===== REGISTRAR EN LOG (ÉXITO COMPLETO) =====
+    // ===== REGISTRAR EN LOG (ÉXITO COMPLETO O PARCIAL) =====
     await supabase
       .from('comment_autoresponder_log')
       .insert({
@@ -530,15 +545,24 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           private_reply_success: true,
           message_id: replyResponse?.message_id,
           recipient_id: replyResponse?.recipient_id,
-          public_reply_id: publicReplyData.id || null,
-          public_reply_success: !publicReplyData.error,
+          public_reply_attempted: true,
+          public_reply_success: publicReplySuccess,
+          public_reply_error: publicReplyError,
+          public_reply_id: publicReplyId,
           public_reply_message: publicReplyMessage,
           processed_at: new Date().toISOString()
         }
       })
 
+    // Log de resumen
+    if (publicReplySuccess) {
+      console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados')
+    } else {
+      console.log('⚠️ PROCESAMIENTO PARCIAL: Solo private reply enviado (public reply falló por permisos)')
+    }
+
   } catch (replyException) {
-    console.error('💥 Excepción enviando respuestas:', replyException)
+    console.error('💥 Excepción enviando private reply:', replyException)
     
     // Registrar la excepción
     await supabase
@@ -553,6 +577,10 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           media_id: mediaId,
           commenter_username: commenterUsername,
           error_type: 'reply_exception',
+          public_reply_attempted: true,
+          public_reply_success: publicReplySuccess,
+          public_reply_error: publicReplyError,
+          public_reply_id: publicReplyId,
           processed_at: new Date().toISOString()
         }
       })
