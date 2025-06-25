@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -98,9 +97,20 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     try {
       console.log('💾 Guardando autoresponder de comentarios para usuario:', currentUser.username);
 
+      // Obtener el user_id actual del usuario autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('No hay usuario autenticado');
+      }
+
+      console.log('💾 User ID autenticado:', user.id);
+
+      // CORREGIDO: Incluir user_id en el insert para asociar con el usuario actual
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .insert({
+          user_id: user.id, // NUEVO: Asociar con el usuario autenticado
           post_id: selectedPost.id,
           post_url: selectedPost.permalink,
           post_caption: selectedPost.caption,
@@ -118,6 +128,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
       }
 
       console.log('✅ Autoresponder de comentarios guardado para usuario:', currentUser.username);
+      console.log('📊 Datos guardados:', { user_id: user.id, name: name.trim() });
 
       toast({
         title: "¡Autoresponder creado!",
