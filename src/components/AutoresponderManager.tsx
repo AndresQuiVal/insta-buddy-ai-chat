@@ -165,6 +165,16 @@ const AutoresponderManager: React.FC = () => {
         throw new Error('Autoresponder no encontrado o no tienes permisos');
       }
 
+      // Eliminar primero los logs relacionados para evitar conflictos de foreign key
+      const { error: logError } = await supabase
+        .from('autoresponder_sent_log')
+        .delete()
+        .eq('autoresponder_message_id', messageId);
+
+      if (logError) {
+        console.warn('⚠️ Error eliminando logs de autoresponder (continuando):', logError);
+      }
+
       // Ahora eliminar el autoresponder
       const { error } = await supabase
         .from('autoresponder_messages')
