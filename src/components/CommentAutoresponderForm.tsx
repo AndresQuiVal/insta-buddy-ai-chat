@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,20 +98,21 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     try {
       console.log('💾 Guardando autoresponder de comentarios para usuario:', currentUser.username);
 
-      // Obtener el user_id actual del usuario autenticado
-      const { data: { user } } = await supabase.auth.getUser();
+      // Verificar autenticación del usuario
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (!user) {
+      if (authError || !user) {
+        console.error('❌ Error de autenticación:', authError);
         throw new Error('No hay usuario autenticado');
       }
 
-      console.log('💾 User ID autenticado:', user.id);
+      console.log('✅ Usuario autenticado correctamente:', user.id);
 
-      // CORREGIDO: Incluir user_id en el insert para asociar con el usuario actual
+      // Insertar el autoresponder
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .insert({
-          user_id: user.id, // NUEVO: Asociar con el usuario autenticado
+          user_id: user.id,
           post_id: selectedPost.id,
           post_url: selectedPost.permalink,
           post_caption: selectedPost.caption,
@@ -123,12 +125,11 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
         .single();
 
       if (error) {
-        console.error('❌ Error guardando:', error);
+        console.error('❌ Error guardando autoresponder:', error);
         throw error;
       }
 
-      console.log('✅ Autoresponder de comentarios guardado para usuario:', currentUser.username);
-      console.log('📊 Datos guardados:', { user_id: user.id, name: name.trim() });
+      console.log('✅ Autoresponder de comentarios guardado exitosamente:', data);
 
       toast({
         title: "¡Autoresponder creado!",
@@ -146,10 +147,10 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
       });
 
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('❌ Error creando autoresponder:', error);
       toast({
         title: "Error",
-        description: "No se pudo guardar el autoresponder",
+        description: error.message || "No se pudo guardar el autoresponder",
         variant: "destructive"
       });
     } finally {

@@ -70,9 +70,7 @@ const AutoresponderManager: React.FC = () => {
     try {
       setLoading(true);
       console.log('🔍 Cargando autoresponders para usuario:', currentUser.username);
-      console.log('🔍 Instagram User ID del usuario actual:', currentUser.instagram_user_id);
 
-      // CORREGIDO: Filtrar por instagram_user_id_ref que coincida con el usuario actual
       const { data, error } = await supabase
         .from('autoresponder_messages')
         .select('*')
@@ -84,13 +82,7 @@ const AutoresponderManager: React.FC = () => {
         throw error;
       }
 
-      console.log('✅ Autoresponders cargados para usuario específico:', data?.length || 0);
-      console.log('📊 Detalle de autoresponders del usuario:', data?.map(ar => ({
-        id: ar.id,
-        name: ar.name,
-        instagram_user_id_ref: ar.instagram_user_id_ref
-      })));
-      
+      console.log('✅ Autoresponders cargados:', data?.length || 0);
       setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -108,19 +100,18 @@ const AutoresponderManager: React.FC = () => {
     if (!currentUser) return;
     
     try {
-      console.log('🔍 Cargando autoresponders de comentarios para usuario:', currentUser.username);
+      console.log('🔍 Cargando autoresponders de comentarios...');
 
-      // Obtener el user_id actual del usuario autenticado
-      const { data: { user } } = await supabase.auth.getUser();
+      // Verificar si el usuario está autenticado
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (!user) {
-        console.error('❌ No hay usuario autenticado');
+      if (authError || !user) {
+        console.error('❌ Error de autenticación:', authError);
         return;
       }
 
-      console.log('🔍 User ID autenticado:', user.id);
+      console.log('✅ Usuario autenticado:', user.id);
 
-      // CORREGIDO: Filtrar por user_id que coincida con el usuario autenticado
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .select('*')
@@ -132,16 +123,15 @@ const AutoresponderManager: React.FC = () => {
         throw error;
       }
 
-      console.log('✅ Autoresponders de comentarios cargados para usuario específico:', data?.length || 0);
-      console.log('📊 Detalle de autoresponders de comentarios del usuario:', data?.map(ar => ({
-        id: ar.id,
-        name: ar.name,
-        user_id: ar.user_id
-      })));
-      
+      console.log('✅ Autoresponders de comentarios cargados:', data?.length || 0);
       setCommentAutoresponders(data || []);
     } catch (error) {
       console.error('Error fetching comment autoresponders:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los autoresponders de comentarios",
+        variant: "destructive"
+      });
     }
   };
 
@@ -162,13 +152,19 @@ const AutoresponderManager: React.FC = () => {
     }
 
     try {
+      console.log('🗑️ Eliminando autoresponder:', messageId);
+      
       const { error } = await supabase
         .from('autoresponder_messages')
         .delete()
         .eq('id', messageId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error eliminando:', error);
+        throw error;
+      }
 
+      console.log('✅ Autoresponder eliminado exitosamente');
       toast({
         title: "¡Eliminado!",
         description: "Autoresponder eliminado exitosamente",
@@ -176,6 +172,7 @@ const AutoresponderManager: React.FC = () => {
 
       fetchMessages();
     } catch (error) {
+      console.error('Error deleting autoresponder:', error);
       toast({
         title: "Error",
         description: "No se pudo eliminar el autoresponder",
@@ -190,13 +187,27 @@ const AutoresponderManager: React.FC = () => {
     }
 
     try {
+      console.log('🗑️ Eliminando autoresponder de comentarios:', id);
+      
+      // Verificar autenticación antes de eliminar
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error('No hay usuario autenticado');
+      }
+
       const { error } = await supabase
         .from('comment_autoresponders')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // Verificación adicional de seguridad
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error eliminando:', error);
+        throw error;
+      }
 
+      console.log('✅ Autoresponder de comentarios eliminado exitosamente');
       toast({
         title: "¡Eliminado!",
         description: "Autoresponder de comentarios eliminado exitosamente",
@@ -204,6 +215,7 @@ const AutoresponderManager: React.FC = () => {
 
       fetchCommentAutoresponders();
     } catch (error) {
+      console.error('Error deleting comment autoresponder:', error);
       toast({
         title: "Error",
         description: "No se pudo eliminar el autoresponder de comentarios",
@@ -238,10 +250,18 @@ const AutoresponderManager: React.FC = () => {
 
   const toggleCommentAutoresponderActive = async (id: string, currentStatus: boolean) => {
     try {
+      // Verificar autenticación antes de actualizar
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error('No hay usuario autenticado');
+      }
+
       const { error } = await supabase
         .from('comment_autoresponders')
         .update({ is_active: !currentStatus })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // Verificación adicional de seguridad
 
       if (error) throw error;
 
@@ -252,6 +272,7 @@ const AutoresponderManager: React.FC = () => {
 
       fetchCommentAutoresponders();
     } catch (error) {
+      console.error('Error toggling comment autoresponder:', error);
       toast({
         title: "Error",
         description: "No se pudo actualizar el estado",
@@ -478,7 +499,7 @@ const AutoresponderManager: React.FC = () => {
         </div>
       )}
 
-      {/* Lista de autoresponders de comentarios - CORREGIDO: ahora filtrado por usuario */}
+      {/* Lista de autoresponders de comentarios */}
       {commentAutoresponders.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-800">Comentarios de Posts</h3>
