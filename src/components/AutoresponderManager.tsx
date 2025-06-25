@@ -146,11 +146,31 @@ const AutoresponderManager: React.FC = () => {
 
     try {
       console.log('🗑️ Eliminando autoresponder:', messageId);
+      console.log('👤 Usuario actual:', currentUser?.instagram_user_id);
       
+      // Primero verificar que el autoresponder pertenece al usuario actual
+      const { data: autoresponder, error: fetchError } = await supabase
+        .from('autoresponder_messages')
+        .select('id, instagram_user_id_ref')
+        .eq('id', messageId)
+        .eq('instagram_user_id_ref', currentUser.instagram_user_id)
+        .single();
+
+      if (fetchError) {
+        console.error('❌ Error verificando autoresponder:', fetchError);
+        throw new Error('No se pudo verificar el autoresponder');
+      }
+
+      if (!autoresponder) {
+        throw new Error('Autoresponder no encontrado o no tienes permisos');
+      }
+
+      // Ahora eliminar el autoresponder
       const { error } = await supabase
         .from('autoresponder_messages')
         .delete()
-        .eq('id', messageId);
+        .eq('id', messageId)
+        .eq('instagram_user_id_ref', currentUser.instagram_user_id);
 
       if (error) {
         console.error('❌ Error eliminando:', error);
@@ -168,7 +188,7 @@ const AutoresponderManager: React.FC = () => {
       console.error('Error deleting autoresponder:', error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el autoresponder",
+        description: error.message || "No se pudo eliminar el autoresponder",
         variant: "destructive"
       });
     }
@@ -183,14 +203,42 @@ const AutoresponderManager: React.FC = () => {
       console.log('🗑️ Eliminando autoresponder de comentarios:', id);
       console.log('👤 Usuario actual:', currentUser?.instagram_user_id);
       
+      // Primero verificar que el autoresponder pertenece al usuario actual
+      const { data: autoresponder, error: fetchError } = await supabase
+        .from('comment_autoresponders')
+        .select('id, user_id')
+        .eq('id', id)
+        .eq('user_id', currentUser.instagram_user_id)
+        .single();
+
+      if (fetchError) {
+        console.error('❌ Error verificando autoresponder de comentarios:', fetchError);
+        throw new Error('No se pudo verificar el autoresponder de comentarios');
+      }
+
+      if (!autoresponder) {
+        throw new Error('Autoresponder de comentarios no encontrado o no tienes permisos');
+      }
+
+      // Eliminar primero los logs relacionados para evitar conflictos de foreign key
+      const { error: logError } = await supabase
+        .from('comment_autoresponder_log')
+        .delete()
+        .eq('comment_autoresponder_id', id);
+
+      if (logError) {
+        console.warn('⚠️ Error eliminando logs (continuando):', logError);
+      }
+
+      // Ahora eliminar el autoresponder
       const { error } = await supabase
         .from('comment_autoresponders')
         .delete()
         .eq('id', id)
-        .eq('user_id', currentUser.instagram_user_id); // Verificación adicional de seguridad
+        .eq('user_id', currentUser.instagram_user_id);
 
       if (error) {
-        console.error('❌ Error eliminando:', error);
+        console.error('❌ Error eliminando autoresponder de comentarios:', error);
         throw error;
       }
 
@@ -205,7 +253,7 @@ const AutoresponderManager: React.FC = () => {
       console.error('Error deleting comment autoresponder:', error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el autoresponder de comentarios",
+        description: error.message || "No se pudo eliminar el autoresponder de comentarios",
         variant: "destructive"
       });
     }
