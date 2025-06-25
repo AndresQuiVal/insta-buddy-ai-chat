@@ -490,7 +490,18 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   }
 
   const accessToken = instagramUser.access_token
-  const publicReplyMessage = "¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊"
+  
+  // ===== SELECCIONAR MENSAJE PÚBLICO ALEATORIO =====
+  const publicReplyMessages = selectedAutoresponder.public_reply_messages || [
+    "¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊"
+  ]
+  
+  // Seleccionar mensaje aleatorio
+  const randomIndex = Math.floor(Math.random() * publicReplyMessages.length)
+  const publicReplyMessage = publicReplyMessages[randomIndex]
+  
+  console.log('🎲 MENSAJE PÚBLICO SELECCIONADO (aleatorio):', publicReplyMessage)
+  console.log('🎯 Índice seleccionado:', randomIndex, 'de', publicReplyMessages.length, 'mensajes disponibles')
   
   // Variables para tracking
   let publicReplySuccess = false
@@ -515,7 +526,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  // ===== ENVIAR REPLY PÚBLICO CON FORM DATA (COMO TU CURL EXITOSO) =====
+  // ===== ENVIAR REPLY PÚBLICO CON MENSAJE ALEATORIO =====
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
@@ -524,7 +535,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     formData.append('access_token', accessToken)
 
     console.log('🎯 URL Reply Público:', `https://graph.instagram.com/${commentId}/replies`)
-    console.log('💬 Mensaje Reply:', publicReplyMessage)
+    console.log('💬 Mensaje Reply (aleatorio):', publicReplyMessage)
     console.log('🔑 Access Token presente:', accessToken ? 'SÍ' : 'NO')
 
     // Debug: mostrar el contenido del FormData
@@ -591,6 +602,9 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
             public_reply_success: publicReplySuccess,
             public_reply_error: publicReplyError,
             public_reply_id: publicReplyId,
+            public_reply_message: publicReplyMessage,
+            public_reply_message_index: randomIndex,
+            total_public_messages: publicReplyMessages.length,
             processed_at: new Date().toISOString()
           }
         })
@@ -621,6 +635,8 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           public_reply_error: publicReplyError,
           public_reply_id: publicReplyId,
           public_reply_message: publicReplyMessage,
+          public_reply_message_index: randomIndex,
+          total_public_messages: publicReplyMessages.length,
           processed_at: new Date().toISOString()
         }
       })
@@ -628,6 +644,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     // Log de resumen
     if (publicReplySuccess) {
       console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados')
+      console.log('🎲 Mensaje público usado (índice', randomIndex + '):', publicReplyMessage)
     } else {
       console.log('⚠️ PROCESAMIENTO PARCIAL: Solo private reply enviado (public reply falló)')
     }
@@ -652,6 +669,9 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           public_reply_success: publicReplySuccess,
           public_reply_error: publicReplyError,
           public_reply_id: publicReplyId,
+          public_reply_message: publicReplyMessage,
+          public_reply_message_index: randomIndex,
+          total_public_messages: publicReplyMessages.length,
           processed_at: new Date().toISOString()
         }
       })

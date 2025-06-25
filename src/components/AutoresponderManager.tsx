@@ -14,7 +14,8 @@ import {
   ToggleRight,
   Key,
   Clock,
-  Filter
+  Filter,
+  MessageSquare
 } from 'lucide-react';
 import AutoresponderForm from './AutoresponderForm';
 import AutoresponderTypeDialog from './AutoresponderTypeDialog';
@@ -42,6 +43,7 @@ interface CommentAutoresponder {
   post_caption?: string;
   is_active: boolean;
   created_at: string;
+  public_reply_messages?: string[];
 }
 
 const AutoresponderManager: React.FC = () => {
@@ -106,7 +108,7 @@ const AutoresponderManager: React.FC = () => {
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .select('*')
-        .eq('user_id', currentUser.instagram_user_id) // Usar instagram_user_id directamente
+        .eq('user_id', currentUser.instagram_user_id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -518,7 +520,10 @@ const AutoresponderManager: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <p className="text-gray-700">{autoresponder.dm_message}</p>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Mensaje DM:</p>
+                      <p className="text-gray-700">{autoresponder.dm_message}</p>
+                    </div>
                     
                     <div className="flex flex-wrap gap-2">
                       <Badge variant={autoresponder.is_active ? "default" : "secondary"}>
@@ -526,6 +531,9 @@ const AutoresponderManager: React.FC = () => {
                       </Badge>
                       <Badge variant="outline" className="bg-orange-50 text-orange-700">
                         Post específico
+                      </Badge>
+                      <Badge variant="outline" className="bg-green-50 text-green-700">
+                        {autoresponder.public_reply_messages?.length || 1} respuestas públicas
                       </Badge>
                     </div>
 
@@ -545,6 +553,24 @@ const AutoresponderManager: React.FC = () => {
                         ))}
                       </div>
                     </div>
+
+                    {/* Mostrar mensajes de respuesta pública */}
+                    {autoresponder.public_reply_messages && autoresponder.public_reply_messages.length > 0 && (
+                      <div className="pt-2">
+                        <div className="flex items-center gap-1 mb-2">
+                          <MessageSquare className="w-3 h-3 text-gray-500" />
+                          <span className="text-xs text-gray-500">Respuestas públicas (se envía una al azar):</span>
+                        </div>
+                        <div className="space-y-1">
+                          {autoresponder.public_reply_messages.map((message, index) => (
+                            <div key={index} className="flex items-start gap-2 p-2 bg-green-50 rounded text-xs">
+                              <span className="text-green-600 font-medium">#{index + 1}</span>
+                              <span className="text-gray-700 flex-1">{message}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="pt-2 text-xs text-gray-500">
                       <a 

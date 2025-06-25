@@ -137,6 +137,7 @@ export type Database = {
           post_caption: string | null
           post_id: string
           post_url: string
+          public_reply_messages: string[] | null
           updated_at: string
           user_id: string
         }
@@ -150,6 +151,7 @@ export type Database = {
           post_caption?: string | null
           post_id: string
           post_url: string
+          public_reply_messages?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -163,6 +165,7 @@ export type Database = {
           post_caption?: string | null
           post_id?: string
           post_url?: string
+          public_reply_messages?: string[] | null
           updated_at?: string
           user_id?: string
         }

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
@@ -15,6 +16,7 @@ export interface CommentAutoresponderConfig {
   name: string;
   keywords: string[];
   dmMessage: string;
+  publicReplyMessages: string[];
   postId: string;
   postUrl: string;
   postCaption?: string;
@@ -31,6 +33,10 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
   const [dmMessage, setDmMessage] = useState('');
+  const [publicReplyMessages, setPublicReplyMessages] = useState<string[]>([
+    '¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊'
+  ]);
+  const [newPublicReply, setNewPublicReply] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -46,10 +52,30 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     setKeywords(keywords.filter((_, i) => i !== index));
   };
 
+  const addPublicReply = () => {
+    if (newPublicReply.trim() && publicReplyMessages.length < 10) {
+      setPublicReplyMessages([...publicReplyMessages, newPublicReply.trim()]);
+      setNewPublicReply('');
+    }
+  };
+
+  const removePublicReply = (index: number) => {
+    if (publicReplyMessages.length > 1) {
+      setPublicReplyMessages(publicReplyMessages.filter((_, i) => i !== index));
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       addKeyword();
+    }
+  };
+
+  const handlePublicReplyKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addPublicReply();
     }
   };
 
@@ -92,23 +118,32 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
       return;
     }
 
+    if (publicReplyMessages.length === 0 || publicReplyMessages.some(msg => !msg.trim())) {
+      toast({
+        title: "Error",
+        description: "Debes tener al menos un mensaje de respuesta pública válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       console.log('💾 Guardando autoresponder de comentarios para usuario:', currentUser.username);
       console.log('🆔 Usando instagram_user_id como user_id:', currentUser.instagram_user_id);
 
-      // Insertar el autoresponder usando el instagram_user_id directamente
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .insert({
-          user_id: currentUser.instagram_user_id, // Usar instagram_user_id en lugar de auth.uid()
+          user_id: currentUser.instagram_user_id,
           post_id: selectedPost.id,
           post_url: selectedPost.permalink,
           post_caption: selectedPost.caption,
           name: name.trim(),
           keywords: keywords,
           dm_message: dmMessage.trim(),
+          public_reply_messages: publicReplyMessages,
           is_active: true
         })
         .select()
@@ -123,14 +158,14 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
 
       toast({
         title: "¡Autoresponder creado!",
-        description: `Se configuró para detectar comentarios en @${currentUser.username}`,
+        description: `Se configuró para detectar comentarios en @${currentUser.username} con ${publicReplyMessages.length} mensajes de respuesta`,
       });
 
-      // Llamar callback de éxito
       onSubmit({
         name: name.trim(),
         keywords,
         dmMessage: dmMessage.trim(),
+        publicReplyMessages,
         postId: selectedPost.id,
         postUrl: selectedPost.permalink,
         postCaption: selectedPost.caption
@@ -276,6 +311,55 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
             </div>
           </div>
 
+          {/* Mensajes de Respuesta Pública */}
+          <div>
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Mensajes de Respuesta Pública
+            </Label>
+            <p className="text-xs text-gray-500 mb-2">
+              Estos mensajes se enviarán como respuesta pública al comentario (se selecciona uno al azar)
+            </p>
+            
+            <div className="flex gap-2 mb-3">
+              <Input
+                value={newPublicReply}
+                onChange={(e) => setNewPublicReply(e.target.value)}
+                onKeyPress={handlePublicReplyKeyPress}
+                placeholder="Escribe un mensaje de respuesta pública..."
+                className="flex-1"
+                disabled={publicReplyMessages.length >= 10}
+              />
+              <Button 
+                type="button" 
+                onClick={addPublicReply} 
+                size="sm"
+                disabled={publicReplyMessages.length >= 10 || !newPublicReply.trim()}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-2 mb-2">
+              {publicReplyMessages.map((message, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                  <span className="text-xs text-blue-600 font-medium">#{index + 1}</span>
+                  <span className="flex-1 text-sm text-gray-800">{message}</span>
+                  {publicReplyMessages.length > 1 && (
+                    <X
+                      className="w-4 h-4 cursor-pointer hover:text-red-500 flex-shrink-0"
+                      onClick={() => removePublicReply(index)}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <p className="text-xs text-gray-400">
+              {publicReplyMessages.length}/10 mensajes configurados
+            </p>
+          </div>
+
           {/* Mensaje DM */}
           <div>
             <Label htmlFor="dmMessage" className="text-sm font-medium text-gray-700">
@@ -310,7 +394,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || keywords.length === 0}
+              disabled={isSubmitting || keywords.length === 0 || publicReplyMessages.length === 0}
               className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
               {isSubmitting ? (
