@@ -1,82 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
-  MessageCircle, 
   Plus, 
   Edit, 
   Trash2, 
+  MessageCircle, 
   ToggleLeft, 
   ToggleRight,
   Key,
+  Send,
   Clock,
   Filter,
-  MessageSquare
+  Users,
+  ArrowLeft
 } from 'lucide-react';
 import AutoresponderForm from './AutoresponderForm';
-import AutoresponderTypeDialog from './AutoresponderTypeDialog';
-import CommentAutoresponderForm from './CommentAutoresponderForm';
 import EditAutoresponderForm from './EditAutoresponderForm';
-import EditCommentAutoresponderForm from './EditCommentAutoresponderForm';
-import InstagramPostSelector from './InstagramPostSelector';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 
 interface AutoresponderMessage {
   id: string;
   name: string;
   message_text: string;
   is_active: boolean;
-  send_only_first_message?: boolean;
-  use_keywords?: boolean;
-  keywords?: string[];
+  send_only_first_message: boolean;
+  use_keywords: boolean;
+  keywords: string[] | null;
   created_at: string;
+  updated_at: string;
+  instagram_user_id_ref: string;
 }
 
-interface CommentAutoresponder {
-  id: string;
-  name: string;
-  keywords: string[];
-  dm_message: string;
-  post_id: string;
-  post_url: string;
-  post_caption?: string;
-  is_active: boolean;
-  created_at: string;
-  public_reply_messages?: string[];
-}
-
-const AutoresponderManager: React.FC = () => {
-  const [messages, setMessages] = useState<AutoresponderMessage[]>([]);
-  const [commentAutoresponders, setCommentAutoresponders] = useState<CommentAutoresponder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [showTypeDialog, setShowTypeDialog] = useState(false);
-  const [showPostSelector, setShowPostSelector] = useState(false);
-  const [showCommentForm, setShowCommentForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [showEditCommentForm, setShowEditCommentForm] = useState(false);
-  const [selectedPost, setSelectedPost] = useState(null);
+const AutoresponderManager = () => {
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingMessage, setEditingMessage] = useState<AutoresponderMessage | null>(null);
-  const [editingCommentAutoresponder, setEditingCommentAutoresponder] = useState<CommentAutoresponder | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { currentUser } = useInstagramUsers();
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchMessages();
-      fetchCommentAutoresponders();
-    }
-  }, [currentUser]);
-
-  const fetchMessages = async () => {
-    if (!currentUser) return;
-    
-    try {
-      setLoading(true);
-      console.log('🔍 Cargando autoresponders para usuario:', currentUser.username);
+  const { data: messages, isLoading } = useQuery({
+    queryKey: ['autoresponder-messages', currentUser?.instagram_user_id],
+    queryFn: async () => {
+      if (!currentUser) return [];
 
       const { data, error } = await supabase
         .from('autoresponder_messages')
@@ -85,213 +55,26 @@ const AutoresponderManager: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error cargando autoresponders:', error);
+        console.error('Error obteniendo autoresponders:', error);
         throw error;
       }
 
-      console.log('✅ Autoresponders cargados:', data?.length || 0);
-      setMessages(data || []);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los autoresponders",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+      return data || [];
+    },
+    enabled: !!currentUser?.instagram_user_id,
+  });
+
+  const handleCreateSuccess = () => {
+    setShowCreateForm(false);
+    queryClient.invalidateQueries({ queryKey: ['autoresponder-messages'] });
   };
 
-  const fetchCommentAutoresponders = async () => {
-    if (!currentUser) return;
-    
-    try {
-      console.log('🔍 Cargando autoresponders de comentarios...');
-      console.log('🆔 Buscando por user_id:', currentUser.instagram_user_id);
-
-      const { data, error } = await supabase
-        .from('comment_autoresponders')
-        .select('*')
-        .eq('user_id', currentUser.instagram_user_id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Error cargando autoresponders de comentarios:', error);
-        throw error;
-      }
-
-      console.log('✅ Autoresponders de comentarios cargados:', data?.length || 0);
-      setCommentAutoresponders(data || []);
-    } catch (error) {
-      console.error('Error fetching comment autoresponders:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los autoresponders de comentarios",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSubmit = () => {
-    setShowForm(false);
+  const handleEditSuccess = () => {
     setEditingMessage(null);
-    fetchMessages();
+    queryClient.invalidateQueries({ queryKey: ['autoresponder-messages'] });
   };
 
-  const handleEdit = (message: AutoresponderMessage) => {
-    setEditingMessage(message);
-    setShowEditForm(true);
-  };
-
-  const handleEditCommentAutoresponder = (autoresponder: CommentAutoresponder) => {
-    setEditingCommentAutoresponder(autoresponder);
-    setShowEditCommentForm(true);
-  };
-
-  const handleEditSubmit = () => {
-    setShowEditForm(false);
-    setEditingMessage(null);
-    fetchMessages();
-  };
-
-  const handleEditCommentSubmit = () => {
-    setShowEditCommentForm(false);
-    setEditingCommentAutoresponder(null);
-    fetchCommentAutoresponders();
-  };
-
-  const handleDelete = async (messageId: string) => {
-    if (!confirm('¿Estás seguro de eliminar este autoresponder?')) {
-      return;
-    }
-
-    try {
-      console.log('🗑️ Eliminando autoresponder:', messageId);
-      console.log('👤 Usuario actual:', currentUser?.instagram_user_id);
-      
-      // Primero verificar que el autoresponder pertenece al usuario actual
-      const { data: autoresponder, error: fetchError } = await supabase
-        .from('autoresponder_messages')
-        .select('id, instagram_user_id_ref')
-        .eq('id', messageId)
-        .eq('instagram_user_id_ref', currentUser.instagram_user_id)
-        .single();
-
-      if (fetchError) {
-        console.error('❌ Error verificando autoresponder:', fetchError);
-        throw new Error('No se pudo verificar el autoresponder');
-      }
-
-      if (!autoresponder) {
-        throw new Error('Autoresponder no encontrado o no tienes permisos');
-      }
-
-      // Eliminar primero los logs relacionados para evitar conflictos de foreign key
-      const { error: logError } = await supabase
-        .from('autoresponder_sent_log')
-        .delete()
-        .eq('autoresponder_message_id', messageId);
-
-      if (logError) {
-        console.warn('⚠️ Error eliminando logs de autoresponder (continuando):', logError);
-      }
-
-      // Ahora eliminar el autoresponder
-      const { error } = await supabase
-        .from('autoresponder_messages')
-        .delete()
-        .eq('id', messageId)
-        .eq('instagram_user_id_ref', currentUser.instagram_user_id);
-
-      if (error) {
-        console.error('❌ Error eliminando:', error);
-        throw error;
-      }
-
-      console.log('✅ Autoresponder eliminado exitosamente');
-      toast({
-        title: "¡Eliminado!",
-        description: "Autoresponder eliminado exitosamente",
-      });
-
-      fetchMessages();
-    } catch (error) {
-      console.error('Error deleting autoresponder:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo eliminar el autoresponder",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDeleteCommentAutoresponder = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este autoresponder de comentarios?')) {
-      return;
-    }
-
-    try {
-      console.log('🗑️ Eliminando autoresponder de comentarios:', id);
-      console.log('👤 Usuario actual:', currentUser?.instagram_user_id);
-      
-      // Primero verificar que el autoresponder pertenece al usuario actual
-      const { data: autoresponder, error: fetchError } = await supabase
-        .from('comment_autoresponders')
-        .select('id, user_id')
-        .eq('id', id)
-        .eq('user_id', currentUser.instagram_user_id)
-        .single();
-
-      if (fetchError) {
-        console.error('❌ Error verificando autoresponder de comentarios:', fetchError);
-        throw new Error('No se pudo verificar el autoresponder de comentarios');
-      }
-
-      if (!autoresponder) {
-        throw new Error('Autoresponder de comentarios no encontrado o no tienes permisos');
-      }
-
-      // Eliminar primero los logs relacionados para evitar conflictos de foreign key
-      const { error: logError } = await supabase
-        .from('comment_autoresponder_log')
-        .delete()
-        .eq('comment_autoresponder_id', id);
-
-      if (logError) {
-        console.warn('⚠️ Error eliminando logs (continuando):', logError);
-      }
-
-      // Ahora eliminar el autoresponder
-      const { error } = await supabase
-        .from('comment_autoresponders')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', currentUser.instagram_user_id);
-
-      if (error) {
-        console.error('❌ Error eliminando autoresponder de comentarios:', error);
-        throw error;
-      }
-
-      console.log('✅ Autoresponder de comentarios eliminado exitosamente');
-      toast({
-        title: "¡Eliminado!",
-        description: "Autoresponder de comentarios eliminado exitosamente",
-      });
-
-      fetchCommentAutoresponders();
-    } catch (error) {
-      console.error('Error deleting comment autoresponder:', error);
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo eliminar el autoresponder de comentarios",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const toggleActive = async (messageId: string, currentStatus: boolean) => {
+  const handleToggleActive = async (messageId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
         .from('autoresponder_messages')
@@ -301,430 +84,243 @@ const AutoresponderManager: React.FC = () => {
       if (error) throw error;
 
       toast({
-        title: "Estado actualizado",
-        description: `Autoresponder ${!currentStatus ? 'activado' : 'desactivado'}`,
+        title: currentStatus ? "Autoresponder desactivado" : "Autoresponder activado",
+        description: currentStatus ? "El autoresponder ya no enviará mensajes automáticos" : "El autoresponder comenzará a enviar mensajes automáticos",
       });
 
-      fetchMessages();
+      queryClient.invalidateQueries({ queryKey: ['autoresponder-messages'] });
     } catch (error) {
+      console.error('Error updating autoresponder:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado",
+        description: "No se pudo actualizar el autoresponder",
         variant: "destructive"
       });
     }
   };
 
-  const toggleCommentAutoresponderActive = async (id: string, currentStatus: boolean) => {
+  const handleDelete = async (messageId: string, messageName: string) => {
+    const confirmDelete = window.confirm(`¿Estás seguro de que quieres eliminar "${messageName}"? Esta acción no se puede deshacer.`);
+    
+    if (!confirmDelete) return;
+
     try {
-      console.log('🔄 Cambiando estado del autoresponder de comentarios:', id);
-      console.log('👤 Usuario actual:', currentUser?.instagram_user_id);
-      
       const { error } = await supabase
-        .from('comment_autoresponders')
-        .update({ is_active: !currentStatus })
-        .eq('id', id)
-        .eq('user_id', currentUser.instagram_user_id); // Verificación adicional de seguridad
+        .from('autoresponder_messages')
+        .delete()
+        .eq('id', messageId);
 
       if (error) throw error;
 
       toast({
-        title: "Estado actualizado",
-        description: `Autoresponder de comentarios ${!currentStatus ? 'activado' : 'desactivado'}`,
+        title: "Autoresponder eliminado",
+        description: `"${messageName}" ha sido eliminado correctamente`,
       });
 
-      fetchCommentAutoresponders();
+      queryClient.invalidateQueries({ queryKey: ['autoresponder-messages'] });
     } catch (error) {
-      console.error('Error toggling comment autoresponder:', error);
+      console.error('Error deleting autoresponder:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado",
+        description: "No se pudo eliminar el autoresponder",
         variant: "destructive"
       });
     }
   };
 
-  const handleTypeSelection = (type: 'comments' | 'messages') => {
-    setShowTypeDialog(false);
-    
-    if (type === 'comments') {
-      setShowPostSelector(true);
-    } else {
-      setShowForm(true);
-    }
-  };
-
-  const handlePostSelected = (post: any) => {
-    setSelectedPost(post);
-    setShowPostSelector(false);
-    setShowCommentForm(true);
-  };
-
-  const handleCommentAutoresponderSubmit = () => {
-    setShowCommentForm(false);
-    setSelectedPost(null);
-    fetchCommentAutoresponders();
-  };
-
-  const handleBackFromCommentForm = () => {
-    setShowCommentForm(false);
-    setSelectedPost(null);
-    setShowPostSelector(true);
-  };
-
-  // Mostrar mensaje si no hay usuario autenticado
   if (!currentUser) {
     return (
       <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <MessageCircle className="w-16 h-16 text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No hay usuario de Instagram autenticado
-          </h3>
+          <MessageCircle className="w-12 h-12 text-gray-400 mb-4" />
           <p className="text-gray-600 text-center">
-            Debes conectar tu cuenta de Instagram para gestionar autoresponders
+            Conecta tu cuenta de Instagram para gestionar autoresponders
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  // Mostrar formulario de edición de autoresponder normal
-  if (showEditForm && editingMessage) {
+  if (showCreateForm) {
+    return (
+      <AutoresponderForm
+        onSubmit={handleCreateSuccess}
+        onCancel={() => setShowCreateForm(false)}
+      />
+    );
+  }
+
+  if (editingMessage) {
     return (
       <EditAutoresponderForm
         message={editingMessage}
-        onSubmit={handleEditSubmit}
-        onCancel={() => {
-          setShowEditForm(false);
-          setEditingMessage(null);
-        }}
+        onSubmit={handleEditSuccess}
+        onCancel={() => setEditingMessage(null)}
       />
     );
   }
-
-  // Mostrar formulario de edición de autoresponder de comentarios
-  if (showEditCommentForm && editingCommentAutoresponder) {
-    return (
-      <EditCommentAutoresponderForm
-        autoresponder={editingCommentAutoresponder}
-        onBack={() => {
-          setShowEditCommentForm(false);
-          setEditingCommentAutoresponder(null);
-        }}
-        onSubmit={handleEditCommentSubmit}
-      />
-    );
-  }
-
-  // Mostrar selector de posts
-  if (showPostSelector) {
-    return (
-      <InstagramPostSelector
-        onPostSelected={handlePostSelected}
-        onBack={() => {
-          setShowPostSelector(false);
-          setShowTypeDialog(true);
-        }}
-      />
-    );
-  }
-
-  // Mostrar formulario de autoresponder de comentarios
-  if (showCommentForm && selectedPost) {
-    return (
-      <CommentAutoresponderForm
-        selectedPost={selectedPost}
-        onBack={handleBackFromCommentForm}
-        onSubmit={handleCommentAutoresponderSubmit}
-      />
-    );
-  }
-
-  // Mostrar formulario de autoresponder normal
-  if (showForm) {
-    return (
-      <AutoresponderForm
-        message={editingMessage}
-        onSubmit={handleSubmit}
-        onCancel={() => {
-          setShowForm(false);
-          setEditingMessage(null);
-        }}
-      />
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Cargando autoresponders...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const totalAutoresponders = messages.length + commentAutoresponders.length;
 
   return (
     <div className="space-y-6">
-      {/* Diálogo de selección de tipo */}
-      <AutoresponderTypeDialog
-        open={showTypeDialog}
-        onOpenChange={setShowTypeDialog}
-        onSelectType={handleTypeSelection}
-      />
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <MessageCircle className="w-6 h-6 text-purple-500" />
-          <div>
-            <h2 className="text-xl font-semibold">Autoresponders</h2>
-            <p className="text-sm text-gray-600">
-              Para @{currentUser.username} ({totalAutoresponders} total)
-            </p>
-          </div>
-        </div>
-        <Button 
-          onClick={() => setShowTypeDialog(true)}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Autoresponder
-        </Button>
-      </div>
-
-      {/* Lista de autoresponders de mensajes directos */}
-      {messages.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-800">Mensajes Directos / Stories</h3>
-          <div className="grid gap-4">
-            {messages.map((message) => (
-              <Card key={message.id} className="border-purple-100">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${message.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      <CardTitle className="text-lg">{message.name}</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleActive(message.id, message.is_active)}
-                      >
-                        {message.is_active ? (
-                          <ToggleRight className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <ToggleLeft className="w-4 h-4 text-gray-400" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(message)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(message.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <p className="text-gray-700">{message.message_text}</p>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant={message.is_active ? "default" : "secondary"}>
-                        {message.is_active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                      
-                      {message.send_only_first_message && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          Solo primer mensaje
-                        </Badge>
-                      )}
-                      
-                      {message.use_keywords && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Filter className="w-3 h-3" />
-                          Con palabras clave
-                        </Badge>
-                      )}
-                    </div>
-
-                    {message.use_keywords && message.keywords && message.keywords.length > 0 && (
-                      <div className="pt-2">
-                        <div className="flex items-center gap-1 mb-2">
-                          <Key className="w-3 h-3 text-gray-500" />
-                          <span className="text-xs text-gray-500">Palabras clave:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {message.keywords.map((keyword, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded"
-                            >
-                              {keyword}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Lista de autoresponders de comentarios */}
-      {commentAutoresponders.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-800">Comentarios de Posts</h3>
-          <div className="grid gap-4">
-            {commentAutoresponders.map((autoresponder) => (
-              <Card key={autoresponder.id} className="border-orange-100">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${autoresponder.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      <CardTitle className="text-lg">{autoresponder.name}</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleCommentAutoresponderActive(autoresponder.id, autoresponder.is_active)}
-                      >
-                        {autoresponder.is_active ? (
-                          <ToggleRight className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <ToggleLeft className="w-4 h-4 text-gray-400" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditCommentAutoresponder(autoresponder)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteCommentAutoresponder(autoresponder.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Mensaje DM:</p>
-                      <p className="text-gray-700">{autoresponder.dm_message}</p>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant={autoresponder.is_active ? "default" : "secondary"}>
-                        {autoresponder.is_active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                      <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                        Post específico
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        {autoresponder.public_reply_messages?.length || 1} respuestas públicas
-                      </Badge>
-                    </div>
-
-                    <div className="pt-2">
-                      <div className="flex items-center gap-1 mb-2">
-                        <Key className="w-3 h-3 text-gray-500" />
-                        <span className="text-xs text-gray-500">Palabras clave:</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {autoresponder.keywords.map((keyword, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded"
-                          >
-                            {keyword}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Mostrar mensajes de respuesta pública */}
-                    {autoresponder.public_reply_messages && autoresponder.public_reply_messages.length > 0 && (
-                      <div className="pt-2">
-                        <div className="flex items-center gap-1 mb-2">
-                          <MessageSquare className="w-3 h-3 text-gray-500" />
-                          <span className="text-xs text-gray-500">Respuestas públicas (se envía una al azar):</span>
-                        </div>
-                        <div className="space-y-1">
-                          {autoresponder.public_reply_messages.map((message, index) => (
-                            <div key={index} className="flex items-start gap-2 p-2 bg-green-50 rounded text-xs">
-                              <span className="text-green-600 font-medium">#{index + 1}</span>
-                              <span className="text-gray-700 flex-1">{message}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="pt-2 text-xs text-gray-500">
-                      <a 
-                        href={autoresponder.post_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        Ver post configurado →
-                      </a>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {totalAutoresponders === 0 && (
-        <Card className="border-dashed border-purple-300 bg-purple-50">
-          <CardContent className="text-center py-8">
-            <MessageCircle className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No hay autoresponders
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Crea tu primer autoresponder para comenzar a responder automáticamente
-            </p>
-            <Button 
-              onClick={() => setShowTypeDialog(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50">
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-purple-900 flex items-center gap-2">
+                <MessageCircle className="w-6 h-6" />
+                Autoresponders de Mensajes Directos
+              </CardTitle>
+              <p className="text-sm text-purple-700 mt-1">
+                Para @{currentUser.username}
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Crear Primer Autoresponder
+              Nuevo Autoresponder
             </Button>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <span className="ml-2 text-gray-600">Cargando autoresponders...</span>
+            </div>
+          ) : !messages || messages.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No tienes autoresponders configurados
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Crea tu primer autoresponder para responder automáticamente a los mensajes directos
+              </p>
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Autoresponder
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {messages.map((message) => (
+                <Card key={message.id} className="border border-gray-200 hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-gray-900">
+                            {message.name}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            {message.is_active ? (
+                              <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
+                                <Send className="w-3 h-3 mr-1" />
+                                Activo
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Inactivo
+                              </Badge>
+                            )}
+                            
+                            {message.send_only_first_message && (
+                              <Badge variant="outline" className="text-blue-600 border-blue-200">
+                                <Users className="w-3 h-3 mr-1" />
+                                Solo primer mensaje
+                              </Badge>
+                            )}
+                            
+                            {message.use_keywords && (
+                              <Badge variant="outline" className="text-orange-600 border-orange-200">
+                                <Key className="w-3 h-3 mr-1" />
+                                Con palabras clave
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                          {message.message_text}
+                        </p>
+                        
+                        {message.use_keywords && message.keywords && message.keywords.length > 0 && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <Filter className="w-4 h-4 text-gray-400" />
+                            <span className="text-xs text-gray-500">Palabras clave:</span>
+                            <div className="flex flex-wrap gap-1">
+                              {message.keywords.slice(0, 3).map((keyword, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs">
+                                  {keyword}
+                                </Badge>
+                              ))}
+                              {message.keywords.length > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{message.keywords.length - 3} más
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <p className="text-xs text-gray-400">
+                          Creado: {new Date(message.created_at).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleActive(message.id, message.is_active)}
+                          className="text-gray-600 hover:text-blue-600"
+                        >
+                          {message.is_active ? (
+                            <ToggleRight className="w-4 h-4" />
+                          ) : (
+                            <ToggleLeft className="w-4 h-4" />
+                          )}
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingMessage(message)}
+                          className="text-gray-600 hover:text-blue-600"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(message.id, message.name)}
+                          className="text-gray-600 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
