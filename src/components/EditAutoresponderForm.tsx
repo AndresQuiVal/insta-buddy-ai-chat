@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { X, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PersonalizationVariables from './PersonalizationVariables';
 
 interface AutoresponderMessage {
   id: string;
@@ -63,6 +64,26 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
     if (e.key === 'Enter') {
       e.preventDefault();
       addKeyword();
+    }
+  };
+
+  // Nueva función para insertar variables en el mensaje
+  const insertVariable = (variable: string) => {
+    const textarea = document.getElementById('message') as HTMLTextAreaElement;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newText = messageText.substring(0, start) + variable + messageText.substring(end);
+      setMessageText(newText);
+      
+      // Restaurar cursor después de la variable insertada
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + variable.length, start + variable.length);
+      }, 0);
+    } else {
+      // Si no se puede obtener la posición del cursor, agregar al final
+      setMessageText(messageText + variable);
     }
   };
 
@@ -157,144 +178,154 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
   }
 
   return (
-    <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-      <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <CardTitle className="text-purple-900">
-              Editar Autoresponder de Mensajes Directos
-            </CardTitle>
-            <p className="text-sm text-purple-700 mt-1">
-              Para @{currentUser.username}
-            </p>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nombre de la respuesta</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Bienvenida inicial"
-              maxLength={100}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="message">Mensaje de respuesta</Label>
-            <Textarea
-              id="message"
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              placeholder="Escribe el mensaje que se enviará automáticamente..."
-              rows={4}
-              maxLength={1000}
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              {messageText.length}/1000 caracteres
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="active"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-            <Label htmlFor="active">Activar esta respuesta automática</Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="sendOnlyFirst"
-              checked={sendOnlyFirstMessage}
-              onCheckedChange={setSendOnlyFirstMessage}
-            />
-            <Label htmlFor="sendOnlyFirst">Solo enviar el primer mensaje</Label>
-            <p className="text-sm text-gray-500">
-              {sendOnlyFirstMessage 
-                ? "Solo responderá la primera vez que alguien te escriba" 
-                : "Responderá a todos los mensajes que recibas"
-              }
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="useKeywords"
-                checked={useKeywords}
-                onCheckedChange={setUseKeywords}
-              />
-              <Label htmlFor="useKeywords">Solo responder a palabras clave específicas</Label>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Formulario principal */}
+      <div className="lg:col-span-2">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={onCancel}>
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <div>
+                <CardTitle className="text-purple-900">
+                  Editar Autoresponder de Mensajes Directos
+                </CardTitle>
+                <p className="text-sm text-purple-700 mt-1">
+                  Para @{currentUser.username}
+                </p>
+              </div>
             </div>
-            
-            {useKeywords && (
-              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                <div>
-                  <Label htmlFor="newKeyword">Agregar palabra clave</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="newKeyword"
-                      value={newKeyword}
-                      onChange={(e) => setNewKeyword(e.target.value)}
-                      onKeyPress={handleKeywordInputKeyPress}
-                      placeholder="Ej: hola, info, precios..."
-                      className="flex-1"
-                    />
-                    <Button type="button" onClick={addKeyword} disabled={!newKeyword.trim()}>
-                      Agregar
-                    </Button>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Solo responderá si el mensaje contiene alguna de estas palabras (no importan mayúsculas/minúsculas)
-                  </p>
+          </CardHeader>
+
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre de la respuesta</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ej: Bienvenida inicial"
+                  maxLength={100}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="message">Mensaje de respuesta</Label>
+                <Textarea
+                  id="message"
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Escribe el mensaje que se enviará automáticamente... Usa variables como {NOMBRE} para personalizar"
+                  rows={4}
+                  maxLength={1000}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  {messageText.length}/1000 caracteres
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="active"
+                  checked={isActive}
+                  onCheckedChange={setIsActive}
+                />
+                <Label htmlFor="active">Activar esta respuesta automática</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="sendOnlyFirst"
+                  checked={sendOnlyFirstMessage}
+                  onCheckedChange={setSendOnlyFirstMessage}
+                />
+                <Label htmlFor="sendOnlyFirst">Solo enviar el primer mensaje</Label>
+                <p className="text-sm text-gray-500">
+                  {sendOnlyFirstMessage 
+                    ? "Solo responderá la primera vez que alguien te escriba" 
+                    : "Responderá a todos los mensajes que recibas"
+                  }
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="useKeywords"
+                    checked={useKeywords}
+                    onCheckedChange={setUseKeywords}
+                  />
+                  <Label htmlFor="useKeywords">Solo responder a palabras clave específicas</Label>
                 </div>
                 
-                {keywords.length > 0 && (
-                  <div>
-                    <Label>Palabras clave configuradas:</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {keywords.map((keyword, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm"
-                        >
-                          {keyword}
-                          <button
-                            type="button"
-                            onClick={() => removeKeyword(keyword)}
-                            className="hover:bg-blue-200 rounded-full p-0.5"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
+                {useKeywords && (
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                    <div>
+                      <Label htmlFor="newKeyword">Agregar palabra clave</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="newKeyword"
+                          value={newKeyword}
+                          onChange={(e) => setNewKeyword(e.target.value)}
+                          onKeyPress={handleKeywordInputKeyPress}
+                          placeholder="Ej: hola, info, precios..."
+                          className="flex-1"
+                        />
+                        <Button type="button" onClick={addKeyword} disabled={!newKeyword.trim()}>
+                          Agregar
+                        </Button>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Solo responderá si el mensaje contiene alguna de estas palabras (no importan mayúsculas/minúsculas)
+                      </p>
                     </div>
+                    
+                    {keywords.length > 0 && (
+                      <div>
+                        <Label>Palabras clave configuradas:</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {keywords.map((keyword, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm"
+                            >
+                              {keyword}
+                              <button
+                                type="button"
+                                onClick={() => removeKeyword(keyword)}
+                                className="hover:bg-blue-200 rounded-full p-0.5"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
-          </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Actualizando...' : 'Guardar Cambios'}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Actualizando...' : 'Guardar Cambios'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Panel de variables de personalización */}
+      <div className="lg:col-span-1">
+        <PersonalizationVariables onVariableClick={insertVariable} />
+      </div>
+    </div>
   );
 };
 
