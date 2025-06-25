@@ -64,6 +64,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
     
+    // ... keep existing code (verification and initial processing) the same
+    
     const url = new URL(req.url)
     const challenge = url.searchParams.get('hub.challenge')
     const verifyToken = url.searchParams.get('hub.verify_token')
@@ -181,6 +183,8 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     return
   }
 
+  // ... keep existing code (prospect activity update) the same
+
   console.log('🔄 Actualizando actividad del prospecto...')
   try {
     const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
@@ -217,6 +221,8 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   // 🆕 OBTENER INFORMACIÓN ADICIONAL DEL USUARIO QUE ENVÍA EL MENSAJE
   console.log('🔍 ===== OBTENIENDO INFORMACIÓN DEL USUARIO QUE ENVÍA =====')
   const senderUserInfo = await fetchInstagramUserInfo(senderId, instagramUser.access_token)
+
+  // ... keep existing code (prospect creation and message saving) the same
 
   console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
   
@@ -262,6 +268,8 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.error('💥 Error en add_prospect_message:', messageErr)
   }
 
+  // ... keep existing code (message analysis and saving) the same
+
   console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
   console.log('📝 Texto:', messageText)
 
@@ -295,6 +303,8 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   } else {
     console.log('✅ Mensaje guardado correctamente')
   }
+
+  // ... keep existing code (autoresponder selection) the same
 
   console.log('🔍 === OBTENIENDO AUTORESPONDERS DEL USUARIO ESPECÍFICO ===')
   console.log('👤 Buscando autoresponders para usuario:', instagramUser.username, 'con instagram_user_id_ref:', recipientId)
@@ -446,6 +456,8 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
+  // ... keep existing code (comment autoresponder selection) the same
+
   console.log('🔍 ===== BUSCANDO AUTORESPONDER DE COMENTARIOS =====')
 
   const { data: commentAutoresponders, error: autoresponderError } = await supabase
@@ -496,6 +508,8 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   }
 
   console.log('🎯 AUTORESPONDER DE COMENTARIO SELECCIONADO:', selectedAutoresponder.name)
+
+  // ... keep existing code (user finding and reply verification) the same
 
   console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM POR ENTRY ID =====')
   console.log('🆔 Instagram Account ID del entry:', instagramAccountId)
@@ -567,6 +581,8 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   let publicReplySuccess = false
   let publicReplyId = null
   let publicReplyError = null
+
+  // ... keep existing code (public reply validation) the same
 
   console.log('🔍 ===== VALIDACIONES PREVIAS =====')
   console.log('🔑 Access Token length:', accessToken ? accessToken.length : 'NO TOKEN')
