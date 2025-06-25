@@ -20,6 +20,8 @@ import {
 import AutoresponderForm from './AutoresponderForm';
 import AutoresponderTypeDialog from './AutoresponderTypeDialog';
 import CommentAutoresponderForm from './CommentAutoresponderForm';
+import EditAutoresponderForm from './EditAutoresponderForm';
+import EditCommentAutoresponderForm from './EditCommentAutoresponderForm';
 import InstagramPostSelector from './InstagramPostSelector';
 
 interface AutoresponderMessage {
@@ -54,8 +56,11 @@ const AutoresponderManager: React.FC = () => {
   const [showTypeDialog, setShowTypeDialog] = useState(false);
   const [showPostSelector, setShowPostSelector] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showEditCommentForm, setShowEditCommentForm] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [editingMessage, setEditingMessage] = useState<AutoresponderMessage | null>(null);
+  const [editingCommentAutoresponder, setEditingCommentAutoresponder] = useState<CommentAutoresponder | null>(null);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
 
@@ -136,7 +141,24 @@ const AutoresponderManager: React.FC = () => {
 
   const handleEdit = (message: AutoresponderMessage) => {
     setEditingMessage(message);
-    setShowForm(true);
+    setShowEditForm(true);
+  };
+
+  const handleEditCommentAutoresponder = (autoresponder: CommentAutoresponder) => {
+    setEditingCommentAutoresponder(autoresponder);
+    setShowEditCommentForm(true);
+  };
+
+  const handleEditSubmit = () => {
+    setShowEditForm(false);
+    setEditingMessage(null);
+    fetchMessages();
+  };
+
+  const handleEditCommentSubmit = () => {
+    setShowEditCommentForm(false);
+    setEditingCommentAutoresponder(null);
+    fetchCommentAutoresponders();
   };
 
   const handleDelete = async (messageId: string) => {
@@ -367,6 +389,34 @@ const AutoresponderManager: React.FC = () => {
     );
   }
 
+  // Mostrar formulario de edición de autoresponder normal
+  if (showEditForm && editingMessage) {
+    return (
+      <EditAutoresponderForm
+        message={editingMessage}
+        onSubmit={handleEditSubmit}
+        onCancel={() => {
+          setShowEditForm(false);
+          setEditingMessage(null);
+        }}
+      />
+    );
+  }
+
+  // Mostrar formulario de edición de autoresponder de comentarios
+  if (showEditCommentForm && editingCommentAutoresponder) {
+    return (
+      <EditCommentAutoresponderForm
+        autoresponder={editingCommentAutoresponder}
+        onBack={() => {
+          setShowEditCommentForm(false);
+          setEditingCommentAutoresponder(null);
+        }}
+        onSubmit={handleEditCommentSubmit}
+      />
+    );
+  }
+
   // Mostrar selector de posts
   if (showPostSelector) {
     return (
@@ -564,6 +614,13 @@ const AutoresponderManager: React.FC = () => {
                         ) : (
                           <ToggleLeft className="w-4 h-4 text-gray-400" />
                         )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditCommentAutoresponder(autoresponder)}
+                      >
+                        <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="outline"
