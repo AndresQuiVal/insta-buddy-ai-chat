@@ -101,21 +101,12 @@ const AutoresponderManager: React.FC = () => {
     
     try {
       console.log('🔍 Cargando autoresponders de comentarios...');
-
-      // Verificar si el usuario está autenticado
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error('❌ Error de autenticación:', authError);
-        return;
-      }
-
-      console.log('✅ Usuario autenticado:', user.id);
+      console.log('🆔 Buscando por user_id:', currentUser.instagram_user_id);
 
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', currentUser.instagram_user_id) // Usar instagram_user_id directamente
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -188,19 +179,13 @@ const AutoresponderManager: React.FC = () => {
 
     try {
       console.log('🗑️ Eliminando autoresponder de comentarios:', id);
+      console.log('👤 Usuario actual:', currentUser?.instagram_user_id);
       
-      // Verificar autenticación antes de eliminar
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        throw new Error('No hay usuario autenticado');
-      }
-
       const { error } = await supabase
         .from('comment_autoresponders')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id); // Verificación adicional de seguridad
+        .eq('user_id', currentUser.instagram_user_id); // Verificación adicional de seguridad
 
       if (error) {
         console.error('❌ Error eliminando:', error);
@@ -250,18 +235,14 @@ const AutoresponderManager: React.FC = () => {
 
   const toggleCommentAutoresponderActive = async (id: string, currentStatus: boolean) => {
     try {
-      // Verificar autenticación antes de actualizar
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('🔄 Cambiando estado del autoresponder de comentarios:', id);
+      console.log('👤 Usuario actual:', currentUser?.instagram_user_id);
       
-      if (authError || !user) {
-        throw new Error('No hay usuario autenticado');
-      }
-
       const { error } = await supabase
         .from('comment_autoresponders')
         .update({ is_active: !currentStatus })
         .eq('id', id)
-        .eq('user_id', user.id); // Verificación adicional de seguridad
+        .eq('user_id', currentUser.instagram_user_id); // Verificación adicional de seguridad
 
       if (error) throw error;
 

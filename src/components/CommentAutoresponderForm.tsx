@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,22 +96,13 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
 
     try {
       console.log('💾 Guardando autoresponder de comentarios para usuario:', currentUser.username);
+      console.log('🆔 Usando instagram_user_id como user_id:', currentUser.instagram_user_id);
 
-      // Verificar autenticación del usuario
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error('❌ Error de autenticación:', authError);
-        throw new Error('No hay usuario autenticado');
-      }
-
-      console.log('✅ Usuario autenticado correctamente:', user.id);
-
-      // Insertar el autoresponder
+      // Insertar el autoresponder usando el instagram_user_id directamente
       const { data, error } = await supabase
         .from('comment_autoresponders')
         .insert({
-          user_id: user.id,
+          user_id: currentUser.instagram_user_id, // Usar instagram_user_id en lugar de auth.uid()
           post_id: selectedPost.id,
           post_url: selectedPost.permalink,
           post_caption: selectedPost.caption,
