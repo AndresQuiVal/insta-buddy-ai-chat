@@ -6,53 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Función para obtener información del usuario de Instagram
-async function fetchInstagramUserInfo(userId: string, accessToken: string) {
-  try {
-    console.log('🔍 Obteniendo info del usuario:', userId)
-    
-    const response = await fetch(`https://graph.instagram.com/${userId}?fields=name,username,profile_picture_url&access_token=${accessToken}`)
-    const userData = await response.json()
-    
-    if (userData.error) {
-      console.error('❌ Error obteniendo info del usuario:', userData.error)
-      return null
-    }
-    
-    console.log('✅ Info del usuario obtenida:', userData)
-    return userData
-  } catch (error) {
-    console.error('💥 Error en fetchInstagramUserInfo:', error)
-    return null
-  }
-}
-
-// Función para procesar variables de personalización
-function processPersonalizationVariables(message: string, userInfo: any, username?: string) {
-  let processedMessage = message
-  
-  // Obtener primer nombre del nombre completo
-  const firstName = userInfo?.name ? userInfo.name.split(' ')[0] : (username || 'Amigo/a')
-  
-  // Reemplazar variables
-  processedMessage = processedMessage
-    .replace(/{NOMBRE}/g, firstName)
-    .replace(/{NOMBRE_COMPLETO}/g, userInfo?.name || username || 'Usuario')
-    .replace(/{USERNAME}/g, userInfo?.username || username || 'usuario')
-    .replace(/{HORA}/g, new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }))
-    .replace(/{DIA}/g, new Date().toLocaleDateString('es-ES', { weekday: 'long' }))
-  
-  console.log('🎯 Variables procesadas:', {
-    original: message,
-    processed: processedMessage,
-    firstName,
-    fullName: userInfo?.name,
-    username: userInfo?.username
-  })
-  
-  return processedMessage
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -64,8 +17,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
     
-    // ... keep existing code (verification and initial processing) the same
-    
+    // Verificación inicial de Facebook (hub.challenge)
     const url = new URL(req.url)
     const challenge = url.searchParams.get('hub.challenge')
     const verifyToken = url.searchParams.get('hub.verify_token')
@@ -74,6 +26,7 @@ serve(async (req) => {
       console.log('🔐 Verificación de Facebook - challenge:', challenge)
       console.log('🔑 Token recibido:', verifyToken)
       
+      // Verificar el token (opcional, pero recomendado)
       if (verifyToken === 'hower-instagram-webhook-token') {
         console.log('✅ Token de verificación correcto')
         return new Response(challenge, { status: 200 })
@@ -105,6 +58,7 @@ serve(async (req) => {
         console.log('📋 Entry completo:', JSON.stringify(entry, null, 2))
         console.log('📋 Entry keys:', Object.keys(entry))
 
+        // FORMATO DE PRODUCCIÓN: entry.messaging
         if (entry.messaging && Array.isArray(entry.messaging)) {
           console.log('📝 PROCESANDO MENSAJES DIRECTOS (FORMATO PRODUCCIÓN)')
           
@@ -112,12 +66,14 @@ serve(async (req) => {
             await processMessage(messagingEvent, supabase, 'messaging', entry.id)
           }
         }
+        // FORMATO DE PRODUCCIÓN ALTERNATIVO: entry.changes
         else if (entry.changes && Array.isArray(entry.changes)) {
           console.log('🔄 PROCESANDO CAMBIOS (FORMATO PRODUCCIÓN)')
           
           for (const change of entry.changes) {
             console.log('📋 Change:', JSON.stringify(change, null, 2))
             
+            // PROCESAR MENSAJES DIRECTOS
             if (change.field === 'messages' && change.value) {
               const messagingEvent = {
                 sender: change.value.sender,
@@ -128,6 +84,7 @@ serve(async (req) => {
               
               await processMessage(messagingEvent, supabase, 'changes', entry.id)
             }
+            // 🆕 PROCESAR COMENTARIOS
             else if (change.field === 'comments' && change.value) {
               console.log('💬 PROCESANDO COMENTARIO')
               await processComment(change.value, supabase, entry.id)
@@ -183,8 +140,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     return
   }
 
-  // ... keep existing code (prospect activity update) the same
-
   console.log('🔄 Actualizando actividad del prospecto...')
   try {
     const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
@@ -203,6 +158,7 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM POR RECIPIENT ID =====')
   console.log('🎯 Buscando usuario con instagram_user_id:', recipientId)
 
+  // CORREGIDO: Buscar usuario específico por recipientId (quien recibe el mensaje)
   const { data: instagramUser, error: userError } = await supabase
     .from('instagram_users')
     .select('*')
@@ -218,12 +174,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
 
   console.log('✅ Usuario de Instagram encontrado:', JSON.stringify(instagramUser, null, 2))
 
-  // 🆕 OBTENER INFORMACIÓN ADICIONAL DEL USUARIO QUE ENVÍA EL MENSAJE
-  console.log('🔍 ===== OBTENIENDO INFORMACIÓN DEL USUARIO QUE ENVÍA =====')
-  const senderUserInfo = await fetchInstagramUserInfo(senderId, instagramUser.access_token)
-
-  // ... keep existing code (prospect creation and message saving) the same
-
   console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
   
   let prospectId;
@@ -231,8 +181,8 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     const { data: prospectResult, error: prospectError } = await supabase.rpc('create_or_update_prospect', {
       p_instagram_user_id: instagramUser.id,
       p_prospect_instagram_id: senderId,
-      p_username: senderUserInfo?.username || `prospect_${senderId.slice(-8)}`,
-      p_profile_picture_url: senderUserInfo?.profile_picture_url || null
+      p_username: `prospect_${senderId.slice(-8)}`,
+      p_profile_picture_url: null
     })
 
     if (prospectError) {
@@ -268,8 +218,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.error('💥 Error en add_prospect_message:', messageErr)
   }
 
-  // ... keep existing code (message analysis and saving) the same
-
   console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
   console.log('📝 Texto:', messageText)
 
@@ -293,8 +241,7 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
       raw_data: {
         ...messagingEvent,
         webhook_source: source,
-        processed_at: new Date().toISOString(),
-        sender_user_info: senderUserInfo
+        processed_at: new Date().toISOString()
       }
     })
 
@@ -304,11 +251,10 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.log('✅ Mensaje guardado correctamente')
   }
 
-  // ... keep existing code (autoresponder selection) the same
-
   console.log('🔍 === OBTENIENDO AUTORESPONDERS DEL USUARIO ESPECÍFICO ===')
   console.log('👤 Buscando autoresponders para usuario:', instagramUser.username, 'con instagram_user_id_ref:', recipientId)
   
+  // CORREGIDO: Buscar autoresponders solo del usuario específico
   const { data: autoresponders, error: autoresponderError } = await supabase
     .from('autoresponder_messages')
     .select('*')
@@ -376,23 +322,13 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     return
   }
 
-  // 🆕 PROCESAR VARIABLES DE PERSONALIZACIÓN EN EL MENSAJE
-  console.log('🎨 ===== PROCESANDO VARIABLES DE PERSONALIZACIÓN =====')
-  const personalizedMessage = processPersonalizationVariables(
-    selectedAutoresponder.message_text,
-    senderUserInfo,
-    senderUserInfo?.username
-  )
-
   console.log('🚀 ENVIANDO AUTORESPONDER...')
 
   const { data, error } = await supabase.functions.invoke('instagram-send-message', {
     body: {
       recipient_id: senderId,
-      message_text: personalizedMessage,
-      instagram_user_id: recipientId,
-      original_message: selectedAutoresponder.message_text,
-      user_info: senderUserInfo
+      message_text: selectedAutoresponder.message_text,
+      instagram_user_id: recipientId
     }
   })
 
@@ -415,17 +351,11 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     await supabase.rpc('add_prospect_message', {
       p_prospect_id: prospectId,
       p_message_instagram_id: data?.message_id || `auto_${Date.now()}`,
-      p_message_text: personalizedMessage,
+      p_message_text: selectedAutoresponder.message_text,
       p_is_from_prospect: false,
       p_message_timestamp: new Date().toISOString(),
       p_message_type: 'autoresponder',
-      p_raw_data: { 
-        autoresponder_id: selectedAutoresponder.id, 
-        sent_via: 'webhook',
-        original_message: selectedAutoresponder.message_text,
-        personalized_message: personalizedMessage,
-        user_info: senderUserInfo
-      }
+      p_raw_data: { autoresponder_id: selectedAutoresponder.id, sent_via: 'webhook' }
     })
     console.log('✅ Autoresponder guardado en prospect_messages')
   } catch (autoMsgError) {
@@ -456,8 +386,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  // ... keep existing code (comment autoresponder selection) the same
-
+  // ===== BUSCAR AUTORESPONDER DE COMENTARIOS QUE COINCIDA =====
   console.log('🔍 ===== BUSCANDO AUTORESPONDER DE COMENTARIOS =====')
 
   const { data: commentAutoresponders, error: autoresponderError } = await supabase
@@ -478,16 +407,19 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
   console.log('✅ Autoresponders encontrados:', commentAutoresponders.length)
 
+  // Buscar coincidencia con palabras clave
   let selectedAutoresponder = null
 
   for (const autoresponder of commentAutoresponders) {
     const keywords = autoresponder.keywords || []
     
+    // Si no tiene keywords, se aplica a todos los comentarios del post
     if (keywords.length === 0) {
       selectedAutoresponder = autoresponder
       break
     }
 
+    // Verificar coincidencia con keywords
     let hasMatch = false
     for (const keyword of keywords) {
       if (commentText.toLowerCase().includes(keyword.toLowerCase())) {
@@ -509,8 +441,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
   console.log('🎯 AUTORESPONDER DE COMENTARIO SELECCIONADO:', selectedAutoresponder.name)
 
-  // ... keep existing code (user finding and reply verification) the same
-
+  // ===== BUSCAR USUARIO DE INSTAGRAM ACTIVO USANDO INSTAGRAM_USER_ID DEL ENTRY =====
   console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM POR ENTRY ID =====')
   console.log('🆔 Instagram Account ID del entry:', instagramAccountId)
 
@@ -524,6 +455,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   if (userError || !instagramUser) {
     console.error('❌ No se encontró usuario de Instagram con ID:', instagramAccountId, userError)
     
+    // Fallback: buscar cualquier usuario activo
     console.log('🔄 Intentando fallback: buscar cualquier usuario activo...')
     const { data: fallbackUser, error: fallbackError } = await supabase
       .from('instagram_users')
@@ -538,16 +470,14 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     }
     
     console.log('✅ Usuario fallback encontrado:', fallbackUser.username)
+    // Usar el usuario fallback
     instagramUser = fallbackUser
   }
 
   console.log('✅ Usuario encontrado:', instagramUser.username)
   console.log('🔑 Access Token (primeros 20 chars):', instagramUser.access_token ? instagramUser.access_token.substring(0, 20) + '...' : 'NO TOKEN')
 
-  // 🆕 OBTENER INFORMACIÓN DEL USUARIO QUE COMENTA
-  console.log('🔍 ===== OBTENIENDO INFORMACIÓN DEL USUARIO QUE COMENTA =====')
-  const commenterUserInfo = await fetchInstagramUserInfo(commenterId, instagramUser.access_token)
-
+  // ===== VERIFICAR SI YA SE ENVIÓ RESPUESTA A ESTE COMENTARIO =====
   const { data: alreadySent } = await supabase
     .from('comment_autoresponder_log')
     .select('*')
@@ -561,35 +491,30 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
   const accessToken = instagramUser.access_token
   
+  // ===== SELECCIONAR MENSAJE PÚBLICO ALEATORIO =====
   const publicReplyMessages = selectedAutoresponder.public_reply_messages || [
     "¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊"
   ]
   
+  // Seleccionar mensaje aleatorio
   const randomIndex = Math.floor(Math.random() * publicReplyMessages.length)
   const publicReplyMessage = publicReplyMessages[randomIndex]
   
-  // 🆕 PROCESAR VARIABLES EN MENSAJE PÚBLICO
-  const personalizedPublicReply = processPersonalizationVariables(
-    publicReplyMessage,
-    commenterUserInfo,
-    commenterUsername
-  )
-  
-  console.log('🎲 MENSAJE PÚBLICO PERSONALIZADO:', personalizedPublicReply)
+  console.log('🎲 MENSAJE PÚBLICO SELECCIONADO (aleatorio):', publicReplyMessage)
   console.log('🎯 Índice seleccionado:', randomIndex, 'de', publicReplyMessages.length, 'mensajes disponibles')
   
+  // Variables para tracking
   let publicReplySuccess = false
   let publicReplyId = null
   let publicReplyError = null
 
-  // ... keep existing code (public reply validation) the same
-
+  // ===== VALIDACIONES PREVIAS =====
   console.log('🔍 ===== VALIDACIONES PREVIAS =====')
   console.log('🔑 Access Token length:', accessToken ? accessToken.length : 'NO TOKEN')
   console.log('🔑 Access Token starts with:', accessToken ? accessToken.substring(0, 10) : 'NO TOKEN')
   console.log('💬 Comment ID:', commentId)
   console.log('💬 Comment ID type:', typeof commentId)
-  console.log('💬 Message length:', personalizedPublicReply.length)
+  console.log('💬 Message length:', publicReplyMessage.length)
   
   if (!accessToken) {
     console.log('❌ NO HAY ACCESS TOKEN - ABORTANDO')
@@ -601,17 +526,19 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
+  // ===== ENVIAR REPLY PÚBLICO CON MENSAJE ALEATORIO =====
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
     const formData = new FormData()
-    formData.append('message', personalizedPublicReply)
+    formData.append('message', publicReplyMessage)
     formData.append('access_token', accessToken)
 
     console.log('🎯 URL Reply Público:', `https://graph.instagram.com/${commentId}/replies`)
-    console.log('💬 Mensaje Reply (personalizado):', personalizedPublicReply)
+    console.log('💬 Mensaje Reply (aleatorio):', publicReplyMessage)
     console.log('🔑 Access Token presente:', accessToken ? 'SÍ' : 'NO')
 
+    // Debug: mostrar el contenido del FormData
     console.log('📋 FormData entries:')
     for (const [key, value] of formData.entries()) {
       console.log(`  ${key}: ${key === 'access_token' ? value.substring(0, 20) + '...' : value}`)
@@ -643,30 +570,22 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     publicReplyError = { message: publicException.message }
   }
 
-  // 🆕 PROCESAR VARIABLES EN MENSAJE DM
-  console.log('🎨 ===== PROCESANDO VARIABLES EN MENSAJE DM =====')
-  const personalizedDmMessage = processPersonalizationVariables(
-    selectedAutoresponder.dm_message,
-    commenterUserInfo,
-    commenterUsername
-  )
-
+  // ===== ENVIAR PRIVATE REPLY USANDO COMMENT_ID =====
   console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
 
   try {
     const { data: replyResponse, error: replyError } = await supabase.functions.invoke('instagram-send-message', {
       body: {
-        message_text: personalizedDmMessage,
+        message_text: selectedAutoresponder.dm_message,
         instagram_user_id: instagramAccountId,
-        comment_id: commentId,
-        original_message: selectedAutoresponder.dm_message,
-        user_info: commenterUserInfo
+        comment_id: commentId
       }
     })
 
     if (replyError) {
       console.error('❌ Error enviando private reply:', replyError)
       
+      // Registrar el error
       await supabase
         .from('comment_autoresponder_log')
         .insert({
@@ -683,12 +602,9 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
             public_reply_success: publicReplySuccess,
             public_reply_error: publicReplyError,
             public_reply_id: publicReplyId,
-            public_reply_message: personalizedPublicReply,
+            public_reply_message: publicReplyMessage,
             public_reply_message_index: randomIndex,
             total_public_messages: publicReplyMessages.length,
-            original_dm_message: selectedAutoresponder.dm_message,
-            personalized_dm_message: personalizedDmMessage,
-            commenter_user_info: commenterUserInfo,
             processed_at: new Date().toISOString()
           }
         })
@@ -699,13 +615,14 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     console.log('✅ PRIVATE REPLY ENVIADO EXITOSAMENTE')
     console.log('📨 Respuesta:', JSON.stringify(replyResponse, null, 2))
 
+    // ===== REGISTRAR EN LOG =====
     await supabase
       .from('comment_autoresponder_log')
       .insert({
         comment_autoresponder_id: selectedAutoresponder.id,
         commenter_instagram_id: commenterId,
         comment_text: commentText,
-        dm_message_sent: personalizedDmMessage,
+        dm_message_sent: selectedAutoresponder.dm_message,
         webhook_data: {
           comment_id: commentId,
           media_id: mediaId,
@@ -717,28 +634,25 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           public_reply_success: publicReplySuccess,
           public_reply_error: publicReplyError,
           public_reply_id: publicReplyId,
-          public_reply_message: personalizedPublicReply,
+          public_reply_message: publicReplyMessage,
           public_reply_message_index: randomIndex,
           total_public_messages: publicReplyMessages.length,
-          original_dm_message: selectedAutoresponder.dm_message,
-          personalized_dm_message: personalizedDmMessage,
-          commenter_user_info: commenterUserInfo,
           processed_at: new Date().toISOString()
         }
       })
 
+    // Log de resumen
     if (publicReplySuccess) {
-      console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados con personalización')
-      console.log('🎲 Mensaje público personalizado:', personalizedPublicReply)
-      console.log('💬 Mensaje DM personalizado:', personalizedDmMessage)
+      console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados')
+      console.log('🎲 Mensaje público usado (índice', randomIndex + '):', publicReplyMessage)
     } else {
       console.log('⚠️ PROCESAMIENTO PARCIAL: Solo private reply enviado (public reply falló)')
-      console.log('💬 Mensaje DM personalizado:', personalizedDmMessage)
     }
 
   } catch (replyException) {
     console.error('💥 Excepción enviando private reply:', replyException)
     
+    // Registrar la excepción
     await supabase
       .from('comment_autoresponder_log')
       .insert({
@@ -755,12 +669,9 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           public_reply_success: publicReplySuccess,
           public_reply_error: publicReplyError,
           public_reply_id: publicReplyId,
-          public_reply_message: personalizedPublicReply,
+          public_reply_message: publicReplyMessage,
           public_reply_message_index: randomIndex,
           total_public_messages: publicReplyMessages.length,
-          original_dm_message: selectedAutoresponder.dm_message,
-          personalized_dm_message: personalizedDmMessage,
-          commenter_user_info: commenterUserInfo,
           processed_at: new Date().toISOString()
         }
       })

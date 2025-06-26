@@ -13,15 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { 
-      recipient_id, 
-      message_text, 
-      reply_to_message_id, 
-      instagram_user_id, 
-      comment_id,
-      original_message,
-      user_info
-    } = await req.json()
+    const { recipient_id, message_text, reply_to_message_id, instagram_user_id, comment_id } = await req.json()
 
     console.log('🚀 Instagram Send Message Edge Function iniciada')
     console.log('📝 Parámetros recibidos:', {
@@ -29,9 +21,7 @@ serve(async (req) => {
       message_text: message_text?.substring(0, 50) + '...',
       reply_to_message_id,
       instagram_user_id,
-      comment_id,
-      has_original_message: !!original_message,
-      has_user_info: !!user_info
+      comment_id
     })
 
     // Validar parámetros requeridos
@@ -49,6 +39,7 @@ serve(async (req) => {
       )
     }
 
+    // Para private replies necesitamos comment_id, para DMs normales necesitamos recipient_id
     if (!comment_id && !recipient_id) {
       console.error('❌ Se requiere comment_id para private reply o recipient_id para DM normal')
       return new Response(
@@ -118,27 +109,12 @@ serve(async (req) => {
     const instagramId = tokenTestData.id
     console.log('✅ Token válido - ID:', instagramId)
 
-    // 📝 LOG DE VARIABLES DE PERSONALIZACIÓN
-    if (original_message && original_message !== message_text) {
-      console.log('🎨 ===== VARIABLES DE PERSONALIZACIÓN APLICADAS =====')
-      console.log('📝 Mensaje original:', original_message)
-      console.log('✨ Mensaje personalizado:', message_text)
-      console.log('👤 Info del usuario:', user_info)
-      
-      // Mostrar qué variables se reemplazaron
-      const variables = ['{NOMBRE}', '{NOMBRE_COMPLETO}', '{USERNAME}', '{HORA}', '{DIA}']
-      variables.forEach(variable => {
-        if (original_message.includes(variable)) {
-          console.log(`🔄 Variable ${variable} encontrada y procesada`)
-        }
-      })
-    }
-
     // Construir el cuerpo del mensaje según el tipo
     let messageBody
     let messageType
 
     if (comment_id) {
+      // 🆕 PRIVATE REPLY - Usando la documentación oficial
       messageType = 'private_reply'
       messageBody = {
         recipient: { 
@@ -150,6 +126,7 @@ serve(async (req) => {
       }
       console.log('💬 Enviando PRIVATE REPLY usando comment_id:', comment_id)
     } else {
+      // DM NORMAL
       messageType = 'direct_message'
       messageBody = {
         recipient: { 
@@ -160,6 +137,7 @@ serve(async (req) => {
         }
       }
 
+      // Solo agregar reply_to para mensajes normales
       if (reply_to_message_id) {
         messageBody.message.reply_to = { mid: reply_to_message_id }
       }
@@ -170,7 +148,6 @@ serve(async (req) => {
     console.log('🎯 URL:', `https://graph.instagram.com/v23.0/${instagramId}/messages`)
     console.log('💬 Tipo de mensaje:', messageType)
     console.log('💬 Cuerpo del mensaje:', JSON.stringify(messageBody, null, 2))
-    console.log('✨ Mensaje final personalizado:', message_text)
 
     // Enviar mensaje usando la API de Instagram
     const response = await fetch(`https://graph.instagram.com/v23.0/${instagramId}/messages`, {
@@ -188,6 +165,7 @@ serve(async (req) => {
     if (responseData.error) {
       console.error('❌ Error enviando mensaje:', responseData.error)
       
+      // Manejar error específico de ventana de tiempo
       if (responseData.error.message && responseData.error.message.includes('outside of allowed window')) {
         console.log('⏰ Mensaje fuera de ventana permitida')
         return new Response(
@@ -198,9 +176,7 @@ serve(async (req) => {
               : 'DM fuera de ventana de 24h',
             debug_info: {
               instagram_error: responseData.error,
-              message_type: messageType,
-              original_message: original_message,
-              personalized_message: message_text
+              message_type: messageType
             }
           }),
           {
@@ -219,9 +195,7 @@ serve(async (req) => {
             status: response.status,
             instagramId,
             message_body_sent: messageBody,
-            message_type: messageType,
-            original_message: original_message,
-            personalized_message: message_text
+            message_type: messageType
           }
         }),
         {
@@ -234,7 +208,6 @@ serve(async (req) => {
     console.log('✅ Mensaje enviado exitosamente')
     console.log('🆔 Message ID:', responseData.message_id)
     console.log('👤 Recipient ID:', responseData.recipient_id)
-    console.log('✨ Mensaje personalizado enviado:', message_text.substring(0, 100) + '...')
 
     return new Response(
       JSON.stringify({
@@ -242,13 +215,10 @@ serve(async (req) => {
         message_id: responseData.message_id,
         recipient_id: responseData.recipient_id,
         message_type: messageType,
-        personalized_message: message_text,
         debug_info: {
           instagramId,
           username: userData.username,
-          used_comment_id: comment_id || null,
-          variables_applied: original_message !== message_text,
-          user_info_used: !!user_info
+          used_comment_id: comment_id || null
         }
       }),
       {
