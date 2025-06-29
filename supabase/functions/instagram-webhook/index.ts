@@ -158,6 +158,7 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM POR RECIPIENT ID =====')
   console.log('🎯 Buscando usuario con instagram_user_id:', recipientId)
 
+  // CORREGIDO: Buscar usuario específico por recipientId (quien recibe el mensaje)
   const { data: instagramUser, error: userError } = await supabase
     .from('instagram_users')
     .select('*')
@@ -253,6 +254,7 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   console.log('🔍 === OBTENIENDO AUTORESPONDERS DEL USUARIO ESPECÍFICO ===')
   console.log('👤 Buscando autoresponders para usuario:', instagramUser.username, 'con instagram_user_id_ref:', recipientId)
   
+  // CORREGIDO: Buscar autoresponders solo del usuario específico
   const { data: autoresponders, error: autoresponderError } = await supabase
     .from('autoresponder_messages')
     .select('*')
@@ -275,8 +277,7 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     id: ar.id,
     name: ar.name,
     use_keywords: ar.use_keywords,
-    keywords: ar.keywords,
-    send_only_first_message: ar.send_only_first_message
+    keywords: ar.keywords
   })))
 
   let selectedAutoresponder = null
@@ -309,58 +310,16 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   }
 
   console.log('🎯 AUTORESPONDER SELECCIONADO:', selectedAutoresponder.name)
-  console.log('🔒 SEND_ONLY_FIRST_MESSAGE:', selectedAutoresponder.send_only_first_message)
 
-  // ===== VERIFICAR SI YA SE ENVIÓ AUTORESPONDER ANTES (MEJORADO) =====
-  if (selectedAutoresponder.send_only_first_message) {
-    console.log('🔍 ===== VERIFICANDO SI YA SE ENVIÓ AUTORESPONDER ANTERIORMENTE =====')
-    
-    // Verificar en autoresponder_sent_log
-    const { data: alreadySentLog } = await supabase
-      .from('autoresponder_sent_log')
-      .select('*')
-      .eq('sender_id', senderId)
-      .eq('autoresponder_message_id', selectedAutoresponder.id)
+  const { data: alreadySent } = await supabase
+    .from('autoresponder_sent_log')
+    .select('*')
+    .eq('sender_id', senderId)
+    .eq('autoresponder_message_id', selectedAutoresponder.id)
 
-    console.log('📋 Registros en autoresponder_sent_log:', alreadySentLog?.length || 0)
-    
-    if (alreadySentLog && alreadySentLog.length > 0) {
-      console.log('⏭️ AUTORESPONDER YA ENVIADO ANTERIORMENTE (según log) - SALTANDO')
-      return
-    }
-
-    // Verificar si ya hay conversación previa (mensajes del usuario hacia este prospecto)
-    const { data: previousMessages } = await supabase
-      .from('prospect_messages')
-      .select('*')
-      .eq('prospect_id', prospectId)
-      .eq('is_from_prospect', false) // Mensajes enviados por el usuario (no del prospecto)
-
-    console.log('📋 Mensajes previos enviados por el usuario:', previousMessages?.length || 0)
-    
-    if (previousMessages && previousMessages.length > 0) {
-      console.log('⏭️ YA EXISTE CONVERSACIÓN PREVIA - NO SE ENVIARÁ AUTORESPONDER')
-      return
-    }
-
-    // Verificar en instagram_messages si ya se envió algo a este sender
-    const { data: previousInstagramMessages } = await supabase
-      .from('instagram_messages')
-      .select('*')
-      .eq('instagram_user_id', instagramUser.id)
-      .eq('recipient_id', senderId) // Mensajes enviados a este sender
-      .eq('message_type', 'sent')
-
-    console.log('📋 Mensajes previos en instagram_messages:', previousInstagramMessages?.length || 0)
-    
-    if (previousInstagramMessages && previousInstagramMessages.length > 0) {
-      console.log('⏭️ YA SE ENVIARON MENSAJES ANTERIORMENTE (según instagram_messages) - SALTANDO')
-      return
-    }
-
-    console.log('✅ VERIFICACIÓN COMPLETA: Se puede enviar el autoresponder')
-  } else {
-    console.log('🔓 SEND_ONLY_FIRST_MESSAGE DESACTIVADO - Se enviará el autoresponder')
+  if (selectedAutoresponder.send_only_first_message && alreadySent && alreadySent.length > 0) {
+    console.log('⏭️ Ya se envió este autoresponder - saltando')
+    return
   }
 
   console.log('🚀 ENVIANDO AUTORESPONDER...')
@@ -380,7 +339,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
 
   console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
 
-  // Registrar en log para evitar envíos futuros
   await supabase
     .from('autoresponder_sent_log')
     .insert({
