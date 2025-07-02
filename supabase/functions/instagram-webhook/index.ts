@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -468,30 +469,54 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
   let selectedAutoresponder = null
 
+  // LÓGICA MEJORADA: Verificar si el comentario CONTIENE la palabra clave (case-insensitive)
   for (const autoresponder of commentAutoresponders) {
     const keywords = autoresponder.keywords || []
     
+    console.log('🔍 Verificando autoresponder:', autoresponder.name)
+    console.log('📝 Palabras clave configuradas:', keywords)
+    console.log('💬 Comentario recibido:', commentText)
+    
     if (keywords.length === 0) {
+      console.log('✅ Autoresponder sin palabras clave específicas - SELECCIONADO')
       selectedAutoresponder = autoresponder
       break
     }
 
     let hasMatch = false
+    let matchedKeyword = ''
+    
+    // Convertir comentario a minúsculas para comparación case-insensitive
+    const commentTextLower = commentText.toLowerCase()
+    
     for (const keyword of keywords) {
-      if (commentText.toLowerCase().includes(keyword.toLowerCase())) {
+      const keywordLower = keyword.toLowerCase()
+      
+      // CAMBIO PRINCIPAL: usar includes() en lugar de coincidencia exacta
+      if (commentTextLower.includes(keywordLower)) {
         hasMatch = true
+        matchedKeyword = keyword
+        console.log('🎯 COINCIDENCIA ENCONTRADA!')
+        console.log('   Palabra clave:', keyword)
+        console.log('   En comentario:', commentText)
+        console.log('   Método: includes() case-insensitive')
         break
       }
     }
 
     if (hasMatch) {
+      console.log('✅ AUTORESPONDER SELECCIONADO:', autoresponder.name)
+      console.log('🎯 Por palabra clave:', matchedKeyword)
       selectedAutoresponder = autoresponder
       break
+    } else {
+      console.log('❌ Sin coincidencias para este autoresponder')
     }
   }
 
   if (!selectedAutoresponder) {
     console.log('❌ No se encontró autoresponder que coincida con las palabras clave')
+    console.log('💡 Verifica que las palabras clave estén configuradas correctamente')
     return
   }
 
