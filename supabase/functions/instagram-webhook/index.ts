@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -311,15 +312,58 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
 
   console.log('🎯 AUTORESPONDER SELECCIONADO:', selectedAutoresponder.name)
 
-  const { data: alreadySent } = await supabase
-    .from('autoresponder_sent_log')
-    .select('*')
-    .eq('sender_id', senderId)
-    .eq('autoresponder_message_id', selectedAutoresponder.id)
+  // ===== VERIFICACIÓN TRIPLE PARA "SOLO ENVIAR PRIMER MENSAJE" =====
+  if (selectedAutoresponder.send_only_first_message) {
+    console.log('🔍 ===== VERIFICANDO SI YA SE ENVIÓ PRIMER MENSAJE =====')
+    console.log('⚙️ send_only_first_message está ACTIVADO - verificando si ya se envió antes')
 
-  if (selectedAutoresponder.send_only_first_message && alreadySent && alreadySent.length > 0) {
-    console.log('⏭️ Ya se envió este autoresponder - saltando')
-    return
+    // VERIFICACIÓN 1: autoresponder_sent_log
+    const { data: alreadySentLog } = await supabase
+      .from('autoresponder_sent_log')
+      .select('*')
+      .eq('sender_id', senderId)
+      .eq('autoresponder_message_id', selectedAutoresponder.id)
+
+    console.log('📊 Resultados autoresponder_sent_log:', alreadySentLog?.length || 0, 'registros')
+
+    if (alreadySentLog && alreadySentLog.length > 0) {
+      console.log('⏭️ Ya se envió este autoresponder según autoresponder_sent_log - SALTANDO')
+      return
+    }
+
+    // VERIFICACIÓN 2: prospect_messages (mensajes de autoresponder enviados)
+    const { data: prospectAutoMessages } = await supabase
+      .from('prospect_messages')
+      .select('*')
+      .eq('prospect_id', prospectId)
+      .eq('is_from_prospect', false)
+      .eq('message_type', 'autoresponder')
+
+    console.log('📊 Mensajes autoresponder en prospect_messages:', prospectAutoMessages?.length || 0, 'registros')
+
+    if (prospectAutoMessages && prospectAutoMessages.length > 0) {
+      console.log('⏭️ Ya existe conversación previa (autoresponder enviado) según prospect_messages - SALTANDO')
+      return
+    }
+
+    // VERIFICACIÓN 3: instagram_messages (cualquier mensaje enviado previamente)
+    const { data: previousMessages } = await supabase
+      .from('instagram_messages')
+      .select('*')
+      .eq('sender_id', recipientId) // Mensajes enviados por nosotros
+      .eq('recipient_id', senderId) // Al prospecto
+      .eq('message_type', 'sent')
+
+    console.log('📊 Mensajes enviados previamente en instagram_messages:', previousMessages?.length || 0, 'registros')
+
+    if (previousMessages && previousMessages.length > 0) {
+      console.log('⏭️ Ya existe conversación previa según instagram_messages - SALTANDO')
+      return
+    }
+
+    console.log('✅ VERIFICACIÓN COMPLETA: No se encontraron mensajes previos - PROCEDIENDO A ENVIAR')
+  } else {
+    console.log('⚙️ send_only_first_message está DESACTIVADO - enviando sin restricciones')
   }
 
   console.log('🚀 ENVIANDO AUTORESPONDER...')
@@ -477,17 +521,11 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('✅ Usuario encontrado:', instagramUser.username)
   console.log('🔑 Access Token (primeros 20 chars):', instagramUser.access_token ? instagramUser.access_token.substring(0, 20) + '...' : 'NO TOKEN')
 
-  // ===== VERIFICAR SI YA SE ENVIÓ RESPUESTA A ESTE COMENTARIO =====
-  const { data: alreadySent } = await supabase
-    .from('comment_autoresponder_log')
-    .select('*')
-    .eq('commenter_instagram_id', commenterId)
-    .eq('comment_autoresponder_id', selectedAutoresponder.id)
-
-  if (alreadySent && alreadySent.length > 0) {
-    console.log('⏭️ Ya se envió respuesta a este usuario para este autoresponder - saltando')
-    return
-  }
+  // ===== AUTORESPONDERS DE COMENTARIOS SIEMPRE SE ENVÍAN =====
+  // NO verificamos conversaciones previas para autoresponders de comentarios
+  console.log('🚀 ===== AUTORESPONDERS DE COMENTARIOS: SIEMPRE ENVIAR =====')
+  console.log('💡 Los autoresponders de comentarios NO verifican conversaciones previas')
+  console.log('💡 Se enviarán SIEMPRE que coincidan las palabras clave del post configurado')
 
   const accessToken = instagramUser.access_token
   
@@ -605,7 +643,8 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
             public_reply_message: publicReplyMessage,
             public_reply_message_index: randomIndex,
             total_public_messages: publicReplyMessages.length,
-            processed_at: new Date().toISOString()
+            processed_at: new Date().toISOString(),
+            note: 'AUTORESPONDERS DE COMENTARIOS: NO verifican conversaciones previas - SIEMPRE envían'
           }
         })
       
@@ -637,7 +676,8 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           public_reply_message: publicReplyMessage,
           public_reply_message_index: randomIndex,
           total_public_messages: publicReplyMessages.length,
-          processed_at: new Date().toISOString()
+          processed_at: new Date().toISOString(),
+          note: 'AUTORESPONDERS DE COMENTARIOS: NO verifican conversaciones previas - SIEMPRE envían'
         }
       })
 
@@ -645,8 +685,10 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     if (publicReplySuccess) {
       console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados')
       console.log('🎲 Mensaje público usado (índice', randomIndex + '):', publicReplyMessage)
+      console.log('💡 IMPORTANTE: Los autoresponders de comentarios SIEMPRE se envían, sin verificar conversaciones previas')
     } else {
       console.log('⚠️ PROCESAMIENTO PARCIAL: Solo private reply enviado (public reply falló)')
+      console.log('💡 IMPORTANTE: Los autoresponders de comentarios SIEMPRE se envían, sin verificar conversaciones previas')
     }
 
   } catch (replyException) {
@@ -672,10 +714,12 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           public_reply_message: publicReplyMessage,
           public_reply_message_index: randomIndex,
           total_public_messages: publicReplyMessages.length,
-          processed_at: new Date().toISOString()
+          processed_at: new Date().toISOString(),
+          note: 'AUTORESPONDERS DE COMENTARIOS: NO verifican conversaciones previas - SIEMPRE envían'
         }
       })
   }
 
   console.log('✅ === COMENTARIO PROCESADO COMPLETAMENTE ===')
+  console.log('💡 === AUTORESPONDERS DE COMENTARIOS FUNCIONAN SIN RESTRICCIONES ===')
 }
