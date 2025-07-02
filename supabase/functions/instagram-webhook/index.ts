@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -248,7 +247,7 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.log('✅ Mensaje guardado correctamente')
   }
 
-  console.log('🔍 === OBTENIENDO AUTORESPONDERS DEL USUARIO ESPECÍFICO ===')
+  console.log('🔍 ===== OBTENIENDO AUTORESPONDERS DEL USUARIO ESPECÍFICO =====')
   console.log('👤 Buscando autoresponders para usuario:', instagramUser.username, 'con instagram_user_id_ref:', recipientId)
   
   const { data: autoresponders, error: autoresponderError } = await supabase
@@ -434,12 +433,14 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   const commenterUsername = commentData.from?.username
   const commentText = commentData.text
   const mediaId = commentData.media?.id
+  const originalMediaId = commentData.media?.original_media_id // NUEVO: Capturar original_media_id
   const commentId = commentData.id
 
   console.log('👤 COMMENTER ID:', commenterId)
   console.log('👤 COMMENTER USERNAME:', commenterUsername)
   console.log('💬 COMMENT TEXT:', commentText)
   console.log('📱 MEDIA ID:', mediaId)
+  console.log('📱 ORIGINAL MEDIA ID:', originalMediaId) // NUEVO: Log del original_media_id
   console.log('🆔 COMMENT ID:', commentId)
 
   if (!commenterId || !commentText || !mediaId || !commentId) {
@@ -449,19 +450,57 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
   console.log('🔍 ===== BUSCANDO AUTORESPONDER DE COMENTARIOS =====')
 
-  const { data: commentAutoresponders, error: autoresponderError } = await supabase
+  // CAMBIO PRINCIPAL: Buscar autoresponders tanto por media_id como por original_media_id
+  let commentAutoresponders = []
+  let searchError = null
+
+  // Primer intento: buscar por media_id actual
+  const { data: autorespondersByMediaId, error: mediaIdError } = await supabase
     .from('comment_autoresponders')
     .select('*')
     .eq('is_active', true)
     .eq('post_id', mediaId)
 
-  if (autoresponderError) {
-    console.error('❌ Error obteniendo comment autoresponders:', autoresponderError)
+  if (mediaIdError) {
+    console.error('❌ Error buscando por media_id:', mediaIdError)
+    searchError = mediaIdError
+  } else {
+    commentAutoresponders = autorespondersByMediaId || []
+    console.log('🔍 Autoresponders encontrados por media_id:', commentAutoresponders.length)
+  }
+
+  // Si no encontró nada Y hay original_media_id, buscar por original_media_id
+  if ((!commentAutoresponders || commentAutoresponders.length === 0) && originalMediaId) {
+    console.log('🔄 No encontrado por media_id, buscando por original_media_id:', originalMediaId)
+    
+    const { data: autorespondersByOriginalId, error: originalIdError } = await supabase
+      .from('comment_autoresponders')
+      .select('*')
+      .eq('is_active', true)
+      .eq('post_id', originalMediaId)
+
+    if (originalIdError) {
+      console.error('❌ Error buscando por original_media_id:', originalIdError)
+      searchError = originalIdError
+    } else {
+      commentAutoresponders = autorespondersByOriginalId || []
+      console.log('🔍 Autoresponders encontrados por original_media_id:', commentAutoresponders.length)
+    }
+  }
+
+  if (searchError) {
+    console.error('❌ Error obteniendo comment autoresponders:', searchError)
     return
   }
 
   if (!commentAutoresponders || commentAutoresponders.length === 0) {
     console.log('❌ No hay autoresponders de comentarios configurados para este post')
+    console.log('💡 IDs buscados:')
+    console.log('   - Media ID:', mediaId)
+    if (originalMediaId) {
+      console.log('   - Original Media ID:', originalMediaId)
+    }
+    console.log('💡 Verifica que el autoresponder esté configurado para alguno de estos IDs')
     return
   }
 
