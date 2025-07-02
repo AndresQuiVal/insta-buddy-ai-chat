@@ -51,6 +51,7 @@ serve(async (req) => {
       )
     }
 
+    // Procesamiento de entries
     if (body.entry && Array.isArray(body.entry)) {
       for (const entry of body.entry) {
         console.log('🔄 ===== PROCESANDO ENTRY =====')
@@ -58,7 +59,6 @@ serve(async (req) => {
         console.log('📋 Entry completo:', JSON.stringify(entry, null, 2))
         console.log('📋 Entry keys:', Object.keys(entry))
 
-        // FORMATO DE PRODUCCIÓN: entry.messaging
         if (entry.messaging && Array.isArray(entry.messaging)) {
           console.log('📝 PROCESANDO MENSAJES DIRECTOS (FORMATO PRODUCCIÓN)')
           
@@ -66,14 +66,12 @@ serve(async (req) => {
             await processMessage(messagingEvent, supabase, 'messaging', entry.id)
           }
         }
-        // FORMATO DE PRODUCCIÓN ALTERNATIVO: entry.changes
         else if (entry.changes && Array.isArray(entry.changes)) {
           console.log('🔄 PROCESANDO CAMBIOS (FORMATO PRODUCCIÓN)')
           
           for (const change of entry.changes) {
             console.log('📋 Change:', JSON.stringify(change, null, 2))
             
-            // PROCESAR MENSAJES DIRECTOS
             if (change.field === 'messages' && change.value) {
               const messagingEvent = {
                 sender: change.value.sender,
@@ -84,7 +82,6 @@ serve(async (req) => {
               
               await processMessage(messagingEvent, supabase, 'changes', entry.id)
             }
-            // 🆕 PROCESAR COMENTARIOS
             else if (change.field === 'comments' && change.value) {
               console.log('💬 PROCESANDO COMENTARIO')
               await processComment(change.value, supabase, entry.id)
@@ -399,6 +396,32 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.log('✅ Registro guardado en autoresponder_sent_log')
   }
 
+  console.log('📅 ===== CREANDO FOLLOW-UP =====')
+  
+  try {
+    const currentTime = new Date()
+    const followupTime = new Date(currentTime.getTime() + (23 * 60 * 60 * 1000)) // 23 horas después
+    
+    const { error: followupError } = await supabase
+      .from('autoresponder_followups')
+      .insert({
+        sender_id: senderId,
+        autoresponder_message_id: selectedAutoresponder.id,
+        initial_message_sent_at: currentTime.toISOString(),
+        followup_scheduled_at: followupTime.toISOString(),
+        followup_message_text: 'Hey! pudiste checar mi mensaje anterior?'
+      })
+
+    if (followupError) {
+      console.error('❌ Error creando follow-up:', followupError)
+    } else {
+      console.log('✅ Follow-up programado para:', followupTime.toISOString())
+      console.log('📝 Mensaje de follow-up:', 'Hey! pudiste checar mi mensaje anterior?')
+    }
+  } catch (followupErr) {
+    console.error('💥 Error en creación de follow-up:', followupErr)
+  }
+
   console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
 }
 
@@ -423,7 +446,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  // ===== BUSCAR AUTORESPONDER DE COMENTARIOS QUE COINCIDA =====
   console.log('🔍 ===== BUSCANDO AUTORESPONDER DE COMENTARIOS =====')
 
   const { data: commentAutoresponders, error: autoresponderError } = await supabase
@@ -444,19 +466,16 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
   console.log('✅ Autoresponders encontrados:', commentAutoresponders.length)
 
-  // Buscar coincidencia con palabras clave
   let selectedAutoresponder = null
 
   for (const autoresponder of commentAutoresponders) {
     const keywords = autoresponder.keywords || []
     
-    // Si no tiene keywords, se aplica a todos los comentarios del post
     if (keywords.length === 0) {
       selectedAutoresponder = autoresponder
       break
     }
 
-    // Verificar coincidencia con keywords
     let hasMatch = false
     for (const keyword of keywords) {
       if (commentText.toLowerCase().includes(keyword.toLowerCase())) {
@@ -478,7 +497,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
   console.log('🎯 AUTORESPONDER DE COMENTARIO SELECCIONADO:', selectedAutoresponder.name)
 
-  // ===== BUSCAR USUARIO DE INSTAGRAM ACTIVO USANDO INSTAGRAM_USER_ID DEL ENTRY =====
   console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM POR ENTRY ID =====')
   console.log('🆔 Instagram Account ID del entry:', instagramAccountId)
 
@@ -492,7 +510,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   if (userError || !instagramUser) {
     console.error('❌ No se encontró usuario de Instagram con ID:', instagramAccountId, userError)
     
-    // Fallback: buscar cualquier usuario activo
     console.log('🔄 Intentando fallback: buscar cualquier usuario activo...')
     const { data: fallbackUser, error: fallbackError } = await supabase
       .from('instagram_users')
@@ -507,39 +524,31 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     }
     
     console.log('✅ Usuario fallback encontrado:', fallbackUser.username)
-    // Usar el usuario fallback
-    instagramUser = fallbackUser
   }
 
   console.log('✅ Usuario encontrado:', instagramUser.username)
   console.log('🔑 Access Token (primeros 20 chars):', instagramUser.access_token ? instagramUser.access_token.substring(0, 20) + '...' : 'NO TOKEN')
 
-  // ===== AUTORESPONDERS DE COMENTARIOS SIEMPRE SE ENVÍAN =====
-  // NO verificamos conversaciones previas para autoresponders de comentarios
   console.log('🚀 ===== AUTORESPONDERS DE COMENTARIOS: SIEMPRE ENVIAR =====')
   console.log('💡 Los autoresponders de comentarios NO verifican conversaciones previas')
   console.log('💡 Se enviarán SIEMPRE que coincidan las palabras clave del post configurado')
 
   const accessToken = instagramUser.access_token
   
-  // ===== SELECCIONAR MENSAJE PÚBLICO ALEATORIO =====
   const publicReplyMessages = selectedAutoresponder.public_reply_messages || [
     "¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊"
   ]
   
-  // Seleccionar mensaje aleatorio
   const randomIndex = Math.floor(Math.random() * publicReplyMessages.length)
   const publicReplyMessage = publicReplyMessages[randomIndex]
   
   console.log('🎲 MENSAJE PÚBLICO SELECCIONADO (aleatorio):', publicReplyMessage)
   console.log('🎯 Índice seleccionado:', randomIndex, 'de', publicReplyMessages.length, 'mensajes disponibles')
   
-  // Variables para tracking
   let publicReplySuccess = false
   let publicReplyId = null
   let publicReplyError = null
 
-  // ===== VALIDACIONES PREVIAS =====
   console.log('🔍 ===== VALIDACIONES PREVIAS =====')
   console.log('🔑 Access Token length:', accessToken ? accessToken.length : 'NO TOKEN')
   console.log('🔑 Access Token starts with:', accessToken ? accessToken.substring(0, 10) : 'NO TOKEN')
@@ -557,7 +566,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
-  // ===== ENVIAR REPLY PÚBLICO CON MENSAJE ALEATORIO =====
   console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
 
   try {
@@ -569,7 +577,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     console.log('💬 Mensaje Reply (aleatorio):', publicReplyMessage)
     console.log('🔑 Access Token presente:', accessToken ? 'SÍ' : 'NO')
 
-    // Debug: mostrar el contenido del FormData
     console.log('📋 FormData entries:')
     for (const [key, value] of formData.entries()) {
       console.log(`  ${key}: ${key === 'access_token' ? value.substring(0, 20) + '...' : value}`)
@@ -601,7 +608,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     publicReplyError = { message: publicException.message }
   }
 
-  // ===== ENVIAR PRIVATE REPLY USANDO COMMENT_ID =====
   console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
 
   try {
@@ -616,7 +622,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     if (replyError) {
       console.error('❌ Error enviando private reply:', replyError)
       
-      // Registrar el error
       await supabase
         .from('comment_autoresponder_log')
         .insert({
@@ -647,7 +652,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     console.log('✅ PRIVATE REPLY ENVIADO EXITOSAMENTE')
     console.log('📨 Respuesta:', JSON.stringify(replyResponse, null, 2))
 
-    // ===== REGISTRAR EN LOG =====
     await supabase
       .from('comment_autoresponder_log')
       .insert({
@@ -674,7 +678,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         }
       })
 
-    // Log de resumen
     if (publicReplySuccess) {
       console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados')
       console.log('🎲 Mensaje público usado (índice', randomIndex + '):', publicReplyMessage)
@@ -687,7 +690,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   } catch (replyException) {
     console.error('💥 Excepción enviando private reply:', replyException)
     
-    // Registrar la excepción
     await supabase
       .from('comment_autoresponder_log')
       .insert({

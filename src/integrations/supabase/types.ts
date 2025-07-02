@@ -9,6 +9,56 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      autoresponder_followups: {
+        Row: {
+          autoresponder_message_id: string | null
+          created_at: string
+          followup_message_text: string
+          followup_scheduled_at: string
+          followup_sent_at: string | null
+          id: string
+          initial_message_sent_at: string
+          is_completed: boolean
+          prospect_responded: boolean
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          autoresponder_message_id?: string | null
+          created_at?: string
+          followup_message_text?: string
+          followup_scheduled_at: string
+          followup_sent_at?: string | null
+          id?: string
+          initial_message_sent_at: string
+          is_completed?: boolean
+          prospect_responded?: boolean
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          autoresponder_message_id?: string | null
+          created_at?: string
+          followup_message_text?: string
+          followup_scheduled_at?: string
+          followup_sent_at?: string | null
+          id?: string
+          initial_message_sent_at?: string
+          is_completed?: boolean
+          prospect_responded?: boolean
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autoresponder_followups_autoresponder_message_id_fkey"
+            columns: ["autoresponder_message_id"]
+            isOneToOne: false
+            referencedRelation: "autoresponder_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       autoresponder_messages: {
         Row: {
           created_at: string
@@ -599,6 +649,13 @@ export type Database = {
       increment_nuevos_prospectos_by_instagram_id: {
         Args: { user_instagram_id: string; increment_by?: number }
         Returns: undefined
+      }
+      process_pending_followups: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          processed_count: number
+          details: Json
+        }[]
       }
       reset_inactive_prospect_traits: {
         Args: Record<PropertyKey, never>
