@@ -9,9 +9,14 @@ import { InstagramPost, getInstagramPosts, formatPostDate, truncateCaption } fro
 interface InstagramPostSelectorProps {
   onPostSelected: (post: InstagramPost) => void;
   onBack: () => void;
+  showAutoresponderSelection?: boolean;
 }
 
-const InstagramPostSelector = ({ onPostSelected, onBack }: InstagramPostSelectorProps) => {
+const InstagramPostSelector = ({ 
+  onPostSelected, 
+  onBack, 
+  showAutoresponderSelection = false 
+}: InstagramPostSelectorProps) => {
   const [posts, setPosts] = useState<InstagramPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<InstagramPost | null>(null);
@@ -55,7 +60,11 @@ const InstagramPostSelector = ({ onPostSelected, onBack }: InstagramPostSelector
 
   const handlePostSelect = (post: InstagramPost) => {
     setSelectedPost(post);
-    onPostSelected(post);
+    if (showAutoresponderSelection) {
+      onPostSelected(post);
+    } else {
+      onPostSelected(post);
+    }
   };
 
   const getMediaIcon = (mediaType: string) => {
@@ -99,10 +108,16 @@ const InstagramPostSelector = ({ onPostSelected, onBack }: InstagramPostSelector
           </Button>
           <div>
             <CardTitle className="text-purple-900">
-              Selecciona un Post para Comentarios Automáticos
+              {showAutoresponderSelection 
+                ? "Selecciona un Post para Asignar Autoresponder"
+                : "Selecciona un Post para Comentarios Automáticos"
+              }
             </CardTitle>
             <p className="text-sm text-purple-700 mt-1">
-              Elige el post donde quieres detectar comentarios con palabras clave
+              {showAutoresponderSelection
+                ? "Elige el post donde quieres asignar un autoresponder existente o crear uno nuevo"
+                : "Elige el post donde quieres detectar comentarios con palabras clave"
+              }
             </p>
           </div>
         </div>

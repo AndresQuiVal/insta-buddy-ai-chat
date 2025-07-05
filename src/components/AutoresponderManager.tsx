@@ -15,7 +15,9 @@ import {
   Key,
   Clock,
   Filter,
-  MessageSquare
+  MessageSquare,
+  Settings,
+  ArrowLeft
 } from 'lucide-react';
 import AutoresponderForm from './AutoresponderForm';
 import AutoresponderTypeDialog from './AutoresponderTypeDialog';
@@ -23,6 +25,8 @@ import CommentAutoresponderForm from './CommentAutoresponderForm';
 import EditAutoresponderForm from './EditAutoresponderForm';
 import EditCommentAutoresponderForm from './EditCommentAutoresponderForm';
 import InstagramPostSelector from './InstagramPostSelector';
+import GeneralAutoresponderManager from './GeneralAutoresponderManager';
+import AutoresponderSelector from './AutoresponderSelector';
 
 interface AutoresponderMessage {
   id: string;
@@ -63,6 +67,8 @@ const AutoresponderManager: React.FC = () => {
   const [editingCommentAutoresponder, setEditingCommentAutoresponder] = useState<CommentAutoresponder | null>(null);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
+  const [showGeneralManager, setShowGeneralManager] = useState(false);
+  const [showAutoresponderSelector, setShowAutoresponderSelector] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -348,10 +354,39 @@ const AutoresponderManager: React.FC = () => {
     setShowTypeDialog(false);
     
     if (type === 'comments') {
-      setShowPostSelector(true);
+      // Mostrar opciones: gestionar autoresponders generales o asignar a post
+      setShowGeneralManager(true);
     } else {
       setShowForm(true);
     }
+  };
+
+  const handleGeneralManagerAction = (action: 'manage' | 'assign') => {
+    if (action === 'manage') {
+      // Quedarse en el gestor de autoresponders generales
+      return;
+    } else {
+      // Ir al selector de posts para asignar
+      setShowGeneralManager(false);
+      setShowPostSelector(true);
+    }
+  };
+
+  const handlePostSelectedForAssignment = (post: any) => {
+    setSelectedPost(post);
+    setShowPostSelector(false);
+    setShowAutoresponderSelector(true);
+  };
+
+  const handleAutoresponderAssigned = () => {
+    setShowAutoresponderSelector(false);
+    setSelectedPost(null);
+    fetchCommentAutoresponders();
+  };
+
+  const handleCreateNewFromSelector = () => {
+    setShowAutoresponderSelector(false);
+    setShowCommentForm(true);
   };
 
   const handlePostSelected = (post: any) => {
@@ -421,11 +456,16 @@ const AutoresponderManager: React.FC = () => {
   if (showPostSelector) {
     return (
       <InstagramPostSelector
-        onPostSelected={handlePostSelected}
+        onPostSelected={showGeneralManager ? handlePostSelectedForAssignment : handlePostSelected}
         onBack={() => {
           setShowPostSelector(false);
-          setShowTypeDialog(true);
+          if (showGeneralManager) {
+            setShowGeneralManager(true);
+          } else {
+            setShowTypeDialog(true);
+          }
         }}
+        showAutoresponderSelection={showGeneralManager}
       />
     );
   }
@@ -467,6 +507,98 @@ const AutoresponderManager: React.FC = () => {
   }
 
   const totalAutoresponders = messages.length + commentAutoresponders.length;
+
+  // Mostrar gestor de autoresponders generales
+  if (showGeneralManager) {
+    return (
+      <div className="space-y-6">
+        {/* Opciones principales */}
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => {
+                setShowGeneralManager(false);
+                setShowTypeDialog(true);
+              }}>
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <div>
+                <CardTitle className="text-purple-900">
+                  Autoresponders para Comentarios
+                </CardTitle>
+                <p className="text-sm text-purple-700 mt-1">
+                  Gestiona tus autoresponders reutilizables
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="p-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="border-green-200 hover:border-green-300 cursor-pointer transition-colors">
+                <CardContent className="p-6 text-center">
+                  <Settings className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Gestionar Autoresponders
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Crea, edita y administra tus autoresponders reutilizables
+                  </p>
+                  <Button 
+                    onClick={() => handleGeneralManagerAction('manage')}
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Administrar
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-purple-200 hover:border-purple-300 cursor-pointer transition-colors">
+                <CardContent className="p-6 text-center">
+                  <MessageCircle className="w-12 h-12 text-purple-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Asignar a Post
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Selecciona un post y asígnale un autoresponder existente
+                  </p>
+                  <Button 
+                    onClick={() => handleGeneralManagerAction('assign')}
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Asignar
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Gestor de autoresponders generales integrado */}
+        <GeneralAutoresponderManager 
+          onBack={() => setShowGeneralManager(false)}
+        />
+      </div>
+    );
+  }
+
+  // Mostrar selector de autoresponder para post seleccionado
+  if (showAutoresponderSelector && selectedPost) {
+    return (
+      <AutoresponderSelector
+        selectedPost={selectedPost}
+        onBack={() => {
+          setShowAutoresponderSelector(false);
+          setSelectedPost(null);
+          setShowPostSelector(true);
+        }}
+        onCreateNew={handleCreateNewFromSelector}
+        onAssigned={handleAutoresponderAssigned}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -593,7 +725,18 @@ const AutoresponderManager: React.FC = () => {
       {/* Lista de autoresponders de comentarios */}
       {commentAutoresponders.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-800">Comentarios de Posts</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-gray-800">Comentarios de Posts</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGeneralManager(true)}
+              className="text-purple-600 hover:text-purple-700"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Gestionar Autoresponders
+            </Button>
+          </div>
           <div className="grid gap-4">
             {commentAutoresponders.map((autoresponder) => (
               <Card key={autoresponder.id} className="border-orange-100">
