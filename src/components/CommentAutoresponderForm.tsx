@@ -1,50 +1,79 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Plus, X, MessageSquare, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
-import { InstagramPost, formatPostDate, truncateCaption } from '@/services/instagramPostsService';
+import ButtonConfig from './ButtonConfig';
 
-export interface CommentAutoresponderConfig {
+interface ButtonData {
+  type: 'web_url' | 'postback';
+  title: string;
+  url?: string;
+  payload?: string;
+  action_type?: 'message' | 'url_redirect';
+  action_data?: any;
+}
+
+interface CommentAutoresponder {
+  id: string;
+  post_id: string;
+  post_url: string;
+  post_caption?: string;
   name: string;
   keywords: string[];
-  dmMessage: string;
-  publicReplyMessages: string[];
-  postId: string;
-  postUrl: string;
-  postCaption?: string;
+  dm_message: string;
+  public_reply_messages: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  use_buttons?: boolean;
+  buttons?: ButtonData[];
 }
 
 interface CommentAutoresponderFormProps {
-  selectedPost: InstagramPost;
+  autoresponder?: CommentAutoresponder | null;
   onBack: () => void;
-  onSubmit: (config: CommentAutoresponderConfig) => void;
+  onSubmit: () => void;
+  selectedPost?: {
+    id: string;
+    permalink: string;
+    caption?: string;
+  } | null;
 }
 
-const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAutoresponderFormProps) => {
+const CommentAutoresponderForm = ({ autoresponder, onBack, onSubmit, selectedPost }: CommentAutoresponderFormProps) => {
   const [name, setName] = useState('');
   const [keywords, setKeywords] = useState<string[]>([]);
-  const [newKeyword, setNewKeyword] = useState('');
+  const [keywordInput, setKeywordInput] = useState('');
   const [dmMessage, setDmMessage] = useState('');
-  const [publicReplyMessages, setPublicReplyMessages] = useState<string[]>([
-    '¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊'
-  ]);
+  const [publicReplies, setPublicReplies] = useState<string[]>(['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
   const [newPublicReply, setNewPublicReply] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [useButtons, setUseButtons] = useState(false);
+  const [buttons, setButtons] = useState<ButtonData[]>([]);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
 
+  useEffect(() => {
+    if (autoresponder) {
+      setName(autoresponder.name);
+      setKeywords(autoresponder.keywords);
+      setDmMessage(autoresponder.dm_message);
+      setPublicReplies(autoresponder.public_reply_messages || ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
+      setUseButtons(autoresponder.use_buttons || false);
+      setButtons(autoresponder.buttons || []);
+    }
+  }, [autoresponder]);
+
   const addKeyword = () => {
-    if (newKeyword.trim() && !keywords.includes(newKeyword.trim().toLowerCase())) {
-      setKeywords([...keywords, newKeyword.trim().toLowerCase()]);
-      setNewKeyword('');
+    if (keywordInput.trim() && !keywords.includes(keywordInput.trim().toLowerCase())) {
+      setKeywords([...keywords, keywordInput.trim().toLowerCase()]);
+      setKeywordInput('');
     }
   };
 
@@ -53,30 +82,22 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   };
 
   const addPublicReply = () => {
-    if (newPublicReply.trim() && publicReplyMessages.length < 10) {
-      setPublicReplyMessages([...publicReplyMessages, newPublicReply.trim()]);
+    if (newPublicReply.trim() && !publicReplies.includes(newPublicReply.trim())) {
+      setPublicReplies([...publicReplies, newPublicReply.trim()]);
       setNewPublicReply('');
     }
   };
 
   const removePublicReply = (index: number) => {
-    if (publicReplyMessages.length > 1) {
-      setPublicReplyMessages(publicReplyMessages.filter((_, i) => i !== index));
+    if (publicReplies.length > 1) {
+      setPublicReplies(publicReplies.filter((_, i) => i !== index));
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addKeyword();
-    }
-  };
-
-  const handlePublicReplyKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addPublicReply();
-    }
+  const updatePublicReply = (index: number, value: string) => {
+    const updated = [...publicReplies];
+    updated[index] = value;
+    setPublicReplies(updated);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,302 +106,239 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     if (!currentUser) {
       toast({
         title: "Error",
-        description: "No hay usuario de Instagram autenticado",
+        description: "No hay usuario autenticado",
         variant: "destructive"
       });
       return;
     }
-    
-    if (!name.trim()) {
+
+    if (!name.trim() || !dmMessage.trim() || keywords.length === 0) {
       toast({
         title: "Error",
-        description: "El nombre es requerido",
+        description: "Por favor completa todos los campos requeridos",
         variant: "destructive"
       });
       return;
     }
 
-    if (keywords.length === 0) {
-      toast({
-        title: "Error", 
-        description: "Debes agregar al menos una palabra clave",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!dmMessage.trim()) {
+    if (!selectedPost && !autoresponder) {
       toast({
         title: "Error",
-        description: "El mensaje DM es requerido",
+        description: "Por favor selecciona un post",
         variant: "destructive"
       });
       return;
     }
-
-    if (publicReplyMessages.length === 0 || publicReplyMessages.some(msg => !msg.trim())) {
-      toast({
-        title: "Error",
-        description: "Debes tener al menos un mensaje de respuesta pública válido",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
 
     try {
-      console.log('💾 Guardando autoresponder de comentarios para usuario:', currentUser.username);
-      console.log('🆔 Usando instagram_user_id como user_id:', currentUser.instagram_user_id);
+      setLoading(true);
 
-      const { data, error } = await supabase
-        .from('comment_autoresponders')
-        .insert({
-          user_id: currentUser.instagram_user_id,
-          post_id: selectedPost.id,
-          post_url: selectedPost.permalink,
-          post_caption: selectedPost.caption,
-          name: name.trim(),
-          keywords: keywords,
-          dm_message: dmMessage.trim(),
-          public_reply_messages: publicReplyMessages,
-          is_active: true
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Error guardando autoresponder:', error);
-        throw error;
-      }
-
-      console.log('✅ Autoresponder de comentarios guardado exitosamente:', data);
-
-      toast({
-        title: "¡Autoresponder creado!",
-        description: `Se configuró para detectar comentarios en @${currentUser.username} con ${publicReplyMessages.length} mensajes de respuesta`,
-      });
-
-      onSubmit({
+      const autoresponderData = {
+        user_id: currentUser.instagram_user_id,
+        post_id: autoresponder?.post_id || selectedPost?.id || '',
+        post_url: autoresponder?.post_url || selectedPost?.permalink || '',
+        post_caption: autoresponder?.post_caption || selectedPost?.caption || null,
         name: name.trim(),
         keywords,
-        dmMessage: dmMessage.trim(),
-        publicReplyMessages,
-        postId: selectedPost.id,
-        postUrl: selectedPost.permalink,
-        postCaption: selectedPost.caption
-      });
+        dm_message: dmMessage.trim(),
+        public_reply_messages: publicReplies.filter(reply => reply.trim()),
+        is_active: true,
+        use_buttons: useButtons,
+        buttons: useButtons && buttons.length > 0 ? buttons : null,
+        updated_at: new Date().toISOString()
+      };
 
+      if (autoresponder) {
+        console.log('🔄 Actualizando autoresponder de comentarios:', autoresponder.id);
+
+        const { error } = await (supabase as any)
+          .from('comment_autoresponders')
+          .update(autoresponderData)
+          .eq('id', autoresponder.id)
+          .eq('user_id', currentUser.instagram_user_id);
+
+        if (error) throw error;
+
+        toast({
+          title: "¡Actualizado!",
+          description: "Autoresponder de comentarios actualizado exitosamente",
+        });
+      } else {
+        console.log('➕ Creando nuevo autoresponder de comentarios');
+
+        const { error } = await (supabase as any)
+          .from('comment_autoresponders')
+          .insert([autoresponderData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "¡Creado!",
+          description: "Autoresponder de comentarios creado exitosamente",
+        });
+      }
+
+      onSubmit();
     } catch (error) {
-      console.error('❌ Error creando autoresponder:', error);
+      console.error('❌ Error guardando autoresponder de comentarios:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo guardar el autoresponder",
+        description: "No se pudo guardar el autoresponder",
         variant: "destructive"
       });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  // Mostrar mensaje si no hay usuario autenticado
-  if (!currentUser) {
-    return (
-      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <p className="text-gray-600">No hay usuario de Instagram autenticado</p>
-          <Button variant="outline" onClick={onBack} className="mt-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-      <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50">
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <CardTitle className="text-purple-900">
-              Configurar Autoresponder para Comentarios
+            <CardTitle className="text-blue-900">
+              {autoresponder ? 'Editar' : 'Crear'} Autoresponder de Comentarios
             </CardTitle>
-            <p className="text-sm text-purple-700 mt-1">
-              Detectar palabras clave en comentarios de @{currentUser.username} y enviar DM automático
+            <p className="text-sm text-blue-700 mt-1">
+              Configura respuestas automáticas para un post específico
             </p>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="p-6">
-        {/* Post Seleccionado */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <MessageCircle className="w-4 h-4" />
-            Post Seleccionado para @{currentUser.username}
-          </h3>
-          <div className="flex gap-3">
-            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-              <img 
-                src={selectedPost.thumbnail_url || selectedPost.media_url} 
-                alt="Post thumbnail"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-600 mb-1">
-                {formatPostDate(selectedPost.timestamp)}
-              </p>
-              <p className="text-sm text-gray-800 line-clamp-2">
-                {truncateCaption(selectedPost.caption, 120)}
-              </p>
-              <a 
-                href={selectedPost.permalink} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-xs text-purple-600 hover:text-purple-800 flex items-center gap-1 mt-1"
-              >
-                Ver post <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-          </div>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Nombre del Autoresponder */}
+          {/* Post seleccionado */}
+          {(selectedPost || autoresponder) && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-medium text-blue-900 mb-2">Post seleccionado:</h3>
+              <p className="text-sm text-blue-700">
+                {autoresponder?.post_caption || selectedPost?.caption || 'Post de Instagram'}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                ID: {autoresponder?.post_id || selectedPost?.id}
+              </p>
+            </div>
+          )}
+
+          {/* Nombre */}
           <div>
-            <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-              Nombre del Autoresponder
-            </Label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nombre del Autoresponder *
+            </label>
             <Input
-              id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Respuesta para lead magnet"
-              className="mt-1"
+              placeholder="Ej: Autoresponder para post de fitness"
               required
             />
           </div>
 
-          {/* Palabras Clave */}
+          {/* Palabras clave */}
           <div>
-            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <Key className="w-4 h-4" />
-              Palabras Clave para Detectar
-            </Label>
-            <p className="text-xs text-gray-500 mb-2">
-              Cuando un comentario contenga alguna de estas palabras, se enviará el DM automáticamente
-            </p>
-            
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Key className="w-4 h-4 inline mr-1" />
+              Palabras Clave *
+            </label>
             <div className="flex gap-2 mb-3">
               <Input
-                value={newKeyword}
-                onChange={(e) => setNewKeyword(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Escribe una palabra clave..."
-                className="flex-1"
+                value={keywordInput}
+                onChange={(e) => setKeywordInput(e.target.value)}
+                placeholder="Agregar palabra clave..."
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
               />
-              <Button type="button" onClick={addKeyword} size="sm">
+              <Button type="button" onClick={addKeyword} variant="outline">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
-
             <div className="flex flex-wrap gap-2">
               {keywords.map((keyword, index) => (
                 <Badge key={index} variant="secondary" className="flex items-center gap-1">
                   {keyword}
-                  <X
-                    className="w-3 h-3 cursor-pointer hover:text-red-500"
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-transparent"
                     onClick={() => removeKeyword(index)}
-                  />
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
                 </Badge>
               ))}
-              {keywords.length === 0 && (
-                <p className="text-sm text-gray-400 italic">
-                  No se han agregado palabras clave
-                </p>
-              )}
             </div>
-          </div>
-
-          {/* Mensajes de Respuesta Pública */}
-          <div>
-            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Mensajes de Respuesta Pública
-            </Label>
-            <p className="text-xs text-gray-500 mb-2">
-              Estos mensajes se enviarán como respuesta pública al comentario (se selecciona uno al azar)
-            </p>
-            
-            <div className="flex gap-2 mb-3">
-              <Input
-                value={newPublicReply}
-                onChange={(e) => setNewPublicReply(e.target.value)}
-                onKeyPress={handlePublicReplyKeyPress}
-                placeholder="Escribe un mensaje de respuesta pública..."
-                className="flex-1"
-                disabled={publicReplyMessages.length >= 10}
-              />
-              <Button 
-                type="button" 
-                onClick={addPublicReply} 
-                size="sm"
-                disabled={publicReplyMessages.length >= 10 || !newPublicReply.trim()}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-2 mb-2">
-              {publicReplyMessages.map((message, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
-                  <span className="text-xs text-blue-600 font-medium">#{index + 1}</span>
-                  <span className="flex-1 text-sm text-gray-800">{message}</span>
-                  {publicReplyMessages.length > 1 && (
-                    <X
-                      className="w-4 h-4 cursor-pointer hover:text-red-500 flex-shrink-0"
-                      onClick={() => removePublicReply(index)}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            <p className="text-xs text-gray-400">
-              {publicReplyMessages.length}/10 mensajes configurados
-            </p>
+            {keywords.length === 0 && (
+              <p className="text-sm text-red-600 mt-1">Agrega al menos una palabra clave</p>
+            )}
           </div>
 
           {/* Mensaje DM */}
           <div>
-            <Label htmlFor="dmMessage" className="text-sm font-medium text-gray-700">
-              Mensaje DM Automático
-            </Label>
-            <p className="text-xs text-gray-500 mb-2">
-              Este mensaje se enviará por DM cuando se detecte una palabra clave
-            </p>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mensaje Privado (DM) *
+            </label>
             <Textarea
-              id="dmMessage"
               value={dmMessage}
               onChange={(e) => setDmMessage(e.target.value)}
-              placeholder="¡Hola! Vi tu comentario y me gustaría enviarte más información..."
-              rows={4}
-              className="mt-1"
+              placeholder="Escribe el mensaje que se enviará por DM cuando alguien comente..."
+              className="min-h-[100px]"
               required
             />
-            <p className="text-xs text-gray-400 mt-1">
-              {dmMessage.length}/1000 caracteres
-            </p>
           </div>
+
+          {/* Respuestas públicas */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <MessageSquare className="w-4 h-4 inline mr-1" />
+              Respuestas Públicas
+            </label>
+            <p className="text-sm text-gray-600 mb-3">
+              Se enviará una respuesta aleatoria de las configuradas
+            </p>
+            <div className="space-y-3">
+              {publicReplies.map((reply, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={reply}
+                    onChange={(e) => updatePublicReply(index, e.target.value)}
+                    placeholder={`Respuesta pública ${index + 1}`}
+                  />
+                  {publicReplies.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removePublicReply(index)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <Input
+                  value={newPublicReply}
+                  onChange={(e) => setNewPublicReply(e.target.value)}
+                  placeholder="Nueva respuesta pública..."
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPublicReply())}
+                />
+                <Button type="button" onClick={addPublicReply} variant="outline">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Configuración de botones */}
+          <ButtonConfig
+            useButtons={useButtons}
+            onUseButtosChange={setUseButtons}
+            buttons={buttons}
+            onButtonsChange={setButtons}
+          />
 
           {/* Botones */}
           <div className="flex gap-3 pt-4">
@@ -394,19 +352,16 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || keywords.length === 0 || publicReplyMessages.length === 0}
-              className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              disabled={loading || !name.trim() || !dmMessage.trim() || keywords.length === 0}
+              className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
             >
-              {isSubmitting ? (
+              {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                   Guardando...
                 </>
               ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Crear Autoresponder
-                </>
+                `${autoresponder ? 'Actualizar' : 'Crear'} Autoresponder`
               )}
             </Button>
           </div>
