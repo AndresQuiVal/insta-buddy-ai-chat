@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, Edit, Trash2, ToggleLeft, ToggleRight, Key, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, ToggleLeft, ToggleRight, Key, MessageSquare, ExternalLink, MousePointer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import GeneralAutoresponderForm from './GeneralAutoresponderForm';
+
+interface ButtonData {
+  type: 'web_url' | 'postback';
+  title: string;
+  url?: string;
+  payload?: string;
+  action_type?: 'message' | 'url_redirect';
+  action_data?: any;
+}
 
 interface GeneralAutoresponder {
   id: string;
@@ -17,6 +26,8 @@ interface GeneralAutoresponder {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  use_buttons?: boolean;
+  buttons?: ButtonData[];
 }
 
 interface GeneralAutoresponderManagerProps {
@@ -53,7 +64,14 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
       if (error) throw error;
 
       console.log('✅ Autoresponders generales cargados:', data?.length || 0);
-      setAutoresponders(data || []);
+      
+      // Convert Json buttons back to ButtonData[]
+      const autorespondersWithParsedButtons = data?.map(autoresponder => ({
+        ...autoresponder,
+        buttons: autoresponder.buttons ? JSON.parse(JSON.stringify(autoresponder.buttons)) as ButtonData[] : undefined
+      })) || [];
+      
+      setAutoresponders(autorespondersWithParsedButtons);
     } catch (error) {
       console.error('❌ Error cargando autoresponders generales:', error);
       toast({
@@ -282,6 +300,12 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
                       <Badge variant="outline" className="bg-green-50 text-green-700">
                         {autoresponder.public_reply_messages?.length || 1} respuestas públicas
                       </Badge>
+                      {autoresponder.use_buttons && autoresponder.buttons && autoresponder.buttons.length > 0 && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          <MousePointer className="w-3 h-3 mr-1" />
+                          {autoresponder.buttons.length} botón{autoresponder.buttons.length > 1 ? 'es' : ''}
+                        </Badge>
+                      )}
                     </div>
 
                     <div>
@@ -319,6 +343,30 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
                               +{autoresponder.public_reply_messages.length - 2} más...
                             </p>
                           )}
+                        </div>
+                      </div>
+                    )}
+
+                    {autoresponder.use_buttons && autoresponder.buttons && autoresponder.buttons.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-1 mb-2">
+                          <MousePointer className="w-3 h-3 text-gray-500" />
+                          <span className="text-xs text-gray-500">Botones configurados:</span>
+                        </div>
+                        <div className="space-y-1">
+                          {autoresponder.buttons.map((button, index) => (
+                            <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded text-xs">
+                              {button.type === 'web_url' ? (
+                                <ExternalLink className="w-3 h-3 text-blue-600" />
+                              ) : (
+                                <MessageSquare className="w-3 h-3 text-blue-600" />
+                              )}
+                              <span className="font-medium text-blue-700">{button.title}</span>
+                              <span className="text-gray-600">
+                                {button.type === 'web_url' ? `→ ${button.url}` : `→ ${button.payload}`}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
