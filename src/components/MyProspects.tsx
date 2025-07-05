@@ -4,7 +4,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import InstagramMessages from '@/components/InstagramMessages';
 import ProspectList from '@/components/ProspectList';
 import AutoresponderManager from '@/components/AutoresponderManager';
-import AllAutorespondersList from '@/components/AllAutorespondersList';
 
 const MyProspects = () => {
   const [activeTab, setActiveTab] = useState('prospects');
@@ -12,10 +11,9 @@ const MyProspects = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="prospects">Prospectos</TabsTrigger>
           <TabsTrigger value="messages">Mensajes</TabsTrigger>
-          <TabsTrigger value="all-autoresponders">Mis Autoresponders</TabsTrigger>
           <TabsTrigger value="autoresponder">Gestionar</TabsTrigger>
         </TabsList>
         <TabsContent value="prospects" className="mt-6">
@@ -23,9 +21,6 @@ const MyProspects = () => {
         </TabsContent>
         <TabsContent value="messages" className="mt-6">
           <InstagramMessages />
-        </TabsContent>
-        <TabsContent value="all-autoresponders" className="mt-6">
-          <AllAutorespondersList />
         </TabsContent>
         <TabsContent value="autoresponder" className="mt-6">
           <AutoresponderManager />

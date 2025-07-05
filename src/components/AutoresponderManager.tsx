@@ -17,7 +17,10 @@ import {
   Filter,
   MessageSquare,
   Settings,
-  ArrowLeft
+  ArrowLeft,
+  Instagram,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import AutoresponderForm from './AutoresponderForm';
 import AutoresponderTypeDialog from './AutoresponderTypeDialog';
@@ -52,9 +55,28 @@ interface CommentAutoresponder {
   public_reply_messages?: string[];
 }
 
+interface GeneralAutoresponder {
+  id: string;
+  name: string;
+  keywords: string[];
+  dm_message: string;
+  is_active: boolean;
+  public_reply_messages?: string[];
+  assigned_posts?: PostAssignment[];
+}
+
+interface PostAssignment {
+  id: string;
+  post_id: string;
+  post_url: string;
+  post_caption?: string;
+  is_active: boolean;
+}
+
 const AutoresponderManager: React.FC = () => {
   const [messages, setMessages] = useState<AutoresponderMessage[]>([]);
   const [commentAutoresponders, setCommentAutoresponders] = useState<CommentAutoresponder[]>([]);
+  const [generalAutoresponders, setGeneralAutoresponders] = useState<GeneralAutoresponder[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showTypeDialog, setShowTypeDialog] = useState(false);
@@ -74,6 +96,7 @@ const AutoresponderManager: React.FC = () => {
     if (currentUser) {
       fetchMessages();
       fetchCommentAutoresponders();
+      fetchGeneralAutoresponders();
     }
   }, [currentUser]);
 
@@ -134,6 +157,48 @@ const AutoresponderManager: React.FC = () => {
       toast({
         title: "Error",
         description: "No se pudieron cargar los autoresponders de comentarios",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchGeneralAutoresponders = async () => {
+    if (!currentUser) return;
+    
+    try {
+      console.log('🔍 Cargando autoresponders generales...');
+
+      const { data: generalData, error: generalError } = await supabase
+        .from('general_comment_autoresponders')
+        .select('*')
+        .eq('user_id', currentUser.instagram_user_id)
+        .order('created_at', { ascending: false });
+
+      if (generalError) throw generalError;
+
+      // Cargar asignaciones de posts para autoresponders generales
+      const { data: postAssignments, error: assignmentsError } = await supabase
+        .from('post_autoresponder_assignments')
+        .select('*')
+        .eq('user_id', currentUser.instagram_user_id);
+
+      if (assignmentsError) throw assignmentsError;
+
+      // Combinar autoresponders generales con sus asignaciones
+      const generalsWithAssignments = generalData.map(general => ({
+        ...general,
+        assigned_posts: postAssignments.filter(
+          assignment => assignment.general_autoresponder_id === general.id
+        )
+      }));
+
+      console.log('✅ Autoresponders generales cargados:', generalsWithAssignments.length);
+      setGeneralAutoresponders(generalsWithAssignments);
+    } catch (error) {
+      console.error('❌ Error cargando autoresponders generales:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los autoresponders generales",
         variant: "destructive"
       });
     }
@@ -496,7 +561,7 @@ const AutoresponderManager: React.FC = () => {
     );
   }
 
-  const totalAutoresponders = messages.length + commentAutoresponders.length;
+  const totalAutoresponders = messages.length + commentAutoresponders.length + generalAutoresponders.length;
 
   if (showGeneralManager) {
     return (
@@ -543,208 +608,312 @@ const AutoresponderManager: React.FC = () => {
         </div>
       </div>
 
-      {messages.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-800">Mensajes Directos / Stories</h3>
-          <div className="grid gap-4">
-            {messages.map((message) => (
-              <Card key={message.id} className="border-purple-100">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${message.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      <CardTitle className="text-lg">{message.name}</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleActive(message.id, message.is_active)}
-                      >
-                        {message.is_active ? (
-                          <ToggleRight className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <ToggleLeft className="w-4 h-4 text-gray-400" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(message)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(message.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <p className="text-gray-700">{message.message_text}</p>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant={message.is_active ? "default" : "secondary"}>
-                        {message.is_active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                      
-                      {message.send_only_first_message && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          Solo primer mensaje
-                        </Badge>
-                      )}
-                      
-                      {message.use_keywords && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Filter className="w-3 h-3" />
-                          Con palabras clave
-                        </Badge>
-                      )}
-                    </div>
-
-                    {message.use_keywords && message.keywords && message.keywords.length > 0 && (
-                      <div className="pt-2">
-                        <div className="flex items-center gap-1 mb-2">
-                          <Key className="w-3 h-3 text-gray-500" />
-                          <span className="text-xs text-gray-500">Palabras clave:</span>
+      {totalAutoresponders > 0 && (
+        <div className="space-y-6">
+          {messages.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800 flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-purple-500" />
+                Mensajes Directos / Stories ({messages.length})
+              </h3>
+              <div className="grid gap-4">
+                {messages.map((message) => (
+                  <Card key={message.id} className="border-purple-100">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${message.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <CardTitle className="text-lg">{message.name}</CardTitle>
                         </div>
-                        <div className="flex flex-wrap gap-1">
-                          {message.keywords.map((keyword, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded"
-                            >
-                              {keyword}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {commentAutoresponders.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-800">Comentarios de Posts</h3>
-          <div className="grid gap-4">
-            {commentAutoresponders.map((autoresponder) => (
-              <Card key={autoresponder.id} className="border-orange-100">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${autoresponder.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      <CardTitle className="text-lg">{autoresponder.name}</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleCommentAutoresponderActive(autoresponder.id, autoresponder.is_active)}
-                      >
-                        {autoresponder.is_active ? (
-                          <ToggleRight className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <ToggleLeft className="w-4 h-4 text-gray-400" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditCommentAutoresponder(autoresponder)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteCommentAutoresponder(autoresponder.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Mensaje DM:</p>
-                      <p className="text-gray-700">{autoresponder.dm_message}</p>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant={autoresponder.is_active ? "default" : "secondary"}>
-                        {autoresponder.is_active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                      <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                        Post específico
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        {autoresponder.public_reply_messages?.length || 1} respuestas públicas
-                      </Badge>
-                    </div>
-
-                    <div className="pt-2">
-                      <div className="flex items-center gap-1 mb-2">
-                        <Key className="w-3 h-3 text-gray-500" />
-                        <span className="text-xs text-gray-500">Palabras clave:</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {autoresponder.keywords.map((keyword, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded"
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleActive(message.id, message.is_active)}
                           >
-                            {keyword}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {autoresponder.public_reply_messages && autoresponder.public_reply_messages.length > 0 && (
-                      <div className="pt-2">
-                        <div className="flex items-center gap-1 mb-2">
-                          <MessageSquare className="w-3 h-3 text-gray-500" />
-                          <span className="text-xs text-gray-500">Respuestas públicas (se envía una al azar):</span>
+                            {message.is_active ? (
+                              <ToggleRight className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <ToggleLeft className="w-4 h-4 text-gray-400" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(message)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(message.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <div className="space-y-1">
-                          {autoresponder.public_reply_messages.map((message, index) => (
-                            <div key={index} className="flex items-start gap-2 p-2 bg-green-50 rounded text-xs">
-                              <span className="text-green-600 font-medium">#{index + 1}</span>
-                              <span className="text-gray-700 flex-1">{message}</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <p className="text-gray-700">{message.message_text}</p>
+                        
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant={message.is_active ? "default" : "secondary"}>
+                            {message.is_active ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                          
+                          {message.send_only_first_message && (
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              Solo primer mensaje
+                            </Badge>
+                          )}
+                          
+                          {message.use_keywords && (
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              <Filter className="w-3 h-3" />
+                              Con palabras clave
+                            </Badge>
+                          )}
+                        </div>
+
+                        {message.use_keywords && message.keywords && message.keywords.length > 0 && (
+                          <div className="pt-2">
+                            <div className="flex items-center gap-1 mb-2">
+                              <Key className="w-3 h-3 text-gray-500" />
+                              <span className="text-xs text-gray-500">Palabras clave:</span>
                             </div>
-                          ))}
+                            <div className="flex flex-wrap gap-1">
+                              {message.keywords.map((keyword, index) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded"
+                                >
+                                  {keyword}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {commentAutoresponders.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800 flex items-center gap-2">
+                <Instagram className="w-5 h-5 text-orange-500" />
+                Posts Específicos ({commentAutoresponders.length})
+              </h3>
+              <div className="grid gap-4">
+                {commentAutoresponders.map((autoresponder) => (
+                  <Card key={autoresponder.id} className="border-orange-100">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${autoresponder.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <CardTitle className="text-lg">{autoresponder.name}</CardTitle>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleCommentAutoresponderActive(autoresponder.id, autoresponder.is_active)}
+                          >
+                            {autoresponder.is_active ? (
+                              <ToggleRight className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <ToggleLeft className="w-4 h-4 text-gray-400" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditCommentAutoresponder(autoresponder)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteCommentAutoresponder(autoresponder.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
-                    )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Mensaje DM:</p>
+                          <p className="text-gray-700">{autoresponder.dm_message}</p>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant={autoresponder.is_active ? "default" : "secondary"}>
+                            {autoresponder.is_active ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                            Post específico
+                          </Badge>
+                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                            {autoresponder.public_reply_messages?.length || 1} respuestas públicas
+                          </Badge>
+                        </div>
 
-                    <div className="pt-2 text-xs text-gray-500">
-                      <a 
-                        href={autoresponder.post_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        Ver post configurado →
-                      </a>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                        <div className="pt-2">
+                          <div className="flex items-center gap-1 mb-2">
+                            <Key className="w-3 h-3 text-gray-500" />
+                            <span className="text-xs text-gray-500">Palabras clave:</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {autoresponder.keywords.map((keyword, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded"
+                              >
+                                {keyword}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {autoresponder.public_reply_messages && autoresponder.public_reply_messages.length > 0 && (
+                          <div className="pt-2">
+                            <div className="flex items-center gap-1 mb-2">
+                              <MessageSquare className="w-3 h-3 text-gray-500" />
+                              <span className="text-xs text-gray-500">Respuestas públicas (se envía una al azar):</span>
+                            </div>
+                            <div className="space-y-1">
+                              {autoresponder.public_reply_messages.map((message, index) => (
+                                <div key={index} className="flex items-start gap-2 p-2 bg-green-50 rounded text-xs">
+                                  <span className="text-green-600 font-medium">#{index + 1}</span>
+                                  <span className="text-gray-700 flex-1">{message}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="pt-2 text-xs text-gray-500">
+                          <a 
+                            href={autoresponder.post_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            Ver post configurado →
+                          </a>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {generalAutoresponders.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-blue-500" />
+                Generales ({generalAutoresponders.length})
+              </h3>
+              <div className="grid gap-4">
+                {generalAutoresponders.map((autoresponder) => (
+                  <Card key={autoresponder.id} className="border-blue-100">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${autoresponder.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                            <h4 className="font-semibold text-gray-900">{autoresponder.name}</h4>
+                          </div>
+                          <Badge variant={autoresponder.is_active ? "default" : "secondary"}>
+                            {autoresponder.is_active ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Mensaje DM:</p>
+                          <p className="text-sm text-gray-700">{autoresponder.dm_message}</p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                            General
+                          </Badge>
+                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                            {autoresponder.public_reply_messages?.length || 1} respuestas públicas
+                          </Badge>
+                          {autoresponder.assigned_posts && autoresponder.assigned_posts.length > 0 && (
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                              {autoresponder.assigned_posts.length} post(s) asignados
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-1 mb-2">
+                            <Key className="w-3 h-3 text-gray-500" />
+                            <span className="text-xs text-gray-500">Palabras clave:</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {autoresponder.keywords.map((keyword, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded"
+                              >
+                                {keyword}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {autoresponder.assigned_posts && autoresponder.assigned_posts.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-1 mb-2">
+                              <Instagram className="w-3 h-3 text-gray-500" />
+                              <span className="text-xs text-gray-500">Posts asignados:</span>
+                            </div>
+                            <div className="space-y-1">
+                              {autoresponder.assigned_posts.slice(0, 3).map((assignment, index) => (
+                                <div key={assignment.id} className="flex items-center gap-2 text-xs">
+                                  <div className={`w-2 h-2 rounded-full ${assignment.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                                  <a 
+                                    href={assignment.post_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                  >
+                                    Post #{index + 1}
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              ))}
+                              {autoresponder.assigned_posts.length > 3 && (
+                                <p className="text-xs text-gray-500 italic">
+                                  +{autoresponder.assigned_posts.length - 3} más...
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
