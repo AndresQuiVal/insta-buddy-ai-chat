@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -135,7 +136,14 @@ const AutoresponderManager: React.FC = () => {
       }
 
       console.log('✅ Autoresponders cargados:', data?.length || 0);
-      setMessages(data || []);
+      
+      // Convert Json buttons back to ButtonData[]
+      const messagesWithParsedButtons = data?.map(message => ({
+        ...message,
+        buttons: message.buttons ? JSON.parse(JSON.stringify(message.buttons)) as ButtonData[] : undefined
+      })) || [];
+      
+      setMessages(messagesWithParsedButtons);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -167,7 +175,14 @@ const AutoresponderManager: React.FC = () => {
       }
 
       console.log('✅ Autoresponders de comentarios cargados:', data?.length || 0);
-      setCommentAutoresponders(data || []);
+      
+      // Convert Json buttons back to ButtonData[]
+      const commentAutorespondersWithParsedButtons = data?.map(autoresponder => ({
+        ...autoresponder,
+        buttons: autoresponder.buttons ? JSON.parse(JSON.stringify(autoresponder.buttons)) as ButtonData[] : undefined
+      })) || [];
+      
+      setCommentAutoresponders(commentAutorespondersWithParsedButtons);
     } catch (error) {
       console.error('Error fetching comment autoresponders:', error);
       toast({
@@ -200,13 +215,14 @@ const AutoresponderManager: React.FC = () => {
 
       if (assignmentsError) throw assignmentsError;
 
-      // Combinar autoresponders generales con sus asignaciones
-      const generalsWithAssignments = generalData.map(general => ({
+      // Combinar autoresponders generales con sus asignaciones y parsear botones
+      const generalsWithAssignments = generalData?.map(general => ({
         ...general,
-        assigned_posts: postAssignments.filter(
+        buttons: general.buttons ? JSON.parse(JSON.stringify(general.buttons)) as ButtonData[] : undefined,
+        assigned_posts: postAssignments?.filter(
           assignment => assignment.general_autoresponder_id === general.id
-        )
-      }));
+        ) || []
+      })) || [];
 
       console.log('✅ Autoresponders generales cargados:', generalsWithAssignments.length);
       setGeneralAutoresponders(generalsWithAssignments);
