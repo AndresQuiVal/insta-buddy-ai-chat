@@ -46,7 +46,7 @@ const AutoresponderSelector = ({ selectedPost, onBack, onCreateNew, onAssigned }
       setLoading(true);
       console.log('🔍 Cargando autoresponders generales para selección...');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('general_comment_autoresponders')
         .select('*')
         .eq('user_id', currentUser.instagram_user_id)
@@ -81,7 +81,7 @@ const AutoresponderSelector = ({ selectedPost, onBack, onCreateNew, onAssigned }
       });
 
       // Verificar si ya existe una asignación para este post
-      const { data: existingAssignment } = await supabase
+      const { data: existingAssignment } = await (supabase as any)
         .from('post_autoresponder_assignments')
         .select('id')
         .eq('user_id', currentUser.instagram_user_id)
@@ -90,7 +90,7 @@ const AutoresponderSelector = ({ selectedPost, onBack, onCreateNew, onAssigned }
 
       if (existingAssignment) {
         // Actualizar asignación existente
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('post_autoresponder_assignments')
           .update({
             general_autoresponder_id: autoresponderId,
@@ -102,7 +102,7 @@ const AutoresponderSelector = ({ selectedPost, onBack, onCreateNew, onAssigned }
         if (error) throw error;
       } else {
         // Crear nueva asignación
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('post_autoresponder_assignments')
           .insert([{
             user_id: currentUser.instagram_user_id,

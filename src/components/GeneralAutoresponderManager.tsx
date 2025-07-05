@@ -45,7 +45,7 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
       setLoading(true);
       console.log('🔍 Cargando autoresponders generales...');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('general_comment_autoresponders')
         .select('*')
         .eq('user_id', currentUser.instagram_user_id)
@@ -80,7 +80,7 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
     try {
       console.log('🗑️ Eliminando autoresponder general:', id);
       
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('general_comment_autoresponders')
         .delete()
         .eq('id', id)
@@ -106,7 +106,7 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('general_comment_autoresponders')
         .update({ is_active: !currentStatus })
         .eq('id', id)
