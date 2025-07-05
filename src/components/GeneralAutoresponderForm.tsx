@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -114,7 +113,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       if (autoresponder) {
         console.log('🔄 Actualizando autoresponder general:', autoresponder.id);
 
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('general_comment_autoresponders')
           .update(autoresponderData)
           .eq('id', autoresponder.id)
@@ -129,7 +128,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       } else {
         console.log('➕ Creando nuevo autoresponder general');
 
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('general_comment_autoresponders')
           .insert([autoresponderData]);
 
