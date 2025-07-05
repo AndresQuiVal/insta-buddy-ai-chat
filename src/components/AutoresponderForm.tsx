@@ -176,7 +176,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         use_keywords: useKeywords,
         keywords: useKeywords ? keywords : null,
         use_buttons: useButtons,
-        buttons: useButtons ? buttons : null,
+        buttons: useButtons ? JSON.parse(JSON.stringify(buttons)) : null,
         instagram_user_id_ref: currentUser.instagram_user_id,
         instagram_user_id: currentUser.id
       };
