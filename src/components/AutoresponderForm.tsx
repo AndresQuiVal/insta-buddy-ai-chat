@@ -9,6 +9,16 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { X } from 'lucide-react';
+import ButtonConfig from './ButtonConfig';
+
+interface ButtonData {
+  type: 'web_url' | 'postback';
+  title: string;
+  url?: string;
+  payload?: string;
+  action_type?: 'message' | 'url_redirect';
+  action_data?: any;
+}
 
 interface AutoresponderMessage {
   id: string;
@@ -18,6 +28,8 @@ interface AutoresponderMessage {
   send_only_first_message?: boolean;
   use_keywords?: boolean;
   keywords?: string[];
+  use_buttons?: boolean;
+  buttons?: ButtonData[];
 }
 
 interface AutoresponderFormProps {
@@ -34,6 +46,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const [useKeywords, setUseKeywords] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
+  const [useButtons, setUseButtons] = useState(false);
+  const [buttons, setButtons] = useState<ButtonData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -46,6 +60,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setSendOnlyFirstMessage(message.send_only_first_message || false);
       setUseKeywords(message.use_keywords || false);
       setKeywords(message.keywords || []);
+      setUseButtons(message.use_buttons || false);
+      setButtons(message.buttons || []);
     } else {
       setName('');
       setMessageText('');
@@ -53,6 +69,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setSendOnlyFirstMessage(false);
       setUseKeywords(false);
       setKeywords([]);
+      setUseButtons(false);
+      setButtons([]);
     }
   }, [message]);
 
@@ -104,6 +122,47 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       return;
     }
 
+    if (useButtons && buttons.length === 0) {
+      toast({
+        title: "Error",
+        description: "Si activas botones, debes agregar al menos un botón",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validar botones
+    if (useButtons) {
+      for (const button of buttons) {
+        if (!button.title.trim()) {
+          toast({
+            title: "Error",
+            description: "Todos los botones deben tener un título",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        if (button.type === 'web_url' && !button.url?.trim()) {
+          toast({
+            title: "Error",
+            description: "Los botones de URL deben tener una URL válida",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        if (button.type === 'postback' && !button.payload?.trim()) {
+          toast({
+            title: "Error",
+            description: "Los botones de acción deben tener un payload",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+    }
+
     setIsLoading(true);
 
     try {
@@ -116,21 +175,21 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         send_only_first_message: sendOnlyFirstMessage,
         use_keywords: useKeywords,
         keywords: useKeywords ? keywords : null,
-        instagram_user_id_ref: currentUser.instagram_user_id, // Usar el ID del usuario actual
-        instagram_user_id: currentUser.id // Mantener referencia al UUID por compatibilidad
+        use_buttons: useButtons,
+        buttons: useButtons ? buttons : null,
+        instagram_user_id_ref: currentUser.instagram_user_id,
+        instagram_user_id: currentUser.id
       };
 
       let result;
 
       if (message) {
-        // Actualizar existente
         console.log('🔄 Actualizando autoresponder:', message.id);
         result = await supabase
           .from('autoresponder_messages')
           .update(messageData)
           .eq('id', message.id);
       } else {
-        // Crear nuevo
         console.log('➕ Creando nuevo autoresponder para usuario:', currentUser.username);
         result = await supabase
           .from('autoresponder_messages')
@@ -142,11 +201,36 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         throw result.error;
       }
 
+      // Guardar acciones de postback si hay botones con postback
+      if (useButtons && buttons.some(b => b.type === 'postback')) {
+        const postbackActions = buttons
+          .filter(b => b.type === 'postback')
+          .map(button => ({
+            payload_key: button.payload!,
+            action_type: button.action_type || 'message',
+            action_data: button.action_data || {},
+            user_id: currentUser.instagram_user_id
+          }));
+
+        if (postbackActions.length > 0) {
+          const { error: postbackError } = await supabase
+            .from('button_postback_actions')
+            .upsert(postbackActions, { 
+              onConflict: 'payload_key',
+              ignoreDuplicates: false 
+            });
+
+          if (postbackError) {
+            console.warn('⚠️ Error guardando acciones postback:', postbackError);
+          }
+        }
+      }
+
       console.log('✅ AUTORESPONDER GUARDADO PARA USUARIO:', currentUser.username);
 
       toast({
         title: message ? "¡Actualizado!" : "¡Creado!",
-        description: `Respuesta automática guardada para @${currentUser.username}`,
+        description: `Respuesta automática ${useButtons ? 'con botones ' : ''}guardada para @${currentUser.username}`,
       });
 
       onSubmit();
@@ -163,7 +247,6 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
     }
   };
 
-  // Mostrar mensaje si no hay usuario autenticado
   if (!currentUser) {
     return (
       <div className="text-center py-8">
@@ -199,12 +282,19 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
           onChange={(e) => setMessageText(e.target.value)}
           placeholder="Escribe el mensaje que se enviará automáticamente..."
           rows={4}
-          maxLength={1000}
+          maxLength={640}
         />
         <p className="text-sm text-gray-500 mt-1">
-          {messageText.length}/1000 caracteres
+          {messageText.length}/640 caracteres {useButtons && '(máx. para mensajes con botones)'}
         </p>
       </div>
+
+      <ButtonConfig
+        useButtons={useButtons}
+        onUseButtosChange={setUseButtons}
+        buttons={buttons}
+        onButtonsChange={setButtons}
+      />
 
       <div className="flex items-center space-x-2">
         <Switch

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -16,860 +17,304 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
-    
-    // Verificación inicial de Facebook (hub.challenge)
-    const url = new URL(req.url)
-    const challenge = url.searchParams.get('hub.challenge')
-    const verifyToken = url.searchParams.get('hub.verify_token')
-    
-    if (challenge) {
-      console.log('🔐 Verificación de Facebook - challenge:', challenge)
-      console.log('🔑 Token recibido:', verifyToken)
-      
-      // Verificar el token (opcional, pero recomendado)
-      if (verifyToken === 'hower-instagram-webhook-token') {
-        console.log('✅ Token de verificación correcto')
-        return new Response(challenge, { status: 200 })
-      } else {
-        console.log('❌ Token de verificación incorrecto')
-        return new Response('Forbidden', { status: 403 })
+
+    if (req.method === 'GET') {
+      const url = new URL(req.url)
+      const mode = url.searchParams.get('hub.mode')
+      const token = url.searchParams.get('hub.verify_token')
+      const challenge = url.searchParams.get('hub.challenge')
+
+      const VERIFY_TOKEN = Deno.env.get('INSTAGRAM_VERIFY_TOKEN')
+
+      if (mode && token) {
+        if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+          console.log('WEBHOOK_VERIFIED')
+          return new Response(challenge, { status: 200 })
+        } else {
+          return new Response('Forbidden', { status: 403 })
+        }
       }
     }
-    
-    const body = await req.json()
-    
-    console.log('📨 ===== WEBHOOK RECIBIDO EN PRODUCCIÓN =====')
-    console.log('📋 Webhook completo:', JSON.stringify(body, null, 2))
-    console.log('🔍 User-Agent:', req.headers.get('User-Agent'))
-    console.log('🔍 Content-Type:', req.headers.get('Content-Type'))
 
-    if (body.object !== 'instagram') {
-      console.log('❌ No es webhook de Instagram, objeto:', body.object)
-      return new Response(
-        JSON.stringify({ message: 'Not an Instagram webhook' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    if (req.method === 'POST') {
+      const body = await req.json()
+      console.log('📨 WEBHOOK RECIBIDO:', JSON.stringify(body, null, 2))
 
-    // Procesamiento de entries
-    if (body.entry && Array.isArray(body.entry)) {
-      for (const entry of body.entry) {
-        console.log('🔄 ===== PROCESANDO ENTRY =====')
-        console.log('📋 Entry ID:', entry.id)
-        console.log('📋 Entry completo:', JSON.stringify(entry, null, 2))
-        console.log('📋 Entry keys:', Object.keys(entry))
-
-        if (entry.messaging && Array.isArray(entry.messaging)) {
-          console.log('📝 PROCESANDO MENSAJES DIRECTOS (FORMATO PRODUCCIÓN)')
-          
-          for (const messagingEvent of entry.messaging) {
-            await processMessage(messagingEvent, supabase, 'messaging', entry.id)
-          }
-        }
-        else if (entry.changes && Array.isArray(entry.changes)) {
-          console.log('🔄 PROCESANDO CAMBIOS (FORMATO PRODUCCIÓN)')
-          
-          for (const change of entry.changes) {
-            console.log('📋 Change:', JSON.stringify(change, null, 2))
-            
-            if (change.field === 'messages' && change.value) {
-              const messagingEvent = {
-                sender: change.value.sender,
-                recipient: change.value.recipient,
-                timestamp: change.value.timestamp,
-                message: change.value.message
+      if (body.object === 'instagram') {
+        for (const entry of body.entry) {
+          // Manejar mensajes directos
+          if (entry.messaging) {
+            for (const messagingEvent of entry.messaging) {
+              // Manejar postback de botones
+              if (messagingEvent.postback) {
+                await handlePostback(messagingEvent, supabase)
               }
-              
-              await processMessage(messagingEvent, supabase, 'changes', entry.id)
+              // Manejar mensajes entrantes
+              else if (messagingEvent.message) {
+                await handleIncomingMessage(messagingEvent, supabase)
+              }
             }
-            else if (change.field === 'comments' && change.value) {
-              console.log('💬 PROCESANDO COMENTARIO')
-              await processComment(change.value, supabase, entry.id)
+          }
+
+          // Manejar comentarios
+          if (entry.changes) {
+            for (const change of entry.changes) {
+              if (change.field === 'comments' && change.value.verb === 'add') {
+                await handleComment(change.value, supabase)
+              }
             }
           }
         }
-        else {
-          console.log('❌ No hay messaging ni changes en este entry')
-          console.log('📋 Entry structure:', JSON.stringify(entry, null, 2))
-        }
       }
+
+      return new Response('EVENT_RECEIVED', { status: 200, headers: corsHeaders })
     }
 
-    console.log('✅ Webhook procesado exitosamente')
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders })
 
   } catch (error) {
-    console.error('💥 Error en webhook:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    console.error('❌ Error en webhook:', error)
+    return new Response('Internal Server Error', { status: 500, headers: corsHeaders })
   }
 })
 
-async function processMessage(messagingEvent: any, supabase: any, source: string, instagramAccountId: string) {
-  console.log(`📝 Procesando mensaje desde ${source}:`, JSON.stringify(messagingEvent, null, 2))
+async function handlePostback(messagingEvent: any, supabase: any) {
+  console.log('🔘 POSTBACK RECIBIDO:', JSON.stringify(messagingEvent, null, 2))
   
-  const senderId = messagingEvent.sender?.id
-  const recipientId = messagingEvent.recipient?.id
-  const messageText = messagingEvent.message?.text
-  const timestamp = messagingEvent.timestamp ? new Date(parseInt(messagingEvent.timestamp) * 1000).toISOString() : new Date().toISOString()
-  const messageId = messagingEvent.message?.mid || `msg_${Date.now()}_${Math.random()}`
-  const isEcho = messagingEvent.message?.is_echo === true
-
-  console.log('🚀 === PROCESANDO MENSAJE ===')
-  console.log('👤 SENDER ID:', senderId)
-  console.log('🎯 RECIPIENT ID:', recipientId)
-  console.log('💬 MENSAJE:', messageText)
-  console.log('🔔 ES ECHO:', isEcho)
-  console.log('⏰ TIMESTAMP:', timestamp)
-  console.log('🆔 MESSAGE ID:', messageId)
-
-  if (!senderId || !recipientId || !messageText) {
-    console.log('❌ Datos insuficientes para procesar mensaje')
-    return
-  }
-
-  if (isEcho) {
-    console.log('⏭️ Es un echo - saltando')
-    return
-  }
-
-  console.log('🔄 Actualizando actividad del prospecto...')
-  try {
-    const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
-      p_prospect_id: senderId 
-    })
-    
-    if (activityError) {
-      console.error('❌ Error actualizando actividad:', activityError)
-    } else {
-      console.log('✅ Actividad del prospecto actualizada')
-    }
-  } catch (activityErr) {
-    console.error('💥 Error en update_prospect_activity:', activityErr)
-  }
-
-  console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM POR RECIPIENT ID =====')
-  console.log('🎯 Buscando usuario con instagram_user_id:', recipientId)
-
-  const { data: instagramUser, error: userError } = await supabase
-    .from('instagram_users')
-    .select('*')
-    .eq('instagram_user_id', recipientId)
-    .eq('is_active', true)
-    .single()
-
-  if (userError || !instagramUser) {
-    console.error('❌ No se encontró usuario de Instagram con ID:', recipientId, userError)
-    console.log('❌ No hay usuario configurado para recibir este mensaje - NO SE ENVIARÁ AUTORESPONDER')
-    return
-  }
-
-  console.log('✅ Usuario de Instagram encontrado:', JSON.stringify(instagramUser, null, 2))
-
-  console.log('🔍 ===== CREANDO/ACTUALIZANDO PROSPECTO =====')
-  
-  let prospectId;
-  try {
-    const { data: prospectResult, error: prospectError } = await supabase.rpc('create_or_update_prospect', {
-      p_instagram_user_id: instagramUser.id,
-      p_prospect_instagram_id: senderId,
-      p_username: `prospect_${senderId.slice(-8)}`,
-      p_profile_picture_url: null
-    })
-
-    if (prospectError) {
-      console.error('❌ Error creando prospecto:', prospectError)
-      return
-    }
-
-    prospectId = prospectResult
-    console.log('✅ Prospecto creado/actualizado con ID:', prospectId)
-    
-  } catch (prospectErr) {
-    console.error('💥 Error en create_or_update_prospect:', prospectErr)
-    return
-  }
-
-  try {
-    const { data: messageResult, error: messageError } = await supabase.rpc('add_prospect_message', {
-      p_prospect_id: prospectId,
-      p_message_instagram_id: messageId,
-      p_message_text: messageText,
-      p_is_from_prospect: true,
-      p_message_timestamp: timestamp,
-      p_message_type: 'text',
-      p_raw_data: messagingEvent
-    })
-
-    if (messageError) {
-      console.error('❌ Error guardando mensaje:', messageError)
-    } else {
-      console.log('✅ Mensaje del prospecto guardado en BD')
-    }
-  } catch (messageErr) {
-    console.error('💥 Error en add_prospect_message:', messageErr)
-  }
-
-  console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
-  console.log('📝 Texto:', messageText)
-
-  const isInvitation = messageText?.toLowerCase().includes('invitacion') || messageText?.toLowerCase().includes('invitación')
-  const isPresentation = messageText?.toLowerCase().includes('presentacion') || messageText?.toLowerCase().includes('presentación')
-  const isInscription = messageText?.toLowerCase().includes('inscripcion') || messageText?.toLowerCase().includes('inscripción')
-
-  const { error: saveError } = await supabase
-    .from('instagram_messages')
-    .insert({
-      instagram_user_id: instagramUser.id,
-      instagram_message_id: messageId,
-      sender_id: senderId,
-      recipient_id: recipientId,
-      message_text: messageText || '',
-      message_type: 'received',
-      timestamp: timestamp,
-      is_invitation: isInvitation,
-      is_presentation: isPresentation,
-      is_inscription: isInscription,
-      raw_data: {
-        ...messagingEvent,
-        webhook_source: source,
-        processed_at: new Date().toISOString()
-      }
-    })
-
-  if (saveError) {
-    console.error('❌ Error guardando mensaje en instagram_messages:', saveError)
-  } else {
-    console.log('✅ Mensaje guardado correctamente')
-  }
-
-  console.log('🔍 ===== OBTENIENDO AUTORESPONDERS DEL USUARIO ESPECÍFICO =====')
-  console.log('👤 Buscando autoresponders para usuario:', instagramUser.username, 'con instagram_user_id_ref:', recipientId)
-  
-  const { data: autoresponders, error: autoresponderError } = await supabase
-    .from('autoresponder_messages')
-    .select('*')
-    .eq('instagram_user_id_ref', recipientId)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-
-  if (autoresponderError) {
-    console.error('❌ Error obteniendo autoresponders:', autoresponderError)
-    return
-  }
-
-  if (!autoresponders || autoresponders.length === 0) {
-    console.log('❌ No se encontraron autoresponders activos para este usuario - NO SE ENVIARÁ AUTORESPONDER')
-    return
-  }
-
-  console.log('✅ Autoresponders encontrados para el usuario:', autoresponders.length)
-  console.log('📊 Detalle de autoresponders:', autoresponders.map(ar => ({
-    id: ar.id,
-    name: ar.name,
-    use_keywords: ar.use_keywords,
-    keywords: ar.keywords,
-    send_only_first_message: ar.send_only_first_message
-  })))
-
-  let selectedAutoresponder = null
-
-  for (const autoresponder of autoresponders) {
-    if (!autoresponder.use_keywords) {
-      selectedAutoresponder = autoresponder
-      break
-    }
-
-    const keywords = autoresponder.keywords || []
-    let hasMatch = false
-
-    for (const keyword of keywords) {
-      if (messageText?.toLowerCase().includes(keyword.toLowerCase())) {
-        hasMatch = true
-        break
-      }
-    }
-
-    if (hasMatch) {
-      selectedAutoresponder = autoresponder
-      break
-    }
-  }
-
-  if (!selectedAutoresponder) {
-    console.log('❌ No se encontró autoresponder que coincida con las palabras clave')
-    return
-  }
-
-  console.log('🎯 AUTORESPONDER SELECCIONADO:', selectedAutoresponder.name)
-  console.log('⚙️ SEND_ONLY_FIRST_MESSAGE:', selectedAutoresponder.send_only_first_message)
-
-  // VERIFICACIÓN MEJORADA PARA "SOLO ENVIAR PRIMER MENSAJE"
-  if (selectedAutoresponder.send_only_first_message) {
-    console.log('🔍 ===== VERIFICANDO SI YA SE ENVIÓ PRIMER MENSAJE (DM AUTORESPONDER) =====')
-    console.log('⚙️ send_only_first_message está ACTIVADO - verificando si ya se envió antes')
-
-    // VERIFICACIÓN 1: autoresponder_sent_log (más específica para este autoresponder)
-    const { data: alreadySentLog, error: sentLogError } = await supabase
-      .from('autoresponder_sent_log')
-      .select('*')
-      .eq('sender_id', senderId)
-      .eq('autoresponder_message_id', selectedAutoresponder.id)
-
-    console.log('📊 Consultando autoresponder_sent_log para sender_id:', senderId, 'y autoresponder_id:', selectedAutoresponder.id)
-    
-    if (sentLogError) {
-      console.error('❌ Error consultando autoresponder_sent_log:', sentLogError)
-    } else {
-      console.log('📊 Resultados autoresponder_sent_log:', alreadySentLog?.length || 0, 'registros encontrados')
-      if (alreadySentLog && alreadySentLog.length > 0) {
-        console.log('📋 Detalle registros encontrados:', alreadySentLog)
-        console.log('⏭️ YA SE ENVIÓ ESTE AUTORESPONDER ESPECÍFICO ANTES - SALTANDO')
-        return
-      }
-    }
-
-    // VERIFICACIÓN 2: Buscar cualquier mensaje de autoresponder enviado previamente a este sender
-    const { data: previousAutoMessages, error: prevAutoError } = await supabase
-      .from('instagram_messages')
-      .select('*')
-      .eq('sender_id', recipientId) // Mensajes enviados por nosotros
-      .eq('recipient_id', senderId) // Al prospecto específico
-      .eq('message_type', 'sent')
-      .neq('message_text', messageText) // Excluir el mensaje actual si existe
-
-    console.log('📊 Consultando mensajes previos enviados al sender_id:', senderId)
-    
-    if (prevAutoError) {
-      console.error('❌ Error consultando mensajes previos:', prevAutoError)
-    } else {
-      console.log('📊 Mensajes enviados previamente:', previousAutoMessages?.length || 0, 'registros')
-      if (previousAutoMessages && previousAutoMessages.length > 0) {
-        console.log('📋 Detalle mensajes previos:', previousAutoMessages.map(msg => ({
-          id: msg.id,
-          message_text: msg.message_text?.substring(0, 50) + '...',
-          timestamp: msg.timestamp
-        })))
-        console.log('⏭️ YA EXISTE CONVERSACIÓN PREVIA CON ESTE PROSPECTO - SALTANDO')
-        return
-      }
-    }
-
-    console.log('✅ VERIFICACIÓN COMPLETA: No se encontraron mensajes previos - PROCEDIENDO A ENVIAR')
-  } else {
-    console.log('⚙️ send_only_first_message está DESACTIVADO - enviando sin restricciones')
-  }
-
-  console.log('🚀 ENVIANDO AUTORESPONDER...')
-
-  const { data, error } = await supabase.functions.invoke('instagram-send-message', {
-    body: {
-      recipient_id: senderId,
-      message_text: selectedAutoresponder.message_text,
-      instagram_user_id: recipientId
-    }
-  })
-
-  if (error) {
-    console.error('❌ Error enviando mensaje:', error)
-    return
-  }
-
-  console.log('✅ AUTORESPONDER ENVIADO EXITOSAMENTE')
-
-  // REGISTRAR EN LOG DE AUTORESPONDERS ENVIADOS
-  const { error: logError } = await supabase
-    .from('autoresponder_sent_log')
-    .insert({
-      autoresponder_message_id: selectedAutoresponder.id,
-      sender_id: senderId,
-      sent_at: new Date().toISOString()
-    })
-
-  if (logError) {
-    console.error('⚠️ Error guardando en autoresponder_sent_log:', logError)
-  } else {
-    console.log('✅ Registro guardado en autoresponder_sent_log')
-  }
-
-  console.log('📅 ===== CREANDO FOLLOW-UP =====')
+  const senderId = messagingEvent.sender.id
+  const payload = messagingEvent.postback.payload
   
   try {
-    const currentTime = new Date()
-    const followupTime = new Date(currentTime.getTime() + (23 * 60 * 60 * 1000)) // 23 horas después
-    
-    const { error: followupError } = await supabase
-      .from('autoresponder_followups')
-      .insert({
-        sender_id: senderId,
-        autoresponder_message_id: selectedAutoresponder.id,
-        initial_message_sent_at: currentTime.toISOString(),
-        followup_scheduled_at: followupTime.toISOString(),
-        followup_message_text: 'Hey! pudiste checar mi mensaje anterior?'
-      })
-
-    if (followupError) {
-      console.error('❌ Error creando follow-up:', followupError)
-    } else {
-      console.log('✅ Follow-up programado para:', followupTime.toISOString())
-      console.log('📝 Mensaje de follow-up:', 'Hey! pudiste checar mi mensaje anterior?')
-    }
-  } catch (followupErr) {
-    console.error('💥 Error en creación de follow-up:', followupErr)
-  }
-
-  console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
-}
-
-async function processComment(commentData: any, supabase: any, instagramAccountId: string) {
-  console.log('💬 ===== PROCESANDO COMENTARIO =====')
-  console.log('📋 Datos del comentario:', JSON.stringify(commentData, null, 2))
-
-  const commenterId = commentData.from?.id
-  const commenterUsername = commentData.from?.username
-  const commentText = commentData.text
-  const mediaId = commentData.media?.id
-  const originalMediaId = commentData.media?.original_media_id
-  const commentId = commentData.id
-
-  console.log('👤 COMMENTER ID:', commenterId)
-  console.log('👤 COMMENTER USERNAME:', commenterUsername)
-  console.log('💬 COMMENT TEXT:', commentText)
-  console.log('📱 MEDIA ID:', mediaId)
-  console.log('📱 ORIGINAL MEDIA ID:', originalMediaId)
-  console.log('🆔 COMMENT ID:', commentId)
-
-  if (!commenterId || !commentText || !mediaId || !commentId) {
-    console.log('❌ Datos insuficientes para procesar comentario')
-    return
-  }
-
-  console.log('🔍 ===== BUSCANDO AUTORESPONDER DE COMENTARIOS =====')
-
-  // PASO 1: Buscar autoresponders específicos del post
-  let commentAutoresponders = []
-  let searchError = null
-  let autoresponderType = null
-
-  // Primer intento: buscar por media_id actual
-  const { data: autorespondersByMediaId, error: mediaIdError } = await supabase
-    .from('comment_autoresponders')
-    .select('*')
-    .eq('is_active', true)
-    .eq('post_id', mediaId)
-
-  if (mediaIdError) {
-    console.error('❌ Error buscando por media_id:', mediaIdError)
-    searchError = mediaIdError
-  } else {
-    commentAutoresponders = autorespondersByMediaId || []
-    if (commentAutoresponders.length > 0) {
-      autoresponderType = 'specific'
-      console.log('🔍 Autoresponders específicos encontrados por media_id:', commentAutoresponders.length)
-    }
-  }
-
-  // Si no encontró nada Y hay original_media_id, buscar por original_media_id
-  if ((!commentAutoresponders || commentAutoresponders.length === 0) && originalMediaId) {
-    console.log('🔄 No encontrado por media_id, buscando por original_media_id:', originalMediaId)
-    
-    const { data: autorespondersByOriginalId, error: originalIdError } = await supabase
-      .from('comment_autoresponders')
+    // Buscar la acción configurada para este payload
+    const { data: action, error } = await supabase
+      .from('button_postback_actions')
       .select('*')
-      .eq('is_active', true)
-      .eq('post_id', originalMediaId)
-
-    if (originalIdError) {
-      console.error('❌ Error buscando por original_media_id:', originalIdError)
-      searchError = originalIdError
-    } else {
-      commentAutoresponders = autorespondersByOriginalId || []
-      if (commentAutoresponders.length > 0) {
-        autoresponderType = 'specific'
-        console.log('🔍 Autoresponders específicos encontrados por original_media_id:', commentAutoresponders.length)
-      }
-    }
-  }
-
-  // PASO 2: NUEVO - Si no encuentra específicos, buscar GENERALES asignados a este post
-  if ((!commentAutoresponders || commentAutoresponders.length === 0)) {
-    console.log('🔄 ===== BUSCANDO AUTORESPONDERS GENERALES ASIGNADOS =====')
-    console.log('🔍 Buscando autoresponders generales para media_id:', mediaId)
-    
-    // Buscar asignaciones activas para este post
-    const { data: assignments, error: assignmentError } = await supabase
-      .from('post_autoresponder_assignments')
-      .select(`
-        *,
-        general_comment_autoresponders!inner(*)
-      `)
-      .eq('is_active', true)
-      .eq('post_id', mediaId)
-      .eq('general_comment_autoresponders.is_active', true)
-
-    if (assignmentError) {
-      console.error('❌ Error buscando autoresponders generales por media_id:', assignmentError)
-    } else if (assignments && assignments.length > 0) {
-      console.log('✅ Encontrados', assignments.length, 'autoresponders generales asignados')
-      
-      // Convertir las asignaciones a formato compatible
-      commentAutoresponders = assignments.map(assignment => ({
-        ...assignment.general_comment_autoresponders,
-        assignment_id: assignment.id,
-        post_id: assignment.post_id,
-        post_url: assignment.post_url
-      }))
-      autoresponderType = 'general'
-    }
-
-    // Si no encuentra por media_id, buscar también por original_media_id
-    if ((!commentAutoresponders || commentAutoresponders.length === 0) && originalMediaId) {
-      console.log('🔄 Buscando autoresponders generales por original_media_id:', originalMediaId)
-      
-      const { data: assignmentsByOriginal, error: assignmentOriginalError } = await supabase
-        .from('post_autoresponder_assignments')
-        .select(`
-          *,
-          general_comment_autoresponders!inner(*)
-        `)
-        .eq('is_active', true)
-        .eq('post_id', originalMediaId)
-        .eq('general_comment_autoresponders.is_active', true)
-
-      if (assignmentOriginalError) {
-        console.error('❌ Error buscando autoresponders generales por original_media_id:', assignmentOriginalError)
-      } else if (assignmentsByOriginal && assignmentsByOriginal.length > 0) {
-        console.log('✅ Encontrados', assignmentsByOriginal.length, 'autoresponders generales por original_media_id')
-        
-        commentAutoresponders = assignmentsByOriginal.map(assignment => ({
-          ...assignment.general_comment_autoresponders,
-          assignment_id: assignment.id,
-          post_id: assignment.post_id,
-          post_url: assignment.post_url
-        }))
-        autoresponderType = 'general'
-      }
-    }
-  }
-
-  if (searchError && (!commentAutoresponders || commentAutoresponders.length === 0)) {
-    console.error('❌ Error obteniendo autoresponders:', searchError)
-    return
-  }
-
-  if (!commentAutoresponders || commentAutoresponders.length === 0) {
-    console.log('❌ No hay autoresponders configurados para este post')
-    console.log('💡 IDs buscados:')
-    console.log('   - Media ID:', mediaId)
-    if (originalMediaId) {
-      console.log('   - Original Media ID:', originalMediaId)
-    }
-    console.log('💡 Verifica que haya autoresponders específicos O generales asignados para alguno de estos IDs')
-    return
-  }
-
-  console.log('✅ Autoresponders encontrados:', commentAutoresponders.length)
-  console.log('🎯 Tipo de autoresponder:', autoresponderType)
-
-  let selectedAutoresponder = null
-
-  // LÓGICA DE SELECCIÓN: Verificar si el comentario CONTIENE la palabra clave (case-insensitive)
-  for (const autoresponder of commentAutoresponders) {
-    const keywords = autoresponder.keywords || []
-    
-    console.log('🔍 Verificando autoresponder:', autoresponder.name)
-    console.log('📝 Palabras clave configuradas:', keywords)
-    console.log('💬 Comentario recibido:', commentText)
-    
-    if (keywords.length === 0) {
-      console.log('✅ Autoresponder sin palabras clave específicas - SELECCIONADO')
-      selectedAutoresponder = autoresponder
-      break
-    }
-
-    let hasMatch = false
-    let matchedKeyword = ''
-    
-    // Convertir comentario a minúsculas para comparación case-insensitive
-    const commentTextLower = commentText.toLowerCase()
-    
-    for (const keyword of keywords) {
-      const keywordLower = keyword.toLowerCase()
-      
-      // CAMBIO PRINCIPAL: usar includes() en lugar de coincidencia exacta
-      if (commentTextLower.includes(keywordLower)) {
-        hasMatch = true
-        matchedKeyword = keyword
-        console.log('🎯 COINCIDENCIA ENCONTRADA!')
-        console.log('   Palabra clave:', keyword)
-        console.log('   En comentario:', commentText)
-        console.log('   Método: includes() case-insensitive')
-        break
-      }
-    }
-
-    if (hasMatch) {
-      console.log('✅ AUTORESPONDER SELECCIONADO:', autoresponder.name)
-      console.log('🎯 Por palabra clave:', matchedKeyword)
-      console.log('🏷️ Tipo:', autoresponderType)
-      selectedAutoresponder = autoresponder
-      break
-    } else {
-      console.log('❌ Sin coincidencias para este autoresponder')
-    }
-  }
-
-  if (!selectedAutoresponder) {
-    console.log('❌ No se encontró autoresponder que coincida con las palabras clave')
-    console.log('💡 Verifica que las palabras clave estén configuradas correctamente')
-    return
-  }
-
-  console.log('🎯 AUTORESPONDER SELECCIONADO:', selectedAutoresponder.name)
-  console.log('🏷️ TIPO:', autoresponderType)
-
-  console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM POR ENTRY ID =====')
-  console.log('🆔 Instagram Account ID del entry:', instagramAccountId)
-
-  const { data: instagramUser, error: userError } = await supabase
-    .from('instagram_users')
-    .select('*')
-    .eq('instagram_user_id', instagramAccountId)
-    .eq('is_active', true)
-    .single()
-
-  if (userError || !instagramUser) {
-    console.error('❌ No se encontró usuario de Instagram con ID:', instagramAccountId, userError)
-    
-    console.log('🔄 Intentando fallback: buscar cualquier usuario activo...')
-    const { data: fallbackUser, error: fallbackError } = await supabase
-      .from('instagram_users')
-      .select('*')
-      .eq('is_active', true)
-      .limit(1)
+      .eq('payload_key', payload)
       .single()
     
-    if (fallbackError || !fallbackUser) {
-      console.error('❌ No se encontró ningún usuario de Instagram activo:', fallbackError)
+    if (error || !action) {
+      console.log('❌ No se encontró acción para payload:', payload)
       return
     }
     
-    console.log('✅ Usuario fallback encontrado:', fallbackUser.username)
+    console.log('✅ Acción encontrada:', action)
+    
+    if (action.action_type === 'message' && action.action_data?.message) {
+      // Enviar mensaje automático
+      await sendInstagramMessage(senderId, action.action_data.message, action.user_id)
+    } else if (action.action_type === 'url_redirect' && action.action_data?.url) {
+      // Para redirección de URL, enviamos un mensaje con la URL
+      const message = `👋 Te redirijo a: ${action.action_data.url}`
+      await sendInstagramMessage(senderId, message, action.user_id)
+    }
+    
+  } catch (error) {
+    console.error('❌ Error manejando postback:', error)
   }
+}
 
-  console.log('✅ Usuario encontrado:', instagramUser.username)
-  console.log('🔑 Access Token (primeros 20 chars):', instagramUser.access_token ? instagramUser.access_token.substring(0, 20) + '...' : 'NO TOKEN')
-
-  console.log('🚀 ===== AUTORESPONDERS DE COMENTARIOS: SIEMPRE ENVIAR =====')
-  console.log('💡 Los autoresponders de comentarios NO verifican conversaciones previas')
-  console.log('💡 Se enviarán SIEMPRE que coincidan las palabras clave del post configurado')
-
-  const accessToken = instagramUser.access_token
+async function handleIncomingMessage(messagingEvent: any, supabase: any) {
+  const senderId = messagingEvent.sender.id
+  const recipientId = messagingEvent.recipient.id
+  const messageText = messagingEvent.message.text?.toLowerCase() || ''
   
-  const publicReplyMessages = selectedAutoresponder.public_reply_messages || [
-    "¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊"
-  ]
-  
-  const randomIndex = Math.floor(Math.random() * publicReplyMessages.length)
-  const publicReplyMessage = publicReplyMessages[randomIndex]
-  
-  console.log('🎲 MENSAJE PÚBLICO SELECCIONADO (aleatorio):', publicReplyMessage)
-  console.log('🎯 Índice seleccionado:', randomIndex, 'de', publicReplyMessages.length, 'mensajes disponibles')
-  
-  let publicReplySuccess = false
-  let publicReplyId = null
-  let publicReplyError = null
-
-  console.log('🔍 ===== VALIDACIONES PREVIAS =====')
-  console.log('🔑 Access Token length:', accessToken ? accessToken.length : 'NO TOKEN')
-  console.log('🔑 Access Token starts with:', accessToken ? accessToken.substring(0, 10) : 'NO TOKEN')
-  console.log('💬 Comment ID:', commentId)
-  console.log('💬 Comment ID type:', typeof commentId)
-  console.log('💬 Message length:', publicReplyMessage.length)
-  
-  if (!accessToken) {
-    console.log('❌ NO HAY ACCESS TOKEN - ABORTANDO')
-    return
-  }
-  
-  if (!commentId) {
-    console.log('❌ NO HAY COMMENT ID - ABORTANDO')
-    return
-  }
-
-  console.log('📢 INTENTANDO REPLY PÚBLICO al comentario:', commentId)
+  console.log('📬 MENSAJE RECIBIDO de:', senderId, 'texto:', messageText)
 
   try {
-    const formData = new FormData()
-    formData.append('message', publicReplyMessage)
-    formData.append('access_token', accessToken)
+    // Buscar autoresponders activos para este usuario de Instagram
+    const { data: autoresponders, error } = await supabase
+      .from('autoresponder_messages')
+      .select('*')
+      .eq('instagram_user_id_ref', recipientId)
+      .eq('is_active', true)
 
-    console.log('🎯 URL Reply Público:', `https://graph.instagram.com/${commentId}/replies`)
-    console.log('💬 Mensaje Reply (aleatorio):', publicReplyMessage)
-    console.log('🔑 Access Token presente:', accessToken ? 'SÍ' : 'NO')
-
-    console.log('📋 FormData entries:')
-    for (const [key, value] of formData.entries()) {
-      console.log(`  ${key}: ${key === 'access_token' ? value.substring(0, 20) + '...' : value}`)
+    if (error) {
+      console.error('❌ Error buscando autoresponders:', error)
+      return
     }
 
-    const publicReplyResponse = await fetch(`https://graph.instagram.com/${commentId}/replies`, {
-      method: 'POST',
-      body: formData,
-    })
+    for (const autoresponder of autoresponders || []) {
+      let shouldRespond = true
 
-    console.log('📨 Status Code:', publicReplyResponse.status)
-    console.log('📨 Status Text:', publicReplyResponse.statusText)
-
-    const publicReplyData = await publicReplyResponse.json()
-    console.log('📨 Respuesta Reply Público:', JSON.stringify(publicReplyData, null, 2))
-
-    if (publicReplyData.error) {
-      console.log('⚠️ Error en reply público:', publicReplyData.error)
-      publicReplyError = publicReplyData.error
-    } else {
-      console.log('✅ REPLY PÚBLICO ENVIADO EXITOSAMENTE')
-      console.log('🆔 Reply ID:', publicReplyData.id)
-      publicReplySuccess = true
-      publicReplyId = publicReplyData.id
-    }
-
-  } catch (publicException) {
-    console.log('⚠️ Excepción en reply público:', publicException.message)
-    publicReplyError = { message: publicException.message }
-  }
-
-  console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
-
-  try {
-    const { data: replyResponse, error: replyError } = await supabase.functions.invoke('instagram-send-message', {
-      body: {
-        message_text: selectedAutoresponder.dm_message,
-        instagram_user_id: instagramAccountId,
-        comment_id: commentId
+      // Verificar palabras clave si están configuradas
+      if (autoresponder.use_keywords && autoresponder.keywords) {
+        shouldRespond = autoresponder.keywords.some((keyword: string) => 
+          messageText.includes(keyword.toLowerCase())
+        )
       }
-    })
 
-    if (replyError) {
-      console.error('❌ Error enviando private reply:', replyError)
-      
-      // Guardar log según el tipo de autoresponder
-      const logTable = autoresponderType === 'general' ? 'comment_autoresponder_log' : 'comment_autoresponder_log'
-      const logData = {
-        comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
-        commenter_instagram_id: commenterId,
-        comment_text: commentText,
-        dm_message_sent: `ERROR: ${replyError.message}`,
-        webhook_data: {
-          comment_id: commentId,
-          media_id: mediaId,
-          commenter_username: commenterUsername,
-          error_type: 'private_reply_failed',
-          autoresponder_type: autoresponderType,
-          autoresponder_name: selectedAutoresponder.name,
-          general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
-          assignment_id: autoresponderType === 'general' ? selectedAutoresponder.assignment_id : null,
-          public_reply_attempted: true,
-          public_reply_success: publicReplySuccess,
-          public_reply_error: publicReplyError,
-          public_reply_id: publicReplyId,
-          public_reply_message: publicReplyMessage,
-          public_reply_message_index: randomIndex,
-          total_public_messages: publicReplyMessages.length,
-          processed_at: new Date().toISOString(),
-          note: 'AUTORESPONDERS DE COMENTARIOS: NO verifican conversaciones previas - SIEMPRE envían'
+      // Verificar si solo debe enviar el primer mensaje
+      if (shouldRespond && autoresponder.send_only_first_message) {
+        const { data: sentLog } = await supabase
+          .from('autoresponder_sent_log')
+          .select('id')
+          .eq('autoresponder_message_id', autoresponder.id)
+          .eq('sender_id', senderId)
+          .limit(1)
+
+        if (sentLog && sentLog.length > 0) {
+          shouldRespond = false
         }
       }
-      
-      await supabase.from(logTable).insert(logData)
+
+      if (shouldRespond) {
+        console.log('✅ Enviando autorespuesta:', autoresponder.name)
+        
+        // Enviar mensaje (con o sin botones)
+        if (autoresponder.use_buttons && autoresponder.buttons) {
+          await sendInstagramMessageWithButtons(
+            senderId, 
+            autoresponder.message_text, 
+            autoresponder.buttons,
+            recipientId
+          )
+        } else {
+          await sendInstagramMessage(senderId, autoresponder.message_text, recipientId)
+        }
+
+        // Registrar envío
+        await supabase
+          .from('autoresponder_sent_log')
+          .insert({
+            autoresponder_message_id: autoresponder.id,
+            sender_id: senderId
+          })
+        
+        break // Solo responder con el primer autoresponder que coincida
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error procesando mensaje:', error)
+  }
+}
+
+async function handleComment(commentData: any, supabase: any) {
+  console.log('💬 COMENTARIO RECIBIDO:', JSON.stringify(commentData, null, 2))
+  
+  const commentText = commentData.text?.toLowerCase() || ''
+  const commenterId = commentData.from.id
+  const postId = commentData.media?.id || commentData.post_id
+
+  try {
+    // Primero buscar autoresponders específicos del post
+    let { data: autoresponders, error } = await supabase
+      .from('comment_autoresponders')
+      .select('*')
+      .eq('post_id', postId)
+      .eq('is_active', true)
+
+    // Si no hay autoresponders específicos, buscar generales asignados a este post
+    if (!autoresponders || autoresponders.length === 0) {
+      const { data: assignments } = await supabase
+        .from('post_autoresponder_assignments')
+        .select(`
+          general_autoresponder_id,
+          general_comment_autoresponders!inner(*)
+        `)
+        .eq('post_id', postId)
+        .eq('is_active', true)
+        .eq('general_comment_autoresponders.is_active', true)
+
+      if (assignments && assignments.length > 0) {
+        autoresponders = assignments.map(a => a.general_comment_autoresponders)
+      }
+    }
+
+    if (error) {
+      console.error('❌ Error buscando autoresponders de comentarios:', error)
       return
     }
 
-    console.log('✅ PRIVATE REPLY ENVIADO EXITOSAMENTE')
-    console.log('📨 Respuesta:', JSON.stringify(replyResponse, null, 2))
+    for (const autoresponder of autoresponders || []) {
+      // Verificar si el comentario contiene alguna palabra clave
+      const hasKeyword = autoresponder.keywords.some((keyword: string) =>
+        commentText.includes(keyword.toLowerCase())
+      )
 
-    // Guardar log según el tipo de autoresponder
-    const logTable = 'comment_autoresponder_log'
-    const logData = {
-      comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
-      commenter_instagram_id: commenterId,
-      comment_text: commentText,
-      dm_message_sent: selectedAutoresponder.dm_message,
-      webhook_data: {
-        comment_id: commentId,
-        media_id: mediaId,
-        commenter_username: commenterUsername,
-        private_reply_success: true,
-        message_id: replyResponse?.message_id,
-        recipient_id: replyResponse?.recipient_id,
-        autoresponder_type: autoresponderType,
-        autoresponder_name: selectedAutoresponder.name,
-        general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
-        assignment_id: autoresponderType === 'general' ? selectedAutoresponder.assignment_id : null,
-        public_reply_attempted: true,
-        public_reply_success: publicReplySuccess,
-        public_reply_error: publicReplyError,
-        public_reply_id: publicReplyId,
-        public_reply_message: publicReplyMessage,
-        public_reply_message_index: randomIndex,
-        total_public_messages: publicReplyMessages.length,
-        processed_at: new Date().toISOString(),
-        note: 'AUTORESPONDERS DE COMENTARIOS: NO verifican conversaciones previas - SIEMPRE envían'
+      if (hasKeyword) {
+        console.log('✅ Keyword encontrada, enviando DM:', autoresponder.name)
+        
+        // Enviar DM (con o sin botones)
+        if (autoresponder.use_buttons && autoresponder.buttons) {
+          await sendInstagramMessageWithButtons(
+            commenterId,
+            autoresponder.dm_message,
+            autoresponder.buttons,
+            autoresponder.user_id
+          )
+        } else {
+          await sendInstagramMessage(commenterId, autoresponder.dm_message, autoresponder.user_id)
+        }
+
+        // Respuesta pública opcional
+        if (autoresponder.public_reply_messages && autoresponder.public_reply_messages.length > 0) {
+          const randomReply = autoresponder.public_reply_messages[
+            Math.floor(Math.random() * autoresponder.public_reply_messages.length)
+          ]
+          await replyToComment(commentData.id, randomReply, autoresponder.user_id)
+        }
+
+        // Registrar el log
+        await supabase
+          .from('comment_autoresponder_log')
+          .insert({
+            comment_autoresponder_id: autoresponder.id,
+            commenter_instagram_id: commenterId,
+            comment_text: commentData.text,
+            dm_message_sent: autoresponder.dm_message,
+            webhook_data: commentData
+          })
+
+        break
       }
     }
-
-    await supabase.from(logTable).insert(logData)
-
-    if (publicReplySuccess) {
-      console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados')
-      console.log('🎲 Mensaje público usado (índice', randomIndex + '):', publicReplyMessage)
-      console.log('🏷️ Tipo de autoresponder:', autoresponderType)
-      console.log('💡 IMPORTANTE: Los autoresponders de comentarios SIEMPRE se envían, sin verificar conversaciones previas')
-    } else {
-      console.log('⚠️ PROCESAMIENTO PARCIAL: Solo private reply enviado (public reply falló)')
-      console.log('🏷️ Tipo de autoresponder:', autoresponderType)
-      console.log('💡 IMPORTANTE: Los autoresponders de comentarios SIEMPRE se envían, sin verificar conversaciones previas')
-    }
-
-  } catch (replyException) {
-    console.error('💥 Excepción enviando private reply:', replyException)
-    
-    // Guardar log de excepción
-    const logTable = 'comment_autoresponder_log'
-    const logData = {
-      comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
-      commenter_instagram_id: commenterId,
-      comment_text: commentText,
-      dm_message_sent: `EXCEPTION: ${replyException.message}`,
-      webhook_data: {
-        comment_id: commentId,
-        media_id: mediaId,
-        commenter_username: commenterUsername,
-        error_type: 'reply_exception',
-        autoresponder_type: autoresponderType,
-        autoresponder_name: selectedAutoresponder.name,
-        general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
-        assignment_id: autoresponderType === 'general' ? selectedAutoresponder.assignment_id : null,
-        public_reply_attempted: true,
-        public_reply_success: publicReplySuccess,
-        public_reply_error: publicReplyError,
-        public_reply_id: publicReplyId,
-        public_reply_message: publicReplyMessage,
-        public_reply_message_index: randomIndex,
-        total_public_messages: publicReplyMessages.length,
-        processed_at: new Date().toISOString(),
-        note: 'AUTORESPONDERS DE COMENTARIOS: NO verifican conversaciones previas - SIEMPRE envían'
-      }
-    }
-    
-    await supabase.from(logTable).insert(logData)
+  } catch (error) {
+    console.error('❌ Error procesando comentario:', error)
   }
+}
 
-  console.log('✅ === COMENTARIO PROCESADO COMPLETAMENTE ===')
-  console.log('💡 === AUTORESPONDERS DE COMENTARIOS FUNCIONAN SIN RESTRICCIONES ===')
-  console.log('🏷️ === TIPO PROCESADO:', autoresponderType, '===')
+async function sendInstagramMessage(recipientId: string, message: string, userId: string) {
+  try {
+    const { data, error } = await createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    ).functions.invoke('instagram-send-message', {
+      body: {
+        recipientId,
+        message,
+        userId
+      }
+    })
+
+    if (error) throw error
+    console.log('✅ Mensaje enviado correctamente')
+  } catch (error) {
+    console.error('❌ Error enviando mensaje:', error)
+  }
+}
+
+async function sendInstagramMessageWithButtons(recipientId: string, message: string, buttons: any[], userId: string) {
+  try {
+    const { data, error } = await createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    ).functions.invoke('instagram-send-message', {
+      body: {
+        recipientId,
+        message,
+        buttons,
+        userId
+      }
+    })
+
+    if (error) throw error
+    console.log('✅ Mensaje con botones enviado correctamente')
+  } catch (error) {
+    console.error('❌ Error enviando mensaje con botones:', error)
+  }
+}
+
+async function replyToComment(commentId: string, message: string, userId: string) {
+  console.log('💬 Respondiendo a comentario:', commentId, 'con mensaje:', message)
+  // La implementación de respuesta a comentarios se puede agregar aquí si es necesaria
 }
