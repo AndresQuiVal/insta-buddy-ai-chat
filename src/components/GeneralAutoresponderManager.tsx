@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,7 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
       setLoading(true);
       console.log('🔍 Cargando autoresponders generales...');
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('general_comment_autoresponders')
         .select('*')
         .eq('user_id', currentUser.instagram_user_id)
@@ -80,7 +79,7 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
     try {
       console.log('🗑️ Eliminando autoresponder general:', id);
       
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('general_comment_autoresponders')
         .delete()
         .eq('id', id)
@@ -106,7 +105,7 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('general_comment_autoresponders')
         .update({ is_active: !currentStatus })
         .eq('id', id)

@@ -221,6 +221,42 @@ export type Database = {
         }
         Relationships: []
       }
+      general_comment_autoresponders: {
+        Row: {
+          created_at: string
+          dm_message: string
+          id: string
+          is_active: boolean
+          keywords: string[]
+          name: string
+          public_reply_messages: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dm_message: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          name: string
+          public_reply_messages?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dm_message?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          name?: string
+          public_reply_messages?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ideal_client_traits: {
         Row: {
           created_at: string
@@ -374,6 +410,50 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      post_autoresponder_assignments: {
+        Row: {
+          created_at: string
+          general_autoresponder_id: string
+          id: string
+          is_active: boolean
+          post_caption: string | null
+          post_id: string
+          post_url: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          general_autoresponder_id: string
+          id?: string
+          is_active?: boolean
+          post_caption?: string | null
+          post_id: string
+          post_url: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          general_autoresponder_id?: string
+          id?: string
+          is_active?: boolean
+          post_caption?: string | null
+          post_id?: string
+          post_url?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_autoresponder_assignments_general_autoresponder_id_fkey"
+            columns: ["general_autoresponder_id"]
+            isOneToOne: false
+            referencedRelation: "general_comment_autoresponders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prospect_analysis: {
         Row: {
