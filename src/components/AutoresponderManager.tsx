@@ -354,25 +354,14 @@ const AutoresponderManager: React.FC = () => {
     setShowTypeDialog(false);
     
     if (type === 'comments') {
-      // Mostrar opciones: gestionar autoresponders generales o asignar a post
-      setShowGeneralManager(true);
+      // Ir directamente al selector de posts para comentarios
+      setShowPostSelector(true);
     } else {
       setShowForm(true);
     }
   };
 
-  const handleGeneralManagerAction = (action: 'manage' | 'assign') => {
-    if (action === 'manage') {
-      // Quedarse en el gestor de autoresponders generales
-      return;
-    } else {
-      // Ir al selector de posts para asignar
-      setShowGeneralManager(false);
-      setShowPostSelector(true);
-    }
-  };
-
-  const handlePostSelectedForAssignment = (post: any) => {
+  const handlePostSelected = (post: any) => {
     setSelectedPost(post);
     setShowPostSelector(false);
     setShowAutoresponderSelector(true);
@@ -389,12 +378,6 @@ const AutoresponderManager: React.FC = () => {
     setShowCommentForm(true);
   };
 
-  const handlePostSelected = (post: any) => {
-    setSelectedPost(post);
-    setShowPostSelector(false);
-    setShowCommentForm(true);
-  };
-
   const handleCommentAutoresponderSubmit = () => {
     setShowCommentForm(false);
     setSelectedPost(null);
@@ -404,10 +387,15 @@ const AutoresponderManager: React.FC = () => {
   const handleBackFromCommentForm = () => {
     setShowCommentForm(false);
     setSelectedPost(null);
+    setShowAutoresponderSelector(true);
+  };
+
+  const handleBackFromSelector = () => {
+    setShowAutoresponderSelector(false);
+    setSelectedPost(null);
     setShowPostSelector(true);
   };
 
-  // Mostrar mensaje si no hay usuario autenticado
   if (!currentUser) {
     return (
       <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
@@ -424,7 +412,6 @@ const AutoresponderManager: React.FC = () => {
     );
   }
 
-  // Mostrar formulario de edición de autoresponder normal
   if (showEditForm && editingMessage) {
     return (
       <EditAutoresponderForm
@@ -438,7 +425,6 @@ const AutoresponderManager: React.FC = () => {
     );
   }
 
-  // Mostrar formulario de edición de autoresponder de comentarios
   if (showEditCommentForm && editingCommentAutoresponder) {
     return (
       <EditCommentAutoresponderForm
@@ -452,25 +438,30 @@ const AutoresponderManager: React.FC = () => {
     );
   }
 
-  // Mostrar selector de posts
   if (showPostSelector) {
     return (
       <InstagramPostSelector
-        onPostSelected={showGeneralManager ? handlePostSelectedForAssignment : handlePostSelected}
+        onPostSelected={handlePostSelected}
         onBack={() => {
           setShowPostSelector(false);
-          if (showGeneralManager) {
-            setShowGeneralManager(true);
-          } else {
-            setShowTypeDialog(true);
-          }
+          setShowTypeDialog(true);
         }}
-        showAutoresponderSelection={showGeneralManager}
+        showAutoresponderSelection={true}
       />
     );
   }
 
-  // Mostrar formulario de autoresponder de comentarios
+  if (showAutoresponderSelector && selectedPost) {
+    return (
+      <AutoresponderSelector
+        selectedPost={selectedPost}
+        onBack={handleBackFromSelector}
+        onCreateNew={handleCreateNewFromSelector}
+        onAssigned={handleAutoresponderAssigned}
+      />
+    );
+  }
+
   if (showCommentForm && selectedPost) {
     return (
       <CommentAutoresponderForm
@@ -481,7 +472,6 @@ const AutoresponderManager: React.FC = () => {
     );
   }
 
-  // Mostrar formulario de autoresponder normal
   if (showForm) {
     return (
       <AutoresponderForm
@@ -508,108 +498,22 @@ const AutoresponderManager: React.FC = () => {
 
   const totalAutoresponders = messages.length + commentAutoresponders.length;
 
-  // Mostrar gestor de autoresponders generales
   if (showGeneralManager) {
     return (
-      <div className="space-y-6">
-        {/* Opciones principales */}
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => {
-                setShowGeneralManager(false);
-                setShowTypeDialog(true);
-              }}>
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <div>
-                <CardTitle className="text-purple-900">
-                  Autoresponders para Comentarios
-                </CardTitle>
-                <p className="text-sm text-purple-700 mt-1">
-                  Gestiona tus autoresponders reutilizables
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="p-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card className="border-green-200 hover:border-green-300 cursor-pointer transition-colors">
-                <CardContent className="p-6 text-center">
-                  <Settings className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Gestionar Autoresponders
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Crea, edita y administra tus autoresponders reutilizables
-                  </p>
-                  <Button 
-                    onClick={() => handleGeneralManagerAction('manage')}
-                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Administrar
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-purple-200 hover:border-purple-300 cursor-pointer transition-colors">
-                <CardContent className="p-6 text-center">
-                  <MessageCircle className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Asignar a Post
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Selecciona un post y asígnale un autoresponder existente
-                  </p>
-                  <Button 
-                    onClick={() => handleGeneralManagerAction('assign')}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Asignar
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Gestor de autoresponders generales integrado */}
-        <GeneralAutoresponderManager 
-          onBack={() => setShowGeneralManager(false)}
-        />
-      </div>
-    );
-  }
-
-  // Mostrar selector de autoresponder para post seleccionado
-  if (showAutoresponderSelector && selectedPost) {
-    return (
-      <AutoresponderSelector
-        selectedPost={selectedPost}
-        onBack={() => {
-          setShowAutoresponderSelector(false);
-          setSelectedPost(null);
-          setShowPostSelector(true);
-        }}
-        onCreateNew={handleCreateNewFromSelector}
-        onAssigned={handleAutoresponderAssigned}
+      <GeneralAutoresponderManager 
+        onBack={() => setShowGeneralManager(false)}
       />
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Diálogo de selección de tipo */}
       <AutoresponderTypeDialog
         open={showTypeDialog}
         onOpenChange={setShowTypeDialog}
         onSelectType={handleTypeSelection}
       />
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <MessageCircle className="w-6 h-6 text-purple-500" />
@@ -620,16 +524,25 @@ const AutoresponderManager: React.FC = () => {
             </p>
           </div>
         </div>
-        <Button 
-          onClick={() => setShowTypeDialog(true)}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Autoresponder
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowGeneralManager(true)}
+            variant="outline"
+            className="text-purple-600 hover:text-purple-700"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Gestionar Generales
+          </Button>
+          <Button 
+            onClick={() => setShowTypeDialog(true)}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Autoresponder
+          </Button>
+        </div>
       </div>
 
-      {/* Lista de autoresponders de mensajes directos */}
       {messages.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-800">Mensajes Directos / Stories</h3>
@@ -722,21 +635,9 @@ const AutoresponderManager: React.FC = () => {
         </div>
       )}
 
-      {/* Lista de autoresponders de comentarios */}
       {commentAutoresponders.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-800">Comentarios de Posts</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowGeneralManager(true)}
-              className="text-purple-600 hover:text-purple-700"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Gestionar Autoresponders
-            </Button>
-          </div>
+          <h3 className="text-lg font-medium text-gray-800">Comentarios de Posts</h3>
           <div className="grid gap-4">
             {commentAutoresponders.map((autoresponder) => (
               <Card key={autoresponder.id} className="border-orange-100">
@@ -812,7 +713,6 @@ const AutoresponderManager: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Mostrar mensajes de respuesta pública */}
                     {autoresponder.public_reply_messages && autoresponder.public_reply_messages.length > 0 && (
                       <div className="pt-2">
                         <div className="flex items-center gap-1 mb-2">
