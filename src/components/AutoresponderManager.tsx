@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,8 +20,7 @@ import {
   ArrowLeft,
   Instagram,
   Globe,
-  ExternalLink,
-  MousePointer
+  ExternalLink
 } from 'lucide-react';
 import AutoresponderForm from './AutoresponderForm';
 import AutoresponderTypeDialog from './AutoresponderTypeDialog';
@@ -33,15 +31,6 @@ import InstagramPostSelector from './InstagramPostSelector';
 import GeneralAutoresponderManager from './GeneralAutoresponderManager';
 import AutoresponderSelector from './AutoresponderSelector';
 
-interface ButtonData {
-  type: 'web_url' | 'postback';
-  title: string;
-  url?: string;
-  payload?: string;
-  action_type?: 'message' | 'url_redirect';
-  action_data?: any;
-}
-
 interface AutoresponderMessage {
   id: string;
   name: string;
@@ -50,8 +39,6 @@ interface AutoresponderMessage {
   send_only_first_message?: boolean;
   use_keywords?: boolean;
   keywords?: string[];
-  use_buttons?: boolean;
-  buttons?: ButtonData[];
   created_at: string;
 }
 
@@ -66,8 +53,6 @@ interface CommentAutoresponder {
   is_active: boolean;
   created_at: string;
   public_reply_messages?: string[];
-  use_buttons?: boolean;
-  buttons?: ButtonData[];
 }
 
 interface GeneralAutoresponder {
@@ -78,8 +63,6 @@ interface GeneralAutoresponder {
   is_active: boolean;
   public_reply_messages?: string[];
   assigned_posts?: PostAssignment[];
-  use_buttons?: boolean;
-  buttons?: ButtonData[];
 }
 
 interface PostAssignment {
@@ -136,14 +119,7 @@ const AutoresponderManager: React.FC = () => {
       }
 
       console.log('✅ Autoresponders cargados:', data?.length || 0);
-      
-      // Convert Json buttons back to ButtonData[]
-      const messagesWithParsedButtons = data?.map(message => ({
-        ...message,
-        buttons: message.buttons ? JSON.parse(JSON.stringify(message.buttons)) as ButtonData[] : undefined
-      })) || [];
-      
-      setMessages(messagesWithParsedButtons);
+      setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -175,14 +151,7 @@ const AutoresponderManager: React.FC = () => {
       }
 
       console.log('✅ Autoresponders de comentarios cargados:', data?.length || 0);
-      
-      // Convert Json buttons back to ButtonData[]
-      const commentAutorespondersWithParsedButtons = data?.map(autoresponder => ({
-        ...autoresponder,
-        buttons: autoresponder.buttons ? JSON.parse(JSON.stringify(autoresponder.buttons)) as ButtonData[] : undefined
-      })) || [];
-      
-      setCommentAutoresponders(commentAutorespondersWithParsedButtons);
+      setCommentAutoresponders(data || []);
     } catch (error) {
       console.error('Error fetching comment autoresponders:', error);
       toast({
@@ -215,14 +184,13 @@ const AutoresponderManager: React.FC = () => {
 
       if (assignmentsError) throw assignmentsError;
 
-      // Combinar autoresponders generales con sus asignaciones y parsear botones
-      const generalsWithAssignments = generalData?.map(general => ({
+      // Combinar autoresponders generales con sus asignaciones
+      const generalsWithAssignments = generalData.map(general => ({
         ...general,
-        buttons: general.buttons ? JSON.parse(JSON.stringify(general.buttons)) as ButtonData[] : undefined,
-        assigned_posts: postAssignments?.filter(
+        assigned_posts: postAssignments.filter(
           assignment => assignment.general_autoresponder_id === general.id
-        ) || []
-      })) || [];
+        )
+      }));
 
       console.log('✅ Autoresponders generales cargados:', generalsWithAssignments.length);
       setGeneralAutoresponders(generalsWithAssignments);
@@ -709,13 +677,6 @@ const AutoresponderManager: React.FC = () => {
                               Con palabras clave
                             </Badge>
                           )}
-
-                          {message.use_buttons && (
-                            <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700">
-                              <MousePointer className="w-3 h-3" />
-                              Con botones ({message.buttons?.length || 0})
-                            </Badge>
-                          )}
                         </div>
 
                         {message.use_keywords && message.keywords && message.keywords.length > 0 && (
@@ -732,30 +693,6 @@ const AutoresponderManager: React.FC = () => {
                                 >
                                   {keyword}
                                 </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {message.use_buttons && message.buttons && message.buttons.length > 0 && (
-                          <div className="pt-2">
-                            <div className="flex items-center gap-1 mb-2">
-                              <MousePointer className="w-3 h-3 text-gray-500" />
-                              <span className="text-xs text-gray-500">Botones configurados:</span>
-                            </div>
-                            <div className="space-y-1">
-                              {message.buttons.map((button, index) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded text-xs">
-                                  <span className="font-medium text-blue-600">
-                                    {button.type === 'web_url' ? '🔗' : '⚡'} {button.title}
-                                  </span>
-                                  {button.type === 'web_url' && button.url && (
-                                    <span className="text-gray-600">→ {button.url}</span>
-                                  )}
-                                  {button.type === 'postback' && button.payload && (
-                                    <span className="text-gray-600">→ {button.payload}</span>
-                                  )}
-                                </div>
                               ))}
                             </div>
                           </div>
@@ -830,12 +767,6 @@ const AutoresponderManager: React.FC = () => {
                           <Badge variant="outline" className="bg-green-50 text-green-700">
                             {autoresponder.public_reply_messages?.length || 1} respuestas públicas
                           </Badge>
-                          {autoresponder.use_buttons && (
-                            <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700">
-                              <MousePointer className="w-3 h-3" />
-                              Con botones ({autoresponder.buttons?.length || 0})
-                            </Badge>
-                          )}
                         </div>
 
                         <div className="pt-2">
@@ -866,30 +797,6 @@ const AutoresponderManager: React.FC = () => {
                                 <div key={index} className="flex items-start gap-2 p-2 bg-green-50 rounded text-xs">
                                   <span className="text-green-600 font-medium">#{index + 1}</span>
                                   <span className="text-gray-700 flex-1">{message}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {autoresponder.use_buttons && autoresponder.buttons && autoresponder.buttons.length > 0 && (
-                          <div className="pt-2">
-                            <div className="flex items-center gap-1 mb-2">
-                              <MousePointer className="w-3 h-3 text-gray-500" />
-                              <span className="text-xs text-gray-500">Botones configurados:</span>
-                            </div>
-                            <div className="space-y-1">
-                              {autoresponder.buttons.map((button, index) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded text-xs">
-                                  <span className="font-medium text-blue-600">
-                                    {button.type === 'web_url' ? '🔗' : '⚡'} {button.title}
-                                  </span>
-                                  {button.type === 'web_url' && button.url && (
-                                    <span className="text-gray-600">→ {button.url}</span>
-                                  )}
-                                  {button.type === 'postback' && button.payload && (
-                                    <span className="text-gray-600">→ {button.payload}</span>
-                                  )}
                                 </div>
                               ))}
                             </div>
@@ -952,12 +859,6 @@ const AutoresponderManager: React.FC = () => {
                               {autoresponder.assigned_posts.length} post(s) asignados
                             </Badge>
                           )}
-                          {autoresponder.use_buttons && (
-                            <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700">
-                              <MousePointer className="w-3 h-3" />
-                              Con botones ({autoresponder.buttons?.length || 0})
-                            </Badge>
-                          )}
                         </div>
 
                         <div>
@@ -976,30 +877,6 @@ const AutoresponderManager: React.FC = () => {
                             ))}
                           </div>
                         </div>
-
-                        {autoresponder.use_buttons && autoresponder.buttons && autoresponder.buttons.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-1 mb-2">
-                              <MousePointer className="w-3 h-3 text-gray-500" />
-                              <span className="text-xs text-gray-500">Botones configurados:</span>
-                            </div>
-                            <div className="space-y-1">
-                              {autoresponder.buttons.map((button, index) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded text-xs">
-                                  <span className="font-medium text-blue-600">
-                                    {button.type === 'web_url' ? '🔗' : '⚡'} {button.title}
-                                  </span>
-                                  {button.type === 'web_url' && button.url && (
-                                    <span className="text-gray-600">→ {button.url}</span>
-                                  )}
-                                  {button.type === 'postback' && button.payload && (
-                                    <span className="text-gray-600">→ {button.payload}</span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
 
                         {autoresponder.assigned_posts && autoresponder.assigned_posts.length > 0 && (
                           <div>

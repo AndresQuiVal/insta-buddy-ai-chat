@@ -61,7 +61,6 @@ export type Database = {
       }
       autoresponder_messages: {
         Row: {
-          buttons: Json | null
           created_at: string
           id: string
           instagram_user_id: string | null
@@ -72,11 +71,9 @@ export type Database = {
           name: string
           send_only_first_message: boolean
           updated_at: string
-          use_buttons: boolean | null
           use_keywords: boolean | null
         }
         Insert: {
-          buttons?: Json | null
           created_at?: string
           id?: string
           instagram_user_id?: string | null
@@ -87,11 +84,9 @@ export type Database = {
           name: string
           send_only_first_message?: boolean
           updated_at?: string
-          use_buttons?: boolean | null
           use_keywords?: boolean | null
         }
         Update: {
-          buttons?: Json | null
           created_at?: string
           id?: string
           instagram_user_id?: string | null
@@ -102,7 +97,6 @@ export type Database = {
           name?: string
           send_only_first_message?: boolean
           updated_at?: string
-          use_buttons?: boolean | null
           use_keywords?: boolean | null
         }
         Relationships: [
@@ -144,39 +138,6 @@ export type Database = {
           },
         ]
       }
-      button_postback_actions: {
-        Row: {
-          action_data: Json
-          action_type: string
-          autoresponder_id: string | null
-          created_at: string
-          id: string
-          payload_key: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          action_data: Json
-          action_type: string
-          autoresponder_id?: string | null
-          created_at?: string
-          id?: string
-          payload_key: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          action_data?: Json
-          action_type?: string
-          autoresponder_id?: string | null
-          created_at?: string
-          id?: string
-          payload_key?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       comment_autoresponder_log: {
         Row: {
           comment_autoresponder_id: string | null
@@ -217,7 +178,6 @@ export type Database = {
       }
       comment_autoresponders: {
         Row: {
-          buttons: Json | null
           created_at: string
           dm_message: string
           id: string
@@ -229,11 +189,9 @@ export type Database = {
           post_url: string
           public_reply_messages: string[] | null
           updated_at: string
-          use_buttons: boolean | null
           user_id: string
         }
         Insert: {
-          buttons?: Json | null
           created_at?: string
           dm_message: string
           id?: string
@@ -245,11 +203,9 @@ export type Database = {
           post_url: string
           public_reply_messages?: string[] | null
           updated_at?: string
-          use_buttons?: boolean | null
           user_id: string
         }
         Update: {
-          buttons?: Json | null
           created_at?: string
           dm_message?: string
           id?: string
@@ -261,14 +217,12 @@ export type Database = {
           post_url?: string
           public_reply_messages?: string[] | null
           updated_at?: string
-          use_buttons?: boolean | null
           user_id?: string
         }
         Relationships: []
       }
       general_comment_autoresponders: {
         Row: {
-          buttons: Json | null
           created_at: string
           dm_message: string
           id: string
@@ -277,11 +231,9 @@ export type Database = {
           name: string
           public_reply_messages: string[] | null
           updated_at: string
-          use_buttons: boolean | null
           user_id: string
         }
         Insert: {
-          buttons?: Json | null
           created_at?: string
           dm_message: string
           id?: string
@@ -290,11 +242,9 @@ export type Database = {
           name: string
           public_reply_messages?: string[] | null
           updated_at?: string
-          use_buttons?: boolean | null
           user_id: string
         }
         Update: {
-          buttons?: Json | null
           created_at?: string
           dm_message?: string
           id?: string
@@ -303,7 +253,6 @@ export type Database = {
           name?: string
           public_reply_messages?: string[] | null
           updated_at?: string
-          use_buttons?: boolean | null
           user_id?: string
         }
         Relationships: []

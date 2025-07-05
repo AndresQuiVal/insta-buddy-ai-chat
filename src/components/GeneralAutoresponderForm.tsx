@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,16 +8,6 @@ import { ArrowLeft, Plus, X, MessageSquare, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
-import ButtonConfig from './ButtonConfig';
-
-interface ButtonData {
-  type: 'web_url' | 'postback';
-  title: string;
-  url?: string;
-  payload?: string;
-  action_type?: 'message' | 'url_redirect';
-  action_data?: any;
-}
 
 interface GeneralAutoresponder {
   id: string;
@@ -29,8 +18,6 @@ interface GeneralAutoresponder {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  use_buttons?: boolean;
-  buttons?: ButtonData[];
 }
 
 interface GeneralAutoresponderFormProps {
@@ -46,8 +33,6 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
   const [dmMessage, setDmMessage] = useState('');
   const [publicReplies, setPublicReplies] = useState<string[]>(['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
   const [newPublicReply, setNewPublicReply] = useState('');
-  const [useButtons, setUseButtons] = useState(false);
-  const [buttons, setButtons] = useState<ButtonData[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -58,8 +43,6 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       setKeywords(autoresponder.keywords);
       setDmMessage(autoresponder.dm_message);
       setPublicReplies(autoresponder.public_reply_messages || ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
-      setUseButtons(autoresponder.use_buttons || false);
-      setButtons(autoresponder.buttons || []);
     }
   }, [autoresponder]);
 
@@ -124,8 +107,6 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
         dm_message: dmMessage.trim(),
         public_reply_messages: publicReplies.filter(reply => reply.trim()),
         is_active: true,
-        use_buttons: useButtons,
-        buttons: useButtons && buttons.length > 0 ? buttons : null,
         updated_at: new Date().toISOString()
       };
 
@@ -299,14 +280,6 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
               </div>
             </div>
           </div>
-
-          {/* Configuración de botones */}
-          <ButtonConfig
-            useButtons={useButtons}
-            onUseButtosChange={setUseButtons}
-            buttons={buttons}
-            onButtonsChange={setButtons}
-          />
 
           {/* Botones */}
           <div className="flex gap-3 pt-4">
