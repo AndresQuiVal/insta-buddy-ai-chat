@@ -155,38 +155,35 @@ const AllAutorespondersList = () => {
 
   const toggleAutoresponderActive = async (autoresponder: AllAutoresponder) => {
     try {
-      let tableName = '';
-      let whereClause = {};
+      let updatePromise;
 
       switch (autoresponder.type) {
         case 'direct_message':
-          tableName = 'autoresponder_messages';
-          whereClause = { 
-            id: autoresponder.id,
-            instagram_user_id_ref: currentUser.instagram_user_id 
-          };
+          updatePromise = supabase
+            .from('autoresponder_messages')
+            .update({ is_active: !autoresponder.is_active })
+            .eq('id', autoresponder.id)
+            .eq('instagram_user_id_ref', currentUser.instagram_user_id);
           break;
         case 'comment_specific':
-          tableName = 'comment_autoresponders';
-          whereClause = { 
-            id: autoresponder.id,
-            user_id: currentUser.instagram_user_id 
-          };
+          updatePromise = supabase
+            .from('comment_autoresponders')
+            .update({ is_active: !autoresponder.is_active })
+            .eq('id', autoresponder.id)
+            .eq('user_id', currentUser.instagram_user_id);
           break;
         case 'general':
-          tableName = 'general_comment_autoresponders';
-          whereClause = { 
-            id: autoresponder.id,
-            user_id: currentUser.instagram_user_id 
-          };
+          updatePromise = supabase
+            .from('general_comment_autoresponders')
+            .update({ is_active: !autoresponder.is_active })
+            .eq('id', autoresponder.id)
+            .eq('user_id', currentUser.instagram_user_id);
           break;
+        default:
+          throw new Error('Tipo de autoresponder no válido');
       }
 
-      const { error } = await supabase
-        .from(tableName)
-        .update({ is_active: !autoresponder.is_active })
-        .match(whereClause);
-
+      const { error } = await updatePromise;
       if (error) throw error;
 
       toast({
