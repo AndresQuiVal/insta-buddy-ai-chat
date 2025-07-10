@@ -93,6 +93,13 @@ const Hower15 = () => {
               La evolución de la prospección inteligente. Nuevas funcionalidades impulsadas por IA 
               para encontrar y conectar con tus prospectos ideales de manera más eficiente que nunca.
             </p>
+
+            {/* General Video - Large */}
+            <div className="mb-8 max-w-4xl mx-auto">
+              <script src="https://fast.wistia.com/player.js" async></script>
+              <script src="https://fast.wistia.com/embed/uuiky8ycjs.js" async type="module"></script>
+              <wistia-player media-id="uuiky8ycjs" aspect="0.5787781350482315" style={{ width: '100%', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}></wistia-player>
+            </div>
             
             <Button size="lg" className="bg-gradient-to-r from-[hsl(var(--hower-primary))] to-[hsl(var(--hower-medium))] hover:opacity-90 text-white px-8 py-3 text-lg">
               <ChevronDown className="mr-2 h-5 w-5" />
@@ -139,6 +146,13 @@ const Hower15 = () => {
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Encuentra los mejores prospectos con inteligencia artificial
           </p>
+
+          {/* Buscador Video - Small */}
+          <div className="mt-8 max-w-2xl mx-auto">
+            <script src="https://fast.wistia.com/player.js" async></script>
+            <script src="https://fast.wistia.com/embed/zgp1z14vbe.js" async type="module"></script>
+            <wistia-player media-id="zgp1z14vbe" aspect="0.5787781350482315" style={{ width: '100%', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}></wistia-player>
+          </div>
         </div>
 
         <div className="space-y-16">
@@ -193,6 +207,13 @@ const Hower15 = () => {
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold mb-4">Generación de Mensajes con IA</h3>
             <p className="text-lg text-muted-foreground">Dos formas inteligentes de crear mensajes perfectos</p>
+
+            {/* Mensajes Video - Small */}
+            <div className="mt-8 max-w-2xl mx-auto">
+              <script src="https://fast.wistia.com/player.js" async></script>
+              <script src="https://fast.wistia.com/embed/sdigf5ug4q.js" async type="module"></script>
+              <wistia-player media-id="sdigf5ug4q" aspect="0.5787781350482315" style={{ width: '100%', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}></wistia-player>
+            </div>
           </div>
           
           <div className="space-y-16">
