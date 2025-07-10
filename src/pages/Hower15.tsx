@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,35 @@ const Hower15 = () => {
     }
   ];
 
+  useEffect(() => {
+    // Load Wistia player script
+    const playerScript = document.createElement('script');
+    playerScript.src = 'https://fast.wistia.com/player.js';
+    playerScript.async = true;
+    document.head.appendChild(playerScript);
+
+    // Load specific video scripts
+    const videoScripts = [
+      'https://fast.wistia.com/embed/uuiky8ycjs.js',
+      'https://fast.wistia.com/embed/zgp1z14vbe.js', 
+      'https://fast.wistia.com/embed/sdigf5ug4q.js'
+    ];
+
+    videoScripts.forEach(src => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.type = 'module';
+      document.head.appendChild(script);
+    });
+
+    return () => {
+      // Cleanup scripts on unmount
+      const scripts = document.querySelectorAll('script[src*="wistia"]');
+      scripts.forEach(script => script.remove());
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       {/* Hero Section */}
@@ -96,8 +126,6 @@ const Hower15 = () => {
 
             {/* General Video - Large */}
             <div className="mb-8 max-w-4xl mx-auto">
-              <script src="https://fast.wistia.com/player.js" async></script>
-              <script src="https://fast.wistia.com/embed/uuiky8ycjs.js" async type="module"></script>
               <wistia-player media-id="uuiky8ycjs" aspect="0.5787781350482315" style={{ width: '100%', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}></wistia-player>
             </div>
             
@@ -149,8 +177,6 @@ const Hower15 = () => {
 
           {/* Buscador Video - Small */}
           <div className="mt-8 max-w-2xl mx-auto">
-            <script src="https://fast.wistia.com/player.js" async></script>
-            <script src="https://fast.wistia.com/embed/zgp1z14vbe.js" async type="module"></script>
             <wistia-player media-id="zgp1z14vbe" aspect="0.5787781350482315" style={{ width: '100%', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}></wistia-player>
           </div>
         </div>
@@ -210,8 +236,6 @@ const Hower15 = () => {
 
             {/* Mensajes Video - Small */}
             <div className="mt-8 max-w-2xl mx-auto">
-              <script src="https://fast.wistia.com/player.js" async></script>
-              <script src="https://fast.wistia.com/embed/sdigf5ug4q.js" async type="module"></script>
               <wistia-player media-id="sdigf5ug4q" aspect="0.5787781350482315" style={{ width: '100%', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}></wistia-player>
             </div>
           </div>
