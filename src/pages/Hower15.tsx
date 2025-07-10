@@ -343,20 +343,25 @@ const Hower15 = () => {
         <Card className="bg-gradient-to-r from-[hsl(var(--hower-primary))] to-[hsl(var(--hower-medium))] border-0 text-white">
           <CardContent className="text-center py-16 px-8">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Disponible Ya Mismo en tu Hower
+              🎉 Actualizaciones Automáticas en tu Extensión de Chrome
             </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Todas estas funcionalidades ya están instaladas en tu aplicación. 
-              Si aún no tienes Hower, puedes instalarlo ahora mismo.
-            </p>
-            <div className="flex justify-center">
-              <Button 
-                size="lg" 
-                className="bg-white text-[hsl(var(--hower-primary))] hover:bg-gray-100 px-8 py-3 text-lg font-semibold"
-                onClick={() => window.open('https://chromewebstore.google.com/detail/hower-social-media-assist/fmjcnabglbobncbckgclmhnffljmjppi?authuser=0&hl=es-419', '_blank')}
-              >
-                Instalar Ahora
-              </Button>
+            <div className="space-y-6 max-w-3xl mx-auto">
+              <p className="text-xl opacity-90">
+                <strong>¡Estas funcionalidades llegan automáticamente a tu extensión de Chrome!</strong>
+              </p>
+              <p className="text-lg opacity-90">
+                Si aún no las ves, aparecerán automáticamente descargadas alrededor del fin de semana. 
+                Notarás los cambios porque dirá <strong>"Versión 1.5"</strong> al ingresar en Hower.
+              </p>
+              <div className="bg-white/10 rounded-lg p-6 mt-8">
+                <p className="text-lg font-semibold mb-2">
+                  ✨ No necesitas hacer nada más
+                </p>
+                <p className="text-md opacity-90">
+                  Las actualizaciones se instalan automáticamente en tu extensión de Chrome. 
+                  Solo espera a ver "Versión 1.5" y disfruta de todas las nuevas funcionalidades.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
