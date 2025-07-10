@@ -38,15 +38,6 @@ const Hower15 = () => {
       badge: "IA Avanzada"
     },
     {
-      icon: <MessageCircle className="h-8 w-8" />,
-      title: "Mensajes Manuales",
-      subtitle: "Interfaz renovada",
-      description: "Nueva interfaz 10 veces más fácil para escribir tus mensajes personalizados.",
-      features: ["Interfaz mejorada", "Más intuitiva", "Control total"],
-      gifUrl: "https://s14.gifyu.com/images/bKN45.gif",
-      badge: "Renovado"
-    },
-    {
       icon: <Sparkles className="h-8 w-8" />,
       title: "Ideas de Mensaje",
       subtitle: "Propuestas editables",
@@ -54,6 +45,18 @@ const Hower15 = () => {
       features: ["Ideas por IA", "100% editables", "Tu estilo personal"],
       gifUrl: messageIdeas,
       badge: "Flexible"
+    }
+  ];
+
+  const manualMessageFeatures = [
+    {
+      icon: <MessageCircle className="h-8 w-8" />,
+      title: "Mensajes Manuales",
+      subtitle: "Interfaz renovada",
+      description: "Nueva interfaz 10 veces más fácil para escribir tus mensajes personalizados.",
+      features: ["Interfaz mejorada", "Más intuitiva", "Control total"],
+      gifUrl: "https://s14.gifyu.com/images/bKN45.gif",
+      badge: "Renovado"
     }
   ];
 
@@ -164,7 +167,7 @@ const Hower15 = () => {
                       src={feature.gifUrl} 
                       alt={feature.title}
                       className="w-full h-auto rounded-lg"
-                      style={{ maxHeight: '350px', objectFit: 'contain' }}
+                      style={{ maxHeight: '420px', objectFit: 'contain' }}
                     />
                   </CardContent>
                 </Card>
@@ -178,55 +181,115 @@ const Hower15 = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Generación de Mensajes con IA
+            Nueva Manera de Crear Mensajes de Prospección
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Dos nuevas formas inteligentes de crear mensajes perfectos
+            Interfaz completamente renovada con nuevas funcionalidades inteligentes
           </p>
         </div>
 
-        <div className="space-y-16">
-          {messageFeatures.map((feature, index) => (
-            <div key={index} className={`flex flex-col ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-12 items-center`}>
-              <div className="flex-1 space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="text-[hsl(var(--hower-primary))]">
-                    {feature.icon}
-                  </div>
-                  <Badge className="bg-gradient-to-r from-[hsl(var(--hower-primary))] to-[hsl(var(--hower-medium))] text-white">
-                    {feature.badge}
-                  </Badge>
-                </div>
-                <div>
-                  <h3 className="text-3xl font-bold mb-2">{feature.title}</h3>
-                  <p className="text-xl text-[hsl(var(--hower-primary))] mb-4">{feature.subtitle}</p>
-                  <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                    {feature.description}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  {feature.features.map((item, itemIndex) => (
-                    <div key={itemIndex} className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[hsl(var(--hower-primary))] to-[hsl(var(--hower-medium))]" />
-                      <span className="text-foreground">{item}</span>
+        {/* Generación con IA Subsection */}
+        <div className="mb-20">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold mb-4">Generación de Mensajes con IA</h3>
+            <p className="text-lg text-muted-foreground">Dos formas inteligentes de crear mensajes perfectos</p>
+          </div>
+          
+          <div className="space-y-16">
+            {messageFeatures.map((feature, index) => (
+              <div key={index} className={`flex flex-col ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-12 items-center`}>
+                <div className="flex-1 space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="text-[hsl(var(--hower-primary))]">
+                      {feature.icon}
                     </div>
-                  ))}
+                    <Badge className="bg-gradient-to-r from-[hsl(var(--hower-primary))] to-[hsl(var(--hower-medium))] text-white">
+                      {feature.badge}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-2xl font-bold mb-2">{feature.title}</h4>
+                    <p className="text-lg text-[hsl(var(--hower-primary))] mb-4">{feature.subtitle}</p>
+                    <p className="text-md text-muted-foreground leading-relaxed mb-6">
+                      {feature.description}
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {feature.features.map((item, itemIndex) => (
+                      <div key={itemIndex} className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[hsl(var(--hower-primary))] to-[hsl(var(--hower-medium))]" />
+                        <span className="text-foreground">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <Card className="overflow-hidden border-2 hover:border-[hsl(var(--hower-primary))] transition-colors">
+                    <CardContent className="p-0">
+                      <img 
+                        src={feature.gifUrl} 
+                        alt={feature.title}
+                        className="w-full h-auto rounded-lg"
+                        style={{ maxHeight: '420px', objectFit: 'contain' }}
+                      />
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
-              <div className="flex-1">
-                <Card className="overflow-hidden border-2 hover:border-[hsl(var(--hower-primary))] transition-colors">
-                  <CardContent className="p-0">
-                    <img 
-                      src={feature.gifUrl} 
-                      alt={feature.title}
-                      className="w-full h-auto rounded-lg"
-                      style={{ maxHeight: '350px', objectFit: 'contain' }}
-                    />
-                  </CardContent>
-                </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Mensajes Manuales Subsection */}
+        <div className="mb-20">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold mb-4">Mensajes Manuales</h3>
+            <p className="text-lg text-muted-foreground">Interfaz completamente renovada para mayor control</p>
+          </div>
+          
+          <div className="space-y-16">
+            {manualMessageFeatures.map((feature, index) => (
+              <div key={index} className="flex flex-col lg:flex-row gap-12 items-center">
+                <div className="flex-1 space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="text-[hsl(var(--hower-primary))]">
+                      {feature.icon}
+                    </div>
+                    <Badge className="bg-gradient-to-r from-[hsl(var(--hower-primary))] to-[hsl(var(--hower-medium))] text-white">
+                      {feature.badge}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="text-2xl font-bold mb-2">{feature.title}</h4>
+                    <p className="text-lg text-[hsl(var(--hower-primary))] mb-4">{feature.subtitle}</p>
+                    <p className="text-md text-muted-foreground leading-relaxed mb-6">
+                      {feature.description}
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {feature.features.map((item, itemIndex) => (
+                      <div key={itemIndex} className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[hsl(var(--hower-primary))] to-[hsl(var(--hower-medium))]" />
+                        <span className="text-foreground">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <Card className="overflow-hidden border-2 hover:border-[hsl(var(--hower-primary))] transition-colors">
+                    <CardContent className="p-0">
+                      <img 
+                        src={feature.gifUrl} 
+                        alt={feature.title}
+                        className="w-full h-auto rounded-lg"
+                        style={{ maxHeight: '420px', objectFit: 'contain' }}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
@@ -239,21 +302,15 @@ const Hower15 = () => {
             </h2>
             <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
               Todas estas funcionalidades ya están instaladas en tu aplicación. 
-              Puedes acceder y probar estas nuevas características ahora mismo.
+              Si aún no tienes Hower, puedes instalarlo ahora mismo.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex justify-center">
               <Button 
                 size="lg" 
                 className="bg-white text-[hsl(var(--hower-primary))] hover:bg-gray-100 px-8 py-3 text-lg font-semibold"
+                onClick={() => window.open('https://chromewebstore.google.com/detail/hower-social-media-assist/fmjcnabglbobncbckgclmhnffljmjppi?authuser=0&hl=es-419', '_blank')}
               >
-                Abrir Mi Hower
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-white text-white hover:bg-white/10 px-8 py-3 text-lg"
-              >
-                Ver Tutorial
+                Instalar Ahora
               </Button>
             </div>
           </CardContent>
