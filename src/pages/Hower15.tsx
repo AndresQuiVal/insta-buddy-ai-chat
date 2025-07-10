@@ -11,19 +11,19 @@ const Hower15 = () => {
       title: "Buscador General",
       description: "Encuentra cuentas y publicaciones categorizadas por IA.",
       features: ["Resultados categorizados", "Más opciones disponibles", "Todo en un lugar"],
-      gifUrl: "https://s14.gifyu.com/images/bKN44.gif"
+      gifUrl: "https://s14.gifyu.com/images/bKN4g.gif"
     },
     {
-      title: "Buscar Seguidores",
+      title: "Buscar Seguidores", 
       description: "Encuentra cuentas específicas para prospectar sus seguidores.",
       features: ["Seguidores de cuentas relevantes", "Filtros inteligentes", "Acceso directo"],
-      gifUrl: accountSearchFollowers
+      gifUrl: "https://s14.gifyu.com/images/bKN44.gif"
     },
     {
       title: "Buscar Comentarios",
       description: "Encuentra publicaciones para prospectar a quienes comentan.",
       features: ["Posts con más engagement", "Comentarios recientes", "Mejor conversión"],
-      gifUrl: "https://s14.gifyu.com/images/bKN4g.gif"
+      gifUrl: accountSearchFollowers
     }
   ];
 
@@ -36,6 +36,15 @@ const Hower15 = () => {
       features: ["Análisis completo", "Mensajes únicos", "Conexión genuina"],
       gifUrl: "https://s14.gifyu.com/images/bKN41.gif",
       badge: "IA Avanzada"
+    },
+    {
+      icon: <MessageCircle className="h-8 w-8" />,
+      title: "Mensajes Manuales",
+      subtitle: "Interfaz renovada",
+      description: "Nueva interfaz 10 veces más fácil para escribir tus mensajes personalizados.",
+      features: ["Interfaz mejorada", "Más intuitiva", "Control total"],
+      gifUrl: "https://s14.gifyu.com/images/bKN45.gif",
+      badge: "Renovado"
     },
     {
       icon: <Sparkles className="h-8 w-8" />,
@@ -155,7 +164,7 @@ const Hower15 = () => {
                       src={feature.gifUrl} 
                       alt={feature.title}
                       className="w-full h-auto rounded-lg"
-                      style={{ maxHeight: '500px', objectFit: 'cover' }}
+                      style={{ maxHeight: '350px', objectFit: 'contain' }}
                     />
                   </CardContent>
                 </Card>
@@ -211,7 +220,7 @@ const Hower15 = () => {
                       src={feature.gifUrl} 
                       alt={feature.title}
                       className="w-full h-auto rounded-lg"
-                      style={{ maxHeight: '500px', objectFit: 'cover' }}
+                      style={{ maxHeight: '350px', objectFit: 'contain' }}
                     />
                   </CardContent>
                 </Card>
