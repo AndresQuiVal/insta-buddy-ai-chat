@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, MessageSquare, Key } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Plus, X, MessageSquare, Key, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import { getInstagramPosts } from '@/services/instagramPostsService';
 
 interface GeneralAutoresponder {
   id: string;
@@ -33,6 +35,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
   const [dmMessage, setDmMessage] = useState('');
   const [publicReplies, setPublicReplies] = useState<string[]>(['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
   const [newPublicReply, setNewPublicReply] = useState('');
+  const [applyToAllPosts, setApplyToAllPosts] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -128,16 +131,73 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       } else {
         console.log('➕ Creando nuevo autoresponder general');
 
-        const { error } = await (supabase as any)
+        const { data: newAutoresponder, error } = await (supabase as any)
           .from('general_comment_autoresponders')
-          .insert([autoresponderData]);
+          .insert([autoresponderData])
+          .select()
+          .single();
 
         if (error) throw error;
 
-        toast({
-          title: "¡Creado!",
-          description: "Autoresponder general creado exitosamente",
-        });
+        // Si se seleccionó "Aplicar a todas las publicaciones", crear asignaciones automáticas
+        if (applyToAllPosts && newAutoresponder) {
+          console.log('🌐 Aplicando autoresponder a todas las publicaciones existentes...');
+          
+          try {
+            // Obtener todos los posts de Instagram
+            const posts = await getInstagramPosts();
+            console.log(`📝 Encontrados ${posts.length} posts para asignar`);
+
+            // Crear asignaciones para cada post
+            if (posts.length > 0) {
+              const assignments = posts.map(post => ({
+                general_autoresponder_id: newAutoresponder.id,
+                user_id: currentUser.instagram_user_id,
+                post_id: post.id,
+                post_url: post.permalink,
+                post_caption: post.caption || '',
+                is_active: true,
+              }));
+
+              const { error: assignmentError } = await (supabase as any)
+                .from('post_autoresponder_assignments')
+                .insert(assignments);
+
+              if (assignmentError) {
+                console.error('❌ Error creando asignaciones automáticas:', assignmentError);
+                // No fallar completamente, solo avisar
+                toast({
+                  title: "Autoresponder creado",
+                  description: `Autoresponder creado, pero no se pudieron asignar automáticamente a ${posts.length} posts. Puedes asignarlos manualmente.`,
+                  variant: "destructive"
+                });
+              } else {
+                console.log(`✅ ${posts.length} asignaciones automáticas creadas exitosamente`);
+                toast({
+                  title: "¡Autoresponder configurado!",
+                  description: `Autoresponder creado y aplicado automáticamente a ${posts.length} publicaciones existentes.`,
+                });
+              }
+            } else {
+              toast({
+                title: "¡Autoresponder creado!",
+                description: "Autoresponder creado. No se encontraron publicaciones existentes para asignar automáticamente.",
+              });
+            }
+          } catch (postsError) {
+            console.error('❌ Error obteniendo posts de Instagram:', postsError);
+            toast({
+              title: "Autoresponder creado",
+              description: "Autoresponder creado, pero no se pudieron obtener las publicaciones para asignación automática. Puedes asignar posts manualmente.",
+              variant: "destructive"
+            });
+          }
+        } else {
+          toast({
+            title: "¡Creado!",
+            description: "Autoresponder general creado exitosamente",
+          });
+        }
       }
 
       onSubmit();
@@ -280,6 +340,29 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
               </div>
             </div>
           </div>
+
+          {/* Aplicar a todas las publicaciones */}
+          {!autoresponder && (
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="applyToAllPosts"
+                  checked={applyToAllPosts}
+                  onCheckedChange={(checked) => setApplyToAllPosts(checked as boolean)}
+                />
+                <div className="flex-1">
+                  <label htmlFor="applyToAllPosts" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    Aplicar automáticamente a todas las publicaciones de la cuenta
+                  </label>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Si activas esta opción, el autoresponder se aplicará automáticamente a todas tus publicaciones existentes y futuras.
+                    No necesitarás asignar posts manualmente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Botones */}
           <div className="flex gap-3 pt-4">
