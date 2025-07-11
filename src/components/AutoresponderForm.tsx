@@ -8,8 +8,17 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
-import { X } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import FollowUpConfig, { FollowUp } from './FollowUpConfig';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface Button {
+  type: 'web_url' | 'postback';
+  title: string;
+  url?: string;
+  payload?: string;
+}
 
 interface AutoresponderMessage {
   id: string;
@@ -20,6 +29,8 @@ interface AutoresponderMessage {
   use_keywords?: boolean;
   keywords?: string[];
   followups?: FollowUp[];
+  use_buttons?: boolean;
+  buttons?: Button[];
 }
 
 interface AutoresponderFormProps {
@@ -37,6 +48,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [useButtons, setUseButtons] = useState(false);
+  const [buttons, setButtons] = useState<Button[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -50,6 +63,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setUseKeywords(message.use_keywords || false);
       setKeywords(message.keywords || []);
       setFollowUps(message.followups || []);
+      setUseButtons(message.use_buttons || false);
+      setButtons(message.buttons || []);
     } else {
       setName('');
       setMessageText('');
@@ -58,6 +73,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setUseKeywords(false);
       setKeywords([]);
       setFollowUps([]);
+      setUseButtons(false);
+      setButtons([]);
     }
   }, [message]);
 
@@ -77,6 +94,38 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       e.preventDefault();
       addKeyword();
     }
+  };
+
+  const addButton = () => {
+    if (buttons.length < 3) {
+      const newButton: Button = {
+        type: 'postback',
+        title: '',
+        payload: ''
+      };
+      setButtons([...buttons, newButton]);
+    }
+  };
+
+  const removeButton = (index: number) => {
+    setButtons(buttons.filter((_, i) => i !== index));
+  };
+
+  const updateButton = (index: number, field: keyof Button, value: string) => {
+    const updatedButtons = buttons.map((button, i) => {
+      if (i === index) {
+        const updated = { ...button, [field]: value };
+        // Limpiar campos no utilizados según el tipo
+        if (updated.type === 'postback') {
+          delete updated.url;
+        } else if (updated.type === 'web_url') {
+          delete updated.payload;
+        }
+        return updated;
+      }
+      return button;
+    });
+    setButtons(updatedButtons);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,6 +170,8 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         send_only_first_message: sendOnlyFirstMessage,
         use_keywords: useKeywords,
         keywords: useKeywords ? keywords : null,
+        use_buttons: useButtons,
+        buttons: useButtons ? buttons as any : null,
         instagram_user_id_ref: currentUser.instagram_user_id, // Usar el ID del usuario actual
         instagram_user_id: currentUser.id // Mantener referencia al UUID por compatibilidad
       };
@@ -343,6 +394,111 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
           </div>
         )}
       </div>
+
+      {/* Configuración de Botones */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="useButtons"
+              checked={useButtons}
+              onCheckedChange={setUseButtons}
+            />
+            <div className="space-y-1">
+              <CardTitle className="text-base">Usar Botones</CardTitle>
+              <CardDescription>
+                Agrega hasta 3 botones interactivos a tu mensaje
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        {useButtons && (
+          <CardContent className="space-y-4">
+            {buttons.map((button, index) => (
+              <div key={index} className="border rounded-lg p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Botón {index + 1}</h4>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeButton(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor={`button-type-${index}`}>Tipo</Label>
+                    <Select
+                      value={button.type}
+                      onValueChange={(value: 'web_url' | 'postback') => 
+                        updateButton(index, 'type', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="postback">Respuesta</SelectItem>
+                        <SelectItem value="web_url">Enlace Web</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`button-title-${index}`}>Texto del Botón</Label>
+                    <Input
+                      id={`button-title-${index}`}
+                      value={button.title}
+                      onChange={(e) => updateButton(index, 'title', e.target.value)}
+                      placeholder="Ej: Más información"
+                      maxLength={20}
+                    />
+                  </div>
+                </div>
+                
+                {button.type === 'web_url' ? (
+                  <div>
+                    <Label htmlFor={`button-url-${index}`}>URL</Label>
+                    <Input
+                      id={`button-url-${index}`}
+                      value={button.url || ''}
+                      onChange={(e) => updateButton(index, 'url', e.target.value)}
+                      placeholder="https://ejemplo.com"
+                      type="url"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor={`button-payload-${index}`}>Payload</Label>
+                    <Input
+                      id={`button-payload-${index}`}
+                      value={button.payload || ''}
+                      onChange={(e) => updateButton(index, 'payload', e.target.value)}
+                      placeholder="datos_del_boton"
+                      maxLength={1000}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {buttons.length < 3 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addButton}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Botón ({buttons.length}/3)
+              </Button>
+            )}
+          </CardContent>
+        )}
+      </Card>
 
       <FollowUpConfig
         followUps={followUps}

@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { recipient_id, message_text, reply_to_message_id, instagram_user_id, comment_id } = await req.json()
+    const { recipient_id, message_text, reply_to_message_id, instagram_user_id, comment_id, buttons } = await req.json()
 
     console.log('🚀 Instagram Send Message Edge Function iniciada')
     console.log('📝 Parámetros recibidos:', {
@@ -21,7 +21,8 @@ serve(async (req) => {
       message_text: message_text?.substring(0, 50) + '...',
       reply_to_message_id,
       instagram_user_id,
-      comment_id
+      comment_id,
+      buttons: buttons ? '✅ Con botones' : '❌ Sin botones'
     })
 
     // Validar parámetros requeridos
@@ -116,29 +117,75 @@ serve(async (req) => {
     if (comment_id) {
       // 🆕 PRIVATE REPLY - Usando la documentación oficial
       messageType = 'private_reply'
-      messageBody = {
-        recipient: { 
-          comment_id: comment_id 
-        },
-        message: { 
-          text: message_text 
+      
+      if (buttons && buttons.length > 0) {
+        // Private reply con botones
+        messageBody = {
+          recipient: { 
+            comment_id: comment_id 
+          },
+          message: {
+            attachment: {
+              type: "template",
+              payload: {
+                template_type: "button",
+                text: message_text,
+                buttons: buttons
+              }
+            }
+          }
         }
+        console.log('🔘 Private reply CON BOTONES')
+      } else {
+        // Private reply sin botones
+        messageBody = {
+          recipient: { 
+            comment_id: comment_id 
+          },
+          message: { 
+            text: message_text 
+          }
+        }
+        console.log('💬 Private reply sin botones')
       }
       console.log('💬 Enviando PRIVATE REPLY usando comment_id:', comment_id)
     } else {
       // DM NORMAL
       messageType = 'direct_message'
-      messageBody = {
-        recipient: { 
-          id: recipient_id 
-        },
-        message: { 
-          text: message_text 
+      
+      if (buttons && buttons.length > 0) {
+        // DM normal con botones
+        messageBody = {
+          recipient: { 
+            id: recipient_id 
+          },
+          message: {
+            attachment: {
+              type: "template",
+              payload: {
+                template_type: "button",
+                text: message_text,
+                buttons: buttons
+              }
+            }
+          }
         }
+        console.log('🔘 DM CON BOTONES')
+      } else {
+        // DM normal sin botones
+        messageBody = {
+          recipient: { 
+            id: recipient_id 
+          },
+          message: { 
+            text: message_text 
+          }
+        }
+        console.log('💬 DM sin botones')
       }
 
-      // Solo agregar reply_to para mensajes normales
-      if (reply_to_message_id) {
+      // Solo agregar reply_to para mensajes normales SIN botones
+      if (reply_to_message_id && (!buttons || buttons.length === 0)) {
         messageBody.message.reply_to = { mid: reply_to_message_id }
       }
       console.log('💬 Enviando DM NORMAL a recipient_id:', recipient_id)
