@@ -273,6 +273,7 @@ export type Database = {
       }
       general_comment_autoresponders: {
         Row: {
+          auto_assign_to_all_posts: boolean | null
           buttons: Json | null
           created_at: string
           dm_message: string
@@ -286,6 +287,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auto_assign_to_all_posts?: boolean | null
           buttons?: Json | null
           created_at?: string
           dm_message: string
@@ -299,6 +301,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auto_assign_to_all_posts?: boolean | null
           buttons?: Json | null
           created_at?: string
           dm_message?: string

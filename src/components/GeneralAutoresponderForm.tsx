@@ -109,6 +109,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
         keywords,
         dm_message: dmMessage.trim(),
         public_reply_messages: publicReplies.filter(reply => reply.trim()),
+        auto_assign_to_all_posts: applyToAllPosts,
         is_active: true,
         updated_at: new Date().toISOString()
       };
