@@ -414,8 +414,7 @@ export const getInstagramPosts = async () => {
 export const sendInstagramMessage = async (
   messageText: string,
   recipientId: string,
-  replyToMessageId?: string,
-  buttons?: any[]
+  replyToMessageId?: string
 ) => {
   try {
     console.log("📤 Enviando mensaje de Instagram...");
@@ -439,7 +438,6 @@ export const sendInstagramMessage = async (
           recipient_id: recipientId,
           message_text: messageText,
           reply_to_message_id: replyToMessageId,
-          buttons: buttons,
         },
       }
     );

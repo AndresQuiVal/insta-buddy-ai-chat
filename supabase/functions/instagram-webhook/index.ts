@@ -370,8 +370,7 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     body: {
       recipient_id: senderId,
       message_text: selectedAutoresponder.message_text,
-      instagram_user_id: recipientId,
-      buttons: selectedAutoresponder.use_buttons ? selectedAutoresponder.buttons : null
+      instagram_user_id: recipientId
     }
   })
 
@@ -942,8 +941,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
       body: {
         message_text: selectedAutoresponder.dm_message,
         instagram_user_id: instagramAccountId,
-        comment_id: commentId,
-        buttons: selectedAutoresponder.use_buttons ? selectedAutoresponder.buttons : null
+        comment_id: commentId
       }
     })
 
