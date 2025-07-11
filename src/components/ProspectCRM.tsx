@@ -232,21 +232,21 @@ const ProspectCRM = () => {
           title="Enviados"
           icon={Send}
           prospects={getProspectsByStatus('enviados')}
-          color="bg-gradient-to-r from-blue-500 to-blue-600"
+          color="bg-gradient-to-r from-purple-400 to-purple-500"
         />
         
         <CRMColumn
           title="Respuestas"
           icon={MessageCircle}
           prospects={getProspectsByStatus('respuestas')}
-          color="bg-gradient-to-r from-green-500 to-green-600"
+          color="bg-gradient-to-r from-purple-500 to-purple-600"
         />
         
         <CRMColumn
           title="Agendados"
           icon={Calendar}
           prospects={getProspectsByStatus('agendados')}
-          color="bg-gradient-to-r from-purple-500 to-purple-600"
+          color="bg-gradient-to-r from-purple-600 to-purple-700"
         />
       </div>
     </div>
