@@ -30,7 +30,6 @@ interface ProspectData {
   last_message_from_prospect: boolean;
   autoresponder_name?: string;
   match_points?: number;
-  met_traits?: string[];
 }
 
 const ProspectCRM = () => {
@@ -85,8 +84,7 @@ const ProspectCRM = () => {
           ...prospect,
           status,
           autoresponder_name: 'Autoresponder General', // TODO: Obtener nombre real del autoresponder
-          match_points: Math.floor(Math.random() * 4) + 1, // TODO: Obtener match points reales
-          met_traits: ['Emprendedor', 'Activo en redes'] // TODO: Obtener traits reales
+          match_points: Math.floor(Math.random() * 4) + 1 // TODO: Obtener match points reales
         };
       }) || [];
 
@@ -143,25 +141,10 @@ const ProspectCRM = () => {
               </Badge>
             )}
             
-            <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+            <div className="flex items-center gap-1 text-xs text-gray-500">
               <Clock className="w-3 h-3" />
               {format(new Date(prospect.last_message_date), 'dd MMM, HH:mm', { locale: es })}
             </div>
-            
-            {prospect.met_traits && prospect.met_traits.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {prospect.met_traits.slice(0, 2).map((trait, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {trait}
-                  </Badge>
-                ))}
-                {prospect.met_traits.length > 2 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{prospect.met_traits.length - 2}
-                  </Badge>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </CardContent>
