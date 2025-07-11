@@ -160,34 +160,56 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
 
               // Crear asignaciones para cada post
               if (posts.length > 0) {
-                const assignments = posts.map(post => ({
-                  general_autoresponder_id: newAutoresponder.id,
-                  user_id: currentUser.instagram_user_id,
-                  post_id: post.id,
-                  post_url: post.permalink,
-                  post_caption: post.caption || '',
-                  is_active: true,
-                }));
+                console.log(`📝 Procesando ${posts.length} posts para asignación...`);
+                
+                let successCount = 0;
+                let skipCount = 0;
+                
+                // Procesar posts uno por uno para evitar conflictos
+                for (const post of posts) {
+                  try {
+                    const assignment = {
+                      general_autoresponder_id: newAutoresponder.id,
+                      user_id: currentUser.instagram_user_id,
+                      post_id: post.id,
+                      post_url: post.permalink,
+                      post_caption: post.caption || '',
+                      is_active: true,
+                    };
 
-                // Usar upsert para manejar duplicados correctamente
-                const { error: assignmentError } = await (supabase as any)
-                  .from('post_autoresponder_assignments')
-                  .upsert(assignments);
+                    // Verificar si ya existe una asignación para este post
+                    const { data: existing } = await (supabase as any)
+                      .from('post_autoresponder_assignments')
+                      .select('id')
+                      .eq('user_id', currentUser.instagram_user_id)
+                      .eq('post_id', post.id)
+                      .single();
 
-                if (assignmentError) {
-                  console.error('❌ Error creando asignaciones automáticas:', assignmentError);
-                  toast({
-                    title: "Autoresponder creado",
-                    description: `Autoresponder creado, pero hubo un error asignando a ${posts.length} posts. Puedes asignarlos manualmente.`,
-                    variant: "destructive"
-                  });
-                } else {
-                  console.log(`✅ ${posts.length} asignaciones automáticas creadas/actualizadas exitosamente`);
-                  toast({
-                    title: "¡Autoresponder configurado!",
-                    description: `Autoresponder creado y aplicado automáticamente a ${posts.length} publicaciones existentes.`,
-                  });
+                    if (existing) {
+                      // Ya existe, actualizar
+                      await (supabase as any)
+                        .from('post_autoresponder_assignments')
+                        .update({ general_autoresponder_id: newAutoresponder.id })
+                        .eq('id', existing.id);
+                      skipCount++;
+                    } else {
+                      // No existe, crear nuevo
+                      await (supabase as any)
+                        .from('post_autoresponder_assignments')
+                        .insert([assignment]);
+                      successCount++;
+                    }
+                  } catch (error) {
+                    console.error('❌ Error procesando post:', post.id, error);
+                    skipCount++;
+                  }
                 }
+
+                const totalProcessed = successCount + skipCount;
+                toast({
+                  title: "¡Autoresponder configurado!",
+                  description: `Autoresponder creado y aplicado a ${totalProcessed} publicaciones (${successCount} nuevas, ${skipCount} actualizadas).`,
+                });
               } else {
                 toast({
                   title: "¡Autoresponder creado!",
