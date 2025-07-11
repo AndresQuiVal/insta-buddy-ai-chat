@@ -183,7 +183,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
                       .select('id')
                       .eq('user_id', currentUser.instagram_user_id)
                       .eq('post_id', post.id)
-                      .single();
+                      .maybeSingle();
 
                     if (existing) {
                       // Ya existe, actualizar
