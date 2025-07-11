@@ -11,10 +11,10 @@ const MyProspects = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="prospects">Prospectos</TabsTrigger>
-          <TabsTrigger value="messages">Mensajes</TabsTrigger>
-          <TabsTrigger value="autoresponder">Gestionar</TabsTrigger>
+          <TabsTrigger value="messages" className="hidden">Mensajes</TabsTrigger>
+          <TabsTrigger value="autoresponder">Autorespondedor</TabsTrigger>
         </TabsList>
         <TabsContent value="prospects" className="mt-6">
           <ProspectCRM />

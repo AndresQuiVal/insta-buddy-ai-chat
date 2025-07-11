@@ -127,11 +127,6 @@ const ProspectCRM = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-semibold text-sm truncate">@{prospect.username}</h4>
-              <div className="flex items-center gap-1">
-                {[...Array(prospect.match_points || 1)].map((_, i) => (
-                  <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
             </div>
             
             {prospect.autoresponder_name && (
@@ -163,8 +158,8 @@ const ProspectCRM = () => {
     prospects: ProspectData[];
     color: string;
   }) => (
-    <Card className="h-full">
-      <CardHeader className={`pb-3 ${color}`}>
+    <Card className="h-full rounded-xl">
+      <CardHeader className={`pb-3 ${color} rounded-t-xl`}>
         <CardTitle className="text-lg flex items-center gap-2 text-white">
           <Icon className="w-5 h-5" />
           {title}
