@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { X } from 'lucide-react';
+import FollowUpConfig, { FollowUp } from './FollowUpConfig';
 
 interface AutoresponderMessage {
   id: string;
@@ -18,6 +19,7 @@ interface AutoresponderMessage {
   send_only_first_message?: boolean;
   use_keywords?: boolean;
   keywords?: string[];
+  followups?: FollowUp[];
 }
 
 interface AutoresponderFormProps {
@@ -34,6 +36,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const [useKeywords, setUseKeywords] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -46,6 +49,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setSendOnlyFirstMessage(message.send_only_first_message || false);
       setUseKeywords(message.use_keywords || false);
       setKeywords(message.keywords || []);
+      setFollowUps(message.followups || []);
     } else {
       setName('');
       setMessageText('');
@@ -53,6 +57,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setSendOnlyFirstMessage(false);
       setUseKeywords(false);
       setKeywords([]);
+      setFollowUps([]);
     }
   }, [message]);
 
@@ -287,6 +292,12 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
           </div>
         )}
       </div>
+
+      <FollowUpConfig
+        followUps={followUps}
+        onChange={setFollowUps}
+        maxFollowUps={4}
+      />
 
       <div className="flex justify-end space-x-2">
         <Button type="button" variant="outline" onClick={onCancel}>
