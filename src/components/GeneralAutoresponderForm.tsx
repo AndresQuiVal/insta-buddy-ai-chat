@@ -169,17 +169,19 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
                   is_active: true,
                 }));
 
+                // Insertar con manejo de duplicados usando upsert
                 const { error: assignmentError } = await (supabase as any)
                   .from('post_autoresponder_assignments')
-                  .insert(assignments);
+                  .upsert(assignments, { 
+                    onConflict: 'user_id,post_id',
+                    ignoreDuplicates: false 
+                  });
 
                 if (assignmentError) {
                   console.error('❌ Error creando asignaciones automáticas:', assignmentError);
-                  // No fallar completamente, solo avisar
                   toast({
                     title: "Autoresponder creado",
-                    description: `Autoresponder creado, pero no se pudieron asignar automáticamente a ${posts.length} posts. Puedes asignarlos manualmente.`,
-                    variant: "destructive"
+                    description: `Autoresponder creado, pero algunos posts ya tenían asignaciones. Se actualizaron las existentes.`,
                   });
                 } else {
                   console.log(`✅ ${posts.length} asignaciones automáticas creadas exitosamente`);
