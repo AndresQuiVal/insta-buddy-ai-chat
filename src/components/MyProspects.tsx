@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import InstagramMessages from '@/components/InstagramMessages';
-import ProspectList from '@/components/ProspectList';
+import ProspectCRM from '@/components/ProspectCRM';
 import AutoresponderManager from '@/components/AutoresponderManager';
 
 const MyProspects = () => {
@@ -17,7 +17,7 @@ const MyProspects = () => {
           <TabsTrigger value="autoresponder">Gestionar</TabsTrigger>
         </TabsList>
         <TabsContent value="prospects" className="mt-6">
-          <ProspectList />
+          <ProspectCRM />
         </TabsContent>
         <TabsContent value="messages" className="mt-6">
           <InstagramMessages />
