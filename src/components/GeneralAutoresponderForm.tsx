@@ -144,54 +144,64 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
         if (applyToAllPosts && newAutoresponder) {
           console.log('🌐 Aplicando autoresponder a todas las publicaciones existentes...');
           
-          try {
-            // Obtener todos los posts de Instagram
-            const posts = await getInstagramPosts();
-            console.log(`📝 Encontrados ${posts.length} posts para asignar`);
-
-            // Crear asignaciones para cada post
-            if (posts.length > 0) {
-              const assignments = posts.map(post => ({
-                general_autoresponder_id: newAutoresponder.id,
-                user_id: currentUser.instagram_user_id,
-                post_id: post.id,
-                post_url: post.permalink,
-                post_caption: post.caption || '',
-                is_active: true,
-              }));
-
-              const { error: assignmentError } = await (supabase as any)
-                .from('post_autoresponder_assignments')
-                .insert(assignments);
-
-              if (assignmentError) {
-                console.error('❌ Error creando asignaciones automáticas:', assignmentError);
-                // No fallar completamente, solo avisar
-                toast({
-                  title: "Autoresponder creado",
-                  description: `Autoresponder creado, pero no se pudieron asignar automáticamente a ${posts.length} posts. Puedes asignarlos manualmente.`,
-                  variant: "destructive"
-                });
-              } else {
-                console.log(`✅ ${posts.length} asignaciones automáticas creadas exitosamente`);
-                toast({
-                  title: "¡Autoresponder configurado!",
-                  description: `Autoresponder creado y aplicado automáticamente a ${posts.length} publicaciones existentes.`,
-                });
-              }
-            } else {
-              toast({
-                title: "¡Autoresponder creado!",
-                description: "Autoresponder creado. No se encontraron publicaciones existentes para asignar automáticamente.",
-              });
-            }
-          } catch (postsError) {
-            console.error('❌ Error obteniendo posts de Instagram:', postsError);
+          // Verificar que hay token de Instagram
+          const instagramToken = localStorage.getItem('hower-instagram-token');
+          if (!instagramToken) {
             toast({
               title: "Autoresponder creado",
-              description: "Autoresponder creado, pero no se pudieron obtener las publicaciones para asignación automática. Puedes asignar posts manualmente.",
+              description: "Autoresponder creado, pero necesitas conectar tu cuenta de Instagram para asignación automática. Ve a Configuración para conectar tu cuenta.",
               variant: "destructive"
             });
+          } else {
+            try {
+              // Obtener todos los posts de Instagram
+              const posts = await getInstagramPosts();
+              console.log(`📝 Encontrados ${posts.length} posts para asignar`);
+
+              // Crear asignaciones para cada post
+              if (posts.length > 0) {
+                const assignments = posts.map(post => ({
+                  general_autoresponder_id: newAutoresponder.id,
+                  user_id: currentUser.instagram_user_id,
+                  post_id: post.id,
+                  post_url: post.permalink,
+                  post_caption: post.caption || '',
+                  is_active: true,
+                }));
+
+                const { error: assignmentError } = await (supabase as any)
+                  .from('post_autoresponder_assignments')
+                  .insert(assignments);
+
+                if (assignmentError) {
+                  console.error('❌ Error creando asignaciones automáticas:', assignmentError);
+                  // No fallar completamente, solo avisar
+                  toast({
+                    title: "Autoresponder creado",
+                    description: `Autoresponder creado, pero no se pudieron asignar automáticamente a ${posts.length} posts. Puedes asignarlos manualmente.`,
+                    variant: "destructive"
+                  });
+                } else {
+                  console.log(`✅ ${posts.length} asignaciones automáticas creadas exitosamente`);
+                  toast({
+                    title: "¡Autoresponder configurado!",
+                    description: `Autoresponder creado y aplicado automáticamente a ${posts.length} publicaciones existentes.`,
+                  });
+                }
+              } else {
+                toast({
+                  title: "¡Autoresponder creado!",
+                  description: "Autoresponder creado. No se encontraron publicaciones existentes para asignar automáticamente.",
+                });
+              }
+            } catch (postsError) {
+              console.error('❌ Error obteniendo posts de Instagram:', postsError);
+              toast({
+                title: "Autoresponder creado",
+                description: "Autoresponder creado, pero no se pudieron obtener las publicaciones para asignación automática. Necesitas conectar tu cuenta de Instagram.",
+                variant: "destructive"
+              });
+            }
           }
         } else {
           toast({
