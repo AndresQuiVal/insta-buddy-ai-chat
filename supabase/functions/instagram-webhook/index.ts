@@ -396,33 +396,84 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.log('✅ Registro guardado en autoresponder_sent_log')
   }
 
-  console.log('📅 ===== CREANDO FOLLOW-UP =====')
-  
-  try {
-    const currentTime = new Date()
-    const followupTime = new Date(currentTime.getTime() + (23 * 60 * 60 * 1000)) // 23 horas después
-    
-    const { error: followupError } = await supabase
-      .from('autoresponder_followups')
-      .insert({
-        sender_id: senderId,
-        autoresponder_message_id: selectedAutoresponder.id,
-        initial_message_sent_at: currentTime.toISOString(),
-        followup_scheduled_at: followupTime.toISOString(),
-        followup_message_text: 'Hey! pudiste checar mi mensaje anterior?'
-      })
-
-    if (followupError) {
-      console.error('❌ Error creando follow-up:', followupError)
-    } else {
-      console.log('✅ Follow-up programado para:', followupTime.toISOString())
-      console.log('📝 Mensaje de follow-up:', 'Hey! pudiste checar mi mensaje anterior?')
-    }
-  } catch (followupErr) {
-    console.error('💥 Error en creación de follow-up:', followupErr)
-  }
+  console.log('📅 ===== CREANDO FOLLOW-UPS CONFIGURADOS =====')
+  await createFollowUps(selectedAutoresponder.id, senderId)
 
   console.log('✅ === MENSAJE PROCESADO COMPLETAMENTE ===')
+}
+
+// Función para crear follow-ups basados en la configuración
+async function createFollowUps(autoresponderMessageId: string, senderId: string) {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  )
+  try {
+    console.log('🔍 Buscando configuración de follow-ups para autoresponder:', autoresponderMessageId)
+    
+    const { data: followUpConfigs, error: configError } = await supabase
+      .from('autoresponder_followup_configs')
+      .select('*')
+      .eq('autoresponder_message_id', autoresponderMessageId)
+      .eq('is_active', true)
+      .order('sequence_order')
+
+    if (configError) {
+      console.error('❌ Error buscando configuración de follow-ups:', configError)
+      return
+    }
+
+    if (!followUpConfigs || followUpConfigs.length === 0) {
+      console.log('ℹ️ No hay follow-ups configurados para este autoresponder')
+      return
+    }
+
+    console.log('✅ Follow-ups configurados encontrados:', followUpConfigs.length)
+
+    const currentTime = new Date()
+    let accumulatedHours = 0
+
+    const followupsToCreate = []
+
+    for (const config of followUpConfigs) {
+      accumulatedHours += config.delay_hours
+      
+      // Validar que no exceda 23 horas por follow-up individual
+      if (config.delay_hours > 23) {
+        console.log(`⚠️ Follow-up ${config.sequence_order} excede 23 horas (${config.delay_hours}h) - omitiendo`)
+        continue
+      }
+
+      const followupTime = new Date(currentTime.getTime() + (accumulatedHours * 60 * 60 * 1000))
+      
+      followupsToCreate.push({
+        sender_id: senderId,
+        autoresponder_message_id: autoresponderMessageId,
+        initial_message_sent_at: currentTime.toISOString(),
+        followup_scheduled_at: followupTime.toISOString(),
+        followup_message_text: config.message_text
+      })
+
+      console.log(`📅 Follow-up ${config.sequence_order} programado para: ${followupTime.toISOString()} (+${accumulatedHours}h total)`)
+    }
+
+    if (followupsToCreate.length > 0) {
+      const { error: insertError } = await supabase
+        .from('autoresponder_followups')
+        .insert(followupsToCreate)
+
+      if (insertError) {
+        console.error('❌ Error insertando follow-ups:', insertError)
+      } else {
+        console.log('✅ Follow-ups creados exitosamente:', followupsToCreate.length)
+      }
+    } else {
+      console.log('ℹ️ No hay follow-ups válidos para crear')
+    }
+
+  } catch (error) {
+    console.error('💥 Error creando follow-ups:', error)
+  }
 }
 
 async function processComment(commentData: any, supabase: any, instagramAccountId: string) {

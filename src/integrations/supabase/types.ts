@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      autoresponder_followup_configs: {
+        Row: {
+          autoresponder_message_id: string
+          created_at: string
+          delay_hours: number
+          id: string
+          is_active: boolean
+          message_text: string
+          sequence_order: number
+          updated_at: string
+        }
+        Insert: {
+          autoresponder_message_id: string
+          created_at?: string
+          delay_hours: number
+          id?: string
+          is_active?: boolean
+          message_text: string
+          sequence_order: number
+          updated_at?: string
+        }
+        Update: {
+          autoresponder_message_id?: string
+          created_at?: string
+          delay_hours?: number
+          id?: string
+          is_active?: boolean
+          message_text?: string
+          sequence_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_autoresponder_followup_configs_message_id"
+            columns: ["autoresponder_message_id"]
+            isOneToOne: false
+            referencedRelation: "autoresponder_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       autoresponder_followups: {
         Row: {
           autoresponder_message_id: string | null

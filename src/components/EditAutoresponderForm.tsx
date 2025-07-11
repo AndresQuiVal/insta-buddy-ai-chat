@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { X, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import FollowUpConfig, { FollowUp } from './FollowUpConfig';
 
 interface AutoresponderMessage {
   id: string;
@@ -19,6 +20,7 @@ interface AutoresponderMessage {
   send_only_first_message?: boolean;
   use_keywords?: boolean;
   keywords?: string[];
+  followups?: FollowUp[];
 }
 
 interface EditAutoresponderFormProps {
@@ -35,6 +37,7 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
   const [useKeywords, setUseKeywords] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -46,7 +49,38 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
     setSendOnlyFirstMessage(message.send_only_first_message || false);
     setUseKeywords(message.use_keywords || false);
     setKeywords(message.keywords || []);
+    
+    // Cargar follow-ups existentes
+    loadFollowUps(message.id);
   }, [message]);
+
+  const loadFollowUps = async (autoresponderMessageId: string) => {
+    try {
+      const { data: followUpConfigs, error } = await supabase
+        .from('autoresponder_followup_configs')
+        .select('*')
+        .eq('autoresponder_message_id', autoresponderMessageId)
+        .order('sequence_order');
+
+      if (error) {
+        console.error('❌ Error cargando follow-ups:', error);
+        return;
+      }
+
+      if (followUpConfigs) {
+        const followUpsData: FollowUp[] = followUpConfigs.map(config => ({
+          id: config.id,
+          delay_hours: config.delay_hours,
+          message_text: config.message_text,
+          is_active: config.is_active
+        }));
+        
+        setFollowUps(followUpsData);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando follow-ups:', error);
+    }
+  };
 
   const addKeyword = () => {
     if (newKeyword.trim() && !keywords.includes(newKeyword.trim().toLowerCase())) {
@@ -119,6 +153,45 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
       if (error) {
         console.error('❌ Error actualizando en BD:', error);
         throw error;
+      }
+
+      // Guardar follow-ups
+      console.log('💾 Actualizando follow-ups:', followUps.length);
+      
+      // Primero eliminar follow-ups existentes
+      const { error: deleteError } = await supabase
+        .from('autoresponder_followup_configs')
+        .delete()
+        .eq('autoresponder_message_id', message.id);
+
+      if (deleteError) {
+        console.error('⚠️ Error eliminando follow-ups previos:', deleteError);
+      }
+
+      // Insertar nuevos follow-ups
+      if (followUps.length > 0) {
+        const followUpConfigs = followUps
+          .filter(f => f.message_text.trim() && f.is_active)
+          .map((followUp, index) => ({
+            autoresponder_message_id: message.id,
+            sequence_order: index + 1,
+            delay_hours: followUp.delay_hours,
+            message_text: followUp.message_text.trim(),
+            is_active: followUp.is_active
+          }));
+
+        if (followUpConfigs.length > 0) {
+          const { error: followUpError } = await supabase
+            .from('autoresponder_followup_configs')
+            .insert(followUpConfigs);
+
+          if (followUpError) {
+            console.error('❌ Error guardando follow-ups:', followUpError);
+            throw followUpError;
+          }
+          
+          console.log('✅ Follow-ups actualizados:', followUpConfigs.length);
+        }
       }
 
       console.log('✅ Autoresponder actualizado exitosamente');
@@ -281,10 +354,16 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
                   </div>
                 )}
               </div>
-            )}
-          </div>
+          )}
+        </div>
 
-          <div className="flex justify-end space-x-2">
+        <FollowUpConfig
+          followUps={followUps}
+          onChange={setFollowUps}
+          maxFollowUps={4}
+        />
+
+        <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancelar
             </Button>

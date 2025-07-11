@@ -126,6 +126,7 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       };
 
       let result;
+      let autoresponderMessageId: string;
 
       if (message) {
         // Actualizar existente
@@ -134,17 +135,67 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
           .from('autoresponder_messages')
           .update(messageData)
           .eq('id', message.id);
+        
+        autoresponderMessageId = message.id;
       } else {
         // Crear nuevo
         console.log('➕ Creando nuevo autoresponder para usuario:', currentUser.username);
         result = await supabase
           .from('autoresponder_messages')
-          .insert([messageData]);
+          .insert([messageData])
+          .select('id')
+          .single();
+        
+        if (result.error) {
+          console.error('❌ Error creando autoresponder:', result.error);
+          throw result.error;
+        }
+        
+        autoresponderMessageId = result.data.id;
       }
 
       if (result.error) {
         console.error('❌ Error guardando en BD:', result.error);
         throw result.error;
+      }
+
+      // Guardar follow-ups
+      console.log('💾 Guardando follow-ups:', followUps.length);
+      
+      // Primero eliminar follow-ups existentes
+      const { error: deleteError } = await supabase
+        .from('autoresponder_followup_configs')
+        .delete()
+        .eq('autoresponder_message_id', autoresponderMessageId);
+
+      if (deleteError) {
+        console.error('⚠️ Error eliminando follow-ups previos:', deleteError);
+      }
+
+      // Insertar nuevos follow-ups
+      if (followUps.length > 0) {
+        const followUpConfigs = followUps
+          .filter(f => f.message_text.trim() && f.is_active)
+          .map((followUp, index) => ({
+            autoresponder_message_id: autoresponderMessageId,
+            sequence_order: index + 1,
+            delay_hours: followUp.delay_hours,
+            message_text: followUp.message_text.trim(),
+            is_active: followUp.is_active
+          }));
+
+        if (followUpConfigs.length > 0) {
+          const { error: followUpError } = await supabase
+            .from('autoresponder_followup_configs')
+            .insert(followUpConfigs);
+
+          if (followUpError) {
+            console.error('❌ Error guardando follow-ups:', followUpError);
+            throw followUpError;
+          }
+          
+          console.log('✅ Follow-ups guardados:', followUpConfigs.length);
+        }
       }
 
       console.log('✅ AUTORESPONDER GUARDADO PARA USUARIO:', currentUser.username);
