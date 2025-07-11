@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { getInstagramPosts } from '@/services/instagramPostsService';
+import FollowUpConfig, { FollowUp } from './FollowUpConfig';
 
 interface GeneralAutoresponder {
   id: string;
@@ -36,6 +37,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
   const [publicReplies, setPublicReplies] = useState<string[]>(['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
   const [newPublicReply, setNewPublicReply] = useState('');
   const [applyToAllPosts, setApplyToAllPosts] = useState(false);
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -46,8 +48,39 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       setKeywords(autoresponder.keywords);
       setDmMessage(autoresponder.dm_message);
       setPublicReplies(autoresponder.public_reply_messages || ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
+      
+      // Cargar follow-ups existentes
+      loadFollowUps(autoresponder.id);
     }
   }, [autoresponder]);
+
+  const loadFollowUps = async (generalAutoresponderID: string) => {
+    try {
+      const { data: followUpConfigs, error } = await supabase
+        .from('autoresponder_followup_configs')
+        .select('*')
+        .eq('general_autoresponder_id', generalAutoresponderID)
+        .order('sequence_order');
+
+      if (error) {
+        console.error('❌ Error cargando follow-ups:', error);
+        return;
+      }
+
+      if (followUpConfigs) {
+        const followUpsData: FollowUp[] = followUpConfigs.map(config => ({
+          id: config.id,
+          delay_hours: config.delay_hours,
+          message_text: config.message_text,
+          is_active: config.is_active
+        }));
+        
+        setFollowUps(followUpsData);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando follow-ups:', error);
+    }
+  };
 
   const addKeyword = () => {
     if (keywordInput.trim() && !keywords.includes(keywordInput.trim().toLowerCase())) {
@@ -125,6 +158,9 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
 
         if (error) throw error;
 
+        // Guardar follow-ups para actualización
+        await saveFollowUps(autoresponder.id, 'general');
+
         toast({
           title: "¡Actualizado!",
           description: "Autoresponder general actualizado exitosamente",
@@ -139,6 +175,9 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
           .single();
 
         if (error) throw error;
+
+        // Guardar follow-ups para nuevo autoresponder
+        await saveFollowUps(newAutoresponder.id, 'general');
 
         // Si se seleccionó "Aplicar a todas las publicaciones", crear asignaciones automáticas
         if (applyToAllPosts && newAutoresponder) {
@@ -243,6 +282,49 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveFollowUps = async (autoresponderID: string, type: 'general') => {
+    try {
+      // Eliminar follow-ups existentes
+      const { error: deleteError } = await supabase
+        .from('autoresponder_followup_configs')
+        .delete()
+        .eq('general_autoresponder_id', autoresponderID);
+
+      if (deleteError) {
+        console.error('⚠️ Error eliminando follow-ups previos:', deleteError);
+      }
+
+      // Insertar nuevos follow-ups
+      if (followUps.length > 0) {
+        const followUpConfigs = followUps
+          .filter(f => f.message_text.trim() && f.is_active)
+          .map((followUp, index) => ({
+            general_autoresponder_id: autoresponderID,
+            sequence_order: index + 1,
+            delay_hours: followUp.delay_hours,
+            message_text: followUp.message_text.trim(),
+            is_active: followUp.is_active
+          }));
+
+        if (followUpConfigs.length > 0) {
+          const { error: followUpError } = await supabase
+            .from('autoresponder_followup_configs')
+            .insert(followUpConfigs);
+
+          if (followUpError) {
+            console.error('❌ Error guardando follow-ups:', followUpError);
+            throw followUpError;
+          }
+          
+          console.log('✅ Follow-ups guardados:', followUpConfigs.length);
+        }
+      }
+    } catch (error) {
+      console.error('💥 Error guardando follow-ups:', error);
+      throw error;
     }
   };
 
@@ -396,6 +478,12 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
               </div>
             </div>
           )}
+
+          <FollowUpConfig
+            followUps={followUps}
+            onChange={setFollowUps}
+            maxFollowUps={4}
+          />
 
           {/* Botones */}
           <div className="flex gap-3 pt-4">

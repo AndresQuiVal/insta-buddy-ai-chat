@@ -476,6 +476,96 @@ async function createFollowUps(autoresponderMessageId: string, senderId: string)
   }
 }
 
+// Función para crear follow-ups de comment autoresponders
+async function createCommentFollowUps(autoresponderID: string, commenterId: string, autoresponderType: string) {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  )
+  
+  try {
+    console.log('🔍 Buscando configuración de follow-ups para autoresponder:', autoresponderID, 'tipo:', autoresponderType)
+    
+    let followUpQuery;
+    
+    if (autoresponderType === 'general') {
+      followUpQuery = supabase
+        .from('autoresponder_followup_configs')
+        .select('*')
+        .eq('general_autoresponder_id', autoresponderID)
+        .eq('is_active', true)
+        .order('sequence_order')
+    } else {
+      followUpQuery = supabase
+        .from('autoresponder_followup_configs')
+        .select('*')
+        .eq('comment_autoresponder_id', autoresponderID)
+        .eq('is_active', true)
+        .order('sequence_order')
+    }
+
+    const { data: followUpConfigs, error: configError } = await followUpQuery
+
+    if (configError) {
+      console.error('❌ Error buscando configuración de follow-ups:', configError)
+      return
+    }
+
+    if (!followUpConfigs || followUpConfigs.length === 0) {
+      console.log('ℹ️ No hay follow-ups configurados para este autoresponder de comentarios')
+      return
+    }
+
+    console.log('✅ Follow-ups configurados encontrados:', followUpConfigs.length)
+
+    const currentTime = new Date()
+    let accumulatedHours = 0
+
+    const followupsToCreate = []
+
+    for (const config of followUpConfigs) {
+      accumulatedHours += config.delay_hours
+      
+      // Validar que no exceda 23 horas por follow-up individual
+      if (config.delay_hours > 23) {
+        console.log(`⚠️ Follow-up ${config.sequence_order} excede 23 horas (${config.delay_hours}h) - omitiendo`)
+        continue
+      }
+
+      const followupTime = new Date(currentTime.getTime() + (accumulatedHours * 60 * 60 * 1000))
+      
+      followupsToCreate.push({
+        sender_id: commenterId,
+        autoresponder_message_id: autoresponderType === 'specific' ? autoresponderID : null,
+        comment_autoresponder_id: autoresponderType === 'specific' ? autoresponderID : null,
+        general_autoresponder_id: autoresponderType === 'general' ? autoresponderID : null,
+        initial_message_sent_at: currentTime.toISOString(),
+        followup_scheduled_at: followupTime.toISOString(),
+        followup_message_text: config.message_text
+      })
+
+      console.log(`📅 Follow-up ${config.sequence_order} programado para: ${followupTime.toISOString()} (+${accumulatedHours}h total)`)
+    }
+
+    if (followupsToCreate.length > 0) {
+      const { error: insertError } = await supabase
+        .from('autoresponder_followups')
+        .insert(followupsToCreate)
+
+      if (insertError) {
+        console.error('❌ Error insertando follow-ups:', insertError)
+      } else {
+        console.log('✅ Follow-ups de comentarios creados exitosamente:', followupsToCreate.length)
+      }
+    } else {
+      console.log('ℹ️ No hay follow-ups válidos para crear')
+    }
+
+  } catch (error) {
+    console.error('💥 Error creando follow-ups de comentarios:', error)
+  }
+}
+
 async function processComment(commentData: any, supabase: any, instagramAccountId: string) {
   console.log('💬 ===== PROCESANDO COMENTARIO =====')
   console.log('📋 Datos del comentario:', JSON.stringify(commentData, null, 2))
@@ -924,6 +1014,10 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     }
 
     await supabase.from(logTable).insert(logData)
+
+    // CREAR FOLLOW-UPS PARA COMMENT AUTORESPONDERS
+    console.log('📅 ===== CREANDO FOLLOW-UPS PARA COMMENT AUTORESPONDER =====')
+    await createCommentFollowUps(selectedAutoresponder.id, commenterId, autoresponderType)
 
     if (publicReplySuccess) {
       console.log('🎉 PROCESAMIENTO COMPLETO: Reply público Y private reply enviados')

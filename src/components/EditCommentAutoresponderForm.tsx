@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSqua
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import FollowUpConfig, { FollowUp } from './FollowUpConfig';
 
 interface CommentAutoresponder {
   id: string;
@@ -39,9 +40,43 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
     autoresponder.public_reply_messages || ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']
   );
   const [newPublicReply, setNewPublicReply] = useState('');
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
+
+  // Cargar follow-ups existentes al montar el componente
+  useEffect(() => {
+    loadFollowUps();
+  }, [autoresponder.id]);
+
+  const loadFollowUps = async () => {
+    try {
+      const { data: followUpConfigs, error } = await supabase
+        .from('autoresponder_followup_configs')
+        .select('*')
+        .eq('comment_autoresponder_id', autoresponder.id)
+        .order('sequence_order');
+
+      if (error) {
+        console.error('❌ Error cargando follow-ups:', error);
+        return;
+      }
+
+      if (followUpConfigs) {
+        const followUpsData: FollowUp[] = followUpConfigs.map(config => ({
+          id: config.id,
+          delay_hours: config.delay_hours,
+          message_text: config.message_text,
+          is_active: config.is_active
+        }));
+        
+        setFollowUps(followUpsData);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando follow-ups:', error);
+    }
+  };
 
   const addKeyword = () => {
     if (newKeyword.trim() && !keywords.includes(newKeyword.trim().toLowerCase())) {
@@ -152,6 +187,9 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
 
       console.log('✅ Autoresponder de comentarios actualizado exitosamente');
 
+      // Guardar follow-ups
+      await saveFollowUps();
+
       toast({
         title: "¡Autoresponder actualizado!",
         description: `Se actualizó para @${currentUser.username} con ${publicReplyMessages.length} mensajes de respuesta`,
@@ -168,6 +206,49 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const saveFollowUps = async () => {
+    try {
+      // Eliminar follow-ups existentes
+      const { error: deleteError } = await supabase
+        .from('autoresponder_followup_configs')
+        .delete()
+        .eq('comment_autoresponder_id', autoresponder.id);
+
+      if (deleteError) {
+        console.error('⚠️ Error eliminando follow-ups previos:', deleteError);
+      }
+
+      // Insertar nuevos follow-ups
+      if (followUps.length > 0) {
+        const followUpConfigs = followUps
+          .filter(f => f.message_text.trim() && f.is_active)
+          .map((followUp, index) => ({
+            comment_autoresponder_id: autoresponder.id,
+            sequence_order: index + 1,
+            delay_hours: followUp.delay_hours,
+            message_text: followUp.message_text.trim(),
+            is_active: followUp.is_active
+          }));
+
+        if (followUpConfigs.length > 0) {
+          const { error: followUpError } = await supabase
+            .from('autoresponder_followup_configs')
+            .insert(followUpConfigs);
+
+          if (followUpError) {
+            console.error('❌ Error guardando follow-ups:', followUpError);
+            throw followUpError;
+          }
+          
+          console.log('✅ Follow-ups guardados:', followUpConfigs.length);
+        }
+      }
+    } catch (error) {
+      console.error('💥 Error guardando follow-ups:', error);
+      throw error;
     }
   };
 
@@ -349,6 +430,12 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
               {dmMessage.length}/1000 caracteres
             </p>
           </div>
+
+          <FollowUpConfig
+            followUps={followUps}
+            onChange={setFollowUps}
+            maxFollowUps={4}
+          />
 
           {/* Botones */}
           <div className="flex gap-3 pt-4">

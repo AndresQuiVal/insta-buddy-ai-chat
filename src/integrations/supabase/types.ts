@@ -16,9 +16,11 @@ export type Database = {
     Tables: {
       autoresponder_followup_configs: {
         Row: {
-          autoresponder_message_id: string
+          autoresponder_message_id: string | null
+          comment_autoresponder_id: string | null
           created_at: string
           delay_hours: number
+          general_autoresponder_id: string | null
           id: string
           is_active: boolean
           message_text: string
@@ -26,9 +28,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          autoresponder_message_id: string
+          autoresponder_message_id?: string | null
+          comment_autoresponder_id?: string | null
           created_at?: string
           delay_hours: number
+          general_autoresponder_id?: string | null
           id?: string
           is_active?: boolean
           message_text: string
@@ -36,9 +40,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          autoresponder_message_id?: string
+          autoresponder_message_id?: string | null
+          comment_autoresponder_id?: string | null
           created_at?: string
           delay_hours?: number
+          general_autoresponder_id?: string | null
           id?: string
           is_active?: boolean
           message_text?: string
@@ -51,6 +57,20 @@ export type Database = {
             columns: ["autoresponder_message_id"]
             isOneToOne: false
             referencedRelation: "autoresponder_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_followup_configs_comment_autoresponder"
+            columns: ["comment_autoresponder_id"]
+            isOneToOne: false
+            referencedRelation: "comment_autoresponders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_followup_configs_general_autoresponder"
+            columns: ["general_autoresponder_id"]
+            isOneToOne: false
+            referencedRelation: "general_comment_autoresponders"
             referencedColumns: ["id"]
           },
         ]

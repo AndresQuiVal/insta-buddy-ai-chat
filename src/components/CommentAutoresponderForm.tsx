@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { InstagramPost, formatPostDate, truncateCaption } from '@/services/instagramPostsService';
+import FollowUpConfig, { FollowUp } from './FollowUpConfig';
 
 export interface CommentAutoresponderConfig {
   name: string;
@@ -37,6 +38,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
     '¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊'
   ]);
   const [newPublicReply, setNewPublicReply] = useState('');
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -155,6 +157,32 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
       }
 
       console.log('✅ Autoresponder de comentarios guardado exitosamente:', data);
+
+      // Guardar follow-ups
+      if (followUps.length > 0) {
+        const followUpConfigs = followUps
+          .filter(f => f.message_text.trim() && f.is_active)
+          .map((followUp, index) => ({
+            comment_autoresponder_id: data.id,
+            sequence_order: index + 1,
+            delay_hours: followUp.delay_hours,
+            message_text: followUp.message_text.trim(),
+            is_active: followUp.is_active
+          }));
+
+        if (followUpConfigs.length > 0) {
+          const { error: followUpError } = await supabase
+            .from('autoresponder_followup_configs')
+            .insert(followUpConfigs);
+
+          if (followUpError) {
+            console.error('❌ Error guardando follow-ups:', followUpError);
+            // No throw, porque ya se guardó el autoresponder principal
+          } else {
+            console.log('✅ Follow-ups guardados:', followUpConfigs.length);
+          }
+        }
+      }
 
       toast({
         title: "¡Autoresponder creado!",
@@ -381,6 +409,12 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
               {dmMessage.length}/1000 caracteres
             </p>
           </div>
+
+          <FollowUpConfig
+            followUps={followUps}
+            onChange={setFollowUps}
+            maxFollowUps={4}
+          />
 
           {/* Botones */}
           <div className="flex gap-3 pt-4">
