@@ -473,6 +473,56 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     }
   }
 
+  // PASO 1.5: Buscar autoresponders generales asignados a este post
+  if (commentAutoresponders.length === 0) {
+    console.log('🔍 Buscando autoresponders generales asignados a este post...')
+    
+    const { data: generalAssignments, error: assignmentError } = await supabase
+      .from('post_autoresponder_assignments')
+      .select(`
+        id,
+        is_active,
+        general_comment_autoresponders!inner(
+          id,
+          name,
+          keywords,
+          dm_message,
+          public_reply_messages,
+          use_buttons,
+          buttons,
+          is_active
+        )
+      `)
+      .eq('post_id', mediaId)
+      .eq('is_active', true)
+      .eq('general_comment_autoresponders.is_active', true)
+
+    if (assignmentError) {
+      console.error('❌ Error buscando asignaciones generales:', assignmentError)
+    } else if (generalAssignments && generalAssignments.length > 0) {
+      console.log('✅ Autoresponders generales encontrados:', generalAssignments.length)
+      
+      // Convertir el formato a comment_autoresponders
+      commentAutoresponders = generalAssignments.map(assignment => ({
+        id: assignment.general_comment_autoresponders.id,
+        name: assignment.general_comment_autoresponders.name,
+        keywords: assignment.general_comment_autoresponders.keywords,
+        dm_message: assignment.general_comment_autoresponders.dm_message,
+        public_reply_messages: assignment.general_comment_autoresponders.public_reply_messages,
+        use_buttons: assignment.general_comment_autoresponders.use_buttons,
+        buttons: assignment.general_comment_autoresponders.buttons,
+        is_active: assignment.general_comment_autoresponders.is_active,
+        post_id: mediaId,
+        post_url: '',
+        post_caption: '',
+        user_id: instagramAccountId
+      }))
+      
+      autoresponderType = 'general'
+      console.log('🔄 Convertidos a formato estándar:', commentAutoresponders.length)
+    }
+  }
+
   // Si no encontró nada Y hay original_media_id, buscar por original_media_id
   if ((!commentAutoresponders || commentAutoresponders.length === 0) && originalMediaId) {
     console.log('🔄 No encontrado por media_id, buscando por original_media_id:', originalMediaId)
