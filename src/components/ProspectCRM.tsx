@@ -46,8 +46,6 @@ const ProspectCRM = () => {
     try {
       setLoading(true);
       console.log('🔄 Cargando prospectos para CRM...');
-      console.log('👤 Usuario actual:', currentUser.username);
-      console.log('🆔 currentUser.id:', currentUser.id);
 
       const { data: prospects, error } = await supabase
         .from('prospects')
@@ -68,9 +66,6 @@ const ProspectCRM = () => {
         console.error('❌ Error cargando prospectos:', error);
         throw error;
       }
-
-      console.log('📊 Prospectos encontrados:', prospects?.length || 0);
-      console.log('📋 Prospectos raw:', prospects);
 
       // Procesar prospectos y asignar a columnas
       const processedProspects: ProspectData[] = prospects?.map(prospect => {
