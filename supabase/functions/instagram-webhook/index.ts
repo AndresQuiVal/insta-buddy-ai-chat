@@ -855,9 +855,30 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('✅ Usuario encontrado:', instagramUser.username)
   console.log('🔑 Access Token (primeros 20 chars):', instagramUser.access_token ? instagramUser.access_token.substring(0, 20) + '...' : 'NO TOKEN')
 
-  console.log('🚀 ===== AUTORESPONDERS DE COMENTARIOS: SIEMPRE ENVIAR =====')
-  console.log('💡 Los autoresponders de comentarios NO verifican conversaciones previas')
-  console.log('💡 Se enviarán SIEMPRE que coincidan las palabras clave del post configurado')
+  // VERIFICAR SI YA SE RESPONDIÓ A ESTE COMENTARIO
+  console.log('🔍 ===== VERIFICANDO SI YA SE RESPONDIÓ A ESTE COMENTARIO =====')
+  console.log('🆔 Comment ID a verificar:', commentId)
+  console.log('👤 Commenter ID a verificar:', commenterId)
+  
+  const { data: existingResponse, error: logCheckError } = await supabase
+    .from('comment_autoresponder_log')
+    .select('*')
+    .eq('commenter_instagram_id', commenterId)
+    .eq('webhook_data->comment_id', commentId)
+    .limit(1)
+
+  if (logCheckError) {
+    console.error('❌ Error verificando log de comentarios:', logCheckError)
+  } else if (existingResponse && existingResponse.length > 0) {
+    console.log('⏭️ YA SE RESPONDIÓ A ESTE COMENTARIO ANTES - SALTANDO')
+    console.log('📋 Log existente:', existingResponse[0])
+    console.log('⏰ Respondido anteriormente el:', existingResponse[0].dm_sent_at)
+    return
+  }
+  
+  console.log('✅ Comentario nuevo - procediendo a responder')
+  console.log('🚀 ===== ENVIANDO AUTORESPONDER DE COMENTARIO =====')
+  console.log('💡 Verificación completada - no hay respuestas previas a este comentario')
 
   const accessToken = instagramUser.access_token
   
