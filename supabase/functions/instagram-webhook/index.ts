@@ -860,11 +860,13 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('🆔 Comment ID a verificar:', commentId)
   console.log('👤 Commenter ID a verificar:', commenterId)
   
+  // Verificación más robusta: buscar por commenter_instagram_id y comment_text
   const { data: existingResponse, error: logCheckError } = await supabase
     .from('comment_autoresponder_log')
     .select('*')
     .eq('commenter_instagram_id', commenterId)
-    .eq('webhook_data->comment_id', commentId)
+    .eq('comment_text', commentText)
+    .gte('dm_sent_at', new Date(Date.now() - 60 * 60 * 1000).toISOString()) // Últimas 1 hora
     .limit(1)
 
   if (logCheckError) {
@@ -873,6 +875,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     console.log('⏭️ YA SE RESPONDIÓ A ESTE COMENTARIO ANTES - SALTANDO')
     console.log('📋 Log existente:', existingResponse[0])
     console.log('⏰ Respondido anteriormente el:', existingResponse[0].dm_sent_at)
+    console.log('💬 Comentario idéntico ya procesado')
     return
   }
   
