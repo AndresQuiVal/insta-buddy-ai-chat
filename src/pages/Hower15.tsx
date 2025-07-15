@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Search, MessageCircle, Zap, Target, TrendingUp, Users, Bot, ChevronDown, Plus } from "lucide-react";
+import { Sparkles, Search, MessageCircle, Zap, Target, TrendingUp, Users, Bot, ChevronDown, Plus, ExternalLink } from "lucide-react";
 import accountSearchFollowers from "@/assets/account-search-followers.gif";
 import messageIdeas from "@/assets/message-ideas.gif";
 
@@ -134,6 +134,67 @@ const Hower15 = () => {
               Ve las funcionalidades aquí abajo
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Quick Access Links Section */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Acceso Directo a Funcionalidades</h2>
+          <p className="text-xl text-muted-foreground">
+            Links directos para cada sección de la aplicación
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { 
+              icon: <BarChart3 className="h-8 w-8" />, 
+              title: "Dashboard", 
+              description: "Métricas y estadísticas",
+              link: "/dashboard/dashboard"
+            },
+            { 
+              icon: <Users className="h-8 w-8" />, 
+              title: "Mis Prospectos", 
+              description: "CRM y gestión",
+              link: "/dashboard/my_prospects"
+            },
+            { 
+              icon: <Search className="h-8 w-8" />, 
+              title: "Prospecta", 
+              description: "Herramientas de búsqueda",
+              link: "/dashboard/prospect"
+            },
+            { 
+              icon: <Settings className="h-8 w-8" />, 
+              title: "Configuración", 
+              description: "Ajustes y personalización",
+              link: "/dashboard/settings"
+            }
+          ].map((item, index) => (
+            <Card key={index} className="text-center border-2 hover:border-[hsl(var(--hower-primary))] transition-all hover:shadow-lg group">
+              <CardContent className="pt-8 pb-6">
+                <div className="text-[hsl(var(--hower-primary))] mb-4 flex justify-center group-hover:scale-110 transition-transform">
+                  {item.icon}
+                </div>
+                <div className="text-xl font-bold text-[hsl(var(--hower-primary))] mb-2">
+                  {item.title}
+                </div>
+                <div className="text-muted-foreground font-medium mb-4">
+                  {item.description}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full"
+                  onClick={() => window.open(item.link, '_blank')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Ir a {item.title}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
 
