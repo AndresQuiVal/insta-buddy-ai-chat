@@ -3,15 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Zap } from "lucide-react";
 
-const Pricing = () => {
+const PricingIncruises = () => {
 
   const plans = [
     {
-      id: "3-months",
+      id: "3-months-incruises",
       title: "Plan 3 Meses",
       subtitle: "Comienza tu transformación",
       description: "Perfecto para iniciar tu estrategia de prospección",
-      price: 88,
+      price: 63,
       duration: "3 meses",
       popular: false,
       icon: <Zap className="h-6 w-6" />,
@@ -32,11 +32,11 @@ const Pricing = () => {
       savings: "Ahorras 15 días de costo de Hower + 5 NUEVAS herramientas"
     },
     {
-      id: "6-months",
+      id: "6-months-incruises",
       title: "Plan 6 Meses",
       subtitle: "Acelera tu crecimiento",
       description: "El plan más popular para resultados consistentes",
-      price: 175,
+      price: 125,
       duration: "6 meses",
       popular: true,
       icon: <Check className="h-6 w-6" />,
@@ -60,11 +60,11 @@ const Pricing = () => {
       savings: "1 mes gratis + 8 NUEVOS productos GRATUITOS"
     },
     {
-      id: "12-months",
+      id: "12-months-incruises",
       title: "Plan 1 Año",
       subtitle: "Domina la prospección",
       description: "La inversión definitiva para transformar tu negocio",
-      price: 349.99,
+      price: 249.99,
       duration: "12 meses",
       popular: false,
       icon: <Crown className="h-6 w-6" />,
@@ -91,7 +91,7 @@ const Pricing = () => {
 
   const handlePurchase = (planId: string) => {
     // Aquí se integrará con Stripe más adelante
-    console.log(`Purchasing plan: ${planId}`);
+    console.log(`Purchasing Incruises plan: ${planId}`);
   };
 
   return (
@@ -99,11 +99,14 @@ const Pricing = () => {
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16 animate-fade-in">
+          <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-hower-primary to-hower-medium text-white">
+            Descuento Especial Incruises
+          </Badge>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-hower-primary to-hower-medium bg-clip-text text-transparent">
             Hower - Transforma tu Prospección
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Elige el plan perfecto para acelerar tu crecimiento con Hower. Herramientas de IA, mentorías exclusivas y acceso VIP a las mejores estrategias de prospección.
+            Planes exclusivos para miembros de Incruises. Elige el plan perfecto para acelerar tu crecimiento con Hower. Herramientas de IA, mentorías exclusivas y acceso VIP a las mejores estrategias de prospección.
           </p>
         </div>
 
@@ -137,6 +140,9 @@ const Pricing = () => {
                     <span className="text-lg text-muted-foreground font-normal"> USD</span>
                   </div>
                   <div className="text-sm text-muted-foreground">{plan.duration}</div>
+                  <Badge variant="secondary" className="mt-2 bg-green-100 text-green-700">
+                    Descuento Incruises
+                  </Badge>
                 </div>
               </CardHeader>
 
@@ -212,4 +218,4 @@ const Pricing = () => {
   );
 };
 
-export default Pricing;
+export default PricingIncruises;

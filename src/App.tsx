@@ -13,6 +13,7 @@ import ProspectsDemo from "./pages/ProspectsDemo";
 import Debug from "./pages/Debug";
 import Hower15 from "./pages/Hower15";
 import Pricing from "./pages/Pricing";
+import PricingIncruises from "./pages/PricingIncruises";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/debug" element={<Debug />} />
           <Route path="/hower-1-5" element={<Hower15 />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/pricing-incruises" element={<PricingIncruises />} />
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
