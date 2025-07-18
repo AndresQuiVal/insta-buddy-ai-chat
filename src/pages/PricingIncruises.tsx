@@ -91,9 +91,9 @@ const PricingIncruises = () => {
 
   const handlePurchase = (planId: string) => {
     const stripeLinks = {
-      "3-months-incruises": "https://buy.stripe.com/bJe6oG9gYbJA2eV9p63wQ0A",
-      "6-months-incruises": "https://buy.stripe.com/00w7sK1Ow9BsaLr44M3wQ0D", 
-      "12-months-incruises": "https://buy.stripe.com/28EcN4eBi7tkdXDeJq3wQ0C"
+      "3-months-incruises": "https://buy.stripe.com/3cIcN49gY3d46vbata3wQ0F",
+      "6-months-incruises": "https://buy.stripe.com/fZufZg50IeVM7zfcBi3wQ0G", 
+      "12-months-incruises": "https://buy.stripe.com/fZufZg1Ow8xo3iZ6cU3wQ0H"
     };
     
     const link = stripeLinks[planId as keyof typeof stripeLinks];
