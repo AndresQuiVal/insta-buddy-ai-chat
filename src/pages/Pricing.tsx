@@ -185,9 +185,9 @@ const Pricing = () => {
                   onClick={() => handlePurchase(plan.id)}
                   className={`w-full ${
                     plan.popular
-                      ? 'bg-gradient-to-r from-hower-primary to-hower-medium hover:opacity-90'
-                      : 'bg-hower-primary hover:bg-hower-medium'
-                  } text-white font-semibold py-3`}
+                      ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80'
+                      : 'bg-primary hover:bg-primary/90'
+                  } text-white font-semibold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200`}
                   size="lg"
                 >
                   Obtener Plan {plan.title.split(' ')[1]}
