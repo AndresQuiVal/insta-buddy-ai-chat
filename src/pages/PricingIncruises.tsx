@@ -112,8 +112,15 @@ const PricingIncruises = () => {
           <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-hower-primary to-hower-medium text-white">
             Descuento Especial Incruises
           </Badge>
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/lovable-uploads/c0b3827b-3db7-4c68-b4ed-7745f1a18c28.png" 
+              alt="Hower Logo" 
+              className="h-16 w-auto"
+            />
+          </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-hower-primary to-hower-medium bg-clip-text text-transparent">
-            Hower - Transforma tu Prospección
+            Transforma tu Prospección
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
             Planes exclusivos para miembros de Incruises. Elige el plan perfecto para acelerar tu crecimiento con Hower. Herramientas de IA, mentorías exclusivas y acceso VIP a las mejores estrategias de prospección.
