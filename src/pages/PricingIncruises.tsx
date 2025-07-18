@@ -90,8 +90,18 @@ const PricingIncruises = () => {
   ];
 
   const handlePurchase = (planId: string) => {
-    // Aquí se integrará con Stripe más adelante
-    console.log(`Purchasing Incruises plan: ${planId}`);
+    const stripeLinks = {
+      "3-months-incruises": "https://buy.stripe.com/bJe6oG9gYbJA2eV9p63wQ0A",
+      "6-months-incruises": "https://buy.stripe.com/00waEWeBi4h8bPvdFm3wQ0B", 
+      "12-months-incruises": "https://buy.stripe.com/28EcN4eBi7tkdXDeJq3wQ0C"
+    };
+    
+    const link = stripeLinks[planId as keyof typeof stripeLinks];
+    if (link) {
+      window.open(link, '_blank');
+    } else {
+      console.log(`Plan not found: ${planId}`);
+    }
   };
 
   return (
