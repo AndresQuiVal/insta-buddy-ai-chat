@@ -294,7 +294,6 @@ export type Database = {
           post_id: string
           post_url: string
           public_reply_messages: string[] | null
-          require_follower: boolean
           updated_at: string
           use_buttons: boolean | null
           user_id: string
@@ -311,7 +310,6 @@ export type Database = {
           post_id: string
           post_url: string
           public_reply_messages?: string[] | null
-          require_follower?: boolean
           updated_at?: string
           use_buttons?: boolean | null
           user_id: string
@@ -328,7 +326,6 @@ export type Database = {
           post_id?: string
           post_url?: string
           public_reply_messages?: string[] | null
-          require_follower?: boolean
           updated_at?: string
           use_buttons?: boolean | null
           user_id?: string
@@ -346,7 +343,6 @@ export type Database = {
           keywords: string[]
           name: string
           public_reply_messages: string[] | null
-          require_follower: boolean
           updated_at: string
           use_buttons: boolean | null
           user_id: string
@@ -361,7 +357,6 @@ export type Database = {
           keywords?: string[]
           name: string
           public_reply_messages?: string[] | null
-          require_follower?: boolean
           updated_at?: string
           use_buttons?: boolean | null
           user_id: string
@@ -376,7 +371,6 @@ export type Database = {
           keywords?: string[]
           name?: string
           public_reply_messages?: string[] | null
-          require_follower?: boolean
           updated_at?: string
           use_buttons?: boolean | null
           user_id?: string

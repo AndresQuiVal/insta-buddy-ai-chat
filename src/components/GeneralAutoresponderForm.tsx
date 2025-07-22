@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Plus, X, MessageSquare, Key, Globe, UserCheck } from 'lucide-react';
+import { ArrowLeft, Plus, X, MessageSquare, Key, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
@@ -19,7 +18,6 @@ interface GeneralAutoresponder {
   keywords: string[];
   dm_message: string;
   public_reply_messages: string[];
-  require_follower?: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -39,7 +37,6 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
   const [publicReplies, setPublicReplies] = useState<string[]>(['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
   const [newPublicReply, setNewPublicReply] = useState('');
   const [applyToAllPosts, setApplyToAllPosts] = useState(false);
-  const [requireFollower, setRequireFollower] = useState(false);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -51,7 +48,6 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       setKeywords(autoresponder.keywords);
       setDmMessage(autoresponder.dm_message);
       setPublicReplies(autoresponder.public_reply_messages || ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
-      setRequireFollower(autoresponder.require_follower || false);
       
       // Cargar follow-ups existentes
       loadFollowUps(autoresponder.id);
@@ -147,7 +143,6 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
         dm_message: dmMessage.trim(),
         public_reply_messages: publicReplies.filter(reply => reply.trim()),
         auto_assign_to_all_posts: applyToAllPosts,
-        require_follower: requireFollower,
         is_active: true,
         updated_at: new Date().toISOString()
       };
@@ -482,28 +477,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
                 </div>
               </div>
             </div>
-            )}
-
-          {/* Verificar seguidor */}
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <div className="flex items-start space-x-3">
-              <Switch
-                id="requireFollowerGeneral"
-                checked={requireFollower}
-                onCheckedChange={setRequireFollower}
-              />
-              <div className="flex-1">
-                <label htmlFor="requireFollowerGeneral" className="text-sm font-medium text-yellow-900 cursor-pointer flex items-center gap-2">
-                  <UserCheck className="w-4 h-4" />
-                  Solo enviar mensaje a usuarios que me siguen
-                </label>
-                <p className="text-xs text-yellow-700 mt-1">
-                  Si está activado, solo se enviará el mensaje DM a usuarios que sigan tu cuenta de Instagram. 
-                  Los usuarios que no te siguen no recibirán ningún mensaje.
-                </p>
-              </div>
-            </div>
-          </div>
+          )}
 
           <FollowUpConfig
             followUps={followUps}
