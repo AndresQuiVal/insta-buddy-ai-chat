@@ -958,6 +958,127 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     publicReplyError = { message: publicException.message }
   }
 
+  // VERIFICAR SI REQUIRE_FOLLOWER ESTÁ ACTIVADO
+  console.log('🔍 ===== VERIFICANDO CONFIGURACIÓN REQUIRE_FOLLOWER =====')
+  
+  if (selectedAutoresponder.require_follower) {
+    console.log('⚠️ REQUIRE_FOLLOWER está ACTIVADO - verificando si el usuario sigue la cuenta')
+    
+    try {
+      const { data: followerCheck, error: followerError } = await supabase.functions.invoke('instagram-check-follower', {
+        body: {
+          commenter_id: commenterId,
+          business_account_id: instagramAccountId
+        }
+      })
+
+      if (followerError) {
+        console.error('❌ Error verificando seguidor:', followerError)
+        console.log('🚫 Por error en verificación, NO se enviará mensaje DM')
+        
+        // Solo guardar log de que se intentó pero falló la verificación
+        const logData = {
+          comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
+          commenter_instagram_id: commenterId,
+          comment_text: commentText,
+          dm_message_sent: 'SKIPPED: Error verificando si sigue la cuenta',
+          webhook_data: {
+            comment_id: commentId,
+            media_id: mediaId,
+            commenter_username: commenterUsername,
+            autoresponder_type: autoresponderType,
+            autoresponder_name: selectedAutoresponder.name,
+            general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
+            require_follower_enabled: true,
+            follower_check_error: followerError,
+            public_reply_attempted: true,
+            public_reply_success: publicReplySuccess,
+            public_reply_error: publicReplyError,
+            public_reply_id: publicReplyId,
+            public_reply_message: publicReplyMessage,
+            processed_at: new Date().toISOString(),
+            note: 'DM OMITIDO: Error verificando seguidor'
+          }
+        }
+        
+        await supabase.from('comment_autoresponder_log').insert(logData)
+        return
+      }
+
+      console.log('📊 Resultado verificación seguidor:', followerCheck)
+      
+      if (!followerCheck || !followerCheck.follows) {
+        console.log('🚫 El usuario NO SIGUE la cuenta - NO se enviará mensaje DM')
+        console.log('✅ Solo se envió respuesta pública, DM omitido por configuración')
+        
+        // Guardar log de que se omitió por no seguir
+        const logData = {
+          comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
+          commenter_instagram_id: commenterId,
+          comment_text: commentText,
+          dm_message_sent: 'SKIPPED: Usuario no sigue la cuenta',
+          webhook_data: {
+            comment_id: commentId,
+            media_id: mediaId,
+            commenter_username: commenterUsername,
+            autoresponder_type: autoresponderType,
+            autoresponder_name: selectedAutoresponder.name,
+            general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
+            require_follower_enabled: true,
+            follows_account: false,
+            follower_check_result: followerCheck,
+            public_reply_attempted: true,
+            public_reply_success: publicReplySuccess,
+            public_reply_error: publicReplyError,
+            public_reply_id: publicReplyId,
+            public_reply_message: publicReplyMessage,
+            processed_at: new Date().toISOString(),
+            note: 'DM OMITIDO: Usuario no sigue la cuenta (require_follower activado)'
+          }
+        }
+        
+        await supabase.from('comment_autoresponder_log').insert(logData)
+        return
+      }
+      
+      console.log('✅ El usuario SÍ SIGUE la cuenta - procediendo a enviar DM')
+      
+    } catch (followerCheckError) {
+      console.error('💥 Excepción verificando seguidor:', followerCheckError)
+      console.log('🚫 Por excepción en verificación, NO se enviará mensaje DM')
+      
+      // Guardar log de excepción
+      const logData = {
+        comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
+        commenter_instagram_id: commenterId,
+        comment_text: commentText,
+        dm_message_sent: `SKIPPED: Excepción verificando seguidor - ${followerCheckError.message}`,
+        webhook_data: {
+          comment_id: commentId,
+          media_id: mediaId,
+          commenter_username: commenterUsername,
+          autoresponder_type: autoresponderType,
+          autoresponder_name: selectedAutoresponder.name,
+          general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
+          require_follower_enabled: true,
+          follower_check_exception: followerCheckError.message,
+          public_reply_attempted: true,
+          public_reply_success: publicReplySuccess,
+          public_reply_error: publicReplyError,
+          public_reply_id: publicReplyId,
+          public_reply_message: publicReplyMessage,
+          processed_at: new Date().toISOString(),
+          note: 'DM OMITIDO: Excepción verificando seguidor'
+        }
+      }
+      
+      await supabase.from('comment_autoresponder_log').insert(logData)
+      return
+    }
+  } else {
+    console.log('ℹ️ REQUIRE_FOLLOWER está DESACTIVADO - enviando DM sin verificación')
+  }
+
   console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
 
   try {
