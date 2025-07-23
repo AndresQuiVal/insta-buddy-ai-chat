@@ -71,11 +71,11 @@ serve(async (req) => {
       if (!followersResponse.ok) {
         console.error('❌ Error en API de Instagram:', followersData)
         
-        // Si hay error en la API, asumimos que sí sigue (modo permisivo)
+        // Si hay error en la API, no permitimos el envío por seguridad
         return new Response(
           JSON.stringify({ 
-            follows: true, 
-            note: 'Error en API, permitiendo envío por defecto',
+            follows: false, 
+            note: 'Error en API, bloqueando envío por seguridad',
             error: followersData.error 
           }),
           { 
@@ -104,11 +104,11 @@ serve(async (req) => {
     } catch (apiError) {
       console.error('💥 Error consultando API de Instagram:', apiError)
       
-      // En caso de error, asumimos que sí sigue (modo permisivo)
+      // En caso de error, no permitimos el envío por seguridad
       return new Response(
         JSON.stringify({ 
-          follows: true, 
-          note: 'Error consultando API, permitiendo envío por defecto' 
+          follows: false, 
+          note: 'Error consultando API, bloqueando envío por seguridad' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -121,7 +121,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        follows: true // Modo permisivo en caso de error
+        follows: false // Modo restrictivo en caso de error cuando require_follower está activado
       }),
       { 
         status: 500, 
