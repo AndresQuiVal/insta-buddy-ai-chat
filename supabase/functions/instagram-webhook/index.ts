@@ -217,108 +217,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
   console.log('📝 Texto:', messageText)
 
-  // VERIFICAR SI ES RESPUESTA A CONFIRMACIÓN DE SEGUIMIENTO
-  console.log('🔍 ===== VERIFICANDO CONFIRMACIÓN DE SEGUIMIENTO =====')
-  const { data: pendingConfirmations, error: pendingError } = await supabase
-    .from('pending_follower_confirmations')
-    .select('*')
-    .eq('commenter_id', senderId)
-    .eq('is_confirmed', false)
-    .eq('original_message_sent', false)
-    .gte('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false })
-    .limit(1)
-
-  if (!pendingError && pendingConfirmations && pendingConfirmations.length > 0) {
-    const pendingConfirmation = pendingConfirmations[0]
-    console.log('✅ Confirmación pendiente encontrada:', pendingConfirmation.id)
-    
-    // Detectar respuestas afirmativas
-    const affirmativeWords = [
-      'si', 'sí', 'yes', 'ya', 'claro', 'obvio', 'por supuesto', 'dale', 'ok', 
-      'okay', 'ya te sigo', 'listo', 'hecho', 'seguido', 'ya lo hice', 'desde hace tiempo',
-      'obvio que sí', 'claro que sí', 'por supuesto que sí', 'ya hace tiempo', 'por supuesto que te sigo'
-    ]
-    
-    const messageTextLower = messageText.toLowerCase().trim()
-    let isAffirmative = false
-    
-    for (const word of affirmativeWords) {
-      if (messageTextLower.includes(word)) {
-        isAffirmative = true
-        console.log('✅ Respuesta afirmativa detectada con palabra:', word)
-        break
-      }
-    }
-    
-    if (isAffirmative) {
-      console.log('🎉 CONFIRMACIÓN AFIRMATIVA - Enviando mensaje original del autoresponder')
-      
-      // Marcar como confirmado
-      const { error: updateError } = await supabase
-        .from('pending_follower_confirmations')
-        .update({
-          is_confirmed: true,
-          confirmed_at: new Date().toISOString(),
-          original_message_sent: true,
-          original_message_sent_at: new Date().toISOString()
-        })
-        .eq('id', pendingConfirmation.id)
-      
-      if (updateError) {
-        console.error('❌ Error actualizando confirmación:', updateError)
-      } else {
-        console.log('✅ Confirmación actualizada en BD')
-      }
-      
-      // Enviar mensaje original del autoresponder
-      console.log('🚀 ENVIANDO MENSAJE ORIGINAL DEL AUTORESPONDER...')
-      const { data: originalResponse, error: originalError } = await supabase.functions.invoke('instagram-send-message', {
-        body: {
-          recipient_id: senderId,
-          message_text: pendingConfirmation.original_dm_message,
-          instagram_user_id: recipientId
-        }
-      })
-      
-      if (originalError) {
-        console.error('❌ Error enviando mensaje original:', originalError)
-      } else {
-        console.log('✅ MENSAJE ORIGINAL ENVIADO EXITOSAMENTE')
-        console.log('📨 Respuesta:', JSON.stringify(originalResponse, null, 2))
-      }
-      
-      // Guardar mensaje en instagram_messages
-      const { error: saveOriginalError } = await supabase
-        .from('instagram_messages')
-        .insert({
-          instagram_user_id: instagramUser.id,
-          instagram_message_id: `follower_confirm_${Date.now()}`,
-          sender_id: recipientId,
-          recipient_id: senderId,
-          message_text: pendingConfirmation.original_dm_message,
-          message_type: 'sent',
-          timestamp: new Date().toISOString(),
-          raw_data: {
-            ...messagingEvent,
-            webhook_source: source,
-            processed_at: new Date().toISOString(),
-            follower_confirmation_type: 'original_message_after_confirmation'
-          }
-        })
-      
-      if (saveOriginalError) {
-        console.error('❌ Error guardando mensaje original en BD:', saveOriginalError)
-      }
-      
-      console.log('✅ CONFIRMACIÓN DE SEGUIMIENTO PROCESADA COMPLETAMENTE')
-      return // Terminar aquí, no continuar con autoresponders normales
-    } else {
-      console.log('❌ Respuesta no afirmativa - no enviando mensaje original')
-      console.log('💡 Esperando respuesta afirmativa del usuario')
-    }
-  }
-
   const isInvitation = messageText?.toLowerCase().includes('invitacion') || messageText?.toLowerCase().includes('invitación')
   const isPresentation = messageText?.toLowerCase().includes('presentacion') || messageText?.toLowerCase().includes('presentación')
   const isInscription = messageText?.toLowerCase().includes('inscripcion') || messageText?.toLowerCase().includes('inscripción')
@@ -1060,58 +958,133 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     publicReplyError = { message: publicException.message }
   }
 
-  console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
-  
-  // Verificar si require_follower está activado
-  let messageToSend = selectedAutoresponder.dm_message
-  let isFollowerConfirmation = false
+  // VERIFICAR SI REQUIRE_FOLLOWER ESTÁ ACTIVADO
+  console.log('🔍 ===== VERIFICANDO CONFIGURACIÓN REQUIRE_FOLLOWER =====')
   
   if (selectedAutoresponder.require_follower) {
-    console.log('🔒 REQUIRE_FOLLOWER activado - enviando mensaje de confirmación')
+    console.log('⚠️ REQUIRE_FOLLOWER está ACTIVADO - verificando si el usuario sigue la cuenta')
     
-    const confirmationMessages = [
-      "¡Hey! Gracias por tu comentario 🙌. Te paso lo que me pediste… pero antes, ¿ya me sigues?",
-      "¡Qué onda! Gracias por comentar 😎. Antes de mandarte lo que pediste, ¿ya estás siguiéndome?",
-      "¡Hola! Gracias por dejar tu comentario 🔥. Te envío lo que pediste, pero primero… ¿me sigues?",
-      "¡Ey, crack! Gracias por comentar 💪. Te paso lo que pediste en un momento… ¿ya le diste seguir?",
-      "¡Gracias por comentar! Antes de mandarte el material, ¿ya me sigues por acá?",
-      "¡Hey! Gracias por tu comentario 👌. Te paso lo tuyo enseguida… pero dime, ¿ya me sigues?",
-      "¡Hola! Me alegra ver tu comentario. Antes de pasarte el contenido, ¿ya estás siguiendo la cuenta?",
-      "¡Ey! Gracias por comentar 🤜🤛. Antes de mandarte lo que me pediste, ¿me sigues ya?",
-      "¡Hey, gracias por comentar! 🔥 Ahora, antes de enviarte lo que pediste… ¿ya me sigues?",
-      "¡Hola! Gracias por tu comentario. Para enviarte lo que pediste, solo dime… ¿ya me sigues?"
-    ]
-    
-    const randomIndex = Math.floor(Math.random() * confirmationMessages.length)
-    messageToSend = confirmationMessages[randomIndex]
-    isFollowerConfirmation = true
-    
-    console.log('🎲 Mensaje de confirmación seleccionado (índice', randomIndex + '):', messageToSend)
-    
-    // Guardar en pending_follower_confirmations
-    const { error: pendingError } = await supabase
-      .from('pending_follower_confirmations')
-      .insert({
-        commenter_id: commenterId,
-        commenter_username: commenterUsername,
-        autoresponder_id: selectedAutoresponder.id,
-        autoresponder_type: autoresponderType,
-        original_comment_text: commentText,
-        original_dm_message: selectedAutoresponder.dm_message,
-        confirmation_message_sent: messageToSend
+    try {
+      const { data: followerCheck, error: followerError } = await supabase.functions.invoke('instagram-check-follower', {
+        body: {
+          commenter_id: commenterId,
+          business_account_id: instagramAccountId
+        }
       })
-    
-    if (pendingError) {
-      console.error('❌ Error guardando confirmación pendiente:', pendingError)
-    } else {
-      console.log('✅ Confirmación pendiente guardada en BD')
+
+      if (followerError) {
+        console.error('❌ Error verificando seguidor:', followerError)
+        console.log('🚫 Por error en verificación, NO se enviará mensaje DM')
+        
+        // Solo guardar log de que se intentó pero falló la verificación
+        const logData = {
+          comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
+          commenter_instagram_id: commenterId,
+          comment_text: commentText,
+          dm_message_sent: 'SKIPPED: Error verificando si sigue la cuenta',
+          webhook_data: {
+            comment_id: commentId,
+            media_id: mediaId,
+            commenter_username: commenterUsername,
+            autoresponder_type: autoresponderType,
+            autoresponder_name: selectedAutoresponder.name,
+            general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
+            require_follower_enabled: true,
+            follower_check_error: followerError,
+            public_reply_attempted: true,
+            public_reply_success: publicReplySuccess,
+            public_reply_error: publicReplyError,
+            public_reply_id: publicReplyId,
+            public_reply_message: publicReplyMessage,
+            processed_at: new Date().toISOString(),
+            note: 'DM OMITIDO: Error verificando seguidor'
+          }
+        }
+        
+        await supabase.from('comment_autoresponder_log').insert(logData)
+        return
+      }
+
+      console.log('📊 Resultado verificación seguidor:', followerCheck)
+      
+      if (!followerCheck || !followerCheck.follows) {
+        console.log('🚫 El usuario NO SIGUE la cuenta - NO se enviará mensaje DM')
+        console.log('✅ Solo se envió respuesta pública, DM omitido por configuración')
+        
+        // Guardar log de que se omitió por no seguir
+        const logData = {
+          comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
+          commenter_instagram_id: commenterId,
+          comment_text: commentText,
+          dm_message_sent: 'SKIPPED: Usuario no sigue la cuenta',
+          webhook_data: {
+            comment_id: commentId,
+            media_id: mediaId,
+            commenter_username: commenterUsername,
+            autoresponder_type: autoresponderType,
+            autoresponder_name: selectedAutoresponder.name,
+            general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
+            require_follower_enabled: true,
+            follows_account: false,
+            follower_check_result: followerCheck,
+            public_reply_attempted: true,
+            public_reply_success: publicReplySuccess,
+            public_reply_error: publicReplyError,
+            public_reply_id: publicReplyId,
+            public_reply_message: publicReplyMessage,
+            processed_at: new Date().toISOString(),
+            note: 'DM OMITIDO: Usuario no sigue la cuenta (require_follower activado)'
+          }
+        }
+        
+        await supabase.from('comment_autoresponder_log').insert(logData)
+        return
+      }
+      
+      console.log('✅ El usuario SÍ SIGUE la cuenta - procediendo a enviar DM')
+      
+    } catch (followerCheckError) {
+      console.error('💥 Excepción verificando seguidor:', followerCheckError)
+      console.log('🚫 Por excepción en verificación, NO se enviará mensaje DM')
+      
+      // Guardar log de excepción
+      const logData = {
+        comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
+        commenter_instagram_id: commenterId,
+        comment_text: commentText,
+        dm_message_sent: `SKIPPED: Excepción verificando seguidor - ${followerCheckError.message}`,
+        webhook_data: {
+          comment_id: commentId,
+          media_id: mediaId,
+          commenter_username: commenterUsername,
+          autoresponder_type: autoresponderType,
+          autoresponder_name: selectedAutoresponder.name,
+          general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
+          require_follower_enabled: true,
+          follower_check_exception: followerCheckError.message,
+          public_reply_attempted: true,
+          public_reply_success: publicReplySuccess,
+          public_reply_error: publicReplyError,
+          public_reply_id: publicReplyId,
+          public_reply_message: publicReplyMessage,
+          processed_at: new Date().toISOString(),
+          note: 'DM OMITIDO: Excepción verificando seguidor'
+        }
+      }
+      
+      await supabase.from('comment_autoresponder_log').insert(logData)
+      return
     }
+  } else {
+    console.log('ℹ️ REQUIRE_FOLLOWER está DESACTIVADO - enviando DM sin verificación')
   }
+
+  console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
 
   try {
     const { data: replyResponse, error: replyError } = await supabase.functions.invoke('instagram-send-message', {
       body: {
-        message_text: messageToSend,
+        message_text: selectedAutoresponder.dm_message,
         instagram_user_id: instagramAccountId,
         comment_id: commentId
       }

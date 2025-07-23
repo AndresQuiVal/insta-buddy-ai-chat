@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { InstagramPost, formatPostDate, truncateCaption } from '@/services/instagramPostsService';
 import FollowUpConfig, { FollowUp } from './FollowUpConfig';
+import { Switch } from '@/components/ui/switch';
 
 export interface CommentAutoresponderConfig {
   name: string;
@@ -39,6 +40,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   ]);
   const [newPublicReply, setNewPublicReply] = useState('');
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [requireFollower, setRequireFollower] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -146,6 +148,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
           keywords: keywords,
           dm_message: dmMessage.trim(),
           public_reply_messages: publicReplyMessages,
+          require_follower: requireFollower,
           is_active: true
         })
         .select()
@@ -408,6 +411,27 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
             <p className="text-xs text-gray-400 mt-1">
               {dmMessage.length}/1000 caracteres
             </p>
+          </div>
+
+          {/* Verificar seguidor */}
+          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+            <div className="flex items-start space-x-3">
+              <Switch
+                id="requireFollower"
+                checked={requireFollower}
+                onCheckedChange={setRequireFollower}
+              />
+              <div className="flex-1">
+                <label htmlFor="requireFollower" className="text-sm font-medium text-yellow-900 cursor-pointer flex items-center gap-2">
+                  <UserCheck className="w-4 h-4" />
+                  Solo enviar mensaje a usuarios que me siguen
+                </label>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Si está activado, solo se enviará el mensaje DM a usuarios que sigan tu cuenta de Instagram. 
+                  Los usuarios que no te siguen no recibirán ningún mensaje.
+                </p>
+              </div>
+            </div>
           </div>
 
           <FollowUpConfig

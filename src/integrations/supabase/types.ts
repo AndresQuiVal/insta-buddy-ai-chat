@@ -537,63 +537,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pending_follower_confirmations: {
-        Row: {
-          autoresponder_id: string
-          autoresponder_type: string
-          commenter_id: string
-          commenter_username: string | null
-          confirmation_message_sent: string
-          confirmation_sent_at: string
-          confirmed_at: string | null
-          created_at: string
-          expires_at: string
-          id: string
-          is_confirmed: boolean
-          original_comment_text: string | null
-          original_dm_message: string
-          original_message_sent: boolean
-          original_message_sent_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          autoresponder_id: string
-          autoresponder_type: string
-          commenter_id: string
-          commenter_username?: string | null
-          confirmation_message_sent: string
-          confirmation_sent_at?: string
-          confirmed_at?: string | null
-          created_at?: string
-          expires_at?: string
-          id?: string
-          is_confirmed?: boolean
-          original_comment_text?: string | null
-          original_dm_message: string
-          original_message_sent?: boolean
-          original_message_sent_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          autoresponder_id?: string
-          autoresponder_type?: string
-          commenter_id?: string
-          commenter_username?: string | null
-          confirmation_message_sent?: string
-          confirmation_sent_at?: string
-          confirmed_at?: string | null
-          created_at?: string
-          expires_at?: string
-          id?: string
-          is_confirmed?: boolean
-          original_comment_text?: string | null
-          original_dm_message?: string
-          original_message_sent?: boolean
-          original_message_sent_at?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       post_autoresponder_assignments: {
         Row: {
           created_at: string
