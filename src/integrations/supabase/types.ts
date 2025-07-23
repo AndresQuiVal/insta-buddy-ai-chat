@@ -294,6 +294,7 @@ export type Database = {
           post_id: string
           post_url: string
           public_reply_messages: string[] | null
+          require_follower: boolean
           updated_at: string
           use_buttons: boolean | null
           user_id: string
@@ -310,6 +311,7 @@ export type Database = {
           post_id: string
           post_url: string
           public_reply_messages?: string[] | null
+          require_follower?: boolean
           updated_at?: string
           use_buttons?: boolean | null
           user_id: string
@@ -326,6 +328,7 @@ export type Database = {
           post_id?: string
           post_url?: string
           public_reply_messages?: string[] | null
+          require_follower?: boolean
           updated_at?: string
           use_buttons?: boolean | null
           user_id?: string
@@ -343,6 +346,7 @@ export type Database = {
           keywords: string[]
           name: string
           public_reply_messages: string[] | null
+          require_follower: boolean
           updated_at: string
           use_buttons: boolean | null
           user_id: string
@@ -357,6 +361,7 @@ export type Database = {
           keywords?: string[]
           name: string
           public_reply_messages?: string[] | null
+          require_follower?: boolean
           updated_at?: string
           use_buttons?: boolean | null
           user_id: string
@@ -371,6 +376,7 @@ export type Database = {
           keywords?: string[]
           name?: string
           public_reply_messages?: string[] | null
+          require_follower?: boolean
           updated_at?: string
           use_buttons?: boolean | null
           user_id?: string
@@ -528,6 +534,63 @@ export type Database = {
           token_expires_at?: string | null
           updated_at?: string
           username?: string
+        }
+        Relationships: []
+      }
+      pending_follower_confirmations: {
+        Row: {
+          autoresponder_id: string
+          autoresponder_type: string
+          commenter_id: string
+          commenter_username: string | null
+          confirmation_message_sent: string
+          confirmation_sent_at: string
+          confirmed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          is_confirmed: boolean
+          original_comment_text: string | null
+          original_dm_message: string
+          original_message_sent: boolean
+          original_message_sent_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          autoresponder_id: string
+          autoresponder_type: string
+          commenter_id: string
+          commenter_username?: string | null
+          confirmation_message_sent: string
+          confirmation_sent_at?: string
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_confirmed?: boolean
+          original_comment_text?: string | null
+          original_dm_message: string
+          original_message_sent?: boolean
+          original_message_sent_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          autoresponder_id?: string
+          autoresponder_type?: string
+          commenter_id?: string
+          commenter_username?: string | null
+          confirmation_message_sent?: string
+          confirmation_sent_at?: string
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_confirmed?: boolean
+          original_comment_text?: string | null
+          original_dm_message?: string
+          original_message_sent?: boolean
+          original_message_sent_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
