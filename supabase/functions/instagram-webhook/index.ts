@@ -214,6 +214,84 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.error('💥 Error en add_prospect_message:', messageErr)
   }
 
+  console.log('🔍 ===== VERIFICANDO SI ES RESPUESTA A CONFIRMACIÓN DE SEGUIDOR =====')
+  
+  // Verificar si es una respuesta afirmativa a una confirmación pendiente
+  const affirmativeWords = ['si', 'sí', 'yes', 'yep', 'ya', 'claro', 'por supuesto', 'obvio', 'afirmativo', 'correcto', 'exacto']
+  const messageTextLower = messageText.toLowerCase().trim()
+  
+  const isAffirmativeResponse = affirmativeWords.some(word => 
+    messageTextLower === word || messageTextLower.includes(word)
+  )
+  
+  if (isAffirmativeResponse) {
+    console.log('🎯 DETECTADA RESPUESTA AFIRMATIVA:', messageText)
+    
+    // Buscar confirmación pendiente para este usuario
+    const { data: pendingConfirmations, error: pendingError } = await supabase
+      .from('pending_follower_confirmations')
+      .select('*')
+      .eq('commenter_id', senderId)
+      .eq('is_confirmed', false)
+      .eq('original_message_sent', false)
+      .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+    
+    if (pendingError) {
+      console.error('❌ Error buscando confirmaciones pendientes:', pendingError)
+    } else if (pendingConfirmations && pendingConfirmations.length > 0) {
+      const confirmation = pendingConfirmations[0]
+      console.log('✅ CONFIRMACIÓN PENDIENTE ENCONTRADA:', confirmation.id)
+      console.log('📤 Enviando mensaje real del autoresponder:', confirmation.original_dm_message)
+      
+      // Enviar el mensaje real del autoresponder
+      try {
+        const { data: finalMessageResponse, error: finalMessageError } = await supabase.functions.invoke('instagram-send-message', {
+          body: {
+            recipient_id: senderId,
+            message_text: confirmation.original_dm_message,
+            instagram_user_id: recipientId
+          }
+        })
+        
+        if (finalMessageError) {
+          console.error('❌ Error enviando mensaje final:', finalMessageError)
+        } else {
+          console.log('✅ MENSAJE FINAL ENVIADO EXITOSAMENTE')
+          
+          // Marcar confirmación como completada
+          await supabase
+            .from('pending_follower_confirmations')
+            .update({
+              is_confirmed: true,
+              confirmed_at: new Date().toISOString(),
+              original_message_sent: true,
+              original_message_sent_at: new Date().toISOString()
+            })
+            .eq('id', confirmation.id)
+          
+          // Registrar en log de autoresponders enviados
+          const { error: logError } = await supabase
+            .from('autoresponder_sent_log')
+            .insert({
+              autoresponder_message_id: null, // Es un comment autoresponder
+              sender_id: senderId,
+              sent_at: new Date().toISOString()
+            })
+          
+          console.log('🎉 FLUJO REQUIRE_FOLLOWER COMPLETADO EXITOSAMENTE')
+          console.log('✅ Usuario confirmó que sigue → Mensaje real enviado')
+          return // Terminar procesamiento aquí
+        }
+      } catch (finalMessageException) {
+        console.error('💥 Excepción enviando mensaje final:', finalMessageException)
+      }
+    } else {
+      console.log('ℹ️ No hay confirmaciones pendientes para este usuario')
+    }
+  }
+
   console.log('🔍 ===== ANÁLISIS DEL MENSAJE =====')
   console.log('📝 Texto:', messageText)
 
@@ -962,26 +1040,58 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('🔍 ===== VERIFICANDO CONFIGURACIÓN REQUIRE_FOLLOWER =====')
   
   if (selectedAutoresponder.require_follower) {
-    console.log('⚠️ REQUIRE_FOLLOWER está ACTIVADO - verificando si el usuario sigue la cuenta')
+    console.log('⚠️ REQUIRE_FOLLOWER está ACTIVADO - enviando mensaje aleatorio de confirmación')
     
+    // Mensajes aleatorios de confirmación cuando require_follower está activado
+    const confirmationMessages = [
+      "Hola! 👋 Me da mucho gusto que hayas comentado. Solo tengo una pregunta rápida: ¿me sigues en Instagram? Si es así, responde 'sí' y te paso la info que necesitas 😊",
+      "¡Hola! 😊 Gracias por comentar. Para poder ayudarte mejor, ¿podrías confirmar si me sigues? Solo responde 'sí' si ya me sigues y te envío lo que necesitas 💪",
+      "¡Qué bueno verte por aquí! 🎉 Para asegurarme de enviarte la información correcta, ¿me confirmas si ya me sigues? Responde 'sí' si me sigues y te mando todo al instante ⚡",
+      "¡Hola! 👋 Me encanta que hayas comentado. Una pregunta rápida: ¿ya me sigues en Instagram? Si es así, solo escribe 'sí' y te paso la info que estás buscando 🚀"
+    ]
+    
+    const randomConfirmationMessage = confirmationMessages[Math.floor(Math.random() * confirmationMessages.length)]
+    console.log('🎲 Mensaje de confirmación seleccionado:', randomConfirmationMessage)
+    
+    // Guardar en pending_follower_confirmations
+    const { data: pendingConfirmation, error: pendingError } = await supabase
+      .from('pending_follower_confirmations')
+      .insert({
+        commenter_id: commenterId,
+        commenter_username: commenterUsername,
+        autoresponder_id: selectedAutoresponder.id,
+        autoresponder_type: autoresponderType,
+        original_comment_text: commentText,
+        original_dm_message: selectedAutoresponder.dm_message,
+        confirmation_message_sent: randomConfirmationMessage
+      })
+      .select()
+      .single()
+    
+    if (pendingError) {
+      console.error('❌ Error guardando confirmación pendiente:', pendingError)
+    } else {
+      console.log('✅ Confirmación pendiente guardada:', pendingConfirmation.id)
+    }
+    
+    // Enviar mensaje aleatorio de confirmación en lugar del mensaje configurado
     try {
-      const { data: followerCheck, error: followerError } = await supabase.functions.invoke('instagram-check-follower', {
+      const { data: replyResponse, error: replyError } = await supabase.functions.invoke('instagram-send-message', {
         body: {
-          commenter_id: commenterId,
-          business_account_id: instagramAccountId
+          message_text: randomConfirmationMessage,
+          instagram_user_id: instagramAccountId,
+          comment_id: commentId
         }
       })
 
-      if (followerError) {
-        console.error('❌ Error verificando seguidor:', followerError)
-        console.log('🚫 Por error en verificación, NO se enviará mensaje DM')
+      if (replyError) {
+        console.error('❌ Error enviando mensaje de confirmación:', replyError)
         
-        // Solo guardar log de que se intentó pero falló la verificación
         const logData = {
           comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
           commenter_instagram_id: commenterId,
           comment_text: commentText,
-          dm_message_sent: 'SKIPPED: Error verificando si sigue la cuenta',
+          dm_message_sent: `ERROR enviando confirmación: ${replyError.message}`,
           webhook_data: {
             comment_id: commentId,
             media_id: mediaId,
@@ -990,14 +1100,14 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
             autoresponder_name: selectedAutoresponder.name,
             general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
             require_follower_enabled: true,
-            follower_check_error: followerError,
+            confirmation_message: randomConfirmationMessage,
             public_reply_attempted: true,
             public_reply_success: publicReplySuccess,
             public_reply_error: publicReplyError,
             public_reply_id: publicReplyId,
             public_reply_message: publicReplyMessage,
             processed_at: new Date().toISOString(),
-            note: 'DM OMITIDO: Error verificando seguidor'
+            note: 'ERROR: No se pudo enviar mensaje de confirmación'
           }
         }
         
@@ -1005,54 +1115,15 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         return
       }
 
-      console.log('📊 Resultado verificación seguidor:', followerCheck)
+      console.log('✅ MENSAJE DE CONFIRMACIÓN ENVIADO EXITOSAMENTE')
+      console.log('📨 Respuesta:', replyResponse)
       
-      if (!followerCheck || !followerCheck.follows) {
-        console.log('🚫 El usuario NO SIGUE la cuenta - NO se enviará mensaje DM')
-        console.log('✅ Solo se envió respuesta pública, DM omitido por configuración')
-        
-        // Guardar log de que se omitió por no seguir
-        const logData = {
-          comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
-          commenter_instagram_id: commenterId,
-          comment_text: commentText,
-          dm_message_sent: 'SKIPPED: Usuario no sigue la cuenta',
-          webhook_data: {
-            comment_id: commentId,
-            media_id: mediaId,
-            commenter_username: commenterUsername,
-            autoresponder_type: autoresponderType,
-            autoresponder_name: selectedAutoresponder.name,
-            general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
-            require_follower_enabled: true,
-            follows_account: false,
-            follower_check_result: followerCheck,
-            public_reply_attempted: true,
-            public_reply_success: publicReplySuccess,
-            public_reply_error: publicReplyError,
-            public_reply_id: publicReplyId,
-            public_reply_message: publicReplyMessage,
-            processed_at: new Date().toISOString(),
-            note: 'DM OMITIDO: Usuario no sigue la cuenta (require_follower activado)'
-          }
-        }
-        
-        await supabase.from('comment_autoresponder_log').insert(logData)
-        return
-      }
-      
-      console.log('✅ El usuario SÍ SIGUE la cuenta - procediendo a enviar DM')
-      
-    } catch (followerCheckError) {
-      console.error('💥 Excepción verificando seguidor:', followerCheckError)
-      console.log('🚫 Por excepción en verificación, NO se enviará mensaje DM')
-      
-      // Guardar log de excepción
+      // Guardar log exitoso
       const logData = {
         comment_autoresponder_id: autoresponderType === 'general' ? null : selectedAutoresponder.id,
         commenter_instagram_id: commenterId,
         comment_text: commentText,
-        dm_message_sent: `SKIPPED: Excepción verificando seguidor - ${followerCheckError.message}`,
+        dm_message_sent: randomConfirmationMessage,
         webhook_data: {
           comment_id: commentId,
           media_id: mediaId,
@@ -1061,22 +1132,36 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           autoresponder_name: selectedAutoresponder.name,
           general_autoresponder_id: autoresponderType === 'general' ? selectedAutoresponder.id : null,
           require_follower_enabled: true,
-          follower_check_exception: followerCheckError.message,
+          confirmation_message: randomConfirmationMessage,
+          confirmation_pending_id: pendingConfirmation?.id,
           public_reply_attempted: true,
           public_reply_success: publicReplySuccess,
           public_reply_error: publicReplyError,
           public_reply_id: publicReplyId,
           public_reply_message: publicReplyMessage,
           processed_at: new Date().toISOString(),
-          note: 'DM OMITIDO: Excepción verificando seguidor'
+          note: 'Mensaje de confirmación enviado - esperando respuesta del prospecto'
         }
       }
       
       await supabase.from('comment_autoresponder_log').insert(logData)
+      
+      console.log('💡 === FLUJO REQUIRE_FOLLOWER ACTIVADO ===')
+      console.log('📤 Se envió mensaje aleatorio de confirmación')
+      console.log('⏳ Esperando respuesta afirmativa del prospecto para enviar mensaje real')
+      
+      // NO crear follow-ups para mensajes de confirmación
+      console.log('ℹ️ No se crean follow-ups para mensajes de confirmación')
+      
+      return
+      
+    } catch (confirmationError) {
+      console.error('💥 Excepción enviando confirmación:', confirmationError)
       return
     }
+    
   } else {
-    console.log('ℹ️ REQUIRE_FOLLOWER está DESACTIVADO - enviando DM sin verificación')
+    console.log('ℹ️ REQUIRE_FOLLOWER está DESACTIVADO - enviando mensaje configurado directamente')
   }
 
   console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
