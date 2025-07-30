@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import InstagramDashboard, {
   DashboardDebugPanel,
 } from "@/components/InstagramDashboard";
@@ -33,6 +34,7 @@ import MyProspects from "@/components/MyProspects";
 import { useInstagramUsers } from "@/hooks/useInstagramUsers";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [accessToken, setAccessToken] = useState("");
   const [isTokenSaved, setIsTokenSaved] = useState(false);
@@ -76,6 +78,16 @@ const Index = () => {
       username: currentUser?.username 
     });
   }, [userLoading, currentUser]);
+
+  // Verificar si debe mostrar onboarding de autorespondedores
+  useEffect(() => {
+    if (currentUser && !userLoading) {
+      const onboardingCompleted = localStorage.getItem('autoresponder-onboarding-completed');
+      if (!onboardingCompleted) {
+        navigate('/autoresponder-onboarding');
+      }
+    }
+  }, [currentUser, userLoading, navigate]);
 
   // Si está cargando, mostrar loading
   if (userLoading) {

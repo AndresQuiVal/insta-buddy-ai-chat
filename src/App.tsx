@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
+import AutoresponderOnboarding from "./pages/AutoresponderOnboarding";
+import Guides from "./pages/Guides";
 import InstagramCallback from "./pages/InstagramCallback";
 import Settings from "./pages/Settings";
 import Beta from "./pages/Beta";
@@ -27,6 +29,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/autoresponder-onboarding" element={<AutoresponderOnboarding />} />
+          <Route path="/guides" element={<Guides />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/beta" element={<Beta />} />
           <Route path="/prospects-demo" element={<ProspectsDemo />} />
