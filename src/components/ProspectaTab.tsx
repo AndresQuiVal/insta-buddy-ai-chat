@@ -13,10 +13,10 @@ const ProspectaTab = () => {
       {/* BLOQUE 1 – HERO PRINCIPAL */}
       <div className="text-center bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-2xl p-12">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          ACTIVA EL HOWER PROSPECTOR EN TU INSTAGRAM
+          Hower Prospector
         </h1>
         <p className="text-xl mb-8 opacity-90">
-          El sistema que te consigue prospectos todos los días sin perseguir gente.
+          prospecta en frío por Instagram
         </p>
         <Button 
           onClick={handleActivateProspector}
