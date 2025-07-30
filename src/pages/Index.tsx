@@ -7,6 +7,8 @@ import InstagramAccountDiagnostic from "@/components/InstagramAccountDiagnostic"
 import ConfigPanel from "@/components/ConfigPanel";
 import ProspectaTab from "@/components/ProspectaTab";
 import ContenidosViralesTab from "@/components/ContenidosViralesTab";
+import AutoresponderManager from "@/components/AutoresponderManager";
+import ProspectCRM from "@/components/ProspectCRM";
 import {
   BarChart3,
   MessageCircle,
@@ -120,9 +122,9 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "autoresponder":
-        return <MyProspects />;
+        return <AutoresponderManager />;
       case "crm":
-        return <MyProspects />;
+        return <ProspectCRM />;
       case "prospecta":
         return <ProspectaTab />;
       case "contenidos_virales":
@@ -138,7 +140,7 @@ const Index = () => {
           </div>
         );
       default:
-        return <MyProspects />;
+        return <AutoresponderManager />;
     }
   };
 
