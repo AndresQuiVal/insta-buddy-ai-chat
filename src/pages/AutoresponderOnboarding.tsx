@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { supabase } from '@/integrations/supabase/client';
+import InstagramPostSelector from '@/components/InstagramPostSelector';
 
 const AutoresponderOnboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -256,26 +257,41 @@ const AutoresponderOnboarding: React.FC = () => {
                       <p className="text-blue-600 text-sm font-medium mt-1">🎯 Para promociones específicas</p>
                     </div>
                   </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <Button 
-                  onClick={handleBack}
-                  variant="outline"
-                  className="flex-1 flex items-center justify-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Anterior
-                </Button>
-                <Button 
-                  onClick={handleNext}
-                  disabled={!autoresponderData.type}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2"
-                >
-                  Continuar <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
+                 </div>
+               </div>
+               
+               {/* Mostrar selector de posts si es específico */}
+               {autoresponderData.type === 'specific' && (
+                 <div className="bg-blue-50 rounded-lg p-6">
+                   <h3 className="text-lg font-semibold text-blue-900 mb-4">Selecciona un post de Instagram</h3>
+                   <p className="text-blue-700 text-sm mb-4">
+                     Elige el post específico donde quieres que funcione este autorespondedor
+                   </p>
+                   <InstagramPostSelector
+                     onPostSelected={(post) => updateAutoresponderData('selectedPost', post)}
+                     onBack={() => updateAutoresponderData('type', '')}
+                     showAutoresponderSelection={false}
+                   />
+                 </div>
+               )}
+               
+               <div className="flex gap-4">
+                 <Button 
+                   onClick={handleBack}
+                   variant="outline"
+                   className="flex-1 flex items-center justify-center gap-2"
+                 >
+                   <ArrowLeft className="w-4 h-4" />
+                   Anterior
+                 </Button>
+                 <Button 
+                   onClick={handleNext}
+                   disabled={!autoresponderData.type || (autoresponderData.type === 'specific' && !autoresponderData.selectedPost)}
+                   className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2"
+                 >
+                   Continuar <ArrowRight className="w-4 h-4" />
+                 </Button>
+               </div>
             </div>
           )}
 
