@@ -1,17 +1,12 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import InstagramDashboard, {
-  DashboardDebugPanel,
-} from "@/components/InstagramDashboard";
-import InstagramMessages from "@/components/InstagramMessages";
-import InstagramDiagnostic from "@/components/InstagramDiagnostic";
-import AdvancedMetrics from "@/components/AdvancedMetrics";
-import InstagramProspect from "@/components/InstagramProspect";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import InstagramLogin from "@/components/InstagramLogin";
 import InstagramAccountDiagnostic from "@/components/InstagramAccountDiagnostic";
 import ConfigPanel from "@/components/ConfigPanel";
+import ProspectaTab from "@/components/ProspectaTab";
+import ContenidosViralesTab from "@/components/ContenidosViralesTab";
 import {
   BarChart3,
   MessageCircle,
@@ -35,7 +30,7 @@ import { useInstagramUsers } from "@/hooks/useInstagramUsers";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("autoresponder");
   const [accessToken, setAccessToken] = useState("");
   const [isTokenSaved, setIsTokenSaved] = useState(false);
   const { toast } = useToast();
@@ -124,37 +119,14 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "dashboard":
-        return (
-          <InstagramDashboard onShowAnalysis={() => setActiveTab("analysis")} />
-        );
-      case "my_prospects":
+      case "autoresponder":
         return <MyProspects />;
-      case "messages":
-        return <InstagramMessages />;
-      case "prospect":
-        return <InstagramProspect />;
-      case "analysis":
-        return (
-          <div className="container mx-auto px-4 py-8">
-            <div className="mb-8">
-              <Button
-                onClick={() => setActiveTab("dashboard")}
-                className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
-                variant="ghost"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Volver al Dashboard
-              </Button>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">
-              Análisis Detallado
-            </h1>
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <AdvancedMetrics />
-            </div>
-          </div>
-        );
+      case "crm":
+        return <MyProspects />;
+      case "prospecta":
+        return <ProspectaTab />;
+      case "contenidos_virales":
+        return <ContenidosViralesTab />;
       case "settings":
         return (
           <div className="space-y-6">
@@ -166,9 +138,7 @@ const Index = () => {
           </div>
         );
       default:
-        return (
-          <InstagramDashboard onShowAnalysis={() => setActiveTab("analysis")} />
-        );
+        return <MyProspects />;
     }
   };
 
@@ -205,6 +175,52 @@ const Index = () => {
               Cerrar Sesión
             </Button>
             <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="mb-8">
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => setActiveTab("autoresponder")}
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === "autoresponder"
+                  ? "bg-purple-600 text-white shadow-lg"
+                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+              }`}
+            >
+              Autorespondedor
+            </button>
+            <button
+              onClick={() => setActiveTab("crm")}
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === "crm"
+                  ? "bg-purple-600 text-white shadow-lg"
+                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+              }`}
+            >
+              CRM
+            </button>
+            <button
+              onClick={() => setActiveTab("prospecta")}
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === "prospecta"
+                  ? "bg-purple-600 text-white shadow-lg"
+                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+              }`}
+            >
+              Prospecta
+            </button>
+            <button
+              onClick={() => setActiveTab("contenidos_virales")}
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === "contenidos_virales"
+                  ? "bg-purple-600 text-white shadow-lg"
+                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+              }`}
+            >
+              Contenidos Virales
+            </button>
           </div>
         </div>
 
