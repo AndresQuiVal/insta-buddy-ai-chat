@@ -18,21 +18,10 @@ const ProspectaTab = () => {
         <p className="text-xl mb-8 opacity-90">
           prospecta en frío por Instagram
         </p>
-        <Button 
-          onClick={handleActivateProspector}
-          size="lg"
-          className="bg-white text-purple-600 hover:bg-gray-100 text-lg px-8 py-4 rounded-xl font-semibold"
-        >
-          Quiero activarlo
-        </Button>
-      </div>
-
-      {/* VIDEO PRIMERO */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="text-center p-8">
-          <h2 className="text-2xl font-bold mb-4 text-gray-900">
+        <div className="mb-8">
+          <p className="text-lg mb-4 opacity-90">
             Mira cómo trabaja por ti 👇
-          </h2>
+          </p>
           <div className="max-w-2xl mx-auto">
             <iframe 
               src="https://www.loom.com/embed/d6880eba31af4f53ad8158a3b2b9faa5?source=embed_watch_on_loom_cta"
@@ -42,8 +31,15 @@ const ProspectaTab = () => {
               title="Cómo usar Hower | Tutorial (Super) Rápido"
             />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <Button 
+          onClick={handleActivateProspector}
+          size="lg"
+          className="bg-white text-purple-600 hover:bg-gray-100 text-lg px-8 py-4 rounded-xl font-semibold"
+        >
+          Quiero activarlo
+        </Button>
+      </div>
 
       {/* BLOQUE 2 – ¿QUÉ ES HOWER PROSPECTOR? */}
       <Card className="border-0 shadow-lg">
