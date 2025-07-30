@@ -260,21 +260,7 @@ const AutoresponderOnboarding: React.FC = () => {
                  </div>
                </div>
                
-               {/* Mostrar selector de posts si es específico */}
-               {autoresponderData.type === 'specific' && (
-                 <div className="bg-blue-50 rounded-lg p-6">
-                   <h3 className="text-lg font-semibold text-blue-900 mb-4">Selecciona un post de Instagram</h3>
-                   <p className="text-blue-700 text-sm mb-4">
-                     Elige el post específico donde quieres que funcione este autorespondedor
-                   </p>
-                   <InstagramPostSelector
-                     onPostSelected={(post) => updateAutoresponderData('selectedPost', post)}
-                     onBack={() => updateAutoresponderData('type', '')}
-                     showAutoresponderSelection={false}
-                   />
-                 </div>
-               )}
-               
+               {/* Botones de navegación siempre visibles */}
                <div className="flex gap-4">
                  <Button 
                    onClick={handleBack}
@@ -292,6 +278,22 @@ const AutoresponderOnboarding: React.FC = () => {
                    Continuar <ArrowRight className="w-4 h-4" />
                  </Button>
                </div>
+               
+               {/* Mostrar selector de posts si es específico */}
+               {autoresponderData.type === 'specific' && (
+                 <div className="bg-blue-50 rounded-lg p-6">
+                   <h3 className="text-lg font-semibold text-blue-900 mb-4">Selecciona un post de Instagram</h3>
+                   <p className="text-blue-700 text-sm mb-4">
+                     Elige el post específico donde quieres que funcione este autorespondedor
+                   </p>
+                   <InstagramPostSelector
+                     onPostSelected={(post) => updateAutoresponderData('selectedPost', post)}
+                     onBack={() => updateAutoresponderData('type', '')}
+                     showAutoresponderSelection={false}
+                   />
+                 </div>
+               )}
+            
             </div>
           )}
 
