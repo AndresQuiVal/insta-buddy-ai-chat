@@ -68,11 +68,14 @@ const ProspectaTab = () => {
           <h2 className="text-2xl font-bold mb-4 text-gray-900">
             Mira cómo trabaja por ti 👇
           </h2>
-          <div className="bg-gray-100 rounded-lg p-8 flex items-center justify-center">
-            <div className="text-center">
-              <Play className="w-16 h-16 text-purple-600 mx-auto mb-4" />
-              <p className="text-gray-600">Video demo próximamente</p>
-            </div>
+          <div className="max-w-2xl mx-auto">
+            <iframe 
+              src="https://www.loom.com/embed/d6880eba31af4f53ad8158a3b2b9faa5?source=embed_watch_on_loom_cta"
+              style={{ width: '100%', height: '400px', borderRadius: '0.5rem' }}
+              frameBorder="0"
+              allowFullScreen
+              title="Cómo usar Hower | Tutorial (Super) Rápido"
+            />
           </div>
         </CardContent>
       </Card>

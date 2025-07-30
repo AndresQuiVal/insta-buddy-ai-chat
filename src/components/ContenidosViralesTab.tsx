@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Search, Eye, Zap, Target, BarChart3 } from 'lucide-react';
@@ -7,6 +7,27 @@ const ContenidosViralesTab = () => {
   const handleOpenViralAI = () => {
     window.open('https://www.howersoftware.io/clients/posts-searcher/', '_blank');
   };
+
+  useEffect(() => {
+    // Load Wistia player script
+    const playerScript = document.createElement('script');
+    playerScript.src = 'https://fast.wistia.com/player.js';
+    playerScript.async = true;
+    document.head.appendChild(playerScript);
+
+    // Load specific video script
+    const videoScript = document.createElement('script');
+    videoScript.src = 'https://fast.wistia.com/embed/zgp1z14vbe.js';
+    videoScript.async = true;
+    videoScript.type = 'module';
+    document.head.appendChild(videoScript);
+
+    return () => {
+      // Cleanup scripts on unmount
+      const scripts = document.querySelectorAll('script[src*="wistia"]');
+      scripts.forEach(script => script.remove());
+    };
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -36,6 +57,19 @@ const ContenidosViralesTab = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="text-center mb-8">
+            <p className="text-lg text-gray-700 mb-6">
+              Primero, mira cómo funciona el buscador de contenidos virales:
+            </p>
+            <div className="max-w-lg mx-auto">
+              <wistia-player 
+                media-id="zgp1z14vbe" 
+                aspect="0.5787781350482315" 
+                style={{ width: '100%', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}
+              />
+            </div>
+          </div>
+          
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div className="flex items-start gap-4">
