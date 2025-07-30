@@ -470,19 +470,6 @@ const AutoresponderOnboarding: React.FC = () => {
                   )}
                 </div>
 
-                {/* Status */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Estado del autorespondedor</h3>
-                      <p className="text-gray-600 text-sm">Activar o desactivar este autorespondedor</p>
-                    </div>
-                    <Switch
-                      checked={autoresponderData.isActive}
-                      onCheckedChange={(checked) => updateAutoresponderData('isActive', checked)}
-                    />
-                  </div>
-                </div>
               </div>
               
               <div className="flex gap-4">
