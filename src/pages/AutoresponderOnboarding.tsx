@@ -25,11 +25,13 @@ const AutoresponderOnboarding: React.FC = () => {
     message: '',
     useKeywords: false,
     keywords: [] as string[],
-    isActive: true
+    isActive: true,
+    type: 'general', // 'general' o 'specific'
+    selectedPost: null as any
   });
 
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1);
     } else {
       handleCreateAutoresponder();
@@ -150,7 +152,7 @@ const AutoresponderOnboarding: React.FC = () => {
         <div className="w-full bg-white/50 h-2 rounded-full mb-10">
           <div 
             className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300" 
-            style={{ width: `${step * 25}%` }}
+            style={{ width: `${step * 20}%` }}
           ></div>
         </div>
 
@@ -207,8 +209,78 @@ const AutoresponderOnboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 2: Nombre del autorespondedor */}
+          {/* Step 2: Tipo de autorespondedor */}
           {step === 2 && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">¿Para qué posts quieres configurarlo?</h2>
+                <p className="text-gray-600">Elige si será para todos tus posts o solo para posts específicos</p>
+              </div>
+              
+              <div className="grid gap-4">
+                <div 
+                  className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
+                    autoresponderData.type === 'general' 
+                      ? 'border-purple-500 bg-purple-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => updateAutoresponderData('type', 'general')}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
+                      <Check className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900">Autorespondedor General</h3>
+                      <p className="text-gray-600 text-sm">Se aplicará automáticamente a todos tus posts nuevos</p>
+                      <p className="text-green-600 text-sm font-medium mt-1">✨ Recomendado para empezar</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
+                    autoresponderData.type === 'specific' 
+                      ? 'border-purple-500 bg-purple-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => updateAutoresponderData('type', 'specific')}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-pink-100 to-purple-100 rounded-lg flex items-center justify-center">
+                      <Instagram className="w-6 h-6 text-pink-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900">Post Específico</h3>
+                      <p className="text-gray-600 text-sm">Solo funcionará en un post que selecciones</p>
+                      <p className="text-blue-600 text-sm font-medium mt-1">🎯 Para promociones específicas</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <Button 
+                  onClick={handleBack}
+                  variant="outline"
+                  className="flex-1 flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Anterior
+                </Button>
+                <Button 
+                  onClick={handleNext}
+                  disabled={!autoresponderData.type}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2"
+                >
+                  Continuar <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Nombre del autorespondedor */}
+          {step === 3 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-2">Nombre de tu autorespondedor</h2>
@@ -256,8 +328,8 @@ const AutoresponderOnboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 3: Mensaje del autorespondedor */}
-          {step === 3 && (
+          {/* Step 4: Mensaje del autorespondedor */}
+          {step === 4 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-2">Mensaje automático</h2>
@@ -308,8 +380,8 @@ const AutoresponderOnboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 4: Configuración final */}
-          {step === 4 && (
+          {/* Step 5: Configuración final */}
+          {step === 5 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-2">Configuración final</h2>
@@ -427,7 +499,7 @@ const AutoresponderOnboarding: React.FC = () => {
           
           {/* Step indicator */}
           <div className="flex justify-center mt-8">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4, 5].map((i) => (
               <div 
                 key={i} 
                 className={`w-3 h-3 rounded-full mx-1 transition-all duration-300 ${
