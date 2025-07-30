@@ -27,6 +27,24 @@ const ProspectaTab = () => {
         </Button>
       </div>
 
+      {/* VIDEO PRIMERO */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="text-center p-8">
+          <h2 className="text-2xl font-bold mb-4 text-gray-900">
+            Mira cómo trabaja por ti 👇
+          </h2>
+          <div className="max-w-2xl mx-auto">
+            <iframe 
+              src="https://www.loom.com/embed/d6880eba31af4f53ad8158a3b2b9faa5?source=embed_watch_on_loom_cta"
+              style={{ width: '100%', height: '400px', borderRadius: '0.5rem' }}
+              frameBorder="0"
+              allowFullScreen
+              title="Cómo usar Hower | Tutorial (Super) Rápido"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* BLOQUE 2 – ¿QUÉ ES HOWER PROSPECTOR? */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -62,25 +80,7 @@ const ProspectaTab = () => {
         </CardContent>
       </Card>
 
-      {/* BLOQUE 3 – VIDEO / DEMO */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="text-center p-8">
-          <h2 className="text-2xl font-bold mb-4 text-gray-900">
-            Mira cómo trabaja por ti 👇
-          </h2>
-          <div className="max-w-2xl mx-auto">
-            <iframe 
-              src="https://www.loom.com/embed/d6880eba31af4f53ad8158a3b2b9faa5?source=embed_watch_on_loom_cta"
-              style={{ width: '100%', height: '400px', borderRadius: '0.5rem' }}
-              frameBorder="0"
-              allowFullScreen
-              title="Cómo usar Hower | Tutorial (Super) Rápido"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* BLOQUE 4 – TESTIMONIOS */}
+      {/* BLOQUE 3 – TESTIMONIOS */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl text-center text-gray-900">
@@ -122,7 +122,7 @@ const ProspectaTab = () => {
         </CardContent>
       </Card>
 
-      {/* BLOQUE 5 – INSTRUCCIONES */}
+      {/* BLOQUE 4 – INSTRUCCIONES */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl text-center text-gray-900">
@@ -148,7 +148,7 @@ const ProspectaTab = () => {
         </CardContent>
       </Card>
 
-      {/* BLOQUE 6 – PREGUNTAS FRECUENTES */}
+      {/* BLOQUE 5 – PREGUNTAS FRECUENTES */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl text-center text-gray-900">
@@ -173,7 +173,7 @@ const ProspectaTab = () => {
         </CardContent>
       </Card>
 
-      {/* BLOQUE 7 – LLAMADO FINAL */}
+      {/* BLOQUE 6 – LLAMADO FINAL */}
       <div className="text-center bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-2xl p-12">
         <h2 className="text-3xl font-bold mb-6">
           Estás a 1 clic de dejar de perseguir gente
