@@ -157,7 +157,13 @@ const Beta: React.FC = () => {
             <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
               <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-24 leading-tight">
                 Oye Coach, Infoproductor, Trafficker... <br /><br />
-                ¿usas Manychat? <br />
+                ¿usas{' '}
+                <img 
+                  src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
+                  alt="Manychat"
+                  className="inline-block h-16 lg:h-20 mx-2 transform rotate-3 translate-y-1"
+                />
+                ? <br />
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   te aseguro que tienes estos problemas...
                 </span>
