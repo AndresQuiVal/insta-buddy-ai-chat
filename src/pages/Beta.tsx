@@ -367,149 +367,164 @@ const Beta: React.FC = () => {
       </section>
 
       {/* Sección de Comparación */}
-      <section className="py-32 bg-white">
-        <div className="container mx-auto px-4">
+      <section className="py-32 bg-gradient-to-br from-gray-50 via-white to-purple-50 relative overflow-hidden">
+        {/* Elementos decorativos de fondo */}
+        <div className="absolute top-10 left-10 w-32 h-32 bg-purple-200 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute bottom-10 right-10 w-40 h-40 bg-pink-200 rounded-full opacity-20 blur-3xl"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="max-w-6xl mx-auto">
               {/* Header de comparación */}
               <div className="text-center mb-16">
+                <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-8">
+                  ¿Por qué elegir Hower Assistant?
+                </h2>
                 <div className="flex items-center justify-center gap-8 mb-8">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 p-4 bg-white rounded-2xl shadow-lg border border-gray-100">
                     <img 
                       src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
                       alt="Manychat"
-                      className="h-12"
+                      className="h-12 rounded-lg"
                     />
                   </div>
                   
-                  <div className="text-6xl font-black text-gray-800">VS</div>
+                  <div className="text-6xl font-black text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text drop-shadow-lg">
+                    VS
+                  </div>
                   
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-lg">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                       <span className="text-white font-bold text-xl">@</span>
                     </div>
                     <div>
-                      <span className="text-2xl font-light text-purple-600">Hower</span>
-                      <span className="text-2xl font-bold text-pink-600 ml-1">Assistant</span>
+                      <span className="text-2xl font-light text-white">Hower</span>
+                      <span className="text-2xl font-bold text-white ml-1">Assistant</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Comparación de características */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
                 {/* Lado Manychat */}
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-xl border border-red-100">
-                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <X className="w-5 h-5 text-white" />
+                <div className="space-y-4">
+                  <div className="text-center mb-6">
+                    <h3 className="text-2xl font-bold text-gray-700 mb-2">Manychat</h3>
+                    <div className="h-1 w-16 bg-red-400 rounded-full mx-auto"></div>
+                  </div>
+                  
+                  <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-red-100 hover:border-red-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                    <div className="w-12 h-12 bg-gradient-to-r from-red-400 to-red-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <X className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-gray-800">500 Contactos</p>
-                      <p className="text-sm text-gray-600">Límite restrictivo</p>
+                      <p className="text-xl font-bold text-gray-800">500 Contactos</p>
+                      <p className="text-sm text-red-600 font-medium">Límite restrictivo</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-xl border border-red-100">
-                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <X className="w-5 h-5 text-white" />
+                  <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-red-100 hover:border-red-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                    <div className="w-12 h-12 bg-gradient-to-r from-red-400 to-red-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <X className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-gray-800">Difícil de usar</p>
-                      <p className="text-sm text-gray-600">Interfaz compleja</p>
+                      <p className="text-xl font-bold text-gray-800">Difícil de usar</p>
+                      <p className="text-sm text-red-600 font-medium">Interfaz compleja y confusa</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-xl border border-red-100">
-                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <X className="w-5 h-5 text-white" />
+                  <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-red-100 hover:border-red-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                    <div className="w-12 h-12 bg-gradient-to-r from-red-400 to-red-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <X className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-gray-800">Más contactos,</p>
-                      <p className="text-lg font-bold text-red-600">Más costoso</p>
+                      <p className="text-xl font-bold text-gray-800">Más contactos,</p>
+                      <p className="text-xl font-bold text-red-600">MÁS COSTOSO</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-xl border border-red-100">
-                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <DollarSign className="w-5 h-5 text-white" />
+                  <div className="group flex items-center space-x-4 p-6 bg-gradient-to-r from-red-50 to-red-100 rounded-2xl border-2 border-red-200 transition-all duration-300 shadow-lg">
+                    <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <DollarSign className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-gray-800">Post 7 días: $15 USD</p>
-                      <p className="text-lg font-semibold text-gray-800">Después: $25 USD, $50 USD...</p>
+                      <p className="text-lg font-bold text-gray-800">Post 7 días: $15 USD</p>
+                      <p className="text-lg font-bold text-red-700">Después: $25, $50, $100+...</p>
+                      <p className="text-sm text-red-600 font-medium">Precio escala con contactos</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Lado Hower Assistant */}
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-xl border border-green-100">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Check className="w-5 h-5 text-white" />
+                <div className="space-y-4">
+                  <div className="text-center mb-6">
+                    <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Hower Assistant</h3>
+                    <div className="h-1 w-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mx-auto"></div>
+                  </div>
+                  
+                  <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-green-100 hover:border-green-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-green-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <Check className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-gray-800">Contactos</p>
-                      <p className="text-lg font-bold text-green-600">ILIMITADOS</p>
+                      <p className="text-xl font-bold text-gray-800">Contactos</p>
+                      <p className="text-xl font-bold text-green-600">ILIMITADOS</p>
+                      <p className="text-sm text-green-600 font-medium">Sin restricciones</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-xl border border-green-100">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Check className="w-5 h-5 text-white" />
+                  <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-green-100 hover:border-green-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-green-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <Check className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-gray-800">Monta tu flujo</p>
-                      <p className="text-lg font-bold text-green-600">en 1 minuto</p>
+                      <p className="text-xl font-bold text-gray-800">Monta tu flujo</p>
+                      <p className="text-xl font-bold text-green-600">en 1 minuto</p>
+                      <p className="text-sm text-green-600 font-medium">Súper fácil de usar</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-xl border border-green-100">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Check className="w-5 h-5 text-white" />
+                  <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-green-100 hover:border-green-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <Search className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-gray-800">Más contactos,</p>
-                      <p className="text-lg font-bold text-green-600">MISMO costo</p>
+                      <p className="text-xl font-bold text-gray-800">Buscador de</p>
+                      <p className="text-xl font-bold text-purple-600">contenidos virales</p>
+                      <p className="text-sm font-bold text-pink-600">con Inteligencia Artificial</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-xl border border-green-100">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Search className="w-5 h-5 text-white" />
+                  <div className="group flex items-center space-x-4 p-6 bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 rounded-2xl border-2 border-purple-200 transition-all duration-300 shadow-xl">
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <DollarSign className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-gray-800">Buscador de</p>
-                      <p className="text-lg font-bold text-green-600">contenidos virales</p>
-                      <p className="text-sm font-semibold text-purple-600">con I.A.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4 p-4 bg-purple-50 rounded-xl border border-purple-200">
-                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <DollarSign className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-purple-600">$13 USD</p>
-                      <p className="text-lg font-bold text-purple-600">DE POR VIDA!</p>
+                      <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">$13 USD/mes</p>
+                      <p className="text-lg font-bold text-gray-800">MISMO PRECIO SIEMPRE</p>
+                      <p className="text-sm text-purple-600 font-medium">Sin importar tus contactos</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Botón CTA */}
+              {/* Botón CTA mejorado */}
               <div className="text-center">
-                <Button
-                  onClick={handleRegister}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-12 text-2xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl mb-4"
-                >
-                  Prueba GRATIS
-                </Button>
-                
-                <div className="flex items-center justify-center space-x-2 text-gray-600">
-                  <div className="w-6 h-6 border-2 border-gray-400 rounded flex items-center justify-center">
-                    <span className="text-xs">💳</span>
+                <div className="bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 max-w-md mx-auto">
+                  <Button
+                    onClick={handleRegister}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-8 text-xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl mb-4"
+                  >
+                    🚀 Prueba GRATIS 7 días
+                  </Button>
+                  
+                  <div className="flex items-center justify-center space-x-2 text-gray-600">
+                    <div className="w-6 h-6 border-2 border-gray-400 rounded flex items-center justify-center">
+                      <span className="text-xs">💳</span>
+                    </div>
+                    <span className="font-semibold">Sin tarjeta requerida</span>
                   </div>
-                  <span className="font-semibold">Sin tarjeta requerida</span>
                 </div>
               </div>
             </div>
