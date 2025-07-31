@@ -611,16 +611,18 @@ const Beta: React.FC = () => {
                 <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
                   Si tienes ya un sistema como <span className="font-semibold">Manychat o Chatfuel</span>, nosotros hacemos la migración de tus respuestas automáticas de estos otros softwares a Hower Assistant (si así lo deseas), en las funcionalidades disponibles dentro de Hower.
                 </p>
-                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 text-lg mb-6">
-                  Migración gratuita incluida
-                </Badge>
-                
-                <Button
-                  onClick={handleRegister}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
-                >
-                  Migrar a Hower gratis
-                </Button>
+                <div className="space-y-4">
+                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 text-lg">
+                    Migración gratuita incluida
+                  </Badge>
+                  
+                  <Button
+                    onClick={handleRegister}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                  >
+                    Migrar a Hower gratis
+                  </Button>
+                </div>
               </div>
             </Card>
           </div>
