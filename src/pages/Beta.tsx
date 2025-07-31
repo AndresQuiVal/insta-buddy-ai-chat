@@ -156,7 +156,7 @@ const Beta: React.FC = () => {
           <div className="min-h-screen flex items-center justify-center">
             <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
               <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-24 leading-tight">
-                Infoproductor <br /><br />
+                Oye Coach, Infoproductor, Trafficker... <br /><br />
                 ¿usas Manychat? <br />
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   te aseguro que tienes estos problemas...
