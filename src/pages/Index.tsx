@@ -151,20 +151,10 @@ const Index = () => {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <img
-              src="/src/assets/hower-logo.png"
+              src="https://i.ibb.co/bMLhkc7G/Hower-logo.png"
               alt="Logo Hower"
               className="w-12 h-12 rounded-2xl object-cover"
             />
-            
-            {/* Mostrar temporalmente el logo descargado */}
-            <div className="fixed top-4 right-4 z-50 bg-white p-4 rounded-lg shadow-lg border">
-              <p className="text-sm text-gray-600 mb-2">Logo descargado:</p>
-              <img
-                src="/src/assets/hower-logo.png"
-                alt="Logo Hower Assistant descargado"
-                className="w-16 h-16 rounded-2xl object-cover border"
-              />
-            </div>
             <div>
               <h1 className="text-4xl font-light bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Hower <span className="font-bold">Assistant</span>
