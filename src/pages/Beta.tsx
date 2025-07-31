@@ -161,7 +161,7 @@ const Beta: React.FC = () => {
                 <img 
                   src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
                   alt="Manychat"
-                  className="inline-block h-16 lg:h-20 mx-2 transform rotate-3 translate-y-1"
+                  className="inline-block h-16 lg:h-20 mx-2 transform rotate-3 translate-y-1 drop-shadow-lg"
                 />
                 ? <br />
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
