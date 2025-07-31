@@ -127,7 +127,7 @@ const Beta: React.FC = () => {
   const navigate = useNavigate();
 
   const handleRegister = () => {
-    navigate('/beta-signup');
+    navigate('/signup');
   };
 
   // Problemas de Manychat

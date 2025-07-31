@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
-const BetaSignupForm = () => {
+const SignupForm = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: ''
@@ -48,7 +48,7 @@ const BetaSignupForm = () => {
         <Card className="bg-white/90 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl p-12">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-              ¡Únete a la Beta!
+              ¡Comienza ahora!
             </h1>
             <p className="text-gray-600 text-lg mb-2">
               Prueba gratuita de 7 días
@@ -107,4 +107,4 @@ const BetaSignupForm = () => {
   );
 };
 
-export default BetaSignupForm;
+export default SignupForm;
