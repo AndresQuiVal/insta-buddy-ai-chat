@@ -146,9 +146,6 @@ const Beta: React.FC = () => {
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-light text-primary">Hower <span className="font-bold">Assistant</span></h1>
             </div>
-            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-              Beta Exclusiva
-            </Badge>
           </div>
         </div>
       </div>
@@ -195,12 +192,7 @@ const Beta: React.FC = () => {
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="max-w-4xl mx-auto text-center space-y-16">
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight text-white mt-16 mb-12">
-                Hower Assistant es para ti{' '}
-                <span className="relative">
-                  <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-2xl lg:text-3xl px-6 py-2 font-bold shadow-lg">
-                    BETA
-                  </Badge>
-                </span>
+                Hower Assistant es para ti
               </h1>
               
               {/* Video explicativo */}
@@ -250,12 +242,12 @@ const Beta: React.FC = () => {
               
               <div className="flex flex-wrap justify-center gap-4 mt-8 mb-32">
                 <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4 bg-white/10 border-white/20 text-white">
-                  <Calendar className="w-5 h-5" />
-                  Beta: 24 de Junio
+                  <MessageSquare className="w-5 h-5" />
+                  Autorespondedor Inteligente
                 </Badge>
                 <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4 bg-white/10 border-white/20 text-white">
-                  <Users className="w-5 h-5" />
-                  Lanzamiento: 1 de Julio
+                  <Search className="w-5 h-5" />
+                  Contenido Viral AI
                 </Badge>
               </div>
             </div>
@@ -474,20 +466,20 @@ const Beta: React.FC = () => {
               <div className="space-y-8">
                 {[
                   {
-                    question: "¿Qué incluye la beta?",
-                    answer: "Acceso completo a los 4 procesos inteligentes de Hower Assistant: IA de sugerencias de seguimientos, prospección semi-móvil, métricas en tiempo real y auto-respondedor completo."
+                    question: "¿Qué incluye Hower Assistant?",
+                    answer: "Acceso completo al Autorespondedor inteligente, Hower Viral AI para contenido viral, gestión de prospectos con IA y métricas en tiempo real."
                   },
                   {
-                    question: "¿Cuándo empezará la beta?",
-                    answer: "La beta comenzará el 24 de junio de 2024. Te notificaremos por email con las instrucciones de acceso una vez que esté lista."
+                    question: "¿Cómo funciona la prueba gratuita?",
+                    answer: "Obtienes acceso completo a todas las funciones durante 7 días sin costo. No necesitas tarjeta de crédito para empezar."
                   },
                   {
-                    question: "¿Por qué $1 USD?",
-                    answer: "El pago simbólico de $1 nos ayuda a confirmar tu interés real en participar en la beta y garantiza que recibirás todas las actualizaciones importantes."
+                    question: "¿Es realmente gratis la migración?",
+                    answer: "Sí, incluimos la migración gratuita de tus respuestas automáticas desde Manychat o Chatfuel a Hower Assistant."
                   },
                   {
-                    question: "¿Qué pasa después del lanzamiento oficial?",
-                    answer: "Los participantes de la beta tendrán acceso a precios especiales y características exclusivas cuando lancemos oficialmente el 1 de julio de 2024."
+                    question: "¿Hay límite de contactos?",
+                    answer: "No, ofrecemos contactos ilimitados. No tienes que preocuparte por pagar más al crecer tu base de contactos."
                   }
                 ].map((faq, index) => (
                   <Card key={index} className="p-8 border-0 bg-white/60 backdrop-blur-sm">
