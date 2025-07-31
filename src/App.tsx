@@ -17,6 +17,7 @@ import Hower15 from "./pages/Hower15";
 import Pricing from "./pages/Pricing";
 import PricingIncruises from "./pages/PricingIncruises";
 import NotFound from "./pages/NotFound";
+import BetaSignupForm from "./components/BetaSignupForm";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/guides" element={<Guides />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/beta" element={<Beta />} />
+          <Route path="/beta-signup" element={<BetaSignupForm />} />
           <Route path="/prospects-demo" element={<ProspectsDemo />} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/hower-1-5" element={<Hower15 />} />

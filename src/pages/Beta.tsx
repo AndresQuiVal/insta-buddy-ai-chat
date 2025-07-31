@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, ArrowDown } from 'lucide-react';
+import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, ArrowDown, Search, Target, Copy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Beta: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -123,16 +124,17 @@ const Beta: React.FC = () => {
     };
   }, []);
 
+  const navigate = useNavigate();
+
   const handleRegister = () => {
-    window.open('https://buy.stripe.com/cNi6oG9gYdRIf1HdFm3wQ0u', '_blank');
+    navigate('/beta-signup');
   };
 
-  // Problemas/Preguntas de los usuarios
+  // Problemas de Manychat
   const problems = [
-    <>Sigo anotando a mis prospectos en mi cuaderno, <strong>para que no se me olvide...</strong></>,
-    <><strong>No se que hacer</strong> cuando mis prospectos me responden a mis mensajes!</>,
-    <>Subo y subo contenido pero <strong>no logro ganar nuevos seguidores, ni venderles</strong></>,
-    <><strong>No me gusta trabajar en la computadora</strong>, prefiero en el celular</>
+    <>Llegué al límite de contactos... <strong>ahora me toca pagar más.. pff.....!</strong></>,
+    <>Tiene muchas cosas que no uso <strong>(y tampoco termino de entenderlas...)</strong></>,
+    <>yo lo que quiero es publicar contenido viral... <strong>y que un bot atienda a los leads por mi...</strong></>
   ];
 
   return (
@@ -156,10 +158,10 @@ const Beta: React.FC = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="min-h-screen flex items-center justify-center">
             <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-              <h1 className="text-6xl lg:text-8xl font-bold text-gray-900 mb-24 leading-tight">
-                Networker, <br />
+              <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-24 leading-tight">
+                Infoproductor ¿usas Manychat? <br />
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  ¿con cuántas te identificas?
+                  te aseguro que tienes estos problemas...
                 </span>
               </h1>
             </div>
@@ -267,89 +269,78 @@ const Beta: React.FC = () => {
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="text-center mb-20">
               <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
-                4 funcionalidades, que ninguno otro tiene para ti
+                Bienvenido al Autorespondedor...
               </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Descubre las funcionalidades que transformarán tu negocio en Instagram
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
+                El autorespondedor es lo que conoces como "automatización", solamente que hasta más "fácil" de entender... no?
               </p>
+              
+              <h3 className="text-2xl font-bold text-gray-800 mb-8">3 pasos configuras un autorespondedor</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-16">
+                {[
+                  { number: "1", title: "Selecciona el tipo de autorespondedor", icon: <Target className="w-8 h-8" /> },
+                  { number: "2", title: "Configura el autorespondedor", icon: <MessageSquare className="w-8 h-8" /> },
+                  { number: "3", title: "Actívalo", icon: <Zap className="w-8 h-8" /> }
+                ].map((step, index) => (
+                  <Card key={index} className="p-6 border-0 bg-white/80 backdrop-blur-sm text-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white">
+                      {step.icon}
+                    </div>
+                    <div className="text-2xl font-bold text-purple-600 mb-2">{step.number}</div>
+                    <p className="text-gray-700 font-semibold">{step.title}</p>
+                  </Card>
+                ))}
+              </div>
+              
+              <p className="text-xl text-gray-600 mb-16">fácil...</p>
             </div>
 
-            <div className="max-w-7xl mx-auto space-y-24">
-              {/* Fila 1: Video Sugerencias + Texto */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
-                    <wistia-player media-id="fe270kwf7n" aspect="0.7361963190184049"></wistia-player>
-                  </div>
-                </div>
-                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="text-center lg:text-left">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-6">
-                      🎯 Sugerencias de IA para cada prospecto
-                    </h3>
-                    <p className="text-lg text-gray-600 leading-relaxed">
-                      Nuestra IA analiza cada conversación y te sugiere exactamente qué decir para aumentar tus posibilidades de cerrar la venta.
-                    </p>
-                  </div>
-                </div>
+            {/* Sección Hower Viral AI */}
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-8">
+                  y no nada más es eso....
+                </h2>
+                <p className="text-2xl text-gray-700 mb-8">
+                  conoce nuestro buscador de contenidos virales de Instagram llamado{' '}
+                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-bold">
+                    "Hower Viral AI"
+                  </span>
+                </p>
               </div>
 
-              {/* Fila 2: Texto + Video Móvil */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
-                  <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
-                    <wistia-player media-id="f9mwa4wrl9" aspect="0.7361963190184049"></wistia-player>
+              <Card className="p-12 border-0 bg-gradient-to-r from-purple-50 to-pink-50 mb-16">
+                <div className="text-center space-y-8">
+                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto">
+                    <Search className="w-10 h-10 text-white" />
                   </div>
-                </div>
-                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
-                  <div className="text-center lg:text-left">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-6">
-                      📱 Gestiona todo desde tu móvil
-                    </h3>
-                    <p className="text-lg text-gray-600 leading-relaxed">
-                      Accede a todas las funciones desde cualquier dispositivo. Responde mensajes, gestiona prospectos y monitorea métricas estés donde estés.
-                    </p>
+                  
+                  <h3 className="text-3xl font-bold text-gray-800 mb-6">Con este buscador vas a poder:</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
+                        1
+                      </div>
+                      <p className="text-lg text-gray-700 leading-relaxed">
+                        Identificar los reels y contenidos MÁS virales que hace tu competencia para ganar más leads
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-start space-x-4">
+                      <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
+                        2
+                      </div>
+                      <p className="text-lg text-gray-700 leading-relaxed">
+                        Copialos para ser igual (o más) viral!
+                      </p>
+                    </div>
                   </div>
+                  
+                  <p className="text-xl text-gray-600 font-semibold">y más cosas...</p>
                 </div>
-              </div>
-
-              {/* Fila 3: Video Métricas + Texto */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
-                    <wistia-player media-id="x6zybq0h5n" aspect="0.6153846153846154"></wistia-player>
-                  </div>
-                </div>
-                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-                  <div className="text-center lg:text-left">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-6">
-                      📊 Métricas que importan
-                    </h3>
-                    <p className="text-lg text-gray-600 leading-relaxed">
-                      Analiza tu rendimiento con métricas claras: tasa de respuesta, tiempo promedio de respuesta, conversiones por etapa y más.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Fila 4: Texto + Video Autoresponder */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-2">
-                  <div className="rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
-                    <wistia-player media-id="ihs01ndhd7" aspect="0.6153846153846154"></wistia-player>
-                  </div>
-                </div>
-                <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 lg:order-1">
-                  <div className="text-center lg:text-left">
-                    <h3 className="text-3xl font-bold text-gray-800 mb-6">
-                      🤖 Autoresponder inteligente
-                    </h3>
-                    <p className="text-lg text-gray-600 leading-relaxed">
-                      Configura respuestas automáticas personalizadas que se envían cuando alguien te escribe por primera vez, ahorrándote tiempo valioso.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              </Card>
             </div>
           </div>
         </div>
@@ -450,10 +441,10 @@ const Beta: React.FC = () => {
             <div className="max-w-4xl mx-auto text-center space-y-12">
               <div className="space-y-6">
                 <h2 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
-                  Asegura tu acceso
+                  ¿Listo para empezar?
                 </h2>
                 <p className="text-2xl text-purple-100 leading-relaxed">
-                  Únete por solo $1 USD y obtén acceso completo desde el 24 de junio
+                  Accede ahora con tu prueba gratuita de 7 días
                 </p>
               </div>
 
@@ -462,11 +453,11 @@ const Beta: React.FC = () => {
                 className="bg-white text-purple-900 hover:bg-gray-100 font-bold py-6 px-12 text-2xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
                 size="lg"
               >
-                Registrarse por $1 USD
+                Accede ahora
               </Button>
 
               <p className="text-purple-200 text-lg">
-                Al hacer clic serás redirigido a Stripe para completar el pago seguro
+                Prueba gratuita de 7 días - Sin compromiso
               </p>
             </div>
           </div>
