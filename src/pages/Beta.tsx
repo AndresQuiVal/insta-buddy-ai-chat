@@ -708,7 +708,7 @@ const Beta: React.FC = () => {
       <footer className="py-12 border-t border-gray-200">
         <div className="container mx-auto px-4 text-center">
           <p className="text-gray-500 text-lg">
-            © 2024 Hower Assistant. La IA será tu mejor aliado en Instagram.
+            © 2025 Hower Assistant. La IA será tu mejor aliado en Instagram.
           </p>
         </div>
       </footer>
