@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, ArrowDown, Search, Target, Copy } from 'lucide-react';
+import { CheckCircle, Calendar, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, ArrowDown, Search, Target, Copy, X, Check, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Beta: React.FC = () => {
@@ -361,6 +361,157 @@ const Beta: React.FC = () => {
                   </Button>
                 </div>
               </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sección de Comparación */}
+      <section className="py-32 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
+            <div className="max-w-6xl mx-auto">
+              {/* Header de comparación */}
+              <div className="text-center mb-16">
+                <div className="flex items-center justify-center gap-8 mb-8">
+                  <div className="flex items-center space-x-3">
+                    <img 
+                      src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
+                      alt="Manychat"
+                      className="h-12"
+                    />
+                  </div>
+                  
+                  <div className="text-6xl font-black text-gray-800">VS</div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                      <span className="text-white font-bold text-xl">@</span>
+                    </div>
+                    <div>
+                      <span className="text-2xl font-light text-purple-600">Hower</span>
+                      <span className="text-2xl font-bold text-pink-600 ml-1">Assistant</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comparación de características */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+                {/* Lado Manychat */}
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-xl border border-red-100">
+                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <X className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-gray-800">500 Contactos</p>
+                      <p className="text-sm text-gray-600">Límite restrictivo</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-xl border border-red-100">
+                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <X className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-gray-800">Difícil de usar</p>
+                      <p className="text-sm text-gray-600">Interfaz compleja</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-xl border border-red-100">
+                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <X className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-gray-800">Más contactos,</p>
+                      <p className="text-lg font-bold text-red-600">Más costoso</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-xl border border-red-100">
+                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <DollarSign className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-gray-800">Post 7 días: $15 USD</p>
+                      <p className="text-lg font-semibold text-gray-800">Después: $25 USD, $50 USD...</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lado Hower Assistant */}
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-xl border border-green-100">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-gray-800">Contactos</p>
+                      <p className="text-lg font-bold text-green-600">ILIMITADOS</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-xl border border-green-100">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-gray-800">Monta tu flujo</p>
+                      <p className="text-lg font-bold text-green-600">en 1 minuto</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-xl border border-green-100">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-gray-800">Más contactos,</p>
+                      <p className="text-lg font-bold text-green-600">MISMO costo</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-xl border border-green-100">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Search className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-gray-800">Buscador de</p>
+                      <p className="text-lg font-bold text-green-600">contenidos virales</p>
+                      <p className="text-sm font-semibold text-purple-600">con I.A.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-4 bg-purple-50 rounded-xl border border-purple-200">
+                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <DollarSign className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-purple-600">$13 USD</p>
+                      <p className="text-lg font-bold text-purple-600">DE POR VIDA!</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botón CTA */}
+              <div className="text-center">
+                <Button
+                  onClick={handleRegister}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-12 text-2xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl mb-4"
+                >
+                  Prueba GRATIS
+                </Button>
+                
+                <div className="flex items-center justify-center space-x-2 text-gray-600">
+                  <div className="w-6 h-6 border-2 border-gray-400 rounded flex items-center justify-center">
+                    <span className="text-xs">💳</span>
+                  </div>
+                  <span className="font-semibold">Sin tarjeta requerida</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
