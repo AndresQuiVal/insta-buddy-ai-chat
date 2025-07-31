@@ -236,9 +236,16 @@ const Beta: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-2xl text-purple-100 leading-relaxed mb-16">
+              <p className="text-2xl text-purple-100 leading-relaxed mb-8">
                 Empieza a vender más con Inteligencia Artificial en Instagram
               </p>
+              
+              <Button
+                onClick={handleRegister}
+                className="bg-white text-purple-900 hover:bg-gray-100 font-semibold py-3 px-8 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg mb-8"
+              >
+                Acceder a la prueba gratuita
+              </Button>
               
               <div className="flex flex-wrap justify-center gap-4 mt-8 mb-32">
                 <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4 bg-white/10 border-white/20 text-white">
@@ -285,7 +292,14 @@ const Beta: React.FC = () => {
                 ))}
               </div>
               
-              <p className="text-xl text-gray-600 mb-16">fácil...</p>
+              <p className="text-xl text-gray-600 mb-8">fácil...</p>
+              
+              <Button
+                onClick={handleRegister}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg mb-16"
+              >
+                Configurar mi autorespondedor
+              </Button>
             </div>
 
             {/* Sección Hower Viral AI */}
@@ -330,7 +344,14 @@ const Beta: React.FC = () => {
                     </div>
                   </div>
                   
-                  <p className="text-xl text-gray-600 font-semibold">y más cosas...</p>
+                  <p className="text-xl text-gray-600 font-semibold mb-8">y más cosas...</p>
+                  
+                  <Button
+                    onClick={handleRegister}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                  >
+                    Probar ahora gratis
+                  </Button>
                 </div>
               </Card>
             </div>
@@ -417,9 +438,16 @@ const Beta: React.FC = () => {
                 <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
                   Si tienes ya un sistema como <span className="font-semibold">Manychat o Chatfuel</span>, nosotros hacemos la migración de tus respuestas automáticas de estos otros softwares a Hower Assistant (si así lo deseas), en las funcionalidades disponibles dentro de Hower.
                 </p>
-                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 text-lg">
+                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 text-lg mb-6">
                   Migración gratuita incluida
                 </Badge>
+                
+                <Button
+                  onClick={handleRegister}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-8 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                >
+                  Migrar a Hower gratis
+                </Button>
               </div>
             </Card>
           </div>
