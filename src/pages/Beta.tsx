@@ -155,16 +155,24 @@ const Beta: React.FC = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="min-h-screen flex items-center justify-center">
             <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-              <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-24 leading-tight">
-                Oye Coach, Infoproductor, Trafficker... <br /><br />
-                ¿usas{' '}
-                <img 
-                  src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
-                  alt="Manychat"
-                  className="inline-block h-16 lg:h-20 mx-2 transform rotate-3 translate-y-1 drop-shadow-lg rounded-xl"
-                />
-                ? <br />
-                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-24 leading-tight">
+                <span className="block mb-4">
+                  <span className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mr-2">🎯 Oye Coach,</span>
+                  <span className="inline-block bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent mr-2">📚 Infoproductor,</span>
+                  <span className="inline-block bg-gradient-to-r from-pink-600 to-pink-700 bg-clip-text text-transparent">🚀 Trafficker...</span>
+                </span>
+                
+                <span className="block text-3xl lg:text-5xl mb-6">
+                  ¿usas{' '}
+                  <img 
+                    src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
+                    alt="Manychat"
+                    className="inline-block h-16 lg:h-20 mx-2 transform rotate-3 translate-y-1 drop-shadow-lg rounded-xl"
+                  />
+                  ?
+                </span>
+                
+                <span className="block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-3xl lg:text-5xl">
                   te aseguro que tienes estos problemas...
                 </span>
               </h1>
