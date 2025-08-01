@@ -72,10 +72,13 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
     console.log('🔍 DEBUGGER - useEffect ejecutándose');
     console.log('🔍 DEBUGGER - autoresponder completo:', autoresponder);
     
-    // Inicializar estado de botones
-    if (autoresponder.use_buttons) {
+    // Detectar automáticamente si hay datos de botón configurados
+    const hasButtonData = autoresponder.button_text || autoresponder.button_type || autoresponder.button_url || autoresponder.postback_response;
+    
+    // Inicializar estado de botones - activar si use_buttons es true O si hay datos de botón
+    if (autoresponder.use_buttons || hasButtonData) {
+      console.log('✅ Activando switch de botones - use_buttons:', autoresponder.use_buttons, 'hasButtonData:', hasButtonData);
       setUseButtons(true);
-      console.log('✅ Botones activados desde datos existentes');
       
       // Cargar tipo de botón y datos
       if (autoresponder.button_type) {
