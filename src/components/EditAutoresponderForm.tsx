@@ -8,8 +8,9 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
-import { X, ArrowLeft } from 'lucide-react';
+import { X, ArrowLeft, MousePointer, Link, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FollowUpConfig, { FollowUp } from './FollowUpConfig';
 
 interface AutoresponderMessage {
@@ -20,6 +21,8 @@ interface AutoresponderMessage {
   send_only_first_message?: boolean;
   use_keywords?: boolean;
   keywords?: string[];
+  use_buttons?: boolean;
+  buttons?: any;
   followups?: FollowUp[];
 }
 
@@ -38,6 +41,12 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [useButtons, setUseButtons] = useState(false);
+  const [buttonType, setButtonType] = useState<'web_url' | 'postback'>('web_url');
+  const [buttonText, setButtonText] = useState('');
+  const [buttonUrl, setButtonUrl] = useState('');
+  const [postbackPayload, setPostbackPayload] = useState('');
+  const [postbackResponse, setPostbackResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -49,6 +58,23 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
     setSendOnlyFirstMessage(message.send_only_first_message || false);
     setUseKeywords(message.use_keywords || false);
     setKeywords(message.keywords || []);
+    
+    // Cargar configuración de botones
+    setUseButtons(message.use_buttons || false);
+    if (message.buttons) {
+      const buttons = Array.isArray(message.buttons) ? message.buttons[0] : message.buttons;
+      if (buttons) {
+        setButtonType(buttons.type || 'web_url');
+        setButtonText(buttons.title || '');
+        if (buttons.type === 'web_url') {
+          setButtonUrl(buttons.url || '');
+        } else if (buttons.type === 'postback') {
+          setPostbackPayload(buttons.payload || '');
+          // Cargar respuesta de postback si existe
+          loadPostbackResponse(buttons.payload);
+        }
+      }
+    }
     
     // Cargar follow-ups existentes
     loadFollowUps(message.id);
@@ -79,6 +105,28 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
       }
     } catch (error) {
       console.error('❌ Error cargando follow-ups:', error);
+    }
+  };
+
+  const loadPostbackResponse = async (payload: string) => {
+    if (!payload || !currentUser) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('button_postback_actions')
+        .select('action_data')
+        .eq('payload_key', payload)
+        .eq('user_id', currentUser.instagram_user_id)
+        .single();
+
+      if (data && data.action_data && typeof data.action_data === 'object') {
+        const actionData = data.action_data as any;
+        if (actionData.response_message) {
+          setPostbackResponse(actionData.response_message);
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando respuesta de postback:', error);
     }
   };
 
@@ -130,6 +178,59 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
       return;
     }
 
+    // Validación para botones
+    if (useButtons) {
+      if (!buttonText.trim()) {
+        toast({
+          title: "Error",
+          description: "El texto del botón es requerido",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (buttonType === 'web_url' && !buttonUrl.trim()) {
+        toast({
+          title: "Error",
+          description: "La URL del botón es requerida para el tipo web_url",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (buttonType === 'postback' && !postbackPayload.trim()) {
+        toast({
+          title: "Error",
+          description: "El payload del postback es requerido",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (buttonType === 'postback' && !postbackResponse.trim()) {
+        toast({
+          title: "Error",
+          description: "La respuesta del postback es requerida",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validar URL si es web_url
+      if (buttonType === 'web_url') {
+        try {
+          new URL(buttonUrl);
+        } catch {
+          toast({
+            title: "Error",
+            description: "Por favor ingresa una URL válida",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
+    }
+
     setIsLoading(true);
 
     try {
@@ -142,6 +243,12 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
         send_only_first_message: sendOnlyFirstMessage,
         use_keywords: useKeywords,
         keywords: useKeywords ? keywords : null,
+        use_buttons: useButtons,
+        buttons: useButtons ? [
+          buttonType === 'web_url' 
+            ? { type: 'web_url', title: buttonText.trim(), url: buttonUrl.trim() }
+            : { type: 'postback', title: buttonText.trim(), payload: postbackPayload.trim() }
+        ] : null,
       };
 
       const { error } = await supabase
@@ -153,6 +260,36 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
       if (error) {
         console.error('❌ Error actualizando en BD:', error);
         throw error;
+      }
+
+      // Guardar postback action si es necesario
+      if (useButtons && buttonType === 'postback' && postbackPayload.trim() && postbackResponse.trim()) {
+        // Primero eliminar postback action existente
+        await supabase
+          .from('button_postback_actions')
+          .delete()
+          .eq('payload_key', postbackPayload.trim())
+          .eq('user_id', currentUser.instagram_user_id);
+
+        // Crear nuevo postback action
+        const { error: postbackError } = await supabase
+          .from('button_postback_actions')
+          .insert({
+            payload_key: postbackPayload.trim(),
+            action_type: 'send_message',
+            action_data: {
+              response_message: postbackResponse.trim()
+            },
+            autoresponder_id: message.id,
+            user_id: currentUser.instagram_user_id
+          });
+
+        if (postbackError) {
+          console.error('❌ Error guardando postback action:', postbackError);
+          throw postbackError;
+        }
+        
+        console.log('✅ Postback action guardado exitosamente');
       }
 
       // Guardar follow-ups
@@ -354,6 +491,130 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
                   </div>
                 )}
               </div>
+          )}
+        </div>
+
+        {/* Configuración de Botones */}
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="flex items-start space-x-3 mb-4">
+            <Switch
+              id="useButtons"
+              checked={useButtons}
+              onCheckedChange={setUseButtons}
+            />
+            <div className="flex-1">
+              <label htmlFor="useButtons" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                <MousePointer className="w-4 h-4" />
+                Agregar botón interactivo al mensaje
+              </label>
+              <p className="text-xs text-blue-700 mt-1">
+                Añade un botón al mensaje DM que el usuario puede presionar
+              </p>
+            </div>
+          </div>
+
+          {useButtons && (
+            <div className="space-y-4 pl-6 border-l-2 border-blue-300">
+              <div>
+                <Label htmlFor="buttonText" className="text-sm font-medium text-blue-900">
+                  Texto del Botón
+                </Label>
+                <Input
+                  id="buttonText"
+                  value={buttonText}
+                  onChange={(e) => setButtonText(e.target.value)}
+                  placeholder="Ej: Ver Información, Descargar PDF..."
+                  className="mt-1"
+                  maxLength={20}
+                />
+                <p className="text-xs text-blue-600 mt-1">
+                  {buttonText.length}/20 caracteres
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="buttonType" className="text-sm font-medium text-blue-900">
+                  Tipo de Botón
+                </Label>
+                <Select value={buttonType} onValueChange={(value: 'web_url' | 'postback') => setButtonType(value)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="web_url">
+                      <div className="flex items-center gap-2">
+                        <Link className="w-4 h-4" />
+                        <span>URL (Redirigir a sitio web)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="postback">
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4" />
+                        <span>Postback (Enviar mensaje automático)</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {buttonType === 'web_url' && (
+                <div>
+                  <Label htmlFor="buttonUrl" className="text-sm font-medium text-blue-900">
+                    URL del Botón
+                  </Label>
+                  <Input
+                    id="buttonUrl"
+                    type="url"
+                    value={buttonUrl}
+                    onChange={(e) => setButtonUrl(e.target.value)}
+                    placeholder="https://ejemplo.com/mi-pagina"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-blue-600 mt-1">
+                    El usuario será redirigido a esta URL cuando presione el botón
+                  </p>
+                </div>
+              )}
+
+              {buttonType === 'postback' && (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="postbackPayload" className="text-sm font-medium text-blue-900">
+                      Identificador del Postback
+                    </Label>
+                    <Input
+                      id="postbackPayload"
+                      value={postbackPayload}
+                      onChange={(e) => setPostbackPayload(e.target.value)}
+                      placeholder="Ej: GET_INFO, DOWNLOAD_PDF..."
+                      className="mt-1"
+                      maxLength={100}
+                    />
+                    <p className="text-xs text-blue-600 mt-1">
+                      Identificador único para este botón (solo letras, números y guiones bajos)
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="postbackResponse" className="text-sm font-medium text-blue-900">
+                      Mensaje de Respuesta Automática
+                    </Label>
+                    <Textarea
+                      id="postbackResponse"
+                      value={postbackResponse}
+                      onChange={(e) => setPostbackResponse(e.target.value)}
+                      placeholder="Este mensaje se enviará automáticamente cuando el usuario presione el botón..."
+                      rows={3}
+                      className="mt-1"
+                      maxLength={1000}
+                    />
+                    <p className="text-xs text-blue-600 mt-1">
+                      {postbackResponse.length}/1000 caracteres - Este mensaje se enviará cuando presionen el botón
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
