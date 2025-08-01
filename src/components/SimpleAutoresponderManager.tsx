@@ -28,6 +28,10 @@ interface CommentAutoresponder {
   button_type?: string;
   button_url?: string;
   postback_response?: string;
+  // Para distinguir el tipo
+  type?: 'specific' | 'general';
+  post_id?: string;
+  post_url?: string;
 }
 
 interface DirectMessage {
@@ -54,9 +58,16 @@ const SimpleAutoresponderManager: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch comment autoresponders
+      // Fetch comment autoresponders (específicos)
       const { data: commentData } = await supabase
         .from('comment_autoresponders')
+        .select('*')
+        .eq('user_id', currentUser.instagram_user_id)
+        .order('created_at', { ascending: false });
+
+      // Fetch general comment autoresponders
+      const { data: generalData } = await supabase
+        .from('general_comment_autoresponders')
         .select('*')
         .eq('user_id', currentUser.instagram_user_id)
         .order('created_at', { ascending: false });
@@ -68,7 +79,13 @@ const SimpleAutoresponderManager: React.FC = () => {
         .eq('instagram_user_id', currentUser.id)
         .order('created_at', { ascending: false });
 
-      setCommentAutoresponders(commentData || []);
+      // Combinar autoresponders específicos y generales
+      const allCommentAutoresponders = [
+        ...(commentData || []).map(item => ({ ...item, type: 'specific' as const })),
+        ...(generalData || []).map(item => ({ ...item, type: 'general' as const }))
+      ];
+
+      setCommentAutoresponders(allCommentAutoresponders);
       setDirectMessages(messageData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -82,10 +99,12 @@ const SimpleAutoresponderManager: React.FC = () => {
     }
   };
 
-  const toggleCommentActive = async (id: string, currentStatus: boolean) => {
+  const toggleCommentActive = async (id: string, currentStatus: boolean, type?: 'specific' | 'general') => {
     try {
+      const tableName = type === 'general' ? 'general_comment_autoresponders' : 'comment_autoresponders';
+      
       await supabase
-        .from('comment_autoresponders')
+        .from(tableName)
         .update({ is_active: !currentStatus })
         .eq('id', id);
 
@@ -210,6 +229,12 @@ const SimpleAutoresponderManager: React.FC = () => {
                       <div className="space-y-1">
                         <CardTitle className="text-lg">{autoresponder.name}</CardTitle>
                         <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={autoresponder.type === 'general' ? 'default' : 'secondary'} 
+                            className="text-xs"
+                          >
+                            {autoresponder.type === 'general' ? 'General' : 'Específico'}
+                          </Badge>
                           <Badge variant="secondary" className="text-xs">
                             {autoresponder.keywords.length} palabras clave
                           </Badge>
@@ -237,7 +262,7 @@ const SimpleAutoresponderManager: React.FC = () => {
                           </span>
                           <Switch
                             checked={autoresponder.is_active}
-                            onCheckedChange={() => toggleCommentActive(autoresponder.id, autoresponder.is_active)}
+                            onCheckedChange={() => toggleCommentActive(autoresponder.id, autoresponder.is_active, autoresponder.type)}
                           />
                         </div>
                         <Button variant="outline" size="sm">
