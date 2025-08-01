@@ -388,6 +388,9 @@ const Beta: React.FC = () => {
                 <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-8">
                   ¿Por qué elegir Hower Assistant?
                 </h2>
+                <p className="text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-8 px-4">
+                  Hower Assistant está hecho para personas que quieren tener un bot fácil de configurar para Instagram, sin lidiar con costos caros ni sistemas complejos. Cualquiera debería poder configurar un bot en Instagram de manera simple y a un costo accesible.
+                </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-8 px-4">
                   <div className="flex items-center space-x-3 p-3 sm:p-4 bg-white rounded-2xl shadow-lg border border-gray-100">
                     <img 
@@ -452,16 +455,26 @@ const Beta: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="group flex items-center space-x-4 p-6 bg-gradient-to-r from-red-50 to-red-100 rounded-2xl border-2 border-red-200 transition-all duration-300 shadow-lg">
-                    <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                      <DollarSign className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-gray-800">Post 7 días: $15 USD</p>
-                      <p className="text-lg font-bold text-red-700">Después: $25, $50, $100+...</p>
-                      <p className="text-sm text-red-600 font-medium">Precio escala con contactos</p>
-                    </div>
-                  </div>
+                   <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-red-100 hover:border-red-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                     <div className="w-12 h-12 bg-gradient-to-r from-red-400 to-red-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                       <X className="w-6 h-6 text-white" />
+                     </div>
+                     <div>
+                       <p className="text-xl font-bold text-gray-800">Tiene marca de agua</p>
+                       <p className="text-sm text-red-600 font-medium">En la prueba gratuita</p>
+                     </div>
+                   </div>
+
+                   <div className="group flex items-center space-x-4 p-6 bg-gradient-to-r from-red-50 to-red-100 rounded-2xl border-2 border-red-200 transition-all duration-300 shadow-lg">
+                     <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                       <DollarSign className="w-6 h-6 text-white" />
+                     </div>
+                     <div>
+                       <p className="text-lg font-bold text-gray-800">Post 7 días: $15 USD</p>
+                       <p className="text-lg font-bold text-red-700">Después: $25, $50, $100+...</p>
+                       <p className="text-sm text-red-600 font-medium">Precio escala con contactos</p>
+                     </div>
+                   </div>
                 </div>
 
                 {/* Lado Hower Assistant */}
@@ -504,16 +517,26 @@ const Beta: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="group flex items-center space-x-4 p-6 bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 rounded-2xl border-2 border-purple-200 transition-all duration-300 shadow-xl">
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                      <DollarSign className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">$13 USD/mes</p>
-                      <p className="text-lg font-bold text-gray-800">MISMO PRECIO SIEMPRE</p>
-                      <p className="text-sm text-purple-600 font-medium">Sin importar tus contactos</p>
-                    </div>
-                  </div>
+                   <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-green-100 hover:border-green-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                     <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-green-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                       <Check className="w-6 h-6 text-white" />
+                     </div>
+                     <div>
+                       <p className="text-xl font-bold text-gray-800">SIN marca de agua</p>
+                       <p className="text-sm text-green-600 font-medium">Ni en la prueba gratuita</p>
+                     </div>
+                   </div>
+
+                   <div className="group flex items-center space-x-4 p-6 bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 rounded-2xl border-2 border-purple-200 transition-all duration-300 shadow-xl">
+                     <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                       <DollarSign className="w-6 h-6 text-white" />
+                     </div>
+                     <div>
+                       <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">$13 USD/mes</p>
+                       <p className="text-lg font-bold text-gray-800">MISMO PRECIO SIEMPRE</p>
+                       <p className="text-sm text-purple-600 font-medium">Sin importar tus contactos</p>
+                     </div>
+                   </div>
                 </div>
               </div>
 
@@ -545,9 +568,9 @@ const Beta: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="max-w-6xl mx-auto">
-              <h2 className="text-4xl lg:text-5xl font-bold text-center mb-16 text-gray-800">
-                ¿Qué incluye el Manychat de Hower?
-              </h2>
+               <h2 className="text-4xl lg:text-5xl font-bold text-center mb-16 text-gray-800">
+                 ¿Qué incluye Hower Assistant?
+               </h2>
               
               <div className="text-center mb-12 space-y-6">
                 <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 text-xl font-bold">
