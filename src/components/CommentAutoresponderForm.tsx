@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare, UserCheck } from 'lucide-react';
+import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare, UserCheck, MousePointer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
@@ -41,6 +41,9 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   const [newPublicReply, setNewPublicReply] = useState('');
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [requireFollower, setRequireFollower] = useState(false);
+  const [useButtonMessage, setUseButtonMessage] = useState(false);
+  const [buttonText, setButtonText] = useState('');
+  const [buttonUrl, setButtonUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -131,6 +134,39 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
       return;
     }
 
+    // Validación para botones
+    if (useButtonMessage) {
+      if (!buttonText.trim()) {
+        toast({
+          title: "Error",
+          description: "El texto del botón es requerido cuando usas mensaje con botón",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!buttonUrl.trim()) {
+        toast({
+          title: "Error", 
+          description: "La URL del botón es requerida cuando usas mensaje con botón",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validar que la URL sea válida
+      try {
+        new URL(buttonUrl);
+      } catch {
+        toast({
+          title: "Error",
+          description: "Por favor ingresa una URL válida para el botón",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -149,6 +185,9 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
           dm_message: dmMessage.trim(),
           public_reply_messages: publicReplyMessages,
           require_follower: requireFollower,
+          use_button_message: useButtonMessage,
+          button_text: useButtonMessage ? buttonText.trim() : null,
+          button_url: useButtonMessage ? buttonUrl.trim() : null,
           is_active: true
         })
         .select()
@@ -411,6 +450,66 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
             <p className="text-xs text-gray-400 mt-1">
               {dmMessage.length}/1000 caracteres
             </p>
+          </div>
+
+          {/* Configuración de Botón en DM */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="flex items-start space-x-3 mb-4">
+              <Switch
+                id="useButtonMessage"
+                checked={useButtonMessage}
+                onCheckedChange={setUseButtonMessage}
+              />
+              <div className="flex-1">
+                <label htmlFor="useButtonMessage" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                  <MousePointer className="w-4 h-4" />
+                  Enviar mensaje DM con botón interactivo
+                </label>
+                <p className="text-xs text-blue-700 mt-1">
+                  Si está activado, el DM incluirá un botón que el usuario puede presionar para ir a una URL específica
+                </p>
+              </div>
+            </div>
+
+            {useButtonMessage && (
+              <div className="space-y-4 pl-6 border-l-2 border-blue-300">
+                <div>
+                  <Label htmlFor="buttonText" className="text-sm font-medium text-blue-900">
+                    Texto del Botón
+                  </Label>
+                  <Input
+                    id="buttonText"
+                    value={buttonText}
+                    onChange={(e) => setButtonText(e.target.value)}
+                    placeholder="Ej: Ver más información"
+                    className="mt-1"
+                    maxLength={20}
+                    required={useButtonMessage}
+                  />
+                  <p className="text-xs text-blue-600 mt-1">
+                    {buttonText.length}/20 caracteres (máximo 20)
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="buttonUrl" className="text-sm font-medium text-blue-900">
+                    URL del Botón
+                  </Label>
+                  <Input
+                    id="buttonUrl"
+                    value={buttonUrl}
+                    onChange={(e) => setButtonUrl(e.target.value)}
+                    placeholder="https://tu-landing-page.com"
+                    className="mt-1"
+                    type="url"
+                    required={useButtonMessage}
+                  />
+                  <p className="text-xs text-blue-600 mt-1">
+                    Debe ser una URL completa que comience con https://
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Verificar seguidor */}

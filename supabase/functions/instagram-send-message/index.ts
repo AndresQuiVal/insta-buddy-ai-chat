@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { recipient_id, message_text, reply_to_message_id, instagram_user_id, comment_id } = await req.json()
+    const { recipient_id, message_text, reply_to_message_id, instagram_user_id, comment_id, use_button, button_text, button_url } = await req.json()
 
     console.log('🚀 Instagram Send Message Edge Function iniciada')
     console.log('📝 Parámetros recibidos:', {
@@ -21,7 +21,10 @@ serve(async (req) => {
       message_text: message_text?.substring(0, 50) + '...',
       reply_to_message_id,
       instagram_user_id,
-      comment_id
+      comment_id,
+      use_button,
+      button_text,
+      button_url: button_url?.substring(0, 50) + '...'
     })
 
     // Validar parámetros requeridos
@@ -52,6 +55,40 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
+    }
+
+    // Validar parámetros de botón si se usa botón
+    if (use_button) {
+      if (!button_text || !button_url) {
+        console.error('❌ Faltan parámetros de botón')
+        return new Response(
+          JSON.stringify({
+            error: 'missing_button_params',
+            message: 'Se requieren button_text y button_url cuando use_button es true'
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      // Validar que la URL sea válida
+      try {
+        new URL(button_url)
+      } catch {
+        console.error('❌ URL de botón inválida')
+        return new Response(
+          JSON.stringify({
+            error: 'invalid_button_url',
+            message: 'La URL del botón debe ser una URL válida'
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
     }
 
     // Crear cliente de Supabase
@@ -116,32 +153,91 @@ serve(async (req) => {
     if (comment_id) {
       // 🆕 PRIVATE REPLY - Usando la documentación oficial
       messageType = 'private_reply'
-      messageBody = {
-        recipient: { 
-          comment_id: comment_id 
-        },
-        message: { 
-          text: message_text 
+      
+      if (use_button) {
+        // PRIVATE REPLY CON BOTÓN
+        messageBody = {
+          recipient: { 
+            comment_id: comment_id 
+          },
+          message: {
+            attachment: {
+              type: "template",
+              payload: {
+                template_type: "button",
+                text: message_text,
+                buttons: [
+                  {
+                    type: "web_url",
+                    url: button_url,
+                    title: button_text
+                  }
+                ]
+              }
+            }
+          }
         }
+        console.log('🔘 Enviando PRIVATE REPLY CON BOTÓN usando comment_id:', comment_id)
+      } else {
+        // PRIVATE REPLY NORMAL
+        messageBody = {
+          recipient: { 
+            comment_id: comment_id 
+          },
+          message: { 
+            text: message_text 
+          }
+        }
+        console.log('💬 Enviando PRIVATE REPLY usando comment_id:', comment_id)
       }
-      console.log('💬 Enviando PRIVATE REPLY usando comment_id:', comment_id)
     } else {
       // DM NORMAL
       messageType = 'direct_message'
-      messageBody = {
-        recipient: { 
-          id: recipient_id 
-        },
-        message: { 
-          text: message_text 
+      
+      if (use_button) {
+        // DM CON BOTÓN
+        messageBody = {
+          recipient: { 
+            id: recipient_id 
+          },
+          message: {
+            attachment: {
+              type: "template",
+              payload: {
+                template_type: "button",
+                text: message_text,
+                buttons: [
+                  {
+                    type: "web_url",
+                    url: button_url,
+                    title: button_text
+                  }
+                ]
+              }
+            }
+          }
         }
-      }
+        
+        // Solo agregar reply_to para mensajes normales (no se puede con template de botón)
+        // Los templates de botón no soportan reply_to según la documentación
+        console.log('🔘 Enviando DM CON BOTÓN a recipient_id:', recipient_id)
+      } else {
+        // DM NORMAL
+        messageBody = {
+          recipient: { 
+            id: recipient_id 
+          },
+          message: { 
+            text: message_text 
+          }
+        }
 
-      // Solo agregar reply_to para mensajes normales
-      if (reply_to_message_id) {
-        messageBody.message.reply_to = { mid: reply_to_message_id }
+        // Solo agregar reply_to para mensajes normales
+        if (reply_to_message_id) {
+          messageBody.message.reply_to = { mid: reply_to_message_id }
+        }
+        console.log('💬 Enviando DM NORMAL a recipient_id:', recipient_id)
       }
-      console.log('💬 Enviando DM NORMAL a recipient_id:', recipient_id)
     }
 
     console.log('📤 Enviando mensaje...')

@@ -251,7 +251,10 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
           body: {
             recipient_id: senderId,
             message_text: confirmation.original_dm_message,
-            instagram_user_id: recipientId
+            instagram_user_id: recipientId,
+            use_button: confirmation.use_button_message || false,
+            button_text: confirmation.button_text || null,
+            button_url: confirmation.button_url || null
           }
         })
         
@@ -448,7 +451,10 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     body: {
       recipient_id: senderId,
       message_text: selectedAutoresponder.message_text,
-      instagram_user_id: recipientId
+      instagram_user_id: recipientId,
+      use_button: selectedAutoresponder.use_buttons || false,
+      button_text: selectedAutoresponder.button_text || null,
+      button_url: selectedAutoresponder.button_url || null
     }
   })
 
@@ -1080,7 +1086,10 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         body: {
           message_text: randomConfirmationMessage,
           instagram_user_id: instagramAccountId,
-          comment_id: commentId
+          comment_id: commentId,
+          use_button: false,
+          button_text: null,
+          button_url: null
         }
       })
 
@@ -1171,7 +1180,10 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
       body: {
         message_text: selectedAutoresponder.dm_message,
         instagram_user_id: instagramAccountId,
-        comment_id: commentId
+        comment_id: commentId,
+        use_button: selectedAutoresponder.use_button_message || false,
+        button_text: selectedAutoresponder.button_text || null,
+        button_url: selectedAutoresponder.button_url || null
       }
     })
 

@@ -283,6 +283,8 @@ export type Database = {
       }
       comment_autoresponders: {
         Row: {
+          button_text: string | null
+          button_url: string | null
           buttons: Json | null
           created_at: string
           dm_message: string
@@ -296,10 +298,13 @@ export type Database = {
           public_reply_messages: string[] | null
           require_follower: boolean
           updated_at: string
+          use_button_message: boolean | null
           use_buttons: boolean | null
           user_id: string
         }
         Insert: {
+          button_text?: string | null
+          button_url?: string | null
           buttons?: Json | null
           created_at?: string
           dm_message: string
@@ -313,10 +318,13 @@ export type Database = {
           public_reply_messages?: string[] | null
           require_follower?: boolean
           updated_at?: string
+          use_button_message?: boolean | null
           use_buttons?: boolean | null
           user_id: string
         }
         Update: {
+          button_text?: string | null
+          button_url?: string | null
           buttons?: Json | null
           created_at?: string
           dm_message?: string
@@ -330,6 +338,7 @@ export type Database = {
           public_reply_messages?: string[] | null
           require_follower?: boolean
           updated_at?: string
+          use_button_message?: boolean | null
           use_buttons?: boolean | null
           user_id?: string
         }
@@ -338,6 +347,8 @@ export type Database = {
       general_comment_autoresponders: {
         Row: {
           auto_assign_to_all_posts: boolean | null
+          button_text: string | null
+          button_url: string | null
           buttons: Json | null
           created_at: string
           dm_message: string
@@ -348,11 +359,14 @@ export type Database = {
           public_reply_messages: string[] | null
           require_follower: boolean
           updated_at: string
+          use_button_message: boolean | null
           use_buttons: boolean | null
           user_id: string
         }
         Insert: {
           auto_assign_to_all_posts?: boolean | null
+          button_text?: string | null
+          button_url?: string | null
           buttons?: Json | null
           created_at?: string
           dm_message: string
@@ -363,11 +377,14 @@ export type Database = {
           public_reply_messages?: string[] | null
           require_follower?: boolean
           updated_at?: string
+          use_button_message?: boolean | null
           use_buttons?: boolean | null
           user_id: string
         }
         Update: {
           auto_assign_to_all_posts?: boolean | null
+          button_text?: string | null
+          button_url?: string | null
           buttons?: Json | null
           created_at?: string
           dm_message?: string
@@ -378,6 +395,7 @@ export type Database = {
           public_reply_messages?: string[] | null
           require_follower?: boolean
           updated_at?: string
+          use_button_message?: boolean | null
           use_buttons?: boolean | null
           user_id?: string
         }
