@@ -32,7 +32,7 @@ const AutoresponderOnboarding: React.FC = () => {
   });
 
   const handleNext = () => {
-    if (step < 5) {
+    if (step < 6) {
       setStep(step + 1);
     } else {
       handleCreateAutoresponder();
@@ -133,76 +133,144 @@ const AutoresponderOnboarding: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex flex-col items-center justify-center p-4 sm:p-6">
       <div className="max-w-4xl w-full">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4">
             <img
               src="https://i.ibb.co/bMLhkc7G/Hower-logo.png"
               alt="Logo Hower"
-              className="w-12 h-12 rounded-2xl object-cover"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl object-cover"
             />
-            <h1 className="text-4xl font-light bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Hower <span className="font-bold">Assistant</span>
             </h1>
           </div>
-          <p className="text-gray-600">Configura tu primer autorespondedor para Instagram</p>
+          <p className="text-sm sm:text-base text-gray-600">Configura tu primer autorespondedor para Instagram</p>
         </div>
 
         {/* Progress bar */}
-        <div className="w-full bg-white/50 h-2 rounded-full mb-10">
+        <div className="w-full bg-white/50 h-2 rounded-full mb-6 sm:mb-10">
           <div 
             className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300" 
-            style={{ width: `${step * 20}%` }}
+            style={{ width: `${step * 16.66}%` }}
           ></div>
         </div>
 
-        <Card className="p-8 shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-          {/* Step 1: Introducción */}
+        <Card className="p-4 sm:p-6 lg:p-8 shadow-lg border-0 bg-white/90 backdrop-blur-sm">
+          {/* Step 1: Conectar Instagram */}
           {step === 1 && (
             <div className="space-y-6">
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="w-10 h-10 text-purple-600" />
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Instagram className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600" />
                 </div>
-                <h2 className="text-3xl font-semibold text-gray-900 mb-2">¡Bienvenido a los Autorespondedores!</h2>
-                <p className="text-gray-600 text-lg">Te ayudaremos a configurar tu primer autorespondedor paso a paso</p>
+                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">Conecta tu Instagram</h2>
+                <p className="text-sm sm:text-base lg:text-lg text-gray-600">Primero necesitas conectar tu cuenta de Instagram para configurar autorespondedores</p>
               </div>
               
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 mb-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">¿Qué es un autorespondedor?</h3>
-                <p className="text-gray-700 mb-4">
-                  Un autorespondedor es una herramienta que automáticamente responde a los comentarios 
-                  en tus posts de Instagram con mensajes directos personalizados.
-                </p>
-                <ul className="space-y-2 text-gray-700">
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 sm:p-6 mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">¿Por qué necesitas conectar Instagram?</h3>
+                <ul className="space-y-2 text-sm sm:text-base text-gray-700">
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-green-600" />
-                    Responde automáticamente a comentarios específicos
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                    Para acceder a tus posts y comentarios
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-green-600" />
-                    Envía mensajes directos personalizados
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                    Para poder enviar mensajes directos automáticos
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-green-600" />
-                    Filtra leads de calidad automáticamente
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                    Para gestionar tus autorespondedores
                   </li>
                 </ul>
               </div>
 
-              <div className="flex gap-4">
+              <div className="text-center py-6 sm:py-8">
+                {currentUser ? (
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="text-green-600 font-medium text-base sm:text-lg">¡Instagram conectado con éxito!</div>
+                    <p className="text-gray-500 text-sm sm:text-base">Tu cuenta @{currentUser.username} está vinculada</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-red-600 font-medium text-sm sm:text-base">⚠️ No tienes Instagram conectado</p>
+                    <Button 
+                      onClick={() => navigate('/settings')}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 sm:px-8 sm:py-3"
+                    >
+                      Ir a Configuración
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button 
-                  onClick={navigateToGuides}
+                  onClick={() => navigate('/guides')}
                   variant="outline"
-                  className="flex-1 flex items-center justify-center gap-2 border-purple-200 text-purple-600 hover:bg-purple-50"
+                  className="flex-1 flex items-center justify-center gap-2 border-purple-200 text-purple-600 hover:bg-purple-50 text-sm sm:text-base"
                 >
                   <HelpCircle className="w-4 h-4" />
                   Ver guías detalladas
                 </Button>
                 <Button 
                   onClick={handleNext}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2"
+                  disabled={!currentUser}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
+                >
+                  Continuar <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Introducción */}
+          {step === 2 && (
+            <div className="space-y-6">
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageCircle className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">¡Bienvenido a los Autorespondedores!</h2>
+                <p className="text-sm sm:text-base lg:text-lg text-gray-600">Te ayudaremos a configurar tu primer autorespondedor paso a paso</p>
+              </div>
+              
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 sm:p-6 mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">¿Qué es un autorespondedor?</h3>
+                <p className="text-sm sm:text-base text-gray-700 mb-4">
+                  Un autorespondedor es una herramienta que automáticamente responde a los comentarios 
+                  en tus posts de Instagram con mensajes directos personalizados.
+                </p>
+                <ul className="space-y-2 text-sm sm:text-base text-gray-700">
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                    Responde automáticamente a comentarios específicos
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                    Envía mensajes directos personalizados
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                    Filtra leads de calidad automáticamente
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Button 
+                  onClick={handleBack}
+                  variant="outline"
+                  className="flex-1 flex items-center justify-center gap-2 text-sm sm:text-base"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Anterior
+                </Button>
+                <Button 
+                  onClick={handleNext}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   Empezar configuración <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -210,12 +278,12 @@ const AutoresponderOnboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 2: Tipo de autorespondedor */}
-          {step === 2 && (
+          {/* Step 3: Tipo de autorespondedor */}
+          {step === 3 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">¿Para qué posts quieres configurarlo?</h2>
-                <p className="text-gray-600">Elige si será para todos tus posts o solo para posts específicos</p>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">¿Para qué posts quieres configurarlo?</h2>
+                <p className="text-sm sm:text-base text-gray-600">Elige si será para todos tus posts o solo para posts específicos</p>
               </div>
               
               <div className="grid gap-4">
@@ -261,11 +329,11 @@ const AutoresponderOnboarding: React.FC = () => {
                </div>
                
                {/* Botones de navegación siempre visibles */}
-               <div className="flex gap-4">
+               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                  <Button 
                    onClick={handleBack}
                    variant="outline"
-                   className="flex-1 flex items-center justify-center gap-2"
+                   className="flex-1 flex items-center justify-center gap-2 text-sm sm:text-base"
                  >
                    <ArrowLeft className="w-4 h-4" />
                    Anterior
@@ -273,7 +341,7 @@ const AutoresponderOnboarding: React.FC = () => {
                  <Button 
                    onClick={handleNext}
                    disabled={!autoresponderData.type || (autoresponderData.type === 'specific' && !autoresponderData.selectedPost)}
-                   className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2"
+                   className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
                  >
                    Continuar <ArrowRight className="w-4 h-4" />
                  </Button>
@@ -297,12 +365,12 @@ const AutoresponderOnboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 3: Nombre del autorespondedor */}
-          {step === 3 && (
+          {/* Step 4: Nombre del autorespondedor */}
+          {step === 4 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Nombre de tu autorespondedor</h2>
-                <p className="text-gray-600">Dale un nombre descriptivo para identificarlo fácilmente</p>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Nombre de tu autorespondedor</h2>
+                <p className="text-sm sm:text-base text-gray-600">Dale un nombre descriptivo para identificarlo fácilmente</p>
               </div>
               
               <div className="space-y-4">
@@ -312,13 +380,13 @@ const AutoresponderOnboarding: React.FC = () => {
                     placeholder="Ej: Leads para curso de marketing"
                     onChange={(e) => updateAutoresponderData('name', e.target.value)}
                     value={autoresponderData.name}
-                    className="w-full text-lg"
+                    className="w-full text-base sm:text-lg"
                   />
                 </div>
                 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h4 className="font-medium text-blue-900 mb-2">💡 Consejos para el nombre:</h4>
-                  <ul className="text-sm text-blue-800 space-y-1">
+                  <ul className="text-xs sm:text-sm text-blue-800 space-y-1">
                     <li>• Usa nombres descriptivos como "Leads para consultoría"</li>
                     <li>• Incluye el tipo de producto o servicio</li>
                     <li>• Evita nombres genéricos como "Autorespondedor 1"</li>
@@ -326,11 +394,11 @@ const AutoresponderOnboarding: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button 
                   onClick={handleBack}
                   variant="outline"
-                  className="flex-1 flex items-center justify-center gap-2"
+                  className="flex-1 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Anterior
@@ -338,7 +406,7 @@ const AutoresponderOnboarding: React.FC = () => {
                 <Button 
                   onClick={handleNext}
                   disabled={!autoresponderData.name.trim()}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2"
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
                 >
                   Continuar <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -346,12 +414,12 @@ const AutoresponderOnboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 4: Mensaje del autorespondedor */}
-          {step === 4 && (
+          {/* Step 5: Mensaje del autorespondedor */}
+          {step === 5 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Mensaje automático</h2>
-                <p className="text-gray-600">Este mensaje se enviará automáticamente por DM a quienes comenten</p>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Mensaje automático</h2>
+                <p className="text-sm sm:text-base text-gray-600">Este mensaje se enviará automáticamente por DM a quienes comenten</p>
               </div>
               
               <div className="space-y-4">
@@ -359,16 +427,16 @@ const AutoresponderOnboarding: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Mensaje que se enviará por DM</label>
                   <Textarea 
                     placeholder="¡Hola! Vi tu comentario y me da mucho gusto tu interés. Te voy a enviar más información sobre..."
-                    rows={6}
+                    rows={5}
                     onChange={(e) => updateAutoresponderData('message', e.target.value)}
                     value={autoresponderData.message}
-                    className="w-full"
+                    className="w-full text-sm sm:text-base"
                   />
                 </div>
                 
                 <div className="bg-green-50 rounded-lg p-4">
                   <h4 className="font-medium text-green-900 mb-2">✨ Mejores prácticas:</h4>
-                  <ul className="text-sm text-green-800 space-y-1">
+                  <ul className="text-xs sm:text-sm text-green-800 space-y-1">
                     <li>• Personaliza el saludo: "¡Hola! Vi tu comentario..."</li>
                     <li>• Explica por qué les escribes</li>
                     <li>• Ofrece valor inmediato</li>
@@ -378,11 +446,11 @@ const AutoresponderOnboarding: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button 
                   onClick={handleBack}
                   variant="outline"
-                  className="flex-1 flex items-center justify-center gap-2"
+                  className="flex-1 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Anterior
@@ -390,7 +458,7 @@ const AutoresponderOnboarding: React.FC = () => {
                 <Button 
                   onClick={handleNext}
                   disabled={!autoresponderData.message.trim()}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2"
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
                 >
                   Continuar <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -398,12 +466,12 @@ const AutoresponderOnboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 5: Configuración final */}
-          {step === 5 && (
+          {/* Step 6: Configuración final */}
+          {step === 6 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Configuración final</h2>
-                <p className="text-gray-600">Configura las opciones avanzadas de tu autorespondedor</p>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Configuración final</h2>
+                <p className="text-sm sm:text-base text-gray-600">Configura las opciones avanzadas de tu autorespondedor</p>
               </div>
               
               <div className="space-y-6">
@@ -472,11 +540,11 @@ const AutoresponderOnboarding: React.FC = () => {
 
               </div>
               
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Button 
                   onClick={handleBack}
                   variant="outline"
-                  className="flex-1 flex items-center justify-center gap-2"
+                  className="flex-1 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Anterior
@@ -484,7 +552,7 @@ const AutoresponderOnboarding: React.FC = () => {
                 <Button 
                   onClick={handleNext}
                   disabled={isLoading}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2"
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
                 >
                   {isLoading ? (
                     <>
@@ -503,11 +571,11 @@ const AutoresponderOnboarding: React.FC = () => {
           )}
           
           {/* Step indicator */}
-          <div className="flex justify-center mt-8">
-            {[1, 2, 3, 4, 5].map((i) => (
+          <div className="flex justify-center mt-6 sm:mt-8">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div 
                 key={i} 
-                className={`w-3 h-3 rounded-full mx-1 transition-all duration-300 ${
+                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full mx-1 transition-all duration-300 ${
                   i === step 
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600' 
                     : i < step 
