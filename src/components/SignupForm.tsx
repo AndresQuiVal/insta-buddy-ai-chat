@@ -36,8 +36,8 @@ const SignupForm = () => {
         description: "Ahora conecta tu cuenta de Instagram para continuar",
       });
       
-      // Redirigir a la página de conexión de Instagram
-      navigate('/instagram-callback');
+      // Redirigir a la página principal
+      navigate('/');
       setIsSubmitting(false);
     }, 1000);
   };
