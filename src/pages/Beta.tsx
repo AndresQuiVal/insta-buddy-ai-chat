@@ -506,17 +506,6 @@ const Beta: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-green-100 hover:border-green-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                      <Search className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-gray-800">Buscador de</p>
-                      <p className="text-xl font-bold text-purple-600">contenidos virales</p>
-                      <p className="text-sm font-bold text-pink-600">con Inteligencia Artificial</p>
-                    </div>
-                  </div>
-
                    <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-green-100 hover:border-green-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
                      <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-green-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
                        <Check className="w-6 h-6 text-white" />
@@ -524,6 +513,17 @@ const Beta: React.FC = () => {
                      <div>
                        <p className="text-xl font-bold text-gray-800">SIN marca de agua</p>
                        <p className="text-sm text-green-600 font-medium">Ni en la prueba gratuita</p>
+                     </div>
+                   </div>
+
+                   <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-green-100 hover:border-green-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                     <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                       <Search className="w-6 h-6 text-white" />
+                     </div>
+                     <div>
+                       <p className="text-xl font-bold text-gray-800">Buscador de</p>
+                       <p className="text-xl font-bold text-purple-600">contenidos virales</p>
+                       <p className="text-sm font-bold text-pink-600">con Inteligencia Artificial</p>
                      </div>
                    </div>
 
