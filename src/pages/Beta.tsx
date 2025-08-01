@@ -155,24 +155,24 @@ const Beta: React.FC = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="min-h-screen flex items-center justify-center">
             <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-              <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-24 leading-tight">
-                <span className="block mb-4">
-                  <span className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mr-2">🎯 Oye Coach,</span>
-                  <span className="inline-block bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent mr-2">📚 Infoproductor,</span>
-                  <span className="inline-block bg-gradient-to-r from-pink-600 to-pink-700 bg-clip-text text-transparent">🚀 Trafficker...</span>
+              <h1 className="text-2xl sm:text-3xl lg:text-6xl font-bold text-gray-900 mb-12 sm:mb-24 leading-tight px-4">
+                <span className="block mb-2 sm:mb-4">
+                  <span className="block sm:inline-block bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-1 sm:mr-2">🎯 Oye Coach,</span>
+                  <span className="block sm:inline-block bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent mb-1 sm:mr-2">📚 Infoproductor,</span>
+                  <span className="block sm:inline-block bg-gradient-to-r from-pink-600 to-pink-700 bg-clip-text text-transparent">🚀 Trafficker...</span>
                 </span>
                 
-                <span className="block text-3xl lg:text-5xl mb-6">
+                <span className="block text-xl sm:text-2xl lg:text-5xl mb-4 sm:mb-6">
                   ¿usas{' '}
                   <img 
                     src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
                     alt="Manychat"
-                    className="inline-block h-16 lg:h-20 mx-2 transform rotate-3 translate-y-1 drop-shadow-lg rounded-xl"
+                    className="inline-block h-8 sm:h-12 lg:h-20 mx-1 sm:mx-2 transform rotate-3 translate-y-1 drop-shadow-lg rounded-xl"
                   />
                   ?
                 </span>
                 
-                <span className="block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-3xl lg:text-5xl">
+                <span className="block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-xl sm:text-2xl lg:text-5xl">
                   te aseguro que tienes estos problemas...
                 </span>
               </h1>
@@ -185,7 +185,7 @@ const Beta: React.FC = () => {
                 className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 max-w-4xl mx-auto"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <p className="text-3xl lg:text-5xl text-gray-700 font-light leading-relaxed text-center">
+                <p className="text-xl sm:text-2xl lg:text-5xl text-gray-700 font-light leading-relaxed text-center px-4">
                   {problem}
                 </p>
               </div>
@@ -206,7 +206,7 @@ const Beta: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="max-w-4xl mx-auto text-center space-y-16">
-              <h1 className="text-4xl lg:text-6xl font-bold leading-tight text-white mt-16 mb-12">
+              <h1 className="text-2xl sm:text-3xl lg:text-6xl font-bold leading-tight text-white mt-8 sm:mt-16 mb-8 sm:mb-12 px-4">
                 Hower Assistant es para ti
               </h1>
               
@@ -251,24 +251,24 @@ const Beta: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-2xl text-purple-100 leading-relaxed mb-8">
+              <p className="text-lg sm:text-xl lg:text-2xl text-purple-100 leading-relaxed mb-6 sm:mb-8 px-4">
                 Empieza a vender más con Inteligencia Artificial en Instagram
               </p>
               
               <Button
                 onClick={handleRegister}
-                className="bg-white text-purple-900 hover:bg-gray-100 font-semibold py-3 px-8 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg mb-8"
+                className="bg-white text-purple-900 hover:bg-gray-100 font-semibold py-3 px-6 sm:px-8 text-base sm:text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg mb-6 sm:mb-8 mx-4"
               >
                 Acceder a la prueba gratuita
               </Button>
               
-              <div className="flex flex-wrap justify-center gap-4 mt-8 mb-32">
-                <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4 bg-white/10 border-white/20 text-white">
-                  <MessageSquare className="w-5 h-5" />
+              <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 sm:mt-8 mb-16 sm:mb-32 px-4">
+                <Badge variant="outline" className="flex items-center justify-center gap-2 text-sm sm:text-lg py-2 px-3 sm:px-4 bg-white/10 border-white/20 text-white">
+                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
                   Autorespondedor Inteligente
                 </Badge>
-                <Badge variant="outline" className="flex items-center gap-2 text-lg py-2 px-4 bg-white/10 border-white/20 text-white">
-                  <Search className="w-5 h-5" />
+                <Badge variant="outline" className="flex items-center justify-center gap-2 text-sm sm:text-lg py-2 px-3 sm:px-4 bg-white/10 border-white/20 text-white">
+                  <Search className="w-4 h-4 sm:w-5 sm:h-5" />
                   Contenido Viral AI
                 </Badge>
               </div>
@@ -282,14 +282,14 @@ const Beta: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="text-center mb-20">
-              <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+              <h2 className="text-2xl sm:text-3xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 px-4">
                 Bienvenido al Autorespondedor...
               </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-6 sm:mb-8 px-4">
                 El autorespondedor es lo que conoces como "automatización", solamente que hasta más "fácil" de entender... no?
               </p>
               
-              <h3 className="text-2xl font-bold text-gray-800 mb-8">3 pasos configuras un autorespondedor</h3>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 mb-6 sm:mb-8 px-4">3 pasos configuras un autorespondedor</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-16">
                 {[
@@ -388,26 +388,26 @@ const Beta: React.FC = () => {
                 <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-8">
                   ¿Por qué elegir Hower Assistant?
                 </h2>
-                <div className="flex items-center justify-center gap-8 mb-8">
-                  <div className="flex items-center space-x-3 p-4 bg-white rounded-2xl shadow-lg border border-gray-100">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-8 px-4">
+                  <div className="flex items-center space-x-3 p-3 sm:p-4 bg-white rounded-2xl shadow-lg border border-gray-100">
                     <img 
                       src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
                       alt="Manychat"
-                      className="h-12 rounded-lg"
+                      className="h-8 sm:h-12 rounded-lg"
                     />
                   </div>
                   
-                  <div className="text-6xl font-black text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text drop-shadow-lg">
+                  <div className="text-3xl sm:text-6xl font-black text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text drop-shadow-lg">
                     VS
                   </div>
                   
-                  <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-lg">
-                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                      <span className="text-white font-bold text-xl">@</span>
+                  <div className="flex items-center space-x-2 sm:space-x-3 p-3 sm:p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-lg">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                      <span className="text-white font-bold text-sm sm:text-xl">@</span>
                     </div>
                     <div>
-                      <span className="text-2xl font-light text-white">Hower</span>
-                      <span className="text-2xl font-bold text-white ml-1">Assistant</span>
+                      <span className="text-lg sm:text-2xl font-light text-white">Hower</span>
+                      <span className="text-lg sm:text-2xl font-bold text-white ml-1">Assistant</span>
                     </div>
                   </div>
                 </div>
@@ -643,17 +643,17 @@ const Beta: React.FC = () => {
           <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
             <div className="max-w-4xl mx-auto text-center space-y-12">
               <div className="space-y-6">
-                <h2 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
+                <h2 className="text-3xl sm:text-4xl lg:text-7xl font-bold text-white leading-tight px-4">
                   ¿Listo para empezar?
                 </h2>
-                <p className="text-2xl text-purple-100 leading-relaxed">
+                <p className="text-lg sm:text-xl lg:text-2xl text-purple-100 leading-relaxed px-4">
                   Accede ahora con tu prueba gratuita de 7 días
                 </p>
               </div>
 
               <Button
                 onClick={handleRegister}
-                className="bg-white text-purple-900 hover:bg-gray-100 font-bold py-6 px-12 text-2xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                className="bg-white text-purple-900 hover:bg-gray-100 font-bold py-4 sm:py-6 px-8 sm:px-12 text-lg sm:text-2xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl mx-4"
                 size="lg"
               >
                 Accede ahora
