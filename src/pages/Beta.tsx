@@ -155,7 +155,7 @@ const Beta: React.FC = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="min-h-screen flex items-center justify-center">
             <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-              <h1 className="text-2xl sm:text-3xl lg:text-6xl font-bold text-gray-900 mb-12 sm:mb-24 leading-tight px-4">
+              <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-12 sm:mb-24 leading-tight px-4">
                 <span className="block mb-2 sm:mb-4">
                   <span className="block sm:inline-block bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-1 sm:mr-2">🎯 Oye Coach,</span>
                   <span className="block sm:inline-block bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent mb-1 sm:mr-2">📚 Infoproductor,</span>
