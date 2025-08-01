@@ -625,7 +625,10 @@ const AutoresponderManager: React.FC = () => {
                           <div className={`w-3 h-3 rounded-full ${message.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
                           <div>
                             <h4 className="font-medium text-gray-900">{message.name}</h4>
-                            <p className="text-sm text-gray-600 truncate max-w-xs">{message.message_text}</p>
+                            <p className="text-xs text-gray-500">
+                              Mensaje directo
+                              {message.use_keywords ? ' • Con palabras clave' : ' • Sin palabras clave'}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -682,7 +685,14 @@ const AutoresponderManager: React.FC = () => {
                           <div className={`w-3 h-3 rounded-full ${autoresponder.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
                           <div>
                             <h4 className="font-medium text-gray-900">{autoresponder.name}</h4>
-                            <p className="text-sm text-gray-600 truncate max-w-xs">{autoresponder.dm_message}</p>
+                            <a 
+                              href={autoresponder.post_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:text-blue-800"
+                            >
+                              Ver post configurado →
+                            </a>
                             <p className="text-xs text-gray-500">{autoresponder.keywords.length} palabras clave</p>
                           </div>
                         </div>
@@ -740,7 +750,7 @@ const AutoresponderManager: React.FC = () => {
                           <div className={`w-3 h-3 rounded-full ${autoresponder.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
                           <div>
                             <h4 className="font-medium text-gray-900">{autoresponder.name}</h4>
-                            <p className="text-sm text-gray-600 truncate max-w-xs">{autoresponder.dm_message}</p>
+                            <p className="text-sm text-gray-600">Autoresponder general</p>
                             <p className="text-xs text-gray-500">
                               {autoresponder.keywords.length} palabras clave
                               {autoresponder.assigned_posts && autoresponder.assigned_posts.length > 0 && 
