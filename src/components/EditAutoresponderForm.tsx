@@ -52,6 +52,10 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
   const { currentUser } = useInstagramUsers();
 
   useEffect(() => {
+    console.log('🔍 Cargando datos del autoresponder para editar:', message);
+    console.log('🔍 use_buttons:', message.use_buttons);
+    console.log('🔍 buttons:', message.buttons);
+    
     setName(message.name);
     setMessageText(message.message_text);
     setIsActive(message.is_active);
@@ -61,19 +65,27 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
     
     // Cargar configuración de botones
     setUseButtons(message.use_buttons || false);
+    console.log('🔍 Setting useButtons to:', message.use_buttons || false);
+    
     if (message.buttons) {
+      console.log('🔍 Procesando configuración de botones:', message.buttons);
       const buttons = Array.isArray(message.buttons) ? message.buttons[0] : message.buttons;
       if (buttons) {
+        console.log('🔍 Botón encontrado:', buttons);
         setButtonType(buttons.type || 'web_url');
         setButtonText(buttons.title || '');
         if (buttons.type === 'web_url') {
           setButtonUrl(buttons.url || '');
+          console.log('🔍 Configurando web_url:', buttons.url);
         } else if (buttons.type === 'postback') {
           setPostbackPayload(buttons.payload || '');
+          console.log('🔍 Configurando postback:', buttons.payload);
           // Cargar respuesta de postback si existe
           loadPostbackResponse(buttons.payload);
         }
       }
+    } else {
+      console.log('🔍 No hay configuración de botones');
     }
     
     // Cargar follow-ups existentes

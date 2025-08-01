@@ -39,6 +39,8 @@ interface AutoresponderMessage {
   send_only_first_message?: boolean;
   use_keywords?: boolean;
   keywords?: string[];
+  use_buttons?: boolean;
+  buttons?: any;
   created_at: string;
 }
 
@@ -119,6 +121,20 @@ const AutoresponderManager: React.FC = () => {
       }
 
       console.log('✅ Autoresponders cargados:', data?.length || 0);
+      console.log('🔍 Datos de autoresponders:', data);
+      
+      // Verificar si hay alguno con botones configurados
+      data?.forEach((autoresponder, index) => {
+        if (autoresponder.use_buttons || autoresponder.buttons) {
+          console.log(`🔍 Autoresponder ${index} tiene botones:`, {
+            id: autoresponder.id,
+            name: autoresponder.name,
+            use_buttons: autoresponder.use_buttons,
+            buttons: autoresponder.buttons
+          });
+        }
+      });
+      
       setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -211,6 +227,9 @@ const AutoresponderManager: React.FC = () => {
   };
 
   const handleEdit = (message: AutoresponderMessage) => {
+    console.log('🔧 Editando autoresponder:', message);
+    console.log('🔧 use_buttons:', message.use_buttons);
+    console.log('🔧 buttons:', message.buttons);
     setEditingMessage(message);
     setShowEditForm(true);
   };
