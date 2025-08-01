@@ -1281,13 +1281,13 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           messagePayload.use_button = false
         }
         } else if (selectedAutoresponder.button_type === 'postback') {
-        if (selectedAutoresponder.postback_payload) {
+        if (selectedAutoresponder.postback_response) {
           messagePayload.button_text = selectedAutoresponder.button_text
-          messagePayload.postback_payload = selectedAutoresponder.postback_payload
+          messagePayload.postback_payload = selectedAutoresponder.postback_response
           messagePayload.button_type = 'postback'
           console.log('📤 Configurando botón postback:', {
             button_text: selectedAutoresponder.button_text,
-            postback_payload: selectedAutoresponder.postback_payload,
+            postback_payload: selectedAutoresponder.postback_response,
             button_type: 'postback'
           })
         } else {
