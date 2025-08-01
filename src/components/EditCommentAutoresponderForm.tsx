@@ -44,6 +44,9 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
   console.log('🔍 DEBUGGER - use_buttons:', autoresponder.use_buttons);
   console.log('🔍 DEBUGGER - buttons:', autoresponder.buttons);
   console.log('🔍 DEBUGGER - button_type:', autoresponder.button_type);
+  console.log('🔍 DEBUGGER - button_text:', autoresponder.button_text);
+  console.log('🔍 DEBUGGER - button_url:', autoresponder.button_url);
+  console.log('🔍 DEBUGGER - postback_response:', autoresponder.postback_response);
   
   const [name, setName] = useState(autoresponder.name);
   const [keywords, setKeywords] = useState<string[]>(autoresponder.keywords);
