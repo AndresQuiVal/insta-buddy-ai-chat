@@ -7,7 +7,7 @@ import InstagramAccountDiagnostic from "@/components/InstagramAccountDiagnostic"
 import ConfigPanel from "@/components/ConfigPanel";
 import ProspectaTab from "@/components/ProspectaTab";
 import ContenidosViralesTab from "@/components/ContenidosViralesTab";
-import AutoresponderManager from "@/components/AutoresponderManager";
+import SimpleAutoresponderManager from "@/components/SimpleAutoresponderManager";
 import ProspectCRM from "@/components/ProspectCRM";
 import {
   BarChart3,
@@ -122,7 +122,7 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "autoresponder":
-        return <AutoresponderManager />;
+        return <SimpleAutoresponderManager />;
       case "crm":
         return <ProspectCRM />;
       case "prospecta":
@@ -140,7 +140,7 @@ const Index = () => {
           </div>
         );
       default:
-        return <AutoresponderManager />;
+        return <SimpleAutoresponderManager />;
     }
   };
 
