@@ -1268,12 +1268,12 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
 
     // Solo agregar datos del botón si está habilitado y tiene los datos necesarios
     if (selectedAutoresponder.use_button_message) {
-      if (selectedAutoresponder.button_text) {
-        messagePayload.button_text = selectedAutoresponder.button_text
-      }
-      
-      if (selectedAutoresponder.button_type === 'web_url') {
+      if (!selectedAutoresponder.button_text) {
+        console.log('⚠️ Botón sin texto - deshabilitando botón')
+        messagePayload.use_button = false
+      } else if (selectedAutoresponder.button_type === 'web_url') {
         if (selectedAutoresponder.button_url) {
+          messagePayload.button_text = selectedAutoresponder.button_text
           messagePayload.button_url = selectedAutoresponder.button_url
           messagePayload.button_type = 'web_url'
         } else {
@@ -1282,12 +1282,16 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         }
       } else if (selectedAutoresponder.button_type === 'postback') {
         if (selectedAutoresponder.postback_payload) {
+          messagePayload.button_text = selectedAutoresponder.button_text
           messagePayload.postback_payload = selectedAutoresponder.postback_payload
           messagePayload.button_type = 'postback'
         } else {
           console.log('⚠️ Botón postback sin payload - deshabilitando botón')
           messagePayload.use_button = false
         }
+      } else {
+        console.log('⚠️ Tipo de botón no válido - deshabilitando botón')
+        messagePayload.use_button = false
       }
     }
 
