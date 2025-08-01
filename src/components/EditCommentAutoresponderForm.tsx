@@ -64,9 +64,38 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
 
-  // Cargar follow-ups existentes al montar el componente
+  // Cargar datos iniciales y follow-ups al montar el componente
   useEffect(() => {
     console.log('🔍 DEBUGGER - useEffect ejecutándose');
+    console.log('🔍 DEBUGGER - autoresponder completo:', autoresponder);
+    
+    // Inicializar estado de botones
+    if (autoresponder.use_buttons) {
+      setUseButtons(true);
+      console.log('✅ Botones activados desde datos existentes');
+      
+      // Cargar tipo de botón y datos
+      if (autoresponder.button_type) {
+        setButtonType(autoresponder.button_type as 'web_url' | 'postback');
+        console.log('✅ Tipo de botón cargado:', autoresponder.button_type);
+      }
+      
+      if (autoresponder.button_text) {
+        setButtonText(autoresponder.button_text);
+        console.log('✅ Texto de botón cargado:', autoresponder.button_text);
+      }
+      
+      if (autoresponder.button_url && autoresponder.button_type === 'web_url') {
+        setButtonUrl(autoresponder.button_url);
+        console.log('✅ URL de botón cargada:', autoresponder.button_url);
+      }
+      
+      if (autoresponder.postback_response && autoresponder.button_type === 'postback') {
+        setPostbackResponse(autoresponder.postback_response);
+        console.log('✅ Respuesta postback cargada:', autoresponder.postback_response);
+      }
+    }
+    
     loadFollowUps();
     loadExistingButtonData();
   }, [autoresponder.id]);
