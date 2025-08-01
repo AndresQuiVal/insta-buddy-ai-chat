@@ -189,8 +189,8 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   
   // Verificar si es un postback y procesarlo por separado
   if (messagingEvent.postback) {
-    console.log('🔘 Es un evento de postback - procesando por separado')
-    // Aquí puedes agregar lógica para manejar postbacks si es necesario
+    console.log('🔘 Es un evento de postback - procesando...')
+    await handlePostbackEvent(messagingEvent, supabase)
     return
   }
   
@@ -1283,11 +1283,11 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         } else if (selectedAutoresponder.button_type === 'postback') {
         if (selectedAutoresponder.postback_response) {
           messagePayload.button_text = selectedAutoresponder.button_text
-          messagePayload.postback_payload = selectedAutoresponder.postback_response
+          messagePayload.postback_payload = `${selectedAutoresponder.id}_postback`
           messagePayload.button_type = 'postback'
           console.log('📤 Configurando botón postback:', {
             button_text: selectedAutoresponder.button_text,
-            postback_payload: selectedAutoresponder.postback_response,
+            postback_payload: `${selectedAutoresponder.id}_postback`,
             button_type: 'postback'
           })
         } else {
