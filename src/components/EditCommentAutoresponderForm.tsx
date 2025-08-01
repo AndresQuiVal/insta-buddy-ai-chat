@@ -40,6 +40,11 @@ interface EditCommentAutoresponderFormProps {
 }
 
 const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditCommentAutoresponderFormProps) => {
+  console.log('🔍 DEBUGGER - Datos del autoresponder recibidos:', autoresponder);
+  console.log('🔍 DEBUGGER - use_buttons:', autoresponder.use_buttons);
+  console.log('🔍 DEBUGGER - buttons:', autoresponder.buttons);
+  console.log('🔍 DEBUGGER - button_type:', autoresponder.button_type);
+  
   const [name, setName] = useState(autoresponder.name);
   const [keywords, setKeywords] = useState<string[]>(autoresponder.keywords);
   const [newKeyword, setNewKeyword] = useState('');
@@ -61,6 +66,7 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
 
   // Cargar follow-ups existentes al montar el componente
   useEffect(() => {
+    console.log('🔍 DEBUGGER - useEffect ejecutándose');
     loadFollowUps();
     loadExistingButtonData();
   }, [autoresponder.id]);
@@ -588,7 +594,7 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
                   Agregar botón interactivo al mensaje DM
                 </label>
                 <p className="text-xs text-blue-700 mt-1">
-                  Si está activado, el DM incluirá un botón que el usuario puede presionar
+                  Si está activado, el DM incluirá un botón interactivo que el usuario puede presionar
                 </p>
               </div>
             </div>
