@@ -619,13 +619,19 @@ const AutoresponderManager: React.FC = () => {
               <div className="grid gap-4">
                 {messages.map((message) => (
                   <Card key={message.id} className="border-purple-100">
-                    <CardHeader className="pb-3">
+                    <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full ${message.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                          <CardTitle className="text-lg">{message.name}</CardTitle>
+                          <div>
+                            <h4 className="font-medium text-gray-900">{message.name}</h4>
+                            <p className="text-sm text-gray-600 truncate max-w-xs">{message.message_text}</p>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Badge variant={message.is_active ? "default" : "secondary"} className="text-xs">
+                            {message.is_active ? 'Activo' : 'Inactivo'}
+                          </Badge>
                           <Button
                             variant="outline"
                             size="sm"
@@ -654,50 +660,6 @@ const AutoresponderManager: React.FC = () => {
                           </Button>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <p className="text-gray-700">{message.message_text}</p>
-                        
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant={message.is_active ? "default" : "secondary"}>
-                            {message.is_active ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                          
-                          {message.send_only_first_message && (
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              Solo primer mensaje
-                            </Badge>
-                          )}
-                          
-                          {message.use_keywords && (
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              <Filter className="w-3 h-3" />
-                              Con palabras clave
-                            </Badge>
-                          )}
-                        </div>
-
-                        {message.use_keywords && message.keywords && message.keywords.length > 0 && (
-                          <div className="pt-2">
-                            <div className="flex items-center gap-1 mb-2">
-                              <Key className="w-3 h-3 text-gray-500" />
-                              <span className="text-xs text-gray-500">Palabras clave:</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {message.keywords.map((keyword, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded"
-                                >
-                                  {keyword}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -714,13 +676,20 @@ const AutoresponderManager: React.FC = () => {
               <div className="grid gap-4">
                 {commentAutoresponders.map((autoresponder) => (
                   <Card key={autoresponder.id} className="border-orange-100">
-                    <CardHeader className="pb-3">
+                    <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full ${autoresponder.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                          <CardTitle className="text-lg">{autoresponder.name}</CardTitle>
+                          <div>
+                            <h4 className="font-medium text-gray-900">{autoresponder.name}</h4>
+                            <p className="text-sm text-gray-600 truncate max-w-xs">{autoresponder.dm_message}</p>
+                            <p className="text-xs text-gray-500">{autoresponder.keywords.length} palabras clave</p>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Badge variant={autoresponder.is_active ? "default" : "secondary"} className="text-xs">
+                            {autoresponder.is_active ? 'Activo' : 'Inactivo'}
+                          </Badge>
                           <Button
                             variant="outline"
                             size="sm"
@@ -749,71 +718,6 @@ const AutoresponderManager: React.FC = () => {
                           </Button>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Mensaje DM:</p>
-                          <p className="text-gray-700">{autoresponder.dm_message}</p>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant={autoresponder.is_active ? "default" : "secondary"}>
-                            {autoresponder.is_active ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                          <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                            Post específico
-                          </Badge>
-                          <Badge variant="outline" className="bg-green-50 text-green-700">
-                            {autoresponder.public_reply_messages?.length || 1} respuestas públicas
-                          </Badge>
-                        </div>
-
-                        <div className="pt-2">
-                          <div className="flex items-center gap-1 mb-2">
-                            <Key className="w-3 h-3 text-gray-500" />
-                            <span className="text-xs text-gray-500">Palabras clave:</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {autoresponder.keywords.map((keyword, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded"
-                              >
-                                {keyword}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        {autoresponder.public_reply_messages && autoresponder.public_reply_messages.length > 0 && (
-                          <div className="pt-2">
-                            <div className="flex items-center gap-1 mb-2">
-                              <MessageSquare className="w-3 h-3 text-gray-500" />
-                              <span className="text-xs text-gray-500">Respuestas públicas (se envía una al azar):</span>
-                            </div>
-                            <div className="space-y-1">
-                              {autoresponder.public_reply_messages.map((message, index) => (
-                                <div key={index} className="flex items-start gap-2 p-2 bg-green-50 rounded text-xs">
-                                  <span className="text-green-600 font-medium">#{index + 1}</span>
-                                  <span className="text-gray-700 flex-1">{message}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="pt-2 text-xs text-gray-500">
-                          <a 
-                            href={autoresponder.post_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            Ver post configurado →
-                          </a>
-                        </div>
-                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -831,82 +735,25 @@ const AutoresponderManager: React.FC = () => {
                 {generalAutoresponders.map((autoresponder) => (
                   <Card key={autoresponder.id} className="border-blue-100">
                     <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${autoresponder.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                            <h4 className="font-semibold text-gray-900">{autoresponder.name}</h4>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${autoresponder.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <div>
+                            <h4 className="font-medium text-gray-900">{autoresponder.name}</h4>
+                            <p className="text-sm text-gray-600 truncate max-w-xs">{autoresponder.dm_message}</p>
+                            <p className="text-xs text-gray-500">
+                              {autoresponder.keywords.length} palabras clave
+                              {autoresponder.assigned_posts && autoresponder.assigned_posts.length > 0 && 
+                                ` • ${autoresponder.assigned_posts.length} posts asignados`
+                              }
+                            </p>
                           </div>
-                          <Badge variant={autoresponder.is_active ? "default" : "secondary"}>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={autoresponder.is_active ? "default" : "secondary"} className="text-xs">
                             {autoresponder.is_active ? 'Activo' : 'Inactivo'}
                           </Badge>
                         </div>
-
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Mensaje DM:</p>
-                          <p className="text-sm text-gray-700">{autoresponder.dm_message}</p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                            General
-                          </Badge>
-                          <Badge variant="outline" className="bg-green-50 text-green-700">
-                            {autoresponder.public_reply_messages?.length || 1} respuestas públicas
-                          </Badge>
-                          {autoresponder.assigned_posts && autoresponder.assigned_posts.length > 0 && (
-                            <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                              {autoresponder.assigned_posts.length} post(s) asignados
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div>
-                          <div className="flex items-center gap-1 mb-2">
-                            <Key className="w-3 h-3 text-gray-500" />
-                            <span className="text-xs text-gray-500">Palabras clave:</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {autoresponder.keywords.map((keyword, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded"
-                              >
-                                {keyword}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        {autoresponder.assigned_posts && autoresponder.assigned_posts.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-1 mb-2">
-                              <Instagram className="w-3 h-3 text-gray-500" />
-                              <span className="text-xs text-gray-500">Posts asignados:</span>
-                            </div>
-                            <div className="space-y-1">
-                              {autoresponder.assigned_posts.slice(0, 3).map((assignment, index) => (
-                                <div key={assignment.id} className="flex items-center gap-2 text-xs">
-                                  <div className={`w-2 h-2 rounded-full ${assignment.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                                  <a 
-                                    href={assignment.post_url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                  >
-                                    Post #{index + 1}
-                                    <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                </div>
-                              ))}
-                              {autoresponder.assigned_posts.length > 3 && (
-                                <p className="text-xs text-gray-500 italic">
-                                  +{autoresponder.assigned_posts.length - 3} más...
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </CardContent>
                   </Card>
