@@ -181,6 +181,19 @@ async function handlePostbackEvent(message: any, supabase: any) {
 async function processMessage(messagingEvent: any, supabase: any, source: string, instagramAccountId: string) {
   console.log(`📝 Procesando mensaje desde ${source}:`, JSON.stringify(messagingEvent, null, 2))
   
+  // Verificar si es un evento de "read" y saltar si es así
+  if (messagingEvent.read) {
+    console.log('📖 Es un evento de lectura - saltando procesamiento')
+    return
+  }
+  
+  // Verificar si es un postback y procesarlo por separado
+  if (messagingEvent.postback) {
+    console.log('🔘 Es un evento de postback - procesando por separado')
+    // Aquí puedes agregar lógica para manejar postbacks si es necesario
+    return
+  }
+  
   const senderId = messagingEvent.sender?.id
   const recipientId = messagingEvent.recipient?.id
   const messageText = messagingEvent.message?.text
@@ -1245,15 +1258,43 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('🚀 ENVIANDO PRIVATE REPLY usando comment_id:', commentId)
 
   try {
-    const { data: replyResponse, error: replyError } = await supabase.functions.invoke('instagram-send-message', {
-      body: {
-        message_text: selectedAutoresponder.dm_message,
-        instagram_user_id: instagramAccountId,
-        comment_id: commentId,
-        use_button: selectedAutoresponder.use_button_message || false,
-        button_text: selectedAutoresponder.button_text || null,
-        button_url: selectedAutoresponder.button_url || null
+    // Preparar datos del botón si está habilitado
+    const messagePayload: any = {
+      message_text: selectedAutoresponder.dm_message,
+      instagram_user_id: instagramAccountId,
+      comment_id: commentId,
+      use_button: selectedAutoresponder.use_button_message || false
+    }
+
+    // Solo agregar datos del botón si está habilitado y tiene los datos necesarios
+    if (selectedAutoresponder.use_button_message) {
+      if (selectedAutoresponder.button_text) {
+        messagePayload.button_text = selectedAutoresponder.button_text
       }
+      
+      if (selectedAutoresponder.button_type === 'web_url') {
+        if (selectedAutoresponder.button_url) {
+          messagePayload.button_url = selectedAutoresponder.button_url
+          messagePayload.button_type = 'web_url'
+        } else {
+          console.log('⚠️ Botón web_url sin URL - deshabilitando botón')
+          messagePayload.use_button = false
+        }
+      } else if (selectedAutoresponder.button_type === 'postback') {
+        if (selectedAutoresponder.postback_payload) {
+          messagePayload.postback_payload = selectedAutoresponder.postback_payload
+          messagePayload.button_type = 'postback'
+        } else {
+          console.log('⚠️ Botón postback sin payload - deshabilitando botón')
+          messagePayload.use_button = false
+        }
+      }
+    }
+
+    console.log('📤 Payload del mensaje:', JSON.stringify(messagePayload, null, 2))
+
+    const { data: replyResponse, error: replyError } = await supabase.functions.invoke('instagram-send-message', {
+      body: messagePayload
     })
 
     if (replyError) {
