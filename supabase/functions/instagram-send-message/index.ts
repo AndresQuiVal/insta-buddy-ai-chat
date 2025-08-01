@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -13,7 +12,18 @@ serve(async (req) => {
   }
 
   try {
-    const { recipient_id, message_text, reply_to_message_id, instagram_user_id, comment_id, use_button, button_text, button_url } = await req.json()
+    const { 
+      recipient_id, 
+      message_text, 
+      reply_to_message_id, 
+      instagram_user_id, 
+      comment_id, 
+      use_button, 
+      button_text, 
+      button_url,
+      button_type = 'web_url',
+      postback_payload
+    } = await req.json()
 
     console.log('🚀 Instagram Send Message Edge Function iniciada')
     console.log('📝 Parámetros recibidos:', {
@@ -24,7 +34,9 @@ serve(async (req) => {
       comment_id,
       use_button,
       button_text,
-      button_url: button_url?.substring(0, 50) + '...'
+      button_url: button_url?.substring(0, 50) + '...',
+      button_type,
+      postback_payload
     })
 
     // Validar parámetros requeridos
@@ -57,37 +69,43 @@ serve(async (req) => {
       )
     }
 
-    // Validar parámetros de botón si se usa botón
+    // Validar configuración del botón si se usa
     if (use_button) {
-      if (!button_text || !button_url) {
-        console.error('❌ Faltan parámetros de botón')
+      if (!button_text) {
+        console.error('❌ Falta button_text para el botón')
         return new Response(
-          JSON.stringify({
-            error: 'missing_button_params',
-            message: 'Se requieren button_text y button_url cuando use_button es true'
-          }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
+          JSON.stringify({ error: 'Button text is required when use_button is true' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
-      // Validar que la URL sea válida
-      try {
-        new URL(button_url)
-      } catch {
-        console.error('❌ URL de botón inválida')
-        return new Response(
-          JSON.stringify({
-            error: 'invalid_button_url',
-            message: 'La URL del botón debe ser una URL válida'
-          }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        )
+      if (button_type === 'web_url') {
+        if (!button_url) {
+          console.error('❌ Falta button_url para botón web_url')
+          return new Response(
+            JSON.stringify({ error: 'Button URL is required for web_url type' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        // Validar formato de URL
+        try {
+          new URL(button_url)
+        } catch {
+          console.error('❌ URL del botón no es válida:', button_url)
+          return new Response(
+            JSON.stringify({ error: 'Invalid button URL format' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+      } else if (button_type === 'postback') {
+        if (!postback_payload) {
+          console.error('❌ Falta postback_payload para botón postback')
+          return new Response(
+            JSON.stringify({ error: 'Postback payload is required for postback type' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
       }
     }
 
@@ -151,42 +169,33 @@ serve(async (req) => {
     let messageType
 
     if (comment_id) {
-      // 🆕 PRIVATE REPLY - Usando la documentación oficial
+      // PRIVATE REPLY
       messageType = 'private_reply'
       
       if (use_button) {
-        // PRIVATE REPLY CON BOTÓN
+        console.log(`🔘 Enviando PRIVATE REPLY CON BOTÓN ${button_type.toUpperCase()} usando comment_id:`, comment_id)
+        
+        const button = button_type === 'web_url' 
+          ? { type: "web_url", url: button_url, title: button_text }
+          : { type: "postback", payload: postback_payload, title: button_text }
+
         messageBody = {
-          recipient: { 
-            comment_id: comment_id 
-          },
+          recipient: { comment_id },
           message: {
             attachment: {
               type: "template",
               payload: {
                 template_type: "button",
                 text: message_text,
-                buttons: [
-                  {
-                    type: "web_url",
-                    url: button_url,
-                    title: button_text
-                  }
-                ]
+                buttons: [button]
               }
             }
           }
         }
-        console.log('🔘 Enviando PRIVATE REPLY CON BOTÓN usando comment_id:', comment_id)
       } else {
-        // PRIVATE REPLY NORMAL
         messageBody = {
-          recipient: { 
-            comment_id: comment_id 
-          },
-          message: { 
-            text: message_text 
-          }
+          recipient: { comment_id },
+          message: { text: message_text }
         }
         console.log('💬 Enviando PRIVATE REPLY usando comment_id:', comment_id)
       }
@@ -195,44 +204,31 @@ serve(async (req) => {
       messageType = 'direct_message'
       
       if (use_button) {
-        // DM CON BOTÓN
+        console.log(`🔘 Enviando DM CON BOTÓN ${button_type.toUpperCase()} al recipient_id:`, recipient_id)
+        
+        const button = button_type === 'web_url' 
+          ? { type: "web_url", url: button_url, title: button_text }
+          : { type: "postback", payload: postback_payload, title: button_text }
+
         messageBody = {
-          recipient: { 
-            id: recipient_id 
-          },
+          recipient: { id: recipient_id },
           message: {
             attachment: {
               type: "template",
               payload: {
                 template_type: "button",
                 text: message_text,
-                buttons: [
-                  {
-                    type: "web_url",
-                    url: button_url,
-                    title: button_text
-                  }
-                ]
+                buttons: [button]
               }
             }
           }
         }
-        
-        // Solo agregar reply_to para mensajes normales (no se puede con template de botón)
-        // Los templates de botón no soportan reply_to según la documentación
-        console.log('🔘 Enviando DM CON BOTÓN a recipient_id:', recipient_id)
       } else {
-        // DM NORMAL
         messageBody = {
-          recipient: { 
-            id: recipient_id 
-          },
-          message: { 
-            text: message_text 
-          }
+          recipient: { id: recipient_id },
+          message: { text: message_text }
         }
 
-        // Solo agregar reply_to para mensajes normales
         if (reply_to_message_id) {
           messageBody.message.reply_to = { mid: reply_to_message_id }
         }

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,6 +43,8 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   const [useButtonMessage, setUseButtonMessage] = useState(false);
   const [buttonText, setButtonText] = useState('');
   const [buttonUrl, setButtonUrl] = useState('');
+  const [buttonType, setButtonType] = useState<'web_url' | 'postback'>('web_url');
+  const [postbackResponse, setPostbackResponse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
@@ -134,36 +135,47 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
       return;
     }
 
-    // Validación para botones
+    // Validaciones del botón
     if (useButtonMessage) {
       if (!buttonText.trim()) {
         toast({
           title: "Error",
-          description: "El texto del botón es requerido cuando usas mensaje con botón",
-          variant: "destructive"
+          description: "El texto del botón es requerido",
+          variant: "destructive",
         });
         return;
       }
       
-      if (!buttonUrl.trim()) {
-        toast({
-          title: "Error", 
-          description: "La URL del botón es requerida cuando usas mensaje con botón",
-          variant: "destructive"
-        });
-        return;
-      }
+      if (buttonType === 'web_url') {
+        if (!buttonUrl.trim()) {
+          toast({
+            title: "Error", 
+            description: "La URL del botón es requerida",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      // Validar que la URL sea válida
-      try {
-        new URL(buttonUrl);
-      } catch {
-        toast({
-          title: "Error",
-          description: "Por favor ingresa una URL válida para el botón",
-          variant: "destructive"
-        });
-        return;
+        // Validar formato de URL
+        try {
+          new URL(buttonUrl);
+        } catch {
+          toast({
+            title: "Error",
+            description: "Por favor ingresa una URL válida",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else if (buttonType === 'postback') {
+        if (!postbackResponse.trim()) {
+          toast({
+            title: "Error",
+            description: "La respuesta del postback es requerida",
+            variant: "destructive",
+          });
+          return;
+        }
       }
     }
 
@@ -186,8 +198,10 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
           public_reply_messages: publicReplyMessages,
           require_follower: requireFollower,
           use_button_message: useButtonMessage,
-          button_text: useButtonMessage ? buttonText.trim() : null,
-          button_url: useButtonMessage ? buttonUrl.trim() : null,
+          button_text: useButtonMessage ? buttonText : null,
+          button_url: useButtonMessage && buttonType === 'web_url' ? buttonUrl : null,
+          button_type: useButtonMessage ? buttonType : 'web_url',
+          postback_response: useButtonMessage && buttonType === 'postback' ? postbackResponse : null,
           is_active: true
         })
         .select()
@@ -452,29 +466,56 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
             </p>
           </div>
 
-          {/* Configuración de Botón en DM */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <div className="flex items-start space-x-3 mb-4">
+          {/* Configuración del Botón en DM */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <MousePointer className="w-4 h-4" />
+                  Incluir Botón en el DM
+                </Label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Agregar un botón al mensaje directo que se envía
+                </p>
+              </div>
               <Switch
-                id="useButtonMessage"
                 checked={useButtonMessage}
                 onCheckedChange={setUseButtonMessage}
               />
-              <div className="flex-1">
-                <label htmlFor="useButtonMessage" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
-                  <MousePointer className="w-4 h-4" />
-                  Enviar mensaje DM con botón interactivo
-                </label>
-                <p className="text-xs text-blue-700 mt-1">
-                  Si está activado, el DM incluirá un botón que el usuario puede presionar para ir a una URL específica
-                </p>
-              </div>
             </div>
 
             {useButtonMessage && (
-              <div className="space-y-4 pl-6 border-l-2 border-blue-300">
+              <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div>
-                  <Label htmlFor="buttonText" className="text-sm font-medium text-blue-900">
+                  <Label className="text-sm font-medium text-gray-700">Tipo de Botón</Label>
+                  <div className="flex gap-4 mt-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="buttonType"
+                        value="web_url"
+                        checked={buttonType === 'web_url'}
+                        onChange={(e) => setButtonType(e.target.value as 'web_url' | 'postback')}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm">URL</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="buttonType"
+                        value="postback"
+                        checked={buttonType === 'postback'}
+                        onChange={(e) => setButtonType(e.target.value as 'web_url' | 'postback')}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm">Postback</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="buttonText" className="text-sm font-medium text-gray-700">
                     Texto del Botón
                   </Label>
                   <Input
@@ -484,30 +525,52 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
                     placeholder="Ej: Ver más información"
                     className="mt-1"
                     maxLength={20}
-                    required={useButtonMessage}
+                    required
                   />
-                  <p className="text-xs text-blue-600 mt-1">
-                    {buttonText.length}/20 caracteres (máximo 20)
+                  <p className="text-xs text-gray-500 mt-1">
+                    Máximo 20 caracteres
                   </p>
                 </div>
 
-                <div>
-                  <Label htmlFor="buttonUrl" className="text-sm font-medium text-blue-900">
-                    URL del Botón
-                  </Label>
-                  <Input
-                    id="buttonUrl"
-                    value={buttonUrl}
-                    onChange={(e) => setButtonUrl(e.target.value)}
-                    placeholder="https://tu-landing-page.com"
-                    className="mt-1"
-                    type="url"
-                    required={useButtonMessage}
-                  />
-                  <p className="text-xs text-blue-600 mt-1">
-                    Debe ser una URL completa que comience con https://
-                  </p>
-                </div>
+                {buttonType === 'web_url' && (
+                  <div>
+                    <Label htmlFor="buttonUrl" className="text-sm font-medium text-gray-700">
+                      URL del Botón
+                    </Label>
+                    <Input
+                      id="buttonUrl"
+                      type="url"
+                      value={buttonUrl}
+                      onChange={(e) => setButtonUrl(e.target.value)}
+                      placeholder="https://ejemplo.com"
+                      className="mt-1"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      URL completa incluyendo https://
+                    </p>
+                  </div>
+                )}
+
+                {buttonType === 'postback' && (
+                  <div>
+                    <Label htmlFor="postbackResponse" className="text-sm font-medium text-gray-700">
+                      Respuesta del Postback
+                    </Label>
+                    <Textarea
+                      id="postbackResponse"
+                      value={postbackResponse}
+                      onChange={(e) => setPostbackResponse(e.target.value)}
+                      placeholder="Mensaje que se enviará cuando el usuario haga click en el botón..."
+                      className="mt-1"
+                      rows={3}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Este mensaje se enviará automáticamente cuando el usuario haga click en el botón
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

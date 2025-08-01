@@ -109,6 +109,142 @@ serve(async (req) => {
   }
 })
 
+// Función para manejar eventos de postback
+async function handlePostbackEvent(message: any, supabase: any) {
+  try {
+    console.log('🔘 === PROCESANDO POSTBACK ===')
+    
+    const senderId = message.sender?.id
+    const recipientId = message.recipient?.id
+    const payload = message.postback?.payload
+    
+    console.log('👤 SENDER ID:', senderId)
+    console.log('🎯 RECIPIENT ID:', recipientId) 
+    console.log('📦 PAYLOAD:', payload)
+    
+    if (!senderId || !recipientId || !payload) {
+      console.log('❌ Datos insuficientes para procesar postback')
+      return
+    }
+    
+    // Extraer ID del autoresponder del payload
+    const autoresponderMatch = payload.match(/^(.+)_postback$/)
+    if (!autoresponderMatch) {
+      console.log('❌ Formato de payload no válido:', payload)
+      return
+    }
+    
+    const autoresponderId = autoresponderMatch[1]
+    console.log('🆔 AUTORESPONDER ID:', autoresponderId)
+    
+    // Buscar el autoresponder para obtener la respuesta
+    const { data: specificAutoresponder } = await supabase
+      .from('comment_autoresponders')
+      .select('postback_response, user_id')
+      .eq('id', autoresponderId)
+      .single()
+    
+    const { data: generalAutoresponder } = await supabase
+      .from('general_comment_autoresponders')
+      .select('postback_response, user_id')
+      .eq('id', autoresponderId)
+      .single()
+    
+    const autoresponder = specificAutoresponder || generalAutoresponder
+    
+    if (!autoresponder || !autoresponder.postback_response) {
+      console.log('❌ No se encontró autoresponder o respuesta de postback')
+      return
+    }
+    
+    console.log('💬 RESPUESTA POSTBACK:', autoresponder.postback_response)
+    
+    // Enviar la respuesta del postback
+    const response = await supabase.functions.invoke('instagram-send-message', {
+      body: {
+        recipient_id: senderId,
+        message_text: autoresponder.postback_response,
+        instagram_user_id: recipientId,
+        use_button: false
+      }
+    })
+    
+    console.log('📨 RESPUESTA ENVIADA:', response)
+    console.log('✅ POSTBACK PROCESADO EXITOSAMENTE')
+    
+  } catch (error) {
+    console.error('❌ Error procesando postback:', error)
+  }
+}
+
+// Función para manejar eventos de postback
+async function handlePostbackEvent(message: any, supabase: any) {
+  try {
+    console.log('🔘 === PROCESANDO POSTBACK ===')
+    
+    const senderId = message.sender?.id
+    const recipientId = message.recipient?.id
+    const payload = message.postback?.payload
+    
+    console.log('👤 SENDER ID:', senderId)
+    console.log('🎯 RECIPIENT ID:', recipientId) 
+    console.log('📦 PAYLOAD:', payload)
+    
+    if (!senderId || !recipientId || !payload) {
+      console.log('❌ Datos insuficientes para procesar postback')
+      return
+    }
+    
+    // Extraer ID del autoresponder del payload
+    const autoresponderMatch = payload.match(/^(.+)_postback$/)
+    if (!autoresponderMatch) {
+      console.log('❌ Formato de payload no válido:', payload)
+      return
+    }
+    
+    const autoresponderId = autoresponderMatch[1]
+    console.log('🆔 AUTORESPONDER ID:', autoresponderId)
+    
+    // Buscar el autoresponder para obtener la respuesta
+    const { data: specificAutoresponder } = await supabase
+      .from('comment_autoresponders')
+      .select('postback_response, user_id')
+      .eq('id', autoresponderId)
+      .single()
+    
+    const { data: generalAutoresponder } = await supabase
+      .from('general_comment_autoresponders')
+      .select('postback_response, user_id')
+      .eq('id', autoresponderId)
+      .single()
+    
+    const autoresponder = specificAutoresponder || generalAutoresponder
+    
+    if (!autoresponder || !autoresponder.postback_response) {
+      console.log('❌ No se encontró autoresponder o respuesta de postback')
+      return
+    }
+    
+    console.log('💬 RESPUESTA POSTBACK:', autoresponder.postback_response)
+    
+    // Enviar la respuesta del postback
+    const response = await supabase.functions.invoke('instagram-send-message', {
+      body: {
+        recipient_id: senderId,
+        message_text: autoresponder.postback_response,
+        instagram_user_id: recipientId,
+        use_button: false
+      }
+    })
+    
+    console.log('📨 RESPUESTA ENVIADA:', response)
+    console.log('✅ POSTBACK PROCESADO EXITOSAMENTE')
+    
+  } catch (error) {
+    console.error('❌ Error procesando postback:', error)
+  }
+}
+
 async function processMessage(messagingEvent: any, supabase: any, source: string, instagramAccountId: string) {
   console.log(`📝 Procesando mensaje desde ${source}:`, JSON.stringify(messagingEvent, null, 2))
   

@@ -284,6 +284,7 @@ export type Database = {
       comment_autoresponders: {
         Row: {
           button_text: string | null
+          button_type: string | null
           button_url: string | null
           buttons: Json | null
           created_at: string
@@ -295,6 +296,7 @@ export type Database = {
           post_caption: string | null
           post_id: string
           post_url: string
+          postback_response: string | null
           public_reply_messages: string[] | null
           require_follower: boolean
           updated_at: string
@@ -304,6 +306,7 @@ export type Database = {
         }
         Insert: {
           button_text?: string | null
+          button_type?: string | null
           button_url?: string | null
           buttons?: Json | null
           created_at?: string
@@ -315,6 +318,7 @@ export type Database = {
           post_caption?: string | null
           post_id: string
           post_url: string
+          postback_response?: string | null
           public_reply_messages?: string[] | null
           require_follower?: boolean
           updated_at?: string
@@ -324,6 +328,7 @@ export type Database = {
         }
         Update: {
           button_text?: string | null
+          button_type?: string | null
           button_url?: string | null
           buttons?: Json | null
           created_at?: string
@@ -335,6 +340,7 @@ export type Database = {
           post_caption?: string | null
           post_id?: string
           post_url?: string
+          postback_response?: string | null
           public_reply_messages?: string[] | null
           require_follower?: boolean
           updated_at?: string
@@ -348,6 +354,7 @@ export type Database = {
         Row: {
           auto_assign_to_all_posts: boolean | null
           button_text: string | null
+          button_type: string | null
           button_url: string | null
           buttons: Json | null
           created_at: string
@@ -356,6 +363,7 @@ export type Database = {
           is_active: boolean
           keywords: string[]
           name: string
+          postback_response: string | null
           public_reply_messages: string[] | null
           require_follower: boolean
           updated_at: string
@@ -366,6 +374,7 @@ export type Database = {
         Insert: {
           auto_assign_to_all_posts?: boolean | null
           button_text?: string | null
+          button_type?: string | null
           button_url?: string | null
           buttons?: Json | null
           created_at?: string
@@ -374,6 +383,7 @@ export type Database = {
           is_active?: boolean
           keywords?: string[]
           name: string
+          postback_response?: string | null
           public_reply_messages?: string[] | null
           require_follower?: boolean
           updated_at?: string
@@ -384,6 +394,7 @@ export type Database = {
         Update: {
           auto_assign_to_all_posts?: boolean | null
           button_text?: string | null
+          button_type?: string | null
           button_url?: string | null
           buttons?: Json | null
           created_at?: string
@@ -392,6 +403,7 @@ export type Database = {
           is_active?: boolean
           keywords?: string[]
           name?: string
+          postback_response?: string | null
           public_reply_messages?: string[] | null
           require_follower?: boolean
           updated_at?: string
