@@ -1280,11 +1280,16 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           console.log('⚠️ Botón web_url sin URL - deshabilitando botón')
           messagePayload.use_button = false
         }
-      } else if (selectedAutoresponder.button_type === 'postback') {
+        } else if (selectedAutoresponder.button_type === 'postback') {
         if (selectedAutoresponder.postback_payload) {
           messagePayload.button_text = selectedAutoresponder.button_text
           messagePayload.postback_payload = selectedAutoresponder.postback_payload
           messagePayload.button_type = 'postback'
+          console.log('📤 Configurando botón postback:', {
+            button_text: selectedAutoresponder.button_text,
+            postback_payload: selectedAutoresponder.postback_payload,
+            button_type: 'postback'
+          })
         } else {
           console.log('⚠️ Botón postback sin payload - deshabilitando botón')
           messagePayload.use_button = false
