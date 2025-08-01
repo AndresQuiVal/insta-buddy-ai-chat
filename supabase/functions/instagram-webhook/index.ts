@@ -1280,7 +1280,7 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           console.log('⚠️ Botón web_url sin URL - deshabilitando botón')
           messagePayload.use_button = false
         }
-        } else if (selectedAutoresponder.button_type === 'postback') {
+      } else if (selectedAutoresponder.button_type === 'postback') {
         if (selectedAutoresponder.postback_response) {
           messagePayload.button_text = selectedAutoresponder.button_text
           messagePayload.postback_payload = `${selectedAutoresponder.id}_postback`
