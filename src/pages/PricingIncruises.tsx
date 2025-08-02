@@ -55,7 +55,7 @@ const PricingIncruises = () => {
         "Hower Assistant (Gratis 3 meses)",
         "Hower WhatsApp (Gratis 3 meses)",
         "Mensajes de prospección de Roberto (actualizados diariamente)",
-        "6 mentorías grabadas de Mihail Millet"
+        ""
       ],
       savings: "1 mes gratis + 8 NUEVOS productos GRATUITOS"
     },
@@ -79,7 +79,7 @@ const PricingIncruises = () => {
         "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)",
         "Acceso temprano a nuevas funcionalidades",
         "Mensajes adaptados a tu nicho (Roberto)",
-        "6 mentorías de Mihail Millet"
+        ""
       ],
       bonus: [
         "Hower Assistant (Gratis LIFETIME)",
