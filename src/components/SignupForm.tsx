@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const SignupForm = () => {
   const [formData, setFormData] = useState({
@@ -34,8 +35,29 @@ const SignupForm = () => {
       return;
     }
 
-    // Simular envío del formulario
-    setTimeout(() => {
+    try {
+      // Guardar datos en la base de datos
+      const { error } = await supabase
+        .from('profiles')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          niche: formData.niche,
+          niche_detail: formData.nicheDetail || null,
+          phone: formData.phone
+        });
+
+      if (error) {
+        console.error('Error saving profile:', error);
+        toast({
+          title: "Error al registrar",
+          description: error.message || "Hubo un problema al guardar tus datos",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       toast({
         title: "¡Registro exitoso!",
         description: "Ahora conecta tu cuenta de Instagram para continuar",
@@ -43,8 +65,16 @@ const SignupForm = () => {
       
       // Redirigir a la página principal
       navigate('/');
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error inesperado",
+        description: "Hubo un problema al procesar tu registro",
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
