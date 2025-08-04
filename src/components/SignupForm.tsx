@@ -3,13 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 const SignupForm = () => {
   const [formData, setFormData] = useState({
     name: '',
-    email: ''
+    email: '',
+    niche: '',
+    nicheDetail: '',
+    phone: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -19,7 +23,8 @@ const SignupForm = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    if (!formData.name || !formData.email) {
+    if (!formData.name || !formData.email || !formData.niche || !formData.phone || 
+        ((formData.niche === 'coach' || formData.niche === 'otro' || formData.niche === 'infoproductor') && !formData.nicheDetail)) {
       toast({
         title: "Campos requeridos",
         description: "Por favor completa todos los campos",
@@ -87,6 +92,75 @@ const SignupForm = () => {
                 placeholder="tu@email.com"
                 required
               />
+            </div>
+
+            <div>
+              <Label className="text-gray-700 font-medium">
+                ¿De qué nicho vienes?
+              </Label>
+              <Select 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, niche: value, nicheDetail: '' }))} 
+                value={formData.niche}
+              >
+                <SelectTrigger className="mt-2 rounded-xl border-gray-200 focus:border-purple-500">
+                  <SelectValue placeholder="Selecciona tu nicho" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="coach">Coach - Mentor</SelectItem>
+                  <SelectItem value="infoproductor">Infoproductor</SelectItem>
+                  <SelectItem value="trafficker">Trafficker</SelectItem>
+                  <SelectItem value="otro">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Campo condicional para especificar el nicho */}
+            {(formData.niche === 'coach' || formData.niche === 'otro') && (
+              <div>
+                <Label className="text-gray-700 font-medium">
+                  {formData.niche === 'coach' ? '¿Coach/mentor de qué nicho?' : 'Especifica tu nicho'}
+                </Label>
+                <Input 
+                  placeholder={formData.niche === 'coach' ? 'Ej: Fitness, Business, Life Coach...' : 'Describe tu nicho...'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nicheDetail: e.target.value }))}
+                  value={formData.nicheDetail}
+                  className="mt-2 rounded-xl border-gray-200 focus:border-purple-500"
+                  required
+                />
+              </div>
+            )}
+
+            {formData.niche === 'infoproductor' && (
+              <div>
+                <Label className="text-gray-700 font-medium">
+                  ¿Qué tipo de infoproductos vendes?
+                </Label>
+                <Input 
+                  placeholder="Ej: Cursos de marketing, ebooks, masterclasses..."
+                  onChange={(e) => setFormData(prev => ({ ...prev, nicheDetail: e.target.value }))}
+                  value={formData.nicheDetail}
+                  className="mt-2 rounded-xl border-gray-200 focus:border-purple-500"
+                  required
+                />
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="phone" className="text-gray-700 font-medium">
+                Número de teléfono
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                className="mt-2 rounded-xl border-gray-200 focus:border-purple-500"
+                placeholder="Ej: +521234567890"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Para recibir soporte personalizado en WhatsApp. No recibirás promocionales, solo ayuda cuando la necesites.
+              </p>
             </div>
 
             <Button
