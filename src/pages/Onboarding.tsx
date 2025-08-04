@@ -2,20 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, Instagram } from 'lucide-react';
+import { ArrowRight, Instagram, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { initiateInstagramAuth, checkInstagramConnection } from '@/services/instagramService';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [onboardingData, setOnboardingData] = useState({
+  const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null); // null = checking, true = first time, false = returning user
+  const [isCheckingUser, setIsCheckingUser] = useState(false);
+  const [connectedInstagramData, setConnectedInstagramData] = useState<any>(null);
+  
+  const [signupData, setSignupData] = useState({
+    name: '',
+    email: '',
     niche: '',
     nicheDetail: '',
-    phone: '',
+    phone: ''
+  });
+  
+  const [onboardingData, setOnboardingData] = useState({
     personality: '',
     idealCustomer: {
       trait1: '',
@@ -26,24 +37,104 @@ const Onboarding: React.FC = () => {
     instagramConnected: false
   });
 
+  // Verificar si la cuenta de Instagram ya existe en la BD
+  const checkExistingInstagramUser = async (instagramData: any) => {
+    setIsCheckingUser(true);
+    try {
+      const instagramUserId = instagramData.instagram?.id;
+      
+      if (!instagramUserId) {
+        setIsFirstTime(true);
+        setIsCheckingUser(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('instagram_users')
+        .select('*')
+        .eq('instagram_user_id', instagramUserId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking user:', error);
+        setIsFirstTime(true);
+      } else if (data) {
+        // Usuario existente - saltar al paso de personalidad
+        setIsFirstTime(false);
+        setStep(3); // Saltar directo al paso de personalidad
+        toast({
+          title: "¡Bienvenido de vuelta!",
+          description: "Tu cuenta ya está registrada. Continúa configurando tu asistente."
+        });
+      } else {
+        // Primera vez - mostrar signup
+        setIsFirstTime(true);
+        setStep(2); // Ir al paso de signup
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setIsFirstTime(true);
+    } finally {
+      setIsCheckingUser(false);
+    }
+  };
+
   useEffect(() => {
-    // Verifica si ya hay una conexión a Instagram
+    // Verificar si ya hay una conexión a Instagram
     if (step === 1) {
-      const isConnected = checkInstagramConnection();
-      if (isConnected) {
+      const savedUserData = localStorage.getItem('hower-instagram-user');
+      if (savedUserData) {
+        const userData = JSON.parse(savedUserData);
+        setConnectedInstagramData(userData);
         setOnboardingData(prev => ({
           ...prev,
           instagramConnected: true
         }));
-        toast({
-          title: "Instagram conectado",
-          description: "Tu cuenta de Instagram ya está conectada a Hower."
-        });
+        
+        // Verificar si es primera vez
+        checkExistingInstagramUser(userData);
       }
     }
   }, [step]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (step === 2 && isFirstTime) {
+      // Guardar datos de signup en la BD
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            name: signupData.name,
+            email: signupData.email,
+            niche: signupData.niche,
+            niche_detail: signupData.nicheDetail || null,
+            phone: signupData.phone
+          });
+
+        if (error) {
+          toast({
+            title: "Error al guardar",
+            description: "Hubo un problema al guardar tus datos. Inténtalo de nuevo.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        toast({
+          title: "Datos guardados",
+          description: "Tu información se ha guardado correctamente."
+        });
+      } catch (error) {
+        console.error('Error saving signup data:', error);
+        toast({
+          title: "Error inesperado",
+          description: "Hubo un problema al procesar tu información.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     if (step < 5) {
       setStep(step + 1);
     } else {
@@ -71,9 +162,16 @@ const Onboarding: React.FC = () => {
     }
   };
 
+  const updateSignupData = (field: string, value: string) => {
+    setSignupData({
+      ...signupData,
+      [field]: value
+    });
+  };
+
   const handleNicheChange = (value: string) => {
-    setOnboardingData({
-      ...onboardingData,
+    setSignupData({
+      ...signupData,
       niche: value,
       nicheDetail: '' // Reset detail when niche changes
     });
@@ -91,13 +189,14 @@ const Onboarding: React.FC = () => {
     // Usar la versión hardcoded de la autenticación
     const success = initiateInstagramAuth();
     
-    // Actualizar el estado si la conexión fue exitosa
-    if (success) {
-      setOnboardingData(prev => ({
-        ...prev,
-        instagramConnected: true
-      }));
-    }
+    // Note: La lógica de verificación se maneja en el useEffect
+    // cuando detecta que hay datos en localStorage
+  };
+
+  const getProgressPercentage = () => {
+    const totalSteps = isFirstTime ? 5 : 4; // 4 steps if returning user (skip signup)
+    const currentStep = isFirstTime ? step : (step - 1); // Adjust for skipped step
+    return (currentStep / totalSteps) * 100;
   };
 
   return (
@@ -112,7 +211,7 @@ const Onboarding: React.FC = () => {
         <div className="w-full bg-gray-100 h-2 rounded-full mb-6 sm:mb-10">
           <div 
             className="bg-primary h-2 rounded-full transition-all duration-300" 
-            style={{ width: `${step * 20}%` }}
+            style={{ width: `${getProgressPercentage()}%` }}
           ></div>
         </div>
 
@@ -130,7 +229,12 @@ const Onboarding: React.FC = () => {
                   <Instagram className="w-10 h-10 sm:w-12 sm:h-12 text-pink-600" />
                 </div>
                 
-                {onboardingData.instagramConnected ? (
+                {isCheckingUser ? (
+                  <div className="flex flex-col items-center text-center">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
+                    <div className="text-gray-600">Verificando tu cuenta...</div>
+                  </div>
+                ) : onboardingData.instagramConnected ? (
                   <div className="flex flex-col items-center text-center">
                     <div className="text-green-500 font-medium">¡Cuenta conectada con éxito!</div>
                     <p className="text-gray-500 text-sm mt-1">Tu cuenta de Instagram está vinculada con Hower</p>
@@ -145,29 +249,59 @@ const Onboarding: React.FC = () => {
                 )}
               </div>
               
-              <Button 
-                onClick={handleNext}
-                className="w-full bg-primary hover:bg-primary-dark text-white flex items-center justify-center gap-2"
-                disabled={!onboardingData.instagramConnected}
-              >
-                Continuar <ArrowRight className="w-4 h-4" />
-              </Button>
+              {onboardingData.instagramConnected && !isCheckingUser && isFirstTime !== null && (
+                <Button 
+                  onClick={handleNext}
+                  className="w-full bg-primary hover:bg-primary-dark text-white flex items-center justify-center gap-2"
+                >
+                  Continuar <ArrowRight className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           )}
 
-          {/* Step 2: Datos personales y nicho */}
-          {step === 2 && (
+          {/* Step 2: Datos de signup (solo si es primera vez) */}
+          {step === 2 && isFirstTime && (
             <div className="space-y-6">
               <div className="space-y-2 text-center mb-6">
-                <h2 className="text-xl sm:text-2xl font-semibold text-primary">Información personal</h2>
-                <p className="text-sm sm:text-base text-gray-500">Cuéntanos sobre ti y tu nicho</p>
+                <h2 className="text-xl sm:text-2xl font-semibold text-primary">¡Bienvenido a Hower!</h2>
+                <p className="text-sm sm:text-base text-gray-500">Como es tu primera vez, necesitamos algunos datos básicos</p>
               </div>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">¿De qué nicho vienes?</label>
-                  <Select onValueChange={handleNicheChange} value={onboardingData.niche}>
-                    <SelectTrigger className="w-full">
+                  <Label htmlFor="name" className="text-gray-700 font-medium">Nombre completo</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={signupData.name}
+                    onChange={(e) => updateSignupData('name', e.target.value)}
+                    className="mt-2"
+                    placeholder="Tu nombre"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={signupData.email}
+                    onChange={(e) => updateSignupData('email', e.target.value)}
+                    className="mt-2"
+                    placeholder="tu@email.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-gray-700 font-medium">¿De qué nicho vienes?</Label>
+                  <Select 
+                    onValueChange={handleNicheChange} 
+                    value={signupData.niche}
+                  >
+                    <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Selecciona tu nicho" />
                     </SelectTrigger>
                     <SelectContent>
@@ -180,40 +314,44 @@ const Onboarding: React.FC = () => {
                 </div>
 
                 {/* Campo condicional para especificar el nicho */}
-                {(onboardingData.niche === 'coach' || onboardingData.niche === 'otro') && (
+                {(signupData.niche === 'coach' || signupData.niche === 'otro') && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {onboardingData.niche === 'coach' ? '¿Coach/mentor de qué nicho?' : 'Especifica tu nicho'}
-                    </label>
+                    <Label className="text-gray-700 font-medium">
+                      {signupData.niche === 'coach' ? '¿Coach/mentor de qué nicho?' : 'Especifica tu nicho'}
+                    </Label>
                     <Input 
-                      placeholder={onboardingData.niche === 'coach' ? 'Ej: Fitness, Business, Life Coach...' : 'Describe tu nicho...'}
-                      onChange={(e) => updateOnboardingData('nicheDetail', e.target.value)}
-                      value={onboardingData.nicheDetail}
-                      className="w-full text-sm sm:text-base"
+                      placeholder={signupData.niche === 'coach' ? 'Ej: Fitness, Business, Life Coach...' : 'Describe tu nicho...'}
+                      onChange={(e) => updateSignupData('nicheDetail', e.target.value)}
+                      value={signupData.nicheDetail}
+                      className="mt-2"
+                      required
                     />
                   </div>
                 )}
 
-                {onboardingData.niche === 'infoproductor' && (
+                {signupData.niche === 'infoproductor' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">¿Qué tipo de infoproductos vendes?</label>
+                    <Label className="text-gray-700 font-medium">¿Qué tipo de infoproductos vendes?</Label>
                     <Input 
                       placeholder="Ej: Cursos de marketing, ebooks, masterclasses..."
-                      onChange={(e) => updateOnboardingData('nicheDetail', e.target.value)}
-                      value={onboardingData.nicheDetail}
-                      className="w-full text-sm sm:text-base"
+                      onChange={(e) => updateSignupData('nicheDetail', e.target.value)}
+                      value={signupData.nicheDetail}
+                      className="mt-2"
+                      required
                     />
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de teléfono</label>
-                  <Input 
+                  <Label htmlFor="phone" className="text-gray-700 font-medium">Número de teléfono</Label>
+                  <Input
+                    id="phone"
                     type="tel"
+                    value={signupData.phone}
+                    onChange={(e) => updateSignupData('phone', e.target.value)}
+                    className="mt-2"
                     placeholder="Ej: +521234567890"
-                    onChange={(e) => updateOnboardingData('phone', e.target.value)}
-                    value={onboardingData.phone}
-                    className="w-full text-sm sm:text-base"
+                    required
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Para recibir soporte personalizado en WhatsApp. No recibirás promocionales, solo ayuda cuando la necesites.
@@ -224,8 +362,8 @@ const Onboarding: React.FC = () => {
               <Button 
                 onClick={handleNext}
                 className="w-full bg-primary hover:bg-primary-dark text-white flex items-center justify-center gap-2"
-                disabled={!onboardingData.niche || !onboardingData.phone || 
-                  ((onboardingData.niche === 'coach' || onboardingData.niche === 'otro' || onboardingData.niche === 'infoproductor') && !onboardingData.nicheDetail)}
+                disabled={!signupData.name || !signupData.email || !signupData.niche || !signupData.phone || 
+                  ((signupData.niche === 'coach' || signupData.niche === 'otro' || signupData.niche === 'infoproductor') && !signupData.nicheDetail)}
               >
                 Continuar <ArrowRight className="w-4 h-4" />
               </Button>
@@ -348,11 +486,11 @@ const Onboarding: React.FC = () => {
           
           {/* Step indicator */}
           <div className="flex justify-center mt-6 sm:mt-8">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {Array.from({ length: isFirstTime ? 5 : 4 }, (_, i) => i + 1).map((i) => (
               <div 
                 key={i} 
                 className={`w-2.5 h-2.5 rounded-full mx-1 ${
-                  i === step ? 'bg-primary' : 'bg-gray-200'
+                  i === (isFirstTime ? step : step - 1) ? 'bg-primary' : 'bg-gray-200'
                 }`}
               ></div>
             ))}
