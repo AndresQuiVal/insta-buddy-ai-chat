@@ -267,7 +267,7 @@ const Beta: React.FC = () => {
                   <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
                   Autorespondedor Inteligente
                 </Badge>
-                <Badge variant="outline" className="flex items-center justify-center gap-2 text-sm sm:text-lg py-2 px-3 sm:px-4 bg-white/10 border-white/20 text-white">
+                <Badge variant="outline" className="flex items-center justify-center gap-2 text-sm sm:text-lg py-2 px-3 sm:px-4 bg-white/10 border-white/20 text-white" style={{ display: 'none' }}>
                   <Search className="w-4 h-4 sm:w-5 sm:h-5" />
                   Contenido Viral AI
                 </Badge>
@@ -318,7 +318,7 @@ const Beta: React.FC = () => {
             </div>
 
             {/* Sección Hower Viral AI */}
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-6xl mx-auto" style={{ display: 'none' }}>
               <div className="text-center mb-16">
                 <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-8">
                   y no nada más es eso....
@@ -516,7 +516,7 @@ const Beta: React.FC = () => {
                      </div>
                    </div>
 
-                   <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-green-100 hover:border-green-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                   <div className="group flex items-center space-x-4 p-6 bg-white rounded-2xl border-2 border-green-100 hover:border-green-200 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1" style={{ display: 'none' }}>
                      <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
                        <Search className="w-6 h-6 text-white" />
                      </div>
