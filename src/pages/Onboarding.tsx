@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, Instagram } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { initiateInstagramAuth, checkInstagramConnection } from '@/services/instagramService';
@@ -12,6 +13,9 @@ const Onboarding: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [onboardingData, setOnboardingData] = useState({
+    niche: '',
+    nicheDetail: '',
+    phone: '',
     personality: '',
     idealCustomer: {
       trait1: '',
@@ -40,7 +44,7 @@ const Onboarding: React.FC = () => {
   }, [step]);
 
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1);
     } else {
       // Marcar el onboarding como completado en localStorage
@@ -65,6 +69,14 @@ const Onboarding: React.FC = () => {
         [field]: value
       });
     }
+  };
+
+  const handleNicheChange = (value: string) => {
+    setOnboardingData({
+      ...onboardingData,
+      niche: value,
+      nicheDetail: '' // Reset detail when niche changes
+    });
   };
 
   const handleInstagramConnect = () => {
@@ -100,7 +112,7 @@ const Onboarding: React.FC = () => {
         <div className="w-full bg-gray-100 h-2 rounded-full mb-6 sm:mb-10">
           <div 
             className="bg-primary h-2 rounded-full transition-all duration-300" 
-            style={{ width: `${step * 25}%` }}
+            style={{ width: `${step * 20}%` }}
           ></div>
         </div>
 
@@ -143,8 +155,85 @@ const Onboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 2: Personalidad */}
+          {/* Step 2: Datos personales y nicho */}
           {step === 2 && (
+            <div className="space-y-6">
+              <div className="space-y-2 text-center mb-6">
+                <h2 className="text-xl sm:text-2xl font-semibold text-primary">Información personal</h2>
+                <p className="text-sm sm:text-base text-gray-500">Cuéntanos sobre ti y tu nicho</p>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">¿De qué nicho vienes?</label>
+                  <Select onValueChange={handleNicheChange} value={onboardingData.niche}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecciona tu nicho" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="coach">Coach - Mentor</SelectItem>
+                      <SelectItem value="infoproductor">Infoproductor</SelectItem>
+                      <SelectItem value="trafficker">Trafficker</SelectItem>
+                      <SelectItem value="otro">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Campo condicional para especificar el nicho */}
+                {(onboardingData.niche === 'coach' || onboardingData.niche === 'otro') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {onboardingData.niche === 'coach' ? '¿Coach/mentor de qué nicho?' : 'Especifica tu nicho'}
+                    </label>
+                    <Input 
+                      placeholder={onboardingData.niche === 'coach' ? 'Ej: Fitness, Business, Life Coach...' : 'Describe tu nicho...'}
+                      onChange={(e) => updateOnboardingData('nicheDetail', e.target.value)}
+                      value={onboardingData.nicheDetail}
+                      className="w-full text-sm sm:text-base"
+                    />
+                  </div>
+                )}
+
+                {onboardingData.niche === 'infoproductor' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">¿Qué tipo de infoproductos vendes?</label>
+                    <Input 
+                      placeholder="Ej: Cursos de marketing, ebooks, masterclasses..."
+                      onChange={(e) => updateOnboardingData('nicheDetail', e.target.value)}
+                      value={onboardingData.nicheDetail}
+                      className="w-full text-sm sm:text-base"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de teléfono</label>
+                  <Input 
+                    type="tel"
+                    placeholder="Ej: +521234567890"
+                    onChange={(e) => updateOnboardingData('phone', e.target.value)}
+                    value={onboardingData.phone}
+                    className="w-full text-sm sm:text-base"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Para recibir soporte personalizado en WhatsApp. No recibirás promocionales, solo ayuda cuando la necesites.
+                  </p>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleNext}
+                className="w-full bg-primary hover:bg-primary-dark text-white flex items-center justify-center gap-2"
+                disabled={!onboardingData.niche || !onboardingData.phone || 
+                  ((onboardingData.niche === 'coach' || onboardingData.niche === 'otro' || onboardingData.niche === 'infoproductor') && !onboardingData.nicheDetail)}
+              >
+                Continuar <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+
+          {/* Step 3: Personalidad */}
+          {step === 3 && (
             <div className="space-y-6">
               <div className="space-y-2 text-center mb-6">
                 <h2 className="text-xl sm:text-2xl font-semibold text-primary">Personalidad de tu marca</h2>
@@ -168,8 +257,8 @@ const Onboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 3: Cliente ideal */}
-          {step === 3 && (
+          {/* Step 4: Cliente ideal */}
+          {step === 4 && (
             <div className="space-y-6">
               <div className="space-y-2 text-center mb-6">
                 <h2 className="text-xl sm:text-2xl font-semibold text-primary">Cliente ideal</h2>
@@ -227,8 +316,8 @@ const Onboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 4: Finalización */}
-          {step === 4 && (
+          {/* Step 5: Finalización */}
+          {step === 5 && (
             <div className="space-y-6">
               <div className="space-y-2 text-center mb-6">
                 <h2 className="text-xl sm:text-2xl font-semibold text-primary">¡Todo listo!</h2>
@@ -259,7 +348,7 @@ const Onboarding: React.FC = () => {
           
           {/* Step indicator */}
           <div className="flex justify-center mt-6 sm:mt-8">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4, 5].map((i) => (
               <div 
                 key={i} 
                 className={`w-2.5 h-2.5 rounded-full mx-1 ${
