@@ -48,7 +48,8 @@ export const initiateInstagramAuth = (
     const currentDomain = window.location.hostname;
     if (
       currentDomain === "localhost" ||
-      currentDomain.includes("lovableproject.com")
+      currentDomain.includes("lovableproject.com") ||
+      currentDomain.includes("lovable.app")
     ) {
       console.log("Dominio válido para desarrollo/producción:", currentDomain);
     } else {
@@ -56,11 +57,7 @@ export const initiateInstagramAuth = (
         "Dominio no configurado en Facebook Developers:",
         currentDomain
       );
-      toast({
-        title: "Advertencia de configuración",
-        description: `Asegúrate de que ${currentDomain} esté configurado como URL válida en Facebook Developers`,
-        variant: "destructive",
-      });
+      // Removida la alerta molesta que aparecía en producción
     }
 
     // Redirigir al usuario a Facebook para autorización
