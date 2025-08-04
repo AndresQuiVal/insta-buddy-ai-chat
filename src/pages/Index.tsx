@@ -220,6 +220,7 @@ const Index = () => {
                   ? "bg-purple-600 text-white shadow-lg"
                   : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
               }`}
+              style={{ display: 'none' }}
             >
               Contenidos Virales
             </button>
