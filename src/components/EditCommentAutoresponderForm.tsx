@@ -761,8 +761,8 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
                   Solo enviar mensaje a usuarios que me siguen
                 </label>
                 <p className="text-xs text-yellow-700 mt-1">
-                  Si está activado, solo se enviará el mensaje DM a usuarios que sigan tu cuenta de Instagram. 
-                  A los usuarios que no te siguen se les enviará un mensaje de confirmación primero.
+                  Siempre se enviará un mensaje de confirmación preguntando si te siguen. 
+                  Solo después de que confirmen que te siguen se enviará el mensaje del autoresponder.
                 </p>
               </div>
             </div>
