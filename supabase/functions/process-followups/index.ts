@@ -60,11 +60,12 @@ serve(async (req) => {
         console.log('💬 Mensaje:', detail.message_text)
         
         try {
-          // Buscar el usuario de Instagram para obtener su ID y token
+          // Buscar el usuario de Instagram más reciente y activo
           const { data: instagramUser, error: userError } = await supabase
             .from('instagram_users')
             .select('instagram_user_id, access_token, username')
             .eq('is_active', true)
+            .order('created_at', { ascending: false })
             .limit(1)
             .single()
 
