@@ -77,6 +77,8 @@ export default function AdminTable() {
         const ahora = new Date();
         const diasDesdeRegistro = Math.floor((ahora.getTime() - fechaRegistro.getTime()) / (1000 * 60 * 60 * 24));
         
+        console.log('Profile:', profile.email, 'Created:', profile.created_at, 'Días:', diasDesdeRegistro);
+        
         adminData.push({
           correo: profile.email || '',
           telefono: profile.phone || '',
