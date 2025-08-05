@@ -262,6 +262,17 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     return
   }
 
+  // 🚨 VERIFICACIÓN CRÍTICA: Si el mensaje contiene texto de respuesta de autoresponder, NO procesarlo
+  if (messageText && (
+    messageText.includes('https://comunidad.vidaplennia.com') ||
+    messageText.includes('Venga, esta es la guía') ||
+    messageText.includes('guía:')
+  )) {
+    console.log('🚫 MENSAJE CONTIENE RESPUESTA DE AUTORESPONDER - SALTANDO PROCESAMIENTO')
+    console.log('📝 Texto del mensaje:', messageText)
+    return
+  }
+
   if (!senderId || !recipientId || !messageText) {
     console.log('❌ Datos insuficientes para procesar mensaje')
     return
