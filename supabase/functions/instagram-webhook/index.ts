@@ -85,7 +85,8 @@ serve(async (req) => {
                 sender: change.value.sender,
                 recipient: change.value.recipient,
                 timestamp: change.value.timestamp,
-                message: change.value.message
+                message: change.value.message,
+                postback: change.value.postback // ✅ INCLUIR POSTBACK PARA MANEJAR CORRECTAMENTE
               }
               
               await processMessage(messagingEvent, supabase, 'changes', entry.id)
