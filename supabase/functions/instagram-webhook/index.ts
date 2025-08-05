@@ -71,6 +71,17 @@ serve(async (req) => {
           console.log('📝 PROCESANDO MENSAJES DIRECTOS (FORMATO PRODUCCIÓN)')
           
           for (const messagingEvent of entry.messaging) {
+            console.log('🔍 ANÁLISIS CRÍTICO ANTES DE PROCESAR:')
+            console.log('📋 Mensaje completo:', JSON.stringify(messagingEvent, null, 2))
+            console.log('🔘 ¿Tiene postback directo?', !!messagingEvent.postback)
+            console.log('🔘 ¿Tiene postback en message?', !!(messagingEvent.message && messagingEvent.message.postback))
+            console.log('🔘 ¿Tiene texto?', !!messagingEvent.message?.text)
+            if (messagingEvent.message?.text) {
+              console.log('📝 Texto del mensaje:', messagingEvent.message.text)
+              console.log('🔍 ¿Contiene _postback?', messagingEvent.message.text.includes('_postback'))
+            }
+            console.log('🚨 LLAMANDO A processMessage...')
+            
             await processMessage(messagingEvent, supabase, 'messaging', entry.id)
           }
         }
