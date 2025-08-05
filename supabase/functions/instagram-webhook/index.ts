@@ -1183,12 +1183,13 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('🆔 Comment ID a verificar:', commentId)
   console.log('👤 Commenter ID a verificar:', commenterId)
   
-  // Verificación más robusta: buscar por commenter_instagram_id y comment_text
+  // VERIFICACIÓN CORRECTA: incluir media_id para verificar por post específico
   const { data: existingResponse, error: logCheckError } = await supabase
     .from('comment_autoresponder_log')
     .select('*')
     .eq('commenter_instagram_id', commenterId)
     .eq('comment_text', commentText)
+    .eq('webhook_data->>media_id', mediaId) // ✅ INCLUIR MEDIA ID para verificar post específico
     .gte('dm_sent_at', new Date(Date.now() - 60 * 60 * 1000).toISOString()) // Últimas 1 hora
     .limit(1)
 
