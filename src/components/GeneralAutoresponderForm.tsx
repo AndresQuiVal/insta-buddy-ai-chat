@@ -27,6 +27,7 @@ interface GeneralAutoresponder {
   button_url?: string;
   button_type?: 'web_url' | 'postback';
   postback_response?: string;
+  auto_assign_to_all_posts?: boolean; // ✅ Agregar esta propiedad
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -78,6 +79,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
 
   useEffect(() => {
     if (autoresponder) {
+      console.log('🔍 Cargando autoresponder para editar:', autoresponder);
       setName(autoresponder.name);
       setKeywords(autoresponder.keywords);
       setDmMessage(autoresponder.dm_message);
@@ -89,8 +91,15 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       setButtonType(autoresponder.button_type || 'web_url');
       setPostbackResponse(autoresponder.postback_response || '');
       
+      // IMPORTANTE: Verificar si tiene auto_assign_to_all_posts activado
+      setApplyToAllPosts(autoresponder.auto_assign_to_all_posts || false);
+      console.log('🔍 auto_assign_to_all_posts del autoresponder:', autoresponder.auto_assign_to_all_posts);
+      
       // Cargar follow-ups existentes
       loadFollowUps(autoresponder.id);
+    } else {
+      // Reset para nuevo autoresponder
+      setApplyToAllPosts(false);
     }
   }, [autoresponder]);
 
@@ -154,6 +163,8 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('🔥 INICIANDO SUBMIT - applyToAllPosts:', applyToAllPosts);
     
     if (!currentUser) {
       toast({
