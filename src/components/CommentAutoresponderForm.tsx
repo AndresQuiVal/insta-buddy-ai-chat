@@ -40,6 +40,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   const [newPublicReply, setNewPublicReply] = useState('');
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [requireFollower, setRequireFollower] = useState(false);
+  const [followerConfirmationMessage, setFollowerConfirmationMessage] = useState('¡Hola! 😊 Gracias por comentar. Para poder ayudarte mejor, ¿podrías confirmar si me sigues? Solo responde "sí" si ya me sigues y te envío lo que necesitas 💪');
   const [useButtonMessage, setUseButtonMessage] = useState(false);
   const [buttonText, setButtonText] = useState('');
   const [buttonUrl, setButtonUrl] = useState('');
@@ -197,6 +198,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
           dm_message: dmMessage.trim(),
           public_reply_messages: publicReplyMessages,
           require_follower: requireFollower,
+          follower_confirmation_message: requireFollower ? followerConfirmationMessage.trim() : null,
           use_button_message: useButtonMessage,
           button_text: useButtonMessage ? buttonText : null,
           button_url: useButtonMessage && buttonType === 'web_url' ? buttonUrl : null,
@@ -590,10 +592,32 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
                 </label>
                 <p className="text-xs text-yellow-700 mt-1">
                   Si está activado, solo se enviará el mensaje DM a usuarios que sigan tu cuenta de Instagram. 
-                  Los usuarios que no te siguen no recibirán ningún mensaje.
+                  A los usuarios que no te siguen se les enviará un mensaje de confirmación primero.
                 </p>
               </div>
             </div>
+            
+            {requireFollower && (
+              <div className="mt-4 space-y-2">
+                <Label className="text-sm font-medium text-yellow-900">
+                  Mensaje de confirmación para no seguidores
+                </Label>
+                <p className="text-xs text-yellow-700 mb-2">
+                  Este mensaje se enviará a las personas que no te siguen, pidiéndoles que confirmen si ya te siguen.
+                </p>
+                <Textarea
+                  value={followerConfirmationMessage}
+                  onChange={(e) => setFollowerConfirmationMessage(e.target.value)}
+                  placeholder="Escribe el mensaje de confirmación..."
+                  rows={3}
+                  maxLength={1000}
+                  className="border-yellow-300 focus:border-yellow-500"
+                />
+                <p className="text-xs text-yellow-600">
+                  {followerConfirmationMessage.length}/1000 caracteres
+                </p>
+              </div>
+            )}
           </div>
 
           <FollowUpConfig

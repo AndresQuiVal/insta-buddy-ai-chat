@@ -295,6 +295,7 @@ export type Database = {
           buttons: Json | null
           created_at: string
           dm_message: string
+          follower_confirmation_message: string | null
           id: string
           is_active: boolean
           keywords: string[]
@@ -317,6 +318,7 @@ export type Database = {
           buttons?: Json | null
           created_at?: string
           dm_message: string
+          follower_confirmation_message?: string | null
           id?: string
           is_active?: boolean
           keywords?: string[]
@@ -339,6 +341,7 @@ export type Database = {
           buttons?: Json | null
           created_at?: string
           dm_message?: string
+          follower_confirmation_message?: string | null
           id?: string
           is_active?: boolean
           keywords?: string[]
@@ -365,6 +368,7 @@ export type Database = {
           buttons: Json | null
           created_at: string
           dm_message: string
+          follower_confirmation_message: string | null
           id: string
           is_active: boolean
           keywords: string[]
@@ -385,6 +389,7 @@ export type Database = {
           buttons?: Json | null
           created_at?: string
           dm_message: string
+          follower_confirmation_message?: string | null
           id?: string
           is_active?: boolean
           keywords?: string[]
@@ -405,6 +410,7 @@ export type Database = {
           buttons?: Json | null
           created_at?: string
           dm_message?: string
+          follower_confirmation_message?: string | null
           id?: string
           is_active?: boolean
           keywords?: string[]

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare, MousePointer, Link } from 'lucide-react';
+import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare, MousePointer, Link, UserCheck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +25,8 @@ interface CommentAutoresponder {
   is_active: boolean;
   created_at: string;
   public_reply_messages?: string[];
+  require_follower?: boolean;
+  follower_confirmation_message?: string;
   use_buttons?: boolean;
   buttons?: any;
   button_type?: string;
@@ -57,6 +59,10 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
   );
   const [newPublicReply, setNewPublicReply] = useState('');
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [requireFollower, setRequireFollower] = useState(autoresponder.require_follower || false);
+  const [followerConfirmationMessage, setFollowerConfirmationMessage] = useState(
+    autoresponder.follower_confirmation_message || '¡Hola! 😊 Gracias por comentar. Para poder ayudarte mejor, ¿podrías confirmar si me sigues? Solo responde "sí" si ya me sigues y te envío lo que necesitas 💪'
+  );
   const [useButtons, setUseButtons] = useState(autoresponder.use_buttons || false);
   const [buttonType, setButtonType] = useState<'web_url' | 'postback'>(autoresponder.button_type as 'web_url' | 'postback' || 'web_url');
   const [buttonText, setButtonText] = useState(autoresponder.button_text || '');
@@ -316,6 +322,8 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
         keywords: keywords,
         dm_message: dmMessage.trim(),
         public_reply_messages: publicReplyMessages,
+        require_follower: requireFollower,
+        follower_confirmation_message: requireFollower ? followerConfirmationMessage.trim() : null,
         use_buttons: useButtons,
         buttons: useButtons ? [
           buttonType === 'web_url' 
@@ -739,6 +747,49 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Verificar seguidor */}
+          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+            <div className="flex items-start space-x-3">
+              <Switch
+                id="requireFollower"
+                checked={requireFollower}
+                onCheckedChange={setRequireFollower}
+              />
+              <div className="flex-1">
+                <label htmlFor="requireFollower" className="text-sm font-medium text-yellow-900 cursor-pointer flex items-center gap-2">
+                  <UserCheck className="w-4 h-4" />
+                  Solo enviar mensaje a usuarios que me siguen
+                </label>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Si está activado, solo se enviará el mensaje DM a usuarios que sigan tu cuenta de Instagram. 
+                  A los usuarios que no te siguen se les enviará un mensaje de confirmación primero.
+                </p>
+              </div>
+            </div>
+            
+            {requireFollower && (
+              <div className="mt-4 space-y-2">
+                <Label className="text-sm font-medium text-yellow-900">
+                  Mensaje de confirmación para no seguidores
+                </Label>
+                <p className="text-xs text-yellow-700 mb-2">
+                  Este mensaje se enviará a las personas que no te siguen, pidiéndoles que confirmen si ya te siguen.
+                </p>
+                <Textarea
+                  value={followerConfirmationMessage}
+                  onChange={(e) => setFollowerConfirmationMessage(e.target.value)}
+                  placeholder="Escribe el mensaje de confirmación..."
+                  rows={3}
+                  maxLength={1000}
+                  className="border-yellow-300 focus:border-yellow-500"
+                />
+                <p className="text-xs text-yellow-600">
+                  {followerConfirmationMessage.length}/1000 caracteres
+                </p>
               </div>
             )}
           </div>

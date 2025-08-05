@@ -15,6 +15,7 @@ interface GeneralAutoresponder {
   dm_message: string;
   public_reply_messages: string[];
   require_follower?: boolean;
+  follower_confirmation_message?: string;
   use_button_message?: boolean;
   button_text?: string;
   button_url?: string;

@@ -21,6 +21,7 @@ interface GeneralAutoresponder {
   dm_message: string;
   public_reply_messages: string[];
   require_follower?: boolean;
+  follower_confirmation_message?: string;
   use_button_message?: boolean;
   button_text?: string;
   button_url?: string;
@@ -46,6 +47,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
   const [newPublicReply, setNewPublicReply] = useState('');
   const [applyToAllPosts, setApplyToAllPosts] = useState(false);
   const [requireFollower, setRequireFollower] = useState(false);
+  const [followerConfirmationMessage, setFollowerConfirmationMessage] = useState('¡Hola! 😊 Gracias por comentar. Para poder ayudarte mejor, ¿podrías confirmar si me sigues? Solo responde "sí" si ya me sigues y te envío lo que necesitas 💪');
   const [useButtonMessage, setUseButtonMessage] = useState(false);
   const [buttonText, setButtonText] = useState('');
   const [buttonUrl, setButtonUrl] = useState('');
@@ -63,6 +65,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       setDmMessage(autoresponder.dm_message);
       setPublicReplies(autoresponder.public_reply_messages || ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
       setRequireFollower(autoresponder.require_follower || false);
+      setFollowerConfirmationMessage(autoresponder.follower_confirmation_message || '¡Hola! 😊 Gracias por comentar. Para poder ayudarte mejor, ¿podrías confirmar si me sigues? Solo responde "sí" si ya me sigues y te envío lo que necesitas 💪');
       setUseButtonMessage(autoresponder.use_button_message || false);
       setButtonText(autoresponder.button_text || '');
       setButtonUrl(autoresponder.button_url || '');
@@ -208,6 +211,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
         public_reply_messages: publicReplies.filter(reply => reply.trim()),
         auto_assign_to_all_posts: applyToAllPosts,
         require_follower: requireFollower,
+        follower_confirmation_message: requireFollower ? followerConfirmationMessage.trim() : null,
         use_button_message: useButtonMessage,
         button_text: useButtonMessage ? buttonText : null,
         button_url: useButtonMessage && buttonType === 'web_url' ? buttonUrl : null,
@@ -673,10 +677,32 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
                 </label>
                 <p className="text-xs text-yellow-700 mt-1">
                   Si está activado, solo se enviará el mensaje DM a usuarios que sigan tu cuenta de Instagram. 
-                  Los usuarios que no te siguen no recibirán ningún mensaje.
+                  A los usuarios que no te siguen se les enviará un mensaje de confirmación primero.
                 </p>
               </div>
             </div>
+            
+            {requireFollower && (
+              <div className="mt-4 space-y-2">
+                <Label className="text-sm font-medium text-yellow-900">
+                  Mensaje de confirmación para no seguidores
+                </Label>
+                <p className="text-xs text-yellow-700 mb-2">
+                  Este mensaje se enviará a las personas que no te siguen, pidiéndoles que confirmen si ya te siguen.
+                </p>
+                <Textarea
+                  value={followerConfirmationMessage}
+                  onChange={(e) => setFollowerConfirmationMessage(e.target.value)}
+                  placeholder="Escribe el mensaje de confirmación..."
+                  rows={3}
+                  maxLength={1000}
+                  className="border-yellow-300 focus:border-yellow-500"
+                />
+                <p className="text-xs text-yellow-600">
+                  {followerConfirmationMessage.length}/1000 caracteres
+                </p>
+              </div>
+            )}
           </div>
 
           <FollowUpConfig
