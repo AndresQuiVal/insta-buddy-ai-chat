@@ -77,9 +77,9 @@ const Index = () => {
     });
   }, [userLoading, currentUser]);
 
-  // Verificar si debe mostrar onboarding de autorespondedores
+  // Verificar si debe mostrar autoresponder onboarding
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
+    const checkAutoresponderOnboardingStatus = async () => {
       if (currentUser && !userLoading) {
         // Verificar si el usuario tiene autorespondedores configurados
         const { data: autoresponders, error } = await supabase
@@ -111,7 +111,7 @@ const Index = () => {
       }
     };
 
-    checkOnboardingStatus();
+    checkAutoresponderOnboardingStatus();
   }, [currentUser, userLoading, navigate]);
 
   // Si está cargando, mostrar loading

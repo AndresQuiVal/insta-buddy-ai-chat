@@ -7,12 +7,12 @@ import { Settings as SettingsIcon } from 'lucide-react';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const [isOnboarded, setIsOnboarded] = useState(localStorage.getItem('hower-onboarded') === 'true');
+  const [isOnboarded, setIsOnboarded] = useState(localStorage.getItem('hower-autoresponder-onboarded') === 'true');
   
-  // Verificar si el usuario ha completado el onboarding
+  // Verificar si el usuario ha completado el autoresponder onboarding
   useEffect(() => {
     if (!isOnboarded) {
-      // Redirigir a la página de onboarding
+      // Redirigir a la página de autoresponder onboarding
       window.location.href = '/autoresponder-onboarding';
     }
   }, [isOnboarded]);
