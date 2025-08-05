@@ -371,7 +371,9 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
             instagram_user_id: recipientId,
             use_button: confirmation.use_button_message || false,
             button_text: confirmation.button_text || null,
-            button_url: confirmation.button_url || null
+            button_url: confirmation.button_url || null,
+            button_type: confirmation.button_type || 'web_url',
+            postback_payload: confirmation.postback_response ? `${confirmation.autoresponder_id}_postback` : null
           }
         })
         
@@ -1240,7 +1242,12 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         autoresponder_type: autoresponderType,
         original_comment_text: commentText,
         original_dm_message: selectedAutoresponder.dm_message,
-        confirmation_message_sent: randomConfirmationMessage
+        confirmation_message_sent: randomConfirmationMessage,
+        use_button_message: selectedAutoresponder.use_button_message || false,
+        button_text: selectedAutoresponder.button_text || null,
+        button_url: selectedAutoresponder.button_url || null,
+        button_type: selectedAutoresponder.button_type || null,
+        postback_response: selectedAutoresponder.postback_response || null
       })
       .select()
       .single()
@@ -1354,6 +1361,13 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
       comment_id: commentId,
       use_button: selectedAutoresponder.use_button_message || false
     }
+
+    console.log('🔘 === VERIFICANDO CONFIGURACIÓN DE BOTONES ===')
+    console.log('🔍 use_button_message:', selectedAutoresponder.use_button_message)
+    console.log('🔍 button_text:', selectedAutoresponder.button_text)
+    console.log('🔍 button_type:', selectedAutoresponder.button_type)
+    console.log('🔍 button_url:', selectedAutoresponder.button_url)
+    console.log('🔍 postback_response:', selectedAutoresponder.postback_response)
 
     // Solo agregar datos del botón si está habilitado y tiene los datos necesarios
     if (selectedAutoresponder.use_button_message) {
