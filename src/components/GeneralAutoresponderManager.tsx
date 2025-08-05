@@ -14,6 +14,12 @@ interface GeneralAutoresponder {
   keywords: string[];
   dm_message: string;
   public_reply_messages: string[];
+  require_follower?: boolean;
+  use_button_message?: boolean;
+  button_text?: string;
+  button_url?: string;
+  button_type?: 'web_url' | 'postback';
+  postback_response?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -54,7 +60,14 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
 
       console.log('✅ Autoresponders generales encontrados:', data?.length || 0);
       console.log('📋 Datos completos:', data);
-      setAutoresponders(data || []);
+      
+      // Transformar los datos para asegurar tipos correctos
+      const transformedData = data?.map(item => ({
+        ...item,
+        button_type: (item.button_type === 'postback' ? 'postback' : 'web_url') as 'web_url' | 'postback'
+      })) || [];
+      
+      setAutoresponders(transformedData);
     } catch (error) {
       console.error('❌ Error cargando autoresponders generales:', error);
       toast({
