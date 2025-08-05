@@ -805,7 +805,13 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           public_reply_messages,
           use_buttons,
           buttons,
-          is_active
+          is_active,
+          use_button_message,
+          button_text,
+          button_url,
+          button_type,
+          postback_response,
+          require_follower
         )
       `)
       .eq('post_id', mediaId)
@@ -827,6 +833,12 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         use_buttons: assignment.general_comment_autoresponders.use_buttons,
         buttons: assignment.general_comment_autoresponders.buttons,
         is_active: assignment.general_comment_autoresponders.is_active,
+        use_button_message: assignment.general_comment_autoresponders.use_button_message,
+        button_text: assignment.general_comment_autoresponders.button_text,
+        button_url: assignment.general_comment_autoresponders.button_url,
+        button_type: assignment.general_comment_autoresponders.button_type,
+        postback_response: assignment.general_comment_autoresponders.postback_response,
+        require_follower: assignment.general_comment_autoresponders.require_follower,
         post_id: mediaId,
         post_url: '',
         post_caption: '',
@@ -870,7 +882,22 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
       .from('post_autoresponder_assignments')
       .select(`
         *,
-        general_comment_autoresponders!inner(*)
+        general_comment_autoresponders!inner(
+          id,
+          name,
+          keywords,
+          dm_message,
+          public_reply_messages,
+          use_buttons,
+          buttons,
+          is_active,
+          use_button_message,
+          button_text,
+          button_url,
+          button_type,
+          postback_response,
+          require_follower
+        )
       `)
       .eq('is_active', true)
       .eq('post_id', mediaId)
@@ -881,13 +908,19 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     } else if (assignments && assignments.length > 0) {
       console.log('✅ Encontrados', assignments.length, 'autoresponders generales asignados')
       
-      // Convertir las asignaciones a formato compatible
-      commentAutoresponders = assignments.map(assignment => ({
-        ...assignment.general_comment_autoresponders,
-        assignment_id: assignment.id,
-        post_id: assignment.post_id,
-        post_url: assignment.post_url
-      }))
+        // Convertir las asignaciones a formato compatible
+        commentAutoresponders = assignments.map(assignment => ({
+          ...assignment.general_comment_autoresponders,
+          assignment_id: assignment.id,
+          post_id: assignment.post_id,
+          post_url: assignment.post_url,
+          use_button_message: assignment.general_comment_autoresponders.use_button_message,
+          button_text: assignment.general_comment_autoresponders.button_text,
+          button_url: assignment.general_comment_autoresponders.button_url,
+          button_type: assignment.general_comment_autoresponders.button_type,
+          postback_response: assignment.general_comment_autoresponders.postback_response,
+          require_follower: assignment.general_comment_autoresponders.require_follower
+        }))
       autoresponderType = 'general'
     }
 
@@ -899,7 +932,22 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
         .from('post_autoresponder_assignments')
         .select(`
           *,
-          general_comment_autoresponders!inner(*)
+          general_comment_autoresponders!inner(
+            id,
+            name,
+            keywords,
+            dm_message,
+            public_reply_messages,
+            use_buttons,
+            buttons,
+            is_active,
+            use_button_message,
+            button_text,
+            button_url,
+            button_type,
+            postback_response,
+            require_follower
+          )
         `)
         .eq('is_active', true)
         .eq('post_id', originalMediaId)
@@ -914,7 +962,13 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
           ...assignment.general_comment_autoresponders,
           assignment_id: assignment.id,
           post_id: assignment.post_id,
-          post_url: assignment.post_url
+          post_url: assignment.post_url,
+          use_button_message: assignment.general_comment_autoresponders.use_button_message,
+          button_text: assignment.general_comment_autoresponders.button_text,
+          button_url: assignment.general_comment_autoresponders.button_url,
+          button_type: assignment.general_comment_autoresponders.button_type,
+          postback_response: assignment.general_comment_autoresponders.postback_response,
+          require_follower: assignment.general_comment_autoresponders.require_follower
         }))
         autoresponderType = 'general'
       }
