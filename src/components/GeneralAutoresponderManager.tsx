@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, Edit, Trash2, ToggleLeft, ToggleRight, Key, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, ToggleLeft, ToggleRight, Key, MessageSquare, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
@@ -146,18 +146,39 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
 
   const handleViewPosts = async (autoresponderID: string) => {
     try {
+      console.log('🔍 Consultando posts asignados para autoresponder:', autoresponderID);
+      
       const { data: assignments, error } = await supabase
         .from('post_autoresponder_assignments')
         .select('*')
         .eq('general_autoresponder_id', autoresponderID)
-        .eq('user_id', currentUser.instagram_user_id);
+        .eq('user_id', currentUser?.instagram_user_id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error consultando assignments:', error);
+        throw error;
+      }
+
+      console.log('📋 Assignments encontrados:', assignments);
 
       const postCount = assignments?.length || 0;
-      const postList = assignments?.map(a => `• ${a.post_caption || 'Sin título'} (${a.post_id})`).join('\n') || 'No hay posts asignados';
       
-      alert(`Posts asignados (${postCount}):\n\n${postList}`);
+      if (postCount === 0) {
+        alert('No hay posts asignados a este autoresponder.');
+        return;
+      }
+      
+      // Crear una lista más legible de los posts
+      const postList = assignments?.map((assignment, index) => {
+        const caption = assignment.post_caption ? 
+          (assignment.post_caption.length > 80 ? 
+            assignment.post_caption.substring(0, 80) + '...' : 
+            assignment.post_caption) : 
+          'Sin título';
+        return `${index + 1}. ${caption}\n   ID: ${assignment.post_id}`;
+      }).join('\n\n') || '';
+      
+      alert(`Posts asignados (${postCount}):\n\n${postList}\n\n✅ Estado: ${assignments?.[0]?.is_active ? 'Activos' : 'Inactivos'}`);
     } catch (error) {
       console.error('❌ Error obteniendo posts asignados:', error);
       toast({
@@ -296,7 +317,7 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
                         onClick={() => handleViewPosts(autoresponder.id)}
                         title="Ver posts asignados"
                       >
-                        <MessageSquare className="w-4 h-4" />
+                        <FileText className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="outline"
