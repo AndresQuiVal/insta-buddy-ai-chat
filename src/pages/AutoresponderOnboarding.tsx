@@ -86,29 +86,57 @@ const AutoresponderOnboarding: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const autoresponderDataToSave = {
-        name: autoresponderData.name,
-        message_text: autoresponderData.message,
-        instagram_user_id_ref: currentUser.instagram_user_id,
-        is_active: autoresponderData.isActive,
-        use_keywords: autoresponderData.useKeywords,
-        keywords: autoresponderData.useKeywords ? autoresponderData.keywords : null,
-        send_only_first_message: false,
-        use_buttons: false,
-        buttons: null
-      };
+      let result;
+      
+      if (autoresponderData.type === 'general') {
+        // Crear autorespondedor general para todos los posts
+        const generalAutoresponderData = {
+          name: autoresponderData.name,
+          dm_message: autoresponderData.message,
+          user_id: currentUser.instagram_user_id,
+          is_active: autoresponderData.isActive,
+          keywords: autoresponderData.useKeywords ? autoresponderData.keywords : [],
+          auto_assign_to_all_posts: true,
+          require_follower: false,
+          use_buttons: false,
+          buttons: null,
+          public_reply_messages: ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']
+        };
 
-      const { data, error } = await supabase
-        .from('autoresponder_messages')
-        .insert([autoresponderDataToSave])
-        .select()
-        .single();
+        result = await supabase
+          .from('general_comment_autoresponders')
+          .insert([generalAutoresponderData])
+          .select()
+          .single();
+      } else if (autoresponderData.type === 'specific') {
+        // Crear autorespondedor para post específico
+        const specificAutoresponderData = {
+          name: autoresponderData.name,
+          dm_message: autoresponderData.message,
+          user_id: currentUser.instagram_user_id,
+          is_active: autoresponderData.isActive,
+          keywords: autoresponderData.useKeywords ? autoresponderData.keywords : [],
+          require_follower: false,
+          use_buttons: false,
+          buttons: null,
+          post_id: autoresponderData.selectedPost?.id,
+          post_url: autoresponderData.selectedPost?.permalink,
+          post_caption: autoresponderData.selectedPost?.caption,
+          public_reply_messages: ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']
+        };
 
-      if (error) throw error;
+        result = await supabase
+          .from('comment_autoresponders')
+          .insert([specificAutoresponderData])
+          .select()
+          .single();
+      }
+
+      if (result?.error) throw result.error;
 
       toast({
         title: "¡Autorespondedor creado!",
-        description: "Tu primer autorespondedor ha sido configurado exitosamente"
+        description: `Tu ${autoresponderData.type === 'general' ? 'autorespondedor general' : 'autorespondedor específico'} ha sido configurado exitosamente`
       });
 
       // Marcar onboarding como completado
