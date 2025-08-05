@@ -11,8 +11,8 @@ const MyProspects = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="prospects">Prospectos</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-1">
+          <TabsTrigger value="prospects" className="hidden">Prospectos</TabsTrigger>
           <TabsTrigger value="messages" className="hidden">Mensajes</TabsTrigger>
           <TabsTrigger value="autoresponder">Autorespondedor</TabsTrigger>
         </TabsList>
