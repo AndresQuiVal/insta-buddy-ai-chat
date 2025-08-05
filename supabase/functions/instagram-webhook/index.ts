@@ -210,10 +210,16 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   let timestamp: string
   if (messagingEvent.timestamp) {
     const timestampNumber = parseInt(messagingEvent.timestamp)
-    // Si el timestamp tiene más de 13 dígitos, está en milisegundos
-    // Si tiene 10 dígitos, está en segundos y necesita multiplicarse por 1000
-    const timestampMs = timestampNumber > 9999999999999 ? timestampNumber : timestampNumber * 1000
-    timestamp = new Date(timestampMs).toISOString()
+    // Los timestamps de Instagram vienen en milisegundos
+    // Verificar si es un timestamp válido (entre 1970 y 2100)
+    const date = new Date(timestampNumber)
+    const year = date.getFullYear()
+    if (year >= 1970 && year <= 2100) {
+      timestamp = date.toISOString()
+    } else {
+      // Si el timestamp no es válido, usar fecha actual
+      timestamp = new Date().toISOString()
+    }
   } else {
     timestamp = new Date().toISOString()
   }
