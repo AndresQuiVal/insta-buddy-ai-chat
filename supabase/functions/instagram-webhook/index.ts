@@ -122,14 +122,19 @@ serve(async (req) => {
 async function handlePostbackEvent(message: any, supabase: any) {
   try {
     console.log('🔘 === PROCESANDO POSTBACK ===')
+    console.log('🔘 Mensaje completo recibido:', JSON.stringify(message, null, 2))
     
     const senderId = message.sender?.id
     const recipientId = message.recipient?.id
-    const payload = message.postback?.payload
+    
+    // El postback puede venir en dos lugares diferentes
+    const postbackData = message.postback || message.message?.postback
+    const payload = postbackData?.payload
     
     console.log('👤 SENDER ID:', senderId)
     console.log('🎯 RECIPIENT ID:', recipientId) 
     console.log('📦 PAYLOAD:', payload)
+    console.log('🔍 Postback extraído de:', message.postback ? 'message.postback' : 'message.message.postback')
     
     if (!senderId || !recipientId || !payload) {
       console.log('❌ Datos insuficientes para procesar postback')
@@ -196,11 +201,12 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     return
   }
   
-  // Verificar si es un postback y procesarlo por separado
-  if (messagingEvent.postback) {
+  // VERIFICACIÓN MEJORADA: Verificar si es un postback en cualquier parte del mensaje
+  if (messagingEvent.postback || (messagingEvent.message && messagingEvent.message.postback)) {
     console.log('🔘 Es un evento de postback - procesando...')
+    console.log('🔍 Postback detectado en:', messagingEvent.postback ? 'messagingEvent.postback' : 'messagingEvent.message.postback')
     await handlePostbackEvent(messagingEvent, supabase)
-    return
+    return // ✅ CRITICAL: No procesar como mensaje normal después del postback
   }
   
   const senderId = messagingEvent.sender?.id
