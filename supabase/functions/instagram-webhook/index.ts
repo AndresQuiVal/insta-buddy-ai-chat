@@ -710,7 +710,7 @@ async function createCommentFollowUps(autoresponderID: string, commenterId: stri
       
       followupsToCreate.push({
         sender_id: commenterId,
-        autoresponder_message_id: autoresponderType === 'specific' ? autoresponderID : null,
+        autoresponder_message_id: null, // Solo para DM autoresponders
         comment_autoresponder_id: autoresponderType === 'specific' ? autoresponderID : null,
         general_autoresponder_id: autoresponderType === 'general' ? autoresponderID : null,
         initial_message_sent_at: currentTime.toISOString(),
