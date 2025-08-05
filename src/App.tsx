@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 
 import AutoresponderOnboarding from "./pages/AutoresponderOnboarding";
@@ -30,7 +30,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          
+          <Route path="/onboarding" element={<Navigate to="/autoresponder-onboarding" replace />} />
           <Route path="/autoresponder-onboarding" element={<AutoresponderOnboarding />} />
           <Route path="/guides" element={<Guides />} />
           <Route path="/settings" element={<Settings />} />
