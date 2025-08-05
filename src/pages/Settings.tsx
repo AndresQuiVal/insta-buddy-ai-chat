@@ -13,7 +13,7 @@ const Settings = () => {
   useEffect(() => {
     if (!isOnboarded) {
       // Redirigir a la página de onboarding
-      window.location.href = '/onboarding';
+      window.location.href = '/autoresponder-onboarding';
     }
   }, [isOnboarded]);
 
