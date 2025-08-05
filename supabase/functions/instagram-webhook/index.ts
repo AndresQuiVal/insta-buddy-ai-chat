@@ -58,6 +58,14 @@ serve(async (req) => {
         console.log('📋 Entry ID:', entry.id)
         console.log('📋 Entry completo:', JSON.stringify(entry, null, 2))
         console.log('📋 Entry keys:', Object.keys(entry))
+        
+        // Debug detallado para identificar tipos de eventos
+        console.log('🔍 DEBUGGING - Analizando tipo de evento:')
+        console.log('  - ¿Tiene messaging?', !!entry.messaging)
+        console.log('  - ¿Tiene changes?', !!entry.changes)
+        if (entry.changes) {
+          console.log('  - Changes fields:', entry.changes.map(c => c.field))
+        }
 
         if (entry.messaging && Array.isArray(entry.messaging)) {
           console.log('📝 PROCESANDO MENSAJES DIRECTOS (FORMATO PRODUCCIÓN)')
