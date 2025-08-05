@@ -138,9 +138,6 @@ const AutoresponderOnboarding: React.FC = () => {
         title: "¡Autorespondedor creado!",
         description: `Tu ${autoresponderData.type === 'general' ? 'autorespondedor general' : 'autorespondedor específico'} ha sido configurado exitosamente`
       });
-
-      // Marcar onboarding como completado
-      localStorage.setItem('autoresponder-onboarding-completed', 'true');
       
       // Navegar al dashboard
       navigate('/');

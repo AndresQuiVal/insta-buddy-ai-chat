@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import MyProspects from "@/components/MyProspects";
 import { useInstagramUsers } from "@/hooks/useInstagramUsers";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -78,12 +79,39 @@ const Index = () => {
 
   // Verificar si debe mostrar onboarding de autorespondedores
   useEffect(() => {
-    if (currentUser && !userLoading) {
-      const onboardingCompleted = localStorage.getItem('autoresponder-onboarding-completed');
-      if (!onboardingCompleted) {
-        navigate('/autoresponder-onboarding');
+    const checkOnboardingStatus = async () => {
+      if (currentUser && !userLoading) {
+        // Verificar si el usuario tiene autorespondedores configurados
+        const { data: autoresponders, error } = await supabase
+          .from('autoresponder_messages')
+          .select('id')
+          .eq('instagram_user_id_ref', currentUser.instagram_user_id)
+          .limit(1);
+
+        const { data: generalAutoresponders, error: generalError } = await supabase
+          .from('general_comment_autoresponders')
+          .select('id')
+          .eq('user_id', currentUser.instagram_user_id)
+          .limit(1);
+
+        const { data: commentAutoresponders, error: commentError } = await supabase
+          .from('comment_autoresponders')
+          .select('id')
+          .eq('user_id', currentUser.instagram_user_id)
+          .limit(1);
+
+        // Si no tiene ningún autorespondedor configurado, mostrar onboarding
+        const hasAutoresponders = (autoresponders && autoresponders.length > 0) ||
+                                 (generalAutoresponders && generalAutoresponders.length > 0) ||
+                                 (commentAutoresponders && commentAutoresponders.length > 0);
+
+        if (!hasAutoresponders) {
+          navigate('/autoresponder-onboarding');
+        }
       }
-    }
+    };
+
+    checkOnboardingStatus();
   }, [currentUser, userLoading, navigate]);
 
   // Si está cargando, mostrar loading
