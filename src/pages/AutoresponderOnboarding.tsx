@@ -134,6 +134,24 @@ const AutoresponderOnboarding: React.FC = () => {
 
       if (result?.error) throw result.error;
 
+      // Si es autorespondedor general, sincronizar automáticamente con posts
+      if (autoresponderData.type === 'general') {
+        console.log('🔄 Sincronizando autorespondedor general con posts...');
+        try {
+          const { data: syncData, error: syncError } = await supabase.functions.invoke('sync-new-posts', {
+            body: { manual: true }
+          });
+          
+          if (syncError) {
+            console.error('⚠️ Error en sincronización automática:', syncError);
+          } else {
+            console.log('✅ Sincronización completada:', syncData);
+          }
+        } catch (syncError) {
+          console.error('⚠️ Error llamando función de sincronización:', syncError);
+        }
+      }
+
       toast({
         title: "¡Autorespondedor creado!",
         description: `Tu ${autoresponderData.type === 'general' ? 'autorespondedor general' : 'autorespondedor específico'} ha sido configurado exitosamente`
