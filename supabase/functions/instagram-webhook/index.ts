@@ -255,6 +255,27 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   console.log('⏰ TIMESTAMP FINAL:', timestamp)
   console.log('🆔 MESSAGE ID:', messageId)
 
+  // 🚨 VERIFICACIÓN CRÍTICA NUEVA: No procesar mensajes que vienen después de un postback
+  // Instagram envía 2 webhooks cuando se hace click en un botón: el postback Y el mensaje de texto
+  // Solo debemos procesar el postback, NO el mensaje de texto que aparece después
+  
+  // Verificar si hay actividad reciente de envío de mensajes (últimos 10 segundos)
+  const recentMessageCheck = await supabase
+    .from('instagram_messages')
+    .select('*')
+    .eq('sender_id', recipientId) // El bot que envió mensaje recientemente
+    .eq('message_type', 'sent')
+    .gte('created_at', new Date(Date.now() - 10000).toISOString()) // Últimos 10 segundos
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (recentMessageCheck.data && recentMessageCheck.data.length > 0) {
+    console.log('🚫 SE DETECTÓ ENVÍO RECIENTE DEL BOT - SALTANDO PROCESAMIENTO PARA EVITAR DUPLICADOS')
+    console.log('📝 Texto del mensaje recibido:', messageText)
+    console.log('⏰ Último mensaje del bot:', recentMessageCheck.data[0].created_at)
+    return
+  }
+
   // 🚨 VERIFICACIÓN CRÍTICA: Si el mensaje contiene un payload de postback, NO procesarlo
   if (messageText && messageText.includes('_postback')) {
     console.log('🚫 MENSAJE CONTIENE PAYLOAD POSTBACK - SALTANDO PROCESAMIENTO')
