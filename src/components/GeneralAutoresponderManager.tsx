@@ -42,7 +42,7 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
     
     try {
       setLoading(true);
-      console.log('🔍 Cargando autoresponders generales...');
+      console.log('🔍 Cargando autoresponders generales para user_id:', currentUser.instagram_user_id);
 
       const { data, error } = await supabase
         .from('general_comment_autoresponders')
@@ -52,7 +52,8 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
 
       if (error) throw error;
 
-      console.log('✅ Autoresponders generales cargados:', data?.length || 0);
+      console.log('✅ Autoresponders generales encontrados:', data?.length || 0);
+      console.log('📋 Datos completos:', data);
       setAutoresponders(data || []);
     } catch (error) {
       console.error('❌ Error cargando autoresponders generales:', error);
