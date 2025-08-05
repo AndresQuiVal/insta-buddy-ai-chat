@@ -244,6 +244,13 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   console.log('⏰ TIMESTAMP FINAL:', timestamp)
   console.log('🆔 MESSAGE ID:', messageId)
 
+  // 🚨 VERIFICACIÓN CRÍTICA: Si el mensaje contiene un payload de postback, NO procesarlo
+  if (messageText && messageText.includes('_postback')) {
+    console.log('🚫 MENSAJE CONTIENE PAYLOAD POSTBACK - SALTANDO PROCESAMIENTO')
+    console.log('📝 Texto del mensaje:', messageText)
+    return
+  }
+
   if (!senderId || !recipientId || !messageText) {
     console.log('❌ Datos insuficientes para procesar mensaje')
     return
