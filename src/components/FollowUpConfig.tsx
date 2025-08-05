@@ -81,10 +81,7 @@ const FollowUpConfig = ({ followUps, onChange, maxFollowUps = 4 }: FollowUpConfi
   };
 
   return (
-    <div className="space-y-4 opacity-50 pointer-events-none relative">
-      <div className="absolute top-0 right-0 bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-medium z-10">
-        SOON
-      </div>
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <Label className="text-base font-medium">Secuencia de Follow-ups</Label>
@@ -92,130 +89,23 @@ const FollowUpConfig = ({ followUps, onChange, maxFollowUps = 4 }: FollowUpConfi
             Configura hasta {maxFollowUps} mensajes de seguimiento automático (máximo 23 horas entre cada uno)
           </p>
         </div>
-        {localFollowUps.length < maxFollowUps && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addFollowUp}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Agregar Follow-up
-          </Button>
-        )}
       </div>
 
-      {localFollowUps.length === 0 ? (
-        <Card className="border-dashed border-2 border-gray-200">
-          <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-            <Clock className="w-8 h-8 text-gray-400 mb-2" />
-            <p className="text-gray-500 mb-4">
-              No hay follow-ups configurados
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addFollowUp}
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Crear primer follow-up
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {localFollowUps.map((followUp, index) => (
-            <Card key={followUp.id} className="relative">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium">
-                    Follow-up {index + 1}
-                    {index > 0 && (
-                      <span className="text-xs text-gray-500 ml-2">
-                        (Total: {calculateTotalTime(index)} horas después del mensaje inicial)
-                      </span>
-                    )}
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={followUp.is_active}
-                      onCheckedChange={(checked) => updateFollowUp(index, 'is_active', checked)}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFollowUp(index)}
-                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor={`delay-${index}`}>
-                    Enviar después de
-                    {index > 0 ? ' (desde el follow-up anterior)' : ' (desde el mensaje inicial)'}
-                  </Label>
-                  <Select
-                    value={followUp.delay_hours.toString()}
-                    onValueChange={(value) => updateFollowUp(index, 'delay_hours', parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getDelayOptions().map((option) => (
-                        <SelectItem key={option.value} value={option.value.toString()}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor={`message-${index}`}>Mensaje del follow-up</Label>
-                  <Textarea
-                    id={`message-${index}`}
-                    value={followUp.message_text}
-                    onChange={(e) => updateFollowUp(index, 'message_text', e.target.value)}
-                    placeholder="Escribe el mensaje de seguimiento..."
-                    rows={3}
-                    maxLength={1000}
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    {followUp.message_text.length}/1000 caracteres
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {localFollowUps.length > 0 && (
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h4 className="font-medium text-blue-900 mb-2">Vista previa de la secuencia:</h4>
-          <div className="space-y-2 text-sm">
-            <div className="text-blue-800">
-              <strong>Mensaje inicial:</strong> Se envía inmediatamente cuando alguien comenta
-            </div>
-            {localFollowUps
-              .filter(f => f.is_active && f.message_text.trim())
-              .map((followUp, index) => (
-                <div key={followUp.id} className="text-blue-700">
-                  <strong>Follow-up {index + 1}:</strong> Se envía {calculateTotalTime(index)} horas después del mensaje inicial
-                </div>
-              ))}
+      {/* SOON Message */}
+      <Card className="border-dashed border-2 border-orange-200 bg-orange-50">
+        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="bg-orange-500 text-white px-8 py-4 rounded-lg text-2xl font-bold mb-4">
+            SOON
           </div>
-        </div>
-      )}
+          <Clock className="w-12 h-12 text-orange-400 mb-4" />
+          <h3 className="text-lg font-medium text-orange-800 mb-2">
+            Follow-ups Automáticos
+          </h3>
+          <p className="text-orange-700 max-w-md">
+            Esta funcionalidad estará disponible próximamente. Podrás configurar mensajes de seguimiento automático para mejorar tus conversiones.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
