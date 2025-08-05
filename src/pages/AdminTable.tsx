@@ -14,6 +14,8 @@ interface AdminData {
   instagram_ligado: string;
   ultimo_autoresponder: string;
   cantidad_autoresponders: number;
+  fecha_registro: string;
+  dias_desde_registro: number;
 }
 
 export default function AdminTable() {
@@ -70,13 +72,20 @@ export default function AdminTable() {
 
         const whatsappLink = profile.phone ? `https://wa.me/${profile.phone.replace(/[^0-9]/g, '')}` : '';
         
+        // Calcular días desde el registro
+        const fechaRegistro = new Date(profile.created_at);
+        const ahora = new Date();
+        const diasDesdeRegistro = Math.floor((ahora.getTime() - fechaRegistro.getTime()) / (1000 * 60 * 60 * 24));
+        
         adminData.push({
           correo: profile.email || '',
           telefono: profile.phone || '',
           whatsapp_link: whatsappLink,
           instagram_ligado: instagramUser?.username || 'No conectado',
           ultimo_autoresponder: lastMessage?.autoresponder_messages?.message_text?.substring(0, 50) + '...' || 'Ninguno',
-          cantidad_autoresponders: autoresponderCount || 0
+          cantidad_autoresponders: autoresponderCount || 0,
+          fecha_registro: fechaRegistro.toLocaleDateString('es-ES'),
+          dias_desde_registro: diasDesdeRegistro
         });
       }
 
@@ -133,18 +142,20 @@ export default function AdminTable() {
                     <TableHead>Instagram Ligado</TableHead>
                     <TableHead>Último Autoresponder</TableHead>
                     <TableHead>Cantidad Autoresponders</TableHead>
+                    <TableHead>Fecha Registro</TableHead>
+                    <TableHead>Días desde Registro</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={8} className="text-center py-8">
                         Cargando datos...
                       </TableCell>
                     </TableRow>
                   ) : data.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={8} className="text-center py-8">
                         No hay datos disponibles
                       </TableCell>
                     </TableRow>
@@ -176,6 +187,12 @@ export default function AdminTable() {
                         <TableCell>
                           <Badge variant="outline">
                             {row.cantidad_autoresponders}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{row.fecha_registro}</TableCell>
+                        <TableCell>
+                          <Badge variant={row.dias_desde_registro <= 7 ? 'default' : 'secondary'}>
+                            {row.dias_desde_registro} días
                           </Badge>
                         </TableCell>
                       </TableRow>
