@@ -194,16 +194,6 @@ const Index = () => {
               Autorespondedor
             </button>
             <button
-              onClick={() => setActiveTab("crm")}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                activeTab === "crm"
-                  ? "bg-purple-600 text-white shadow-lg"
-                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-              }`}
-            >
-              CRM
-            </button>
-            <button
               onClick={() => setActiveTab("prospecta")}
               className={`px-6 py-3 rounded-lg font-medium transition-all ${
                 activeTab === "prospecta"
