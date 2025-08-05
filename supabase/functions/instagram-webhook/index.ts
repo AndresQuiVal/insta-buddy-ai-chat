@@ -242,6 +242,33 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.error('💥 Error en update_prospect_activity:', activityErr)
   }
 
+  // NUEVA FUNCIONALIDAD: Cancelar follow-ups pendientes cuando el prospecto responde
+  console.log('🔄 Cancelando follow-ups pendientes del prospecto que respondió...')
+  try {
+    const { data: cancelledFollowups, error: followupError } = await supabase
+      .from('autoresponder_followups')
+      .update({ 
+        prospect_responded: true,
+        is_completed: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('sender_id', senderId)
+      .eq('prospect_responded', false)
+      .eq('is_completed', false)
+      .select('id, followup_message_text')
+    
+    if (followupError) {
+      console.error('❌ Error cancelando follow-ups:', followupError)
+    } else if (cancelledFollowups && cancelledFollowups.length > 0) {
+      console.log('✅ Follow-ups cancelados exitosamente:', cancelledFollowups.length)
+      console.log('📋 Follow-ups cancelados:', cancelledFollowups.map(f => ({ id: f.id, message: f.followup_message_text.substring(0, 50) + '...' })))
+    } else {
+      console.log('ℹ️ No había follow-ups pendientes para cancelar')
+    }
+  } catch (followupErr) {
+    console.error('💥 Error en cancelación de follow-ups:', followupErr)
+  }
+
   console.log('🔍 ===== BUSCANDO USUARIO DE INSTAGRAM POR RECIPIENT ID =====')
   console.log('🎯 Buscando usuario con instagram_user_id:', recipientId)
 
