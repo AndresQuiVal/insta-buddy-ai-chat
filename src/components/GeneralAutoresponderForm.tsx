@@ -528,25 +528,26 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
           </div>
 
           {/* Configuración del Botón en DM */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <MousePointer className="w-4 h-4" />
-                  Incluir Botón en el DM
-                </Label>
-                <p className="text-xs text-gray-500 mt-1">
-                  Agregar un botón al mensaje directo que se envía
-                </p>
-              </div>
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="flex items-start space-x-3 mb-4">
               <Switch
+                id="useButtonMessage"
                 checked={useButtonMessage}
                 onCheckedChange={setUseButtonMessage}
               />
+              <div className="flex-1">
+                <label htmlFor="useButtonMessage" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                  <MousePointer className="w-4 h-4" />
+                  Incluir Botón en el DM
+                </label>
+                <p className="text-xs text-blue-700 mt-1">
+                  Agregar un botón al mensaje directo que se envía
+                </p>
+              </div>
             </div>
 
             {useButtonMessage && (
-              <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="space-y-4 pl-6 border-l-2 border-blue-300">
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Tipo de Botón</Label>
                   <div className="flex gap-4 mt-2">
