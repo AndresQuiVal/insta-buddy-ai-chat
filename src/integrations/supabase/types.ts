@@ -78,10 +78,12 @@ export type Database = {
       autoresponder_followups: {
         Row: {
           autoresponder_message_id: string | null
+          comment_autoresponder_id: string | null
           created_at: string
           followup_message_text: string
           followup_scheduled_at: string
           followup_sent_at: string | null
+          general_autoresponder_id: string | null
           id: string
           initial_message_sent_at: string
           is_completed: boolean
@@ -91,10 +93,12 @@ export type Database = {
         }
         Insert: {
           autoresponder_message_id?: string | null
+          comment_autoresponder_id?: string | null
           created_at?: string
           followup_message_text?: string
           followup_scheduled_at: string
           followup_sent_at?: string | null
+          general_autoresponder_id?: string | null
           id?: string
           initial_message_sent_at: string
           is_completed?: boolean
@@ -104,10 +108,12 @@ export type Database = {
         }
         Update: {
           autoresponder_message_id?: string | null
+          comment_autoresponder_id?: string | null
           created_at?: string
           followup_message_text?: string
           followup_scheduled_at?: string
           followup_sent_at?: string | null
+          general_autoresponder_id?: string | null
           id?: string
           initial_message_sent_at?: string
           is_completed?: boolean
