@@ -61,6 +61,26 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [requireFollower, setRequireFollower] = useState(autoresponder.require_follower || false);
   const [useButtons, setUseButtons] = useState(autoresponder.use_buttons || false);
+
+  // Desactivar botón cuando se activa require_follower
+  const handleRequireFollowerChange = (checked: boolean) => {
+    setRequireFollower(checked);
+    if (checked) {
+      setUseButtons(false);
+      setButtonText('');
+      setButtonUrl('');
+      setPostbackResponse('');
+      setPostbackPayload('');
+    }
+  };
+
+  // Desactivar require_follower cuando se activa useButtons
+  const handleUseButtonsChange = (checked: boolean) => {
+    setUseButtons(checked);
+    if (checked) {
+      setRequireFollower(false);
+    }
+  };
   const [buttonType, setButtonType] = useState<'web_url' | 'postback'>(autoresponder.button_type as 'web_url' | 'postback' || 'web_url');
   const [buttonText, setButtonText] = useState(autoresponder.button_text || '');
   const [buttonUrl, setButtonUrl] = useState(autoresponder.button_url || '');
@@ -625,16 +645,22 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
               <Switch
                 id="useButtons"
                 checked={useButtons}
-                onCheckedChange={setUseButtons}
+                onCheckedChange={handleUseButtonsChange}
+                disabled={requireFollower}
               />
               <div className="flex-1">
-                <label htmlFor="useButtons" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                <label htmlFor="useButtons" className={`text-sm font-medium cursor-pointer flex items-center gap-2 ${requireFollower ? 'text-gray-500' : 'text-blue-900'}`}>
                   <MousePointer className="w-4 h-4" />
                   Agregar botón interactivo al mensaje DM
                 </label>
-                <p className="text-xs text-blue-700 mt-1">
+                <p className={`text-xs mt-1 ${requireFollower ? 'text-gray-500' : 'text-blue-700'}`}>
                   Si está activado, el DM incluirá un botón interactivo que el usuario puede presionar
                 </p>
+                {requireFollower && (
+                  <p className="text-xs text-orange-600 mt-1 font-medium">
+                    ⚠️ No disponible cuando "Solo enviar a seguidores" está activado
+                  </p>
+                )}
               </div>
             </div>
 
@@ -753,7 +779,7 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
               <Switch
                 id="requireFollower"
                 checked={requireFollower}
-                onCheckedChange={setRequireFollower}
+                onCheckedChange={handleRequireFollowerChange}
               />
               <div className="flex-1">
                 <label htmlFor="requireFollower" className="text-sm font-medium text-yellow-900 cursor-pointer flex items-center gap-2">
@@ -764,6 +790,11 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
                   Siempre se enviará un mensaje de confirmación preguntando si te siguen. 
                   Solo después de que confirmen que te siguen se enviará el mensaje del autoresponder.
                 </p>
+                {requireFollower && (
+                  <p className="text-xs text-orange-600 mt-1 font-medium">
+                    ⚠️ Los botones se desactivan automáticamente con esta opción
+                  </p>
+                )}
               </div>
             </div>
             
