@@ -205,7 +205,21 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   const senderId = messagingEvent.sender?.id
   const recipientId = messagingEvent.recipient?.id
   const messageText = messagingEvent.message?.text
-  const timestamp = messagingEvent.timestamp ? new Date(parseInt(messagingEvent.timestamp) * 1000).toISOString() : new Date().toISOString()
+  
+  // Corregir el procesamiento del timestamp
+  let timestamp: string
+  if (messagingEvent.timestamp) {
+    const timestampNumber = parseInt(messagingEvent.timestamp)
+    // Si el timestamp tiene más de 13 dígitos, está en milisegundos
+    // Si tiene 10 dígitos, está en segundos y necesita multiplicarse por 1000
+    const timestampMs = timestampNumber > 9999999999999 ? timestampNumber : timestampNumber * 1000
+    timestamp = new Date(timestampMs).toISOString()
+  } else {
+    timestamp = new Date().toISOString()
+  }
+  
+  console.log('🕐 TIMESTAMP ORIGINAL:', messagingEvent.timestamp)
+  console.log('🕐 TIMESTAMP PROCESADO:', timestamp)
   const messageId = messagingEvent.message?.mid || `msg_${Date.now()}_${Math.random()}`
   const isEcho = messagingEvent.message?.is_echo === true
 
@@ -214,7 +228,7 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
   console.log('🎯 RECIPIENT ID:', recipientId)
   console.log('💬 MENSAJE:', messageText)
   console.log('🔔 ES ECHO:', isEcho)
-  console.log('⏰ TIMESTAMP:', timestamp)
+  console.log('⏰ TIMESTAMP FINAL:', timestamp)
   console.log('🆔 MESSAGE ID:', messageId)
 
   if (!senderId || !recipientId || !messageText) {
