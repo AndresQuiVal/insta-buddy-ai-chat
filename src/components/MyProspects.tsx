@@ -6,7 +6,7 @@ import ProspectCRM from '@/components/ProspectCRM';
 import AutoresponderManager from '@/components/AutoresponderManager';
 
 const MyProspects = () => {
-  const [activeTab, setActiveTab] = useState('prospects');
+  const [activeTab, setActiveTab] = useState('autoresponder');
 
   return (
     <div className="space-y-6">
