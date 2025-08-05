@@ -400,12 +400,14 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
         
         console.log('📋 Autoresponder original encontrado:', autoresponderData?.name)
         console.log('🔘 Use buttons:', autoresponderData?.use_buttons)
+        console.log('🔘 Use button message:', autoresponderData?.use_button_message)
         console.log('🔘 Button text:', autoresponderData?.button_text)
         console.log('🔘 Button URL:', autoresponderData?.button_url)
         console.log('🔘 Button type:', autoresponderData?.button_type)
         console.log('🔘 Postback response:', autoresponderData?.postback_response)
         
-        if (autoresponderData?.use_buttons) {
+        // Usar use_button_message O use_buttons para compatibilidad
+        if (autoresponderData?.use_button_message || autoresponderData?.use_buttons) {
           buttonData = {
             use_button: true,
             button_text: autoresponderData.button_text || null,
