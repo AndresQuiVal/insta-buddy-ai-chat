@@ -378,16 +378,59 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
       
       // Enviar el mensaje real del autoresponder
       try {
+        // Buscar el autoresponder original para obtener los datos del botón
+        let autoresponderData = null
+        let buttonData = {}
+        
+        if (confirmation.autoresponder_type === 'general') {
+          const { data: generalAutoresponder } = await supabase
+            .from('general_comment_autoresponders')
+            .select('*')
+            .eq('id', confirmation.autoresponder_id)
+            .single()
+          autoresponderData = generalAutoresponder
+        } else {
+          const { data: commentAutoresponder } = await supabase
+            .from('comment_autoresponders')
+            .select('*')
+            .eq('id', confirmation.autoresponder_id)
+            .single()
+          autoresponderData = commentAutoresponder
+        }
+        
+        console.log('📋 Autoresponder original encontrado:', autoresponderData?.name)
+        console.log('🔘 Use buttons:', autoresponderData?.use_buttons)
+        console.log('🔘 Button text:', autoresponderData?.button_text)
+        console.log('🔘 Button URL:', autoresponderData?.button_url)
+        console.log('🔘 Button type:', autoresponderData?.button_type)
+        console.log('🔘 Postback response:', autoresponderData?.postback_response)
+        
+        if (autoresponderData?.use_buttons) {
+          buttonData = {
+            use_button: true,
+            button_text: autoresponderData.button_text || null,
+            button_url: autoresponderData.button_url || null,
+            button_type: autoresponderData.button_type || 'web_url',
+            postback_payload: autoresponderData.postback_response ? `${autoresponderData.id}_postback` : null
+          }
+        } else {
+          buttonData = {
+            use_button: false,
+            button_text: null,
+            button_url: null,
+            button_type: 'web_url',
+            postback_payload: null
+          }
+        }
+        
+        console.log('📤 Enviando mensaje con datos de botón:', buttonData)
+        
         const { data: finalMessageResponse, error: finalMessageError } = await supabase.functions.invoke('instagram-send-message', {
           body: {
             recipient_id: senderId,
             message_text: confirmation.original_dm_message,
             instagram_user_id: recipientId,
-            use_button: confirmation.use_button_message || false,
-            button_text: confirmation.button_text || null,
-            button_url: confirmation.button_url || null,
-            button_type: confirmation.button_type || 'web_url',
-            postback_payload: confirmation.postback_response ? `${confirmation.autoresponder_id}_postback` : null
+            ...buttonData
           }
         })
         
