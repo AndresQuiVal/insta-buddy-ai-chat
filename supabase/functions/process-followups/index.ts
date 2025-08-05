@@ -60,10 +60,10 @@ serve(async (req) => {
         console.log('💬 Mensaje:', detail.message_text)
         
         try {
-          // Buscar el usuario de Instagram para obtener su ID
+          // Buscar el usuario de Instagram para obtener su ID y token
           const { data: instagramUser, error: userError } = await supabase
             .from('instagram_users')
-            .select('instagram_user_id')
+            .select('instagram_user_id, access_token, username')
             .eq('is_active', true)
             .limit(1)
             .single()
@@ -77,14 +77,25 @@ serve(async (req) => {
             continue
           }
 
-          // Enviar el mensaje de follow-up
-          const { data: sendResult, error: sendError } = await supabase.functions.invoke('instagram-send-message', {
-            body: {
-              recipient_id: detail.sender_id,
-              message_text: detail.message_text,
-              instagram_user_id: instagramUser.instagram_user_id
-            }
+          // Enviar el mensaje de follow-up directamente usando la API de Instagram
+          console.log('📤 Enviando mensaje directamente a Instagram API...')
+          
+          const messagePayload = {
+            recipient: { id: detail.sender_id },
+            message: { text: detail.message_text }
+          }
+          
+          const sendResponse = await fetch(`https://graph.instagram.com/v23.0/${instagramUser.instagram_user_id}/messages`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${instagramUser.access_token}`
+            },
+            body: JSON.stringify(messagePayload)
           })
+          
+          const sendResult = await sendResponse.json()
+          const sendError = sendResult.error || (!sendResponse.ok ? { message: 'HTTP error', status: sendResponse.status } : null)
 
           if (sendError) {
             console.error('❌ Error enviando follow-up:', sendError)
