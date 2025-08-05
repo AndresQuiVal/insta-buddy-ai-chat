@@ -176,7 +176,9 @@ const Index = () => {
               <LogOut className="w-4 h-4 mr-2" />
               Cerrar Sesión
             </Button>
-            <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
+            <div className="hidden">
+              <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
+            </div>
           </div>
         </div>
 
