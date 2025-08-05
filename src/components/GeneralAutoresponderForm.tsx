@@ -663,27 +663,27 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
           </div>
 
           {/* Aplicar a todas las publicaciones */}
-          {!autoresponder && (
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="applyToAllPosts"
-                  checked={applyToAllPosts}
-                  onCheckedChange={(checked) => setApplyToAllPosts(checked as boolean)}
-                />
-                <div className="flex-1">
-                  <label htmlFor="applyToAllPosts" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
-                    <Globe className="w-4 h-4" />
-                    Aplicar automáticamente a todas las publicaciones de la cuenta
-                  </label>
-                  <p className="text-xs text-blue-700 mt-1">
-                    Si activas esta opción, el autoresponder se aplicará automáticamente a todas tus publicaciones existentes y futuras.
-                    No necesitarás asignar posts manualmente.
-                  </p>
-                </div>
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="applyToAllPosts"
+                checked={applyToAllPosts}
+                onCheckedChange={(checked) => setApplyToAllPosts(checked as boolean)}
+              />
+              <div className="flex-1">
+                <label htmlFor="applyToAllPosts" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  {autoresponder ? 'Aplicar a todas las publicaciones (reemplazará asignaciones actuales)' : 'Aplicar automáticamente a todas las publicaciones de la cuenta'}
+                </label>
+                <p className="text-xs text-blue-700 mt-1">
+                  {autoresponder 
+                    ? 'Esta opción aplicará el autoresponder a todas las publicaciones, reemplazando las asignaciones existentes.'
+                    : 'Si activas esta opción, el autoresponder se aplicará automáticamente a todas tus publicaciones existentes y futuras. No necesitarás asignar posts manualmente.'
+                  }
+                </p>
               </div>
             </div>
-            )}
+          </div>
 
           {/* Verificar seguidor */}
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">

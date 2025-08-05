@@ -144,6 +144,30 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
     }
   };
 
+  const handleViewPosts = async (autoresponderID: string) => {
+    try {
+      const { data: assignments, error } = await supabase
+        .from('post_autoresponder_assignments')
+        .select('*')
+        .eq('general_autoresponder_id', autoresponderID)
+        .eq('user_id', currentUser.instagram_user_id);
+
+      if (error) throw error;
+
+      const postCount = assignments?.length || 0;
+      const postList = assignments?.map(a => `• ${a.post_caption || 'Sin título'} (${a.post_id})`).join('\n') || 'No hay posts asignados';
+      
+      alert(`Posts asignados (${postCount}):\n\n${postList}`);
+    } catch (error) {
+      console.error('❌ Error obteniendo posts asignados:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron obtener los posts asignados",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleFormSubmit = () => {
     setShowForm(false);
     setEditingAutoresponder(null);
@@ -265,6 +289,14 @@ const GeneralAutoresponderManager = ({ onBack }: GeneralAutoresponderManagerProp
                         ) : (
                           <ToggleLeft className="w-4 h-4 text-gray-400" />
                         )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewPosts(autoresponder.id)}
+                        title="Ver posts asignados"
+                      >
+                        <MessageSquare className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="outline"
