@@ -28,11 +28,34 @@ const AutoresponderOnboarding: React.FC = () => {
     keywords: [] as string[],
     isActive: true,
     type: 'general', // 'general' o 'specific'
-    selectedPost: null as any
+    selectedPost: null as any,
+    publicReplies: ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊'] as string[]
   });
 
+  const [newPublicReply, setNewPublicReply] = useState('');
+
+  const addPublicReply = () => {
+    if (newPublicReply.trim() && !autoresponderData.publicReplies.includes(newPublicReply.trim())) {
+      const updatedReplies = [...autoresponderData.publicReplies, newPublicReply.trim()];
+      updateAutoresponderData('publicReplies', updatedReplies);
+      setNewPublicReply('');
+    }
+  };
+
+  const removePublicReply = (replyToRemove: string) => {
+    const updatedReplies = autoresponderData.publicReplies.filter(reply => reply !== replyToRemove);
+    updateAutoresponderData('publicReplies', updatedReplies);
+  };
+
+  const handlePublicReplyInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addPublicReply();
+    }
+  };
+
   const handleNext = () => {
-    if (step < 6) {
+    if (step < 7) {
       setStep(step + 1);
     } else {
       handleCreateAutoresponder();
@@ -100,7 +123,7 @@ const AutoresponderOnboarding: React.FC = () => {
           require_follower: false,
           use_buttons: false,
           buttons: null,
-          public_reply_messages: ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']
+          public_reply_messages: autoresponderData.publicReplies
         };
 
         result = await supabase
@@ -122,7 +145,7 @@ const AutoresponderOnboarding: React.FC = () => {
           post_id: autoresponderData.selectedPost?.id,
           post_url: autoresponderData.selectedPost?.permalink,
           post_caption: autoresponderData.selectedPost?.caption,
-          public_reply_messages: ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']
+          public_reply_messages: autoresponderData.publicReplies
         };
 
         result = await supabase
@@ -196,7 +219,7 @@ const AutoresponderOnboarding: React.FC = () => {
         <div className="w-full bg-white/50 h-2 rounded-full mb-6 sm:mb-10">
           <div 
             className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300" 
-            style={{ width: `${step * 16.66}%` }}
+            style={{ width: `${(step / 7) * 100}%` }}
           ></div>
         </div>
 
@@ -509,8 +532,96 @@ const AutoresponderOnboarding: React.FC = () => {
             </div>
           )}
 
-          {/* Step 6: Configuración final */}
+          {/* Step 6: Respuestas públicas a comentarios */}
           {step === 6 && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Respuestas públicas a comentarios</h2>
+                <p className="text-sm sm:text-base text-gray-600">Configura los mensajes que se mostrarán como respuesta pública a los comentarios</p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">💭 ¿Qué son las respuestas públicas?</h4>
+                  <p className="text-xs sm:text-sm text-blue-800 mb-2">
+                    Cuando alguien comenta en tu post, se enviará automáticamente:
+                  </p>
+                  <ul className="text-xs sm:text-sm text-blue-800 space-y-1">
+                    <li>• Una respuesta pública al comentario (que todos pueden ver)</li>
+                    <li>• Un mensaje privado por DM (que configuraste antes)</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mensajes de respuesta pública ({autoresponderData.publicReplies.length})
+                  </label>
+                  <div className="flex gap-2 mb-3">
+                    <Input
+                      placeholder="Ej: ¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊"
+                      value={newPublicReply}
+                      onChange={(e) => setNewPublicReply(e.target.value)}
+                      onKeyPress={handlePublicReplyInputKeyPress}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={addPublicReply}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                    >
+                      Agregar
+                    </Button>
+                  </div>
+                  
+                  {autoresponderData.publicReplies.length > 0 && (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {autoresponderData.publicReplies.map((reply, index) => (
+                        <div 
+                          key={index}
+                          className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border"
+                        >
+                          <div className="flex-1 text-sm text-gray-700">{reply}</div>
+                          <X 
+                            className="w-4 h-4 cursor-pointer hover:text-red-600 flex-shrink-0 mt-0.5" 
+                            onClick={() => removePublicReply(reply)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="bg-green-50 rounded-lg p-3 mt-3">
+                    <p className="text-sm text-green-800">
+                      ✨ Tip: El sistema elegirá aleatoriamente uno de estos mensajes para cada respuesta, 
+                      lo que hace que las respuestas se vean más naturales y menos automáticas.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Button 
+                  onClick={handleBack}
+                  variant="outline"
+                  className="flex-1 flex items-center justify-center gap-2 text-sm sm:text-base"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Anterior
+                </Button>
+                <Button 
+                  onClick={handleNext}
+                  disabled={autoresponderData.publicReplies.length === 0}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
+                >
+                  Continuar <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 7: Configuración final */}
+          {step === 7 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Configuración final</h2>
@@ -615,7 +726,7 @@ const AutoresponderOnboarding: React.FC = () => {
           
           {/* Step indicator */}
           <div className="flex justify-center mt-6 sm:mt-8">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
               <div 
                 key={i} 
                 className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full mx-1 transition-all duration-300 ${
