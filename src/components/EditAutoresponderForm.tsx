@@ -64,8 +64,8 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
     setKeywords(message.keywords || []);
     
     // Cargar configuración de botones
-    setUseButtons(message.use_buttons || false);
-    console.log('🔍 Setting useButtons to:', message.use_buttons || false);
+    setUseButtons(message.use_buttons === true);
+    console.log('🔍 Setting useButtons to:', message.use_buttons === true);
     
     if (message.buttons) {
       console.log('🔍 Procesando configuración de botones:', message.buttons);
