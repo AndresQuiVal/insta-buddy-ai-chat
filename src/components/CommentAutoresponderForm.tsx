@@ -587,7 +587,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
               <div className="flex-1">
                 <label htmlFor="requireFollower" className="text-sm font-medium text-yellow-900 cursor-pointer flex items-center gap-2">
                   <UserCheck className="w-4 h-4" />
-                  Solo enviar mensaje a usuarios que me siguen
+                  Solo enviar Autoresponder a usuarios que me siguen...
                 </label>
                 <p className="text-xs text-yellow-700 mt-1">
                   Siempre se enviará un mensaje de confirmación preguntando si te siguen. 
