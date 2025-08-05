@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Plus, X, MessageSquare, Key, Globe, UserCheck } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Plus, X, MessageSquare, Key, Globe, UserCheck, MousePointer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
@@ -20,6 +21,11 @@ interface GeneralAutoresponder {
   dm_message: string;
   public_reply_messages: string[];
   require_follower?: boolean;
+  use_button_message?: boolean;
+  button_text?: string;
+  button_url?: string;
+  button_type?: 'web_url' | 'postback';
+  postback_response?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -40,6 +46,11 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
   const [newPublicReply, setNewPublicReply] = useState('');
   const [applyToAllPosts, setApplyToAllPosts] = useState(false);
   const [requireFollower, setRequireFollower] = useState(false);
+  const [useButtonMessage, setUseButtonMessage] = useState(false);
+  const [buttonText, setButtonText] = useState('');
+  const [buttonUrl, setButtonUrl] = useState('');
+  const [buttonType, setButtonType] = useState<'web_url' | 'postback'>('web_url');
+  const [postbackResponse, setPostbackResponse] = useState('');
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -52,6 +63,11 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       setDmMessage(autoresponder.dm_message);
       setPublicReplies(autoresponder.public_reply_messages || ['¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊']);
       setRequireFollower(autoresponder.require_follower || false);
+      setUseButtonMessage(autoresponder.use_button_message || false);
+      setButtonText(autoresponder.button_text || '');
+      setButtonUrl(autoresponder.button_url || '');
+      setButtonType(autoresponder.button_type || 'web_url');
+      setPostbackResponse(autoresponder.postback_response || '');
       
       // Cargar follow-ups existentes
       loadFollowUps(autoresponder.id);
@@ -137,6 +153,50 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
       return;
     }
 
+    // Validaciones del botón
+    if (useButtonMessage) {
+      if (!buttonText.trim()) {
+        toast({
+          title: "Error",
+          description: "El texto del botón es requerido",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (buttonType === 'web_url') {
+        if (!buttonUrl.trim()) {
+          toast({
+            title: "Error", 
+            description: "La URL del botón es requerida",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Validar formato de URL
+        try {
+          new URL(buttonUrl);
+        } catch {
+          toast({
+            title: "Error",
+            description: "Por favor ingresa una URL válida",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else if (buttonType === 'postback') {
+        if (!postbackResponse.trim()) {
+          toast({
+            title: "Error",
+            description: "La respuesta del postback es requerida",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
     try {
       setLoading(true);
 
@@ -148,6 +208,11 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
         public_reply_messages: publicReplies.filter(reply => reply.trim()),
         auto_assign_to_all_posts: applyToAllPosts,
         require_follower: requireFollower,
+        use_button_message: useButtonMessage,
+        button_text: useButtonMessage ? buttonText : null,
+        button_url: useButtonMessage && buttonType === 'web_url' ? buttonUrl : null,
+        button_type: useButtonMessage ? buttonType : 'web_url',
+        postback_response: useButtonMessage && buttonType === 'postback' ? postbackResponse : null,
         is_active: true,
         updated_at: new Date().toISOString()
       };
@@ -459,6 +524,115 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
                 </Button>
               </div>
             </div>
+          </div>
+
+          {/* Configuración del Botón en DM */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <MousePointer className="w-4 h-4" />
+                  Incluir Botón en el DM
+                </Label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Agregar un botón al mensaje directo que se envía
+                </p>
+              </div>
+              <Switch
+                checked={useButtonMessage}
+                onCheckedChange={setUseButtonMessage}
+              />
+            </div>
+
+            {useButtonMessage && (
+              <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Tipo de Botón</Label>
+                  <div className="flex gap-4 mt-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="buttonType"
+                        value="web_url"
+                        checked={buttonType === 'web_url'}
+                        onChange={(e) => setButtonType(e.target.value as 'web_url' | 'postback')}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm">URL</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="buttonType"
+                        value="postback"
+                        checked={buttonType === 'postback'}
+                        onChange={(e) => setButtonType(e.target.value as 'web_url' | 'postback')}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm">Postback</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="buttonText" className="text-sm font-medium text-gray-700">
+                    Texto del Botón
+                  </Label>
+                  <Input
+                    id="buttonText"
+                    value={buttonText}
+                    onChange={(e) => setButtonText(e.target.value)}
+                    placeholder="Ej: Ver más información"
+                    className="mt-1"
+                    maxLength={20}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Máximo 20 caracteres
+                  </p>
+                </div>
+
+                {buttonType === 'web_url' && (
+                  <div>
+                    <Label htmlFor="buttonUrl" className="text-sm font-medium text-gray-700">
+                      URL del Botón
+                    </Label>
+                    <Input
+                      id="buttonUrl"
+                      type="url"
+                      value={buttonUrl}
+                      onChange={(e) => setButtonUrl(e.target.value)}
+                      placeholder="https://ejemplo.com"
+                      className="mt-1"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      URL completa incluyendo https://
+                    </p>
+                  </div>
+                )}
+
+                {buttonType === 'postback' && (
+                  <div>
+                    <Label htmlFor="postbackResponse" className="text-sm font-medium text-gray-700">
+                      Respuesta del Postback
+                    </Label>
+                    <Textarea
+                      id="postbackResponse"
+                      value={postbackResponse}
+                      onChange={(e) => setPostbackResponse(e.target.value)}
+                      placeholder="Mensaje que se enviará cuando el usuario haga click en el botón..."
+                      className="mt-1"
+                      rows={3}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Este mensaje se enviará automáticamente cuando el usuario haga click en el botón
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Aplicar a todas las publicaciones */}
