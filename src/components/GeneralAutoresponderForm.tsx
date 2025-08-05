@@ -239,6 +239,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
 
       if (autoresponder) {
         console.log('🔄 Actualizando autoresponder general:', autoresponder.id);
+        console.log('🔍 applyToAllPosts está activado:', applyToAllPosts);
 
         const { error } = await (supabase as any)
           .from('general_comment_autoresponders')
@@ -251,10 +252,95 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
         // Guardar follow-ups para actualización
         await saveFollowUps(autoresponder.id, 'general');
 
-        toast({
-          title: "¡Actualizado!",
-          description: "Autoresponder general actualizado exitosamente",
-        });
+        // Si se seleccionó "Aplicar a todas las publicaciones" al editar, aplicar asignaciones
+        if (applyToAllPosts) {
+          console.log('🌐 Aplicando autoresponder editado a todas las publicaciones...');
+          
+          // Verificar que hay token de Instagram
+          const instagramToken = localStorage.getItem('hower-instagram-token');
+          if (!instagramToken) {
+            toast({
+              title: "Autoresponder actualizado",
+              description: "Autoresponder actualizado, pero necesitas conectar tu cuenta de Instagram para asignación automática.",
+              variant: "destructive"
+            });
+          } else {
+            try {
+              // Obtener todos los posts de Instagram
+              const posts = await getInstagramPosts();
+              console.log(`📝 Encontrados ${posts.length} posts para reasignar`);
+
+              if (posts.length > 0) {
+                console.log(`📝 Procesando ${posts.length} posts para reasignación...`);
+                
+                let successCount = 0;
+                let updateCount = 0;
+                
+                // Procesar posts uno por uno
+                for (const post of posts) {
+                  try {
+                    const assignment = {
+                      general_autoresponder_id: autoresponder.id,
+                      user_id: currentUser.instagram_user_id,
+                      post_id: post.id,
+                      post_url: post.permalink,
+                      post_caption: post.caption || '',
+                      is_active: true,
+                    };
+
+                    // Verificar si ya existe una asignación para este post
+                    const { data: existing } = await (supabase as any)
+                      .from('post_autoresponder_assignments')
+                      .select('id')
+                      .eq('user_id', currentUser.instagram_user_id)
+                      .eq('post_id', post.id)
+                      .maybeSingle();
+
+                    if (existing) {
+                      // Ya existe, actualizar autoresponder
+                      await (supabase as any)
+                        .from('post_autoresponder_assignments')
+                        .update({ general_autoresponder_id: autoresponder.id })
+                        .eq('id', existing.id);
+                      updateCount++;
+                    } else {
+                      // No existe, crear nuevo
+                      await (supabase as any)
+                        .from('post_autoresponder_assignments')
+                        .insert([assignment]);
+                      successCount++;
+                    }
+                  } catch (error) {
+                    console.error('❌ Error procesando post:', post.id, error);
+                  }
+                }
+
+                const totalProcessed = successCount + updateCount;
+                toast({
+                  title: "¡Autoresponder actualizado y aplicado!",
+                  description: `Autoresponder actualizado y aplicado a ${totalProcessed} publicaciones (${successCount} nuevas, ${updateCount} actualizadas).`,
+                });
+              } else {
+                toast({
+                  title: "¡Autoresponder actualizado!",
+                  description: "Autoresponder actualizado. No se encontraron publicaciones para asignar.",
+                });
+              }
+            } catch (postsError) {
+              console.error('❌ Error obteniendo posts de Instagram:', postsError);
+              toast({
+                title: "Autoresponder actualizado",
+                description: "Autoresponder actualizado, pero no se pudieron obtener las publicaciones para asignación automática.",
+                variant: "destructive"
+              });
+            }
+          }
+        } else {
+          toast({
+            title: "¡Actualizado!",
+            description: "Autoresponder general actualizado exitosamente",
+          });
+        }
       } else {
         console.log('➕ Creando nuevo autoresponder general');
 
