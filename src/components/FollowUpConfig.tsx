@@ -81,7 +81,10 @@ const FollowUpConfig = ({ followUps, onChange, maxFollowUps = 4 }: FollowUpConfi
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 opacity-50 pointer-events-none relative">
+      <div className="absolute top-0 right-0 bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-medium z-10">
+        SOON
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <Label className="text-base font-medium">Secuencia de Follow-ups</Label>
