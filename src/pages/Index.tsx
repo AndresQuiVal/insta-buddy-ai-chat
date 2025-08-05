@@ -106,6 +106,7 @@ const Index = () => {
                                  (commentAutoresponders && commentAutoresponders.length > 0);
 
         if (!hasAutoresponders) {
+          console.log('🔍 DEBUG Index - No autoresponders found, navigating to /autoresponder-onboarding');
           navigate('/autoresponder-onboarding');
         }
       }

@@ -9,9 +9,14 @@ const Settings = () => {
   const navigate = useNavigate();
   const [isOnboarded, setIsOnboarded] = useState(localStorage.getItem('hower-autoresponder-onboarded') === 'true');
   
+  console.log('🔍 DEBUG Settings - localStorage value:', localStorage.getItem('hower-autoresponder-onboarded'));
+  console.log('🔍 DEBUG Settings - isOnboarded:', isOnboarded);
+  
   // Verificar si el usuario ha completado el autoresponder onboarding
   useEffect(() => {
+    console.log('🔍 DEBUG Settings useEffect - isOnboarded:', isOnboarded);
     if (!isOnboarded) {
+      console.log('🔍 DEBUG Settings - Redirigiendo a /autoresponder-onboarding');
       // Redirigir a la página de autoresponder onboarding
       window.location.href = '/autoresponder-onboarding';
     }
