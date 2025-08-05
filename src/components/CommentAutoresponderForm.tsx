@@ -40,7 +40,6 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   const [newPublicReply, setNewPublicReply] = useState('');
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [requireFollower, setRequireFollower] = useState(false);
-  const [followerConfirmationMessage, setFollowerConfirmationMessage] = useState('¡Hola! 😊 Gracias por comentar. Para poder ayudarte mejor, ¿podrías confirmar si me sigues? Solo responde "sí" si ya me sigues y te envío lo que necesitas 💪');
   const [useButtonMessage, setUseButtonMessage] = useState(false);
   const [buttonText, setButtonText] = useState('');
   const [buttonUrl, setButtonUrl] = useState('');
@@ -198,7 +197,6 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
           dm_message: dmMessage.trim(),
           public_reply_messages: publicReplyMessages,
           require_follower: requireFollower,
-          follower_confirmation_message: requireFollower ? followerConfirmationMessage.trim() : null,
           use_button_message: useButtonMessage,
           button_text: useButtonMessage ? buttonText : null,
           button_url: useButtonMessage && buttonType === 'web_url' ? buttonUrl : null,
@@ -598,24 +596,18 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
             </div>
             
             {requireFollower && (
-              <div className="mt-4 space-y-2">
-                <Label className="text-sm font-medium text-yellow-900">
-                  Mensaje de confirmación para no seguidores
-                </Label>
-                <p className="text-xs text-yellow-700 mb-2">
-                  Este mensaje se enviará a las personas que no te siguen, pidiéndoles que confirmen si ya te siguen.
-                </p>
-                <Textarea
-                  value={followerConfirmationMessage}
-                  onChange={(e) => setFollowerConfirmationMessage(e.target.value)}
-                  placeholder="Escribe el mensaje de confirmación..."
-                  rows={3}
-                  maxLength={1000}
-                  className="border-yellow-300 focus:border-yellow-500"
-                />
-                <p className="text-xs text-yellow-600">
-                  {followerConfirmationMessage.length}/1000 caracteres
-                </p>
+              <div className="mt-4 p-3 bg-yellow-100 rounded-lg border border-yellow-300">
+                <h4 className="text-sm font-medium text-yellow-900 mb-2">
+                  Flujo de confirmación de seguidor
+                </h4>
+                <div className="text-xs text-yellow-800 space-y-1">
+                  <p><strong>1.</strong> Se enviará un mensaje de confirmación preguntando si te siguen</p>
+                  <p><strong>2.</strong> El prospecto debe responder 'sí' para confirmar que te sigue</p>
+                  <p><strong>3.</strong> Solo después de la confirmación se enviará el mensaje del autoresponder</p>
+                </div>
+                <div className="mt-3 p-2 bg-yellow-200 rounded text-xs text-yellow-900">
+                  <strong>Mensaje por defecto:</strong> "¡Hola! 😊 Gracias por comentar. Para poder ayudarte mejor, ¿podrías confirmar si me sigues? Solo responde 'sí' si ya me sigues y te envío lo que necesitas 💪"
+                </div>
               </div>
             )}
           </div>
