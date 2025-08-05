@@ -48,6 +48,25 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
   const [applyToAllPosts, setApplyToAllPosts] = useState(false);
   const [requireFollower, setRequireFollower] = useState(false);
   const [useButtonMessage, setUseButtonMessage] = useState(false);
+
+  // Desactivar botón cuando se activa require_follower
+  const handleRequireFollowerChange = (checked: boolean) => {
+    setRequireFollower(checked);
+    if (checked) {
+      setUseButtonMessage(false);
+      setButtonText('');
+      setButtonUrl('');
+      setPostbackResponse('');
+    }
+  };
+
+  // Desactivar require_follower cuando se activa useButtonMessage
+  const handleUseButtonMessageChange = (checked: boolean) => {
+    setUseButtonMessage(checked);
+    if (checked) {
+      setRequireFollower(false);
+    }
+  };
   const [buttonText, setButtonText] = useState('');
   const [buttonUrl, setButtonUrl] = useState('');
   const [buttonType, setButtonType] = useState<'web_url' | 'postback'>('web_url');
@@ -533,16 +552,22 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
               <Switch
                 id="useButtonMessage"
                 checked={useButtonMessage}
-                onCheckedChange={setUseButtonMessage}
+                onCheckedChange={handleUseButtonMessageChange}
+                disabled={requireFollower}
               />
               <div className="flex-1">
-                <label htmlFor="useButtonMessage" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                <label htmlFor="useButtonMessage" className={`text-sm font-medium cursor-pointer flex items-center gap-2 ${requireFollower ? 'text-gray-500' : 'text-blue-900'}`}>
                   <MousePointer className="w-4 h-4" />
                   Incluir Botón en el DM
                 </label>
-                <p className="text-xs text-blue-700 mt-1">
+                <p className={`text-xs mt-1 ${requireFollower ? 'text-gray-500' : 'text-blue-700'}`}>
                   Agregar un botón al mensaje directo que se envía
                 </p>
+                {requireFollower && (
+                  <p className="text-xs text-orange-600 mt-1 font-medium">
+                    ⚠️ No disponible cuando "Solo Enviar a Seguidores" está activado
+                  </p>
+                )}
               </div>
             </div>
 
@@ -666,7 +691,7 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
               <Switch
                 id="requireFollowerGeneral"
                 checked={requireFollower}
-                onCheckedChange={setRequireFollower}
+                onCheckedChange={handleRequireFollowerChange}
               />
               <div className="flex-1">
                 <label htmlFor="requireFollowerGeneral" className="text-sm font-medium text-yellow-900 cursor-pointer flex items-center gap-2">
@@ -677,6 +702,11 @@ const GeneralAutoresponderForm = ({ autoresponder, onBack, onSubmit }: GeneralAu
                   Siempre se enviará un mensaje de confirmación preguntando si te siguen. 
                   Solo después de que confirmen que te siguen se enviará el mensaje del autoresponder.
                 </p>
+                {requireFollower && (
+                  <p className="text-xs text-orange-600 mt-1 font-medium">
+                    ⚠️ Los botones se desactivan automáticamente con esta opción
+                  </p>
+                )}
               </div>
             </div>
             
