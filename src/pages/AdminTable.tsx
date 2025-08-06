@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface AdminData {
   correo: string;
   telefono: string;
+  telefono_completo: string;
   whatsapp_link: string;
   instagram_ligado: string;
   ultimo_autoresponder: string;
@@ -100,7 +101,12 @@ export default function AdminTable() {
             .limit(1)
             .single();
 
-          const whatsappLink = profile.phone ? `https://wa.me/${profile.phone.replace(/[^0-9]/g, '')}` : '';
+          // Crear teléfono completo con código de país
+          const telefonoCompleto = profile.country_code && profile.phone 
+            ? `${profile.country_code}${profile.phone}`
+            : profile.phone || '';
+          
+          const whatsappLink = telefonoCompleto ? `https://wa.me/${telefonoCompleto.replace(/[^0-9]/g, '')}` : '';
           
           // Calcular días desde el registro
           const fechaRegistro = new Date(profile.created_at);
@@ -116,6 +122,7 @@ export default function AdminTable() {
           adminData.push({
             correo: profile.email || '',
             telefono: profile.phone || '',
+            telefono_completo: telefonoCompleto,
             whatsapp_link: whatsappLink,
             instagram_ligado: instagramUser?.username || 'No conectado',
             ultimo_autoresponder: lastMessage?.autoresponder_messages?.message_text?.substring(0, 50) + '...' || 'Ninguno',
@@ -348,7 +355,7 @@ export default function AdminTable() {
                     filteredData.map((row, index) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">{row.correo}</TableCell>
-                        <TableCell>{row.telefono}</TableCell>
+                        <TableCell className="font-mono">{row.telefono_completo}</TableCell>
                         <TableCell>
                           {row.whatsapp_link ? (
                             <Button variant="outline" size="sm" asChild>

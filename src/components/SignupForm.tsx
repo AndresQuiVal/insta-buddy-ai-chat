@@ -14,6 +14,7 @@ const SignupForm = () => {
     email: '',
     niche: '',
     nicheDetail: '',
+    countryCode: '+52',
     phone: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +25,7 @@ const SignupForm = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    if (!formData.name || !formData.email || !formData.niche || !formData.phone || 
+    if (!formData.name || !formData.email || !formData.niche || !formData.phone || !formData.countryCode || 
         ((formData.niche === 'coach' || formData.niche === 'otro' || formData.niche === 'infoproductor') && !formData.nicheDetail)) {
       toast({
         title: "Campos requeridos",
@@ -44,6 +45,7 @@ const SignupForm = () => {
           email: formData.email,
           niche: formData.niche,
           niche_detail: formData.nicheDetail || null,
+          country_code: formData.countryCode,
           phone: formData.phone
         });
 
@@ -179,15 +181,46 @@ const SignupForm = () => {
               <Label htmlFor="phone" className="text-gray-700 font-medium">
                 Número de teléfono
               </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="mt-2 rounded-xl border-gray-200 focus:border-purple-500"
-                placeholder="Ej: +521234567890"
-                required
-              />
+              <div className="flex gap-2 mt-2">
+                <Select 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, countryCode: value }))} 
+                  value={formData.countryCode}
+                >
+                  <SelectTrigger className="w-32 rounded-xl border-gray-200 focus:border-purple-500">
+                    <SelectValue placeholder="Código" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                    <SelectItem value="+52">🇲🇽 +52</SelectItem>
+                    <SelectItem value="+34">🇪🇸 +34</SelectItem>
+                    <SelectItem value="+54">🇦🇷 +54</SelectItem>
+                    <SelectItem value="+57">🇨🇴 +57</SelectItem>
+                    <SelectItem value="+51">🇵🇪 +51</SelectItem>
+                    <SelectItem value="+56">🇨🇱 +56</SelectItem>
+                    <SelectItem value="+598">🇺🇾 +598</SelectItem>
+                    <SelectItem value="+506">🇨🇷 +506</SelectItem>
+                    <SelectItem value="+507">🇵🇦 +507</SelectItem>
+                    <SelectItem value="+503">🇸🇻 +503</SelectItem>
+                    <SelectItem value="+504">🇭🇳 +504</SelectItem>
+                    <SelectItem value="+502">🇬🇹 +502</SelectItem>
+                    <SelectItem value="+505">🇳🇮 +505</SelectItem>
+                    <SelectItem value="+591">🇧🇴 +591</SelectItem>
+                    <SelectItem value="+593">🇪🇨 +593</SelectItem>
+                    <SelectItem value="+595">🇵🇾 +595</SelectItem>
+                    <SelectItem value="+58">🇻🇪 +58</SelectItem>
+                    <SelectItem value="+1809">🇩🇴 +1809</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  className="flex-1 rounded-xl border-gray-200 focus:border-purple-500"
+                  placeholder="1234567890"
+                  required
+                />
+              </div>
               <p className="text-xs text-gray-500 mt-1">
                 Para recibir soporte personalizado en WhatsApp. No recibirás promocionales, solo ayuda cuando la necesites.
               </p>
