@@ -30,7 +30,6 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/onboarding" element={<Navigate to="/autoresponder-onboarding" replace />} />
           <Route path="/autoresponder-onboarding" element={<AutoresponderOnboarding />} />
           <Route path="/guides" element={<Guides />} />
           <Route path="/settings" element={<Settings />} />
