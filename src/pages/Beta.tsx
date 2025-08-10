@@ -470,9 +470,9 @@ const Beta: React.FC = () => {
                        <DollarSign className="w-6 h-6 text-white" />
                      </div>
                      <div>
-                       <p className="text-lg font-bold text-gray-800">Post 7 días: $15 USD</p>
-                       <p className="text-lg font-bold text-red-700">Después: $25, $50, $100+...</p>
-                       <p className="text-sm text-red-600 font-medium">Precio escala con contactos</p>
+                       <p className="text-lg font-bold text-red-700">$15 USD por mes</p>
+                       <p className="text-lg font-bold text-gray-800">Solo 500 contactos</p>
+                       <p className="text-sm text-red-600 font-medium">Después: $25, $50, $100+...</p>
                      </div>
                    </div>
                 </div>
