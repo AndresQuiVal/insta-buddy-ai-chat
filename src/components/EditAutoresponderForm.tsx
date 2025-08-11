@@ -8,10 +8,12 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
-import { X, ArrowLeft, MousePointer, Link, MessageCircle } from 'lucide-react';
+import { X, ArrowLeft, MousePointer, Link, MessageCircle, GitBranch } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FollowUpConfig, { FollowUp } from './FollowUpConfig';
+import { FlowEditor } from './FlowEditor';
 
 interface AutoresponderMessage {
   id: string;
@@ -48,6 +50,8 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
   const [postbackPayload, setPostbackPayload] = useState('');
   const [postbackResponse, setPostbackResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFlowEditorOpen, setIsFlowEditorOpen] = useState(false);
+  const [flowData, setFlowData] = useState(null);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
 
@@ -397,254 +401,324 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
       </CardHeader>
 
       <CardContent className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nombre de la respuesta</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Bienvenida inicial"
-              maxLength={100}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="message">Mensaje de respuesta</Label>
-            <Textarea
-              id="message"
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              placeholder="Escribe el mensaje que se enviará automáticamente..."
-              rows={4}
-              maxLength={1000}
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              {messageText.length}/1000 caracteres
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="active"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-            <Label htmlFor="active">Activar esta respuesta automática</Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="sendOnlyFirst"
-              checked={sendOnlyFirstMessage}
-              onCheckedChange={setSendOnlyFirstMessage}
-            />
-            <Label htmlFor="sendOnlyFirst">Solo enviar el primer mensaje</Label>
-            <p className="text-sm text-gray-500">
-              {sendOnlyFirstMessage 
-                ? "Solo responderá la primera vez que alguien te escriba" 
-                : "Responderá a todos los mensajes que recibas"
-              }
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="useKeywords"
-                checked={useKeywords}
-                onCheckedChange={setUseKeywords}
-              />
-              <Label htmlFor="useKeywords">Solo responder a palabras clave específicas</Label>
-            </div>
-            
-            {useKeywords && (
-              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                <div>
-                  <Label htmlFor="newKeyword">Agregar palabra clave</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="newKeyword"
-                      value={newKeyword}
-                      onChange={(e) => setNewKeyword(e.target.value)}
-                      onKeyPress={handleKeywordInputKeyPress}
-                      placeholder="Ej: hola, info, precios..."
-                      className="flex-1"
-                    />
-                    <Button type="button" onClick={addKeyword} disabled={!newKeyword.trim()}>
-                      Agregar
-                    </Button>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Solo responderá si el mensaje contiene alguna de estas palabras (no importan mayúsculas/minúsculas)
-                  </p>
-                </div>
-                
-                {keywords.length > 0 && (
-                  <div>
-                    <Label>Palabras clave configuradas:</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {keywords.map((keyword, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm"
-                        >
-                          {keyword}
-                          <button
-                            type="button"
-                            onClick={() => removeKeyword(keyword)}
-                            className="hover:bg-blue-200 rounded-full p-0.5"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-          )}
-        </div>
-
-        {/* Configuración de Botones */}
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div className="flex items-start space-x-3 mb-4">
-            <Switch
-              id="useButtons"
-              checked={useButtons}
-              onCheckedChange={setUseButtons}
-            />
-            <div className="flex-1">
-              <label htmlFor="useButtons" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
-                <MousePointer className="w-4 h-4" />
-                Agregar botón interactivo al mensaje
-              </label>
-              <p className="text-xs text-blue-700 mt-1">
-                Añade un botón al mensaje DM que el usuario puede presionar
-              </p>
-            </div>
-          </div>
-
-          {useButtons && (
-            <div className="space-y-4 pl-6 border-l-2 border-blue-300">
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="basic" className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Configuración Básica
+            </TabsTrigger>
+            <TabsTrigger value="flow" className="flex items-center gap-2">
+              <GitBranch className="w-4 h-4" />
+              Editor de Flujos
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="basic">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="buttonText" className="text-sm font-medium text-blue-900">
-                  Texto del Botón
-                </Label>
+                <Label htmlFor="name">Nombre de la respuesta</Label>
                 <Input
-                  id="buttonText"
-                  value={buttonText}
-                  onChange={(e) => setButtonText(e.target.value)}
-                  placeholder="Ej: Ver Información, Descargar PDF..."
-                  className="mt-1"
-                  maxLength={20}
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ej: Bienvenida inicial"
+                  maxLength={100}
                 />
-                <p className="text-xs text-blue-600 mt-1">
-                  {buttonText.length}/20 caracteres
+              </div>
+
+              <div>
+                <Label htmlFor="message">Mensaje de respuesta</Label>
+                <Textarea
+                  id="message"
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Escribe el mensaje que se enviará automáticamente..."
+                  rows={4}
+                  maxLength={1000}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  {messageText.length}/1000 caracteres
                 </p>
               </div>
 
-              <div>
-                <Label htmlFor="buttonType" className="text-sm font-medium text-blue-900">
-                  Tipo de Botón
-                </Label>
-                <Select value={buttonType} onValueChange={(value: 'web_url' | 'postback') => setButtonType(value)}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="web_url">
-                      <div className="flex items-center gap-2">
-                        <Link className="w-4 h-4" />
-                        <span>URL (Redirigir a sitio web)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="postback">
-                      <div className="flex items-center gap-2">
-                        <MessageCircle className="w-4 h-4" />
-                        <span>Postback (Enviar mensaje automático)</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="active"
+                  checked={isActive}
+                  onCheckedChange={setIsActive}
+                />
+                <Label htmlFor="active">Activar esta respuesta automática</Label>
               </div>
 
-              {buttonType === 'web_url' && (
-                <div>
-                  <Label htmlFor="buttonUrl" className="text-sm font-medium text-blue-900">
-                    URL del Botón
-                  </Label>
-                  <Input
-                    id="buttonUrl"
-                    type="url"
-                    value={buttonUrl}
-                    onChange={(e) => setButtonUrl(e.target.value)}
-                    placeholder="https://ejemplo.com/mi-pagina"
-                    className="mt-1"
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="sendOnlyFirst"
+                  checked={sendOnlyFirstMessage}
+                  onCheckedChange={setSendOnlyFirstMessage}
+                />
+                <Label htmlFor="sendOnlyFirst">Solo enviar el primer mensaje</Label>
+                <p className="text-sm text-gray-500">
+                  {sendOnlyFirstMessage 
+                    ? "Solo responderá la primera vez que alguien te escriba" 
+                    : "Responderá a todos los mensajes que recibas"
+                  }
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="useKeywords"
+                    checked={useKeywords}
+                    onCheckedChange={setUseKeywords}
                   />
-                  <p className="text-xs text-blue-600 mt-1">
-                    El usuario será redirigido a esta URL cuando presione el botón
+                  <Label htmlFor="useKeywords">Solo responder a palabras clave específicas</Label>
+                </div>
+                
+                {useKeywords && (
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                    <div>
+                      <Label htmlFor="newKeyword">Agregar palabra clave</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="newKeyword"
+                          value={newKeyword}
+                          onChange={(e) => setNewKeyword(e.target.value)}
+                          onKeyPress={handleKeywordInputKeyPress}
+                          placeholder="Ej: hola, info, precios..."
+                          className="flex-1"
+                        />
+                        <Button type="button" onClick={addKeyword} disabled={!newKeyword.trim()}>
+                          Agregar
+                        </Button>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Solo responderá si el mensaje contiene alguna de estas palabras (no importan mayúsculas/minúsculas)
+                      </p>
+                    </div>
+                    
+                    {keywords.length > 0 && (
+                      <div>
+                        <Label>Palabras clave configuradas:</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {keywords.map((keyword, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm"
+                            >
+                              {keyword}
+                              <button
+                                type="button"
+                                onClick={() => removeKeyword(keyword)}
+                                className="hover:bg-blue-200 rounded-full p-0.5"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Configuración de Botones */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-start space-x-3 mb-4">
+                  <Switch
+                    id="useButtons"
+                    checked={useButtons}
+                    onCheckedChange={setUseButtons}
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="useButtons" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                      <MousePointer className="w-4 h-4" />
+                      Agregar botón interactivo al mensaje
+                    </label>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Añade un botón al mensaje DM que el usuario puede presionar
+                    </p>
+                  </div>
+                </div>
+
+                {useButtons && (
+                  <div className="space-y-4 pl-6 border-l-2 border-blue-300">
+                    <div>
+                      <Label htmlFor="buttonText" className="text-sm font-medium text-blue-900">
+                        Texto del Botón
+                      </Label>
+                      <Input
+                        id="buttonText"
+                        value={buttonText}
+                        onChange={(e) => setButtonText(e.target.value)}
+                        placeholder="Ej: Ver Información, Descargar PDF..."
+                        className="mt-1"
+                        maxLength={20}
+                      />
+                      <p className="text-xs text-blue-600 mt-1">
+                        {buttonText.length}/20 caracteres
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="buttonType" className="text-sm font-medium text-blue-900">
+                        Tipo de Botón
+                      </Label>
+                      <Select value={buttonType} onValueChange={(value: 'web_url' | 'postback') => setButtonType(value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="web_url">
+                            <div className="flex items-center gap-2">
+                              <Link className="w-4 h-4" />
+                              <span>URL (Redirigir a sitio web)</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="postback">
+                            <div className="flex items-center gap-2">
+                              <MessageCircle className="w-4 h-4" />
+                              <span>Postback (Enviar mensaje automático)</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {buttonType === 'web_url' && (
+                      <div>
+                        <Label htmlFor="buttonUrl" className="text-sm font-medium text-blue-900">
+                          URL del Botón
+                        </Label>
+                        <Input
+                          id="buttonUrl"
+                          type="url"
+                          value={buttonUrl}
+                          onChange={(e) => setButtonUrl(e.target.value)}
+                          placeholder="https://ejemplo.com/mi-pagina"
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-blue-600 mt-1">
+                          El usuario será redirigido a esta URL cuando presione el botón
+                        </p>
+                      </div>
+                    )}
+
+                    {buttonType === 'postback' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="postbackPayload" className="text-sm font-medium text-blue-900">
+                            Identificador del Postback
+                          </Label>
+                          <Input
+                            id="postbackPayload"
+                            value={postbackPayload}
+                            onChange={(e) => setPostbackPayload(e.target.value)}
+                            placeholder="Ej: GET_INFO, DOWNLOAD_PDF..."
+                            className="mt-1"
+                            maxLength={100}
+                          />
+                          <p className="text-xs text-blue-600 mt-1">
+                            Identificador único para este botón (solo letras, números y guiones bajos)
+                          </p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="postbackResponse" className="text-sm font-medium text-blue-900">
+                            Mensaje de Respuesta Automática
+                          </Label>
+                          <Textarea
+                            id="postbackResponse"
+                            value={postbackResponse}
+                            onChange={(e) => setPostbackResponse(e.target.value)}
+                            placeholder="Este mensaje se enviará automáticamente cuando el usuario presione el botón..."
+                            rows={3}
+                            className="mt-1"
+                            maxLength={1000}
+                          />
+                          <p className="text-xs text-blue-600 mt-1">
+                            {postbackResponse.length}/1000 caracteres - Este mensaje se enviará cuando presionen el botón
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <FollowUpConfig
+                followUps={followUps}
+                onChange={setFollowUps}
+                maxFollowUps={4}
+              />
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Actualizando...' : 'Guardar Cambios'}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="flow">
+            <div className="space-y-4">
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                  <GitBranch className="w-5 h-5" />
+                  Editor de Flujos Avanzado
+                </h3>
+                <p className="text-blue-700 mb-4">
+                  Crea flujos complejos con múltiples mensajes, condiciones y acciones interconectadas.
+                </p>
+                <Button 
+                  onClick={() => setIsFlowEditorOpen(true)}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  <GitBranch className="w-4 h-4 mr-2" />
+                  Abrir Editor de Flujos
+                </Button>
+              </div>
+
+              {flowData && (
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h4 className="text-green-900 font-medium mb-2">✅ Flujo Configurado</h4>
+                  <p className="text-green-700 text-sm">
+                    Tu flujo ha sido configurado exitosamente. Haz clic en "Abrir Editor de Flujos" para modificarlo.
                   </p>
                 </div>
               )}
 
-              {buttonType === 'postback' && (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="postbackPayload" className="text-sm font-medium text-blue-900">
-                      Identificador del Postback
-                    </Label>
-                    <Input
-                      id="postbackPayload"
-                      value={postbackPayload}
-                      onChange={(e) => setPostbackPayload(e.target.value)}
-                      placeholder="Ej: GET_INFO, DOWNLOAD_PDF..."
-                      className="mt-1"
-                      maxLength={100}
-                    />
-                    <p className="text-xs text-blue-600 mt-1">
-                      Identificador único para este botón (solo letras, números y guiones bajos)
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="postbackResponse" className="text-sm font-medium text-blue-900">
-                      Mensaje de Respuesta Automática
-                    </Label>
-                    <Textarea
-                      id="postbackResponse"
-                      value={postbackResponse}
-                      onChange={(e) => setPostbackResponse(e.target.value)}
-                      placeholder="Este mensaje se enviará automáticamente cuando el usuario presione el botón..."
-                      rows={3}
-                      className="mt-1"
-                      maxLength={1000}
-                    />
-                    <p className="text-xs text-blue-600 mt-1">
-                      {postbackResponse.length}/1000 caracteres - Este mensaje se enviará cuando presionen el botón
-                    </p>
-                  </div>
-                </div>
-              )}
+              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                <h4 className="text-yellow-900 font-medium mb-2">💡 ¿Qué puedes hacer con los flujos?</h4>
+                <ul className="text-yellow-800 text-sm space-y-1 list-disc list-inside">
+                  <li>Crear secuencias de mensajes automáticos</li>
+                  <li>Agregar botones interactivos con respuestas personalizadas</li>
+                  <li>Configurar condiciones basadas en respuestas del usuario</li>
+                  <li>Establecer acciones automáticas como etiquetado o notificaciones</li>
+                  <li>Diseñar flujos complejos con múltiples caminos</li>
+                </ul>
+              </div>
             </div>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
 
-        <FollowUpConfig
-          followUps={followUps}
-          onChange={setFollowUps}
-          maxFollowUps={4}
+        <FlowEditor
+          isOpen={isFlowEditorOpen}
+          onClose={() => setIsFlowEditorOpen(false)}
+          autoresponderData={message}
+          onSave={(data) => {
+            setFlowData(data);
+            console.log('✅ Flujo guardado:', data);
+            toast({
+              title: "¡Flujo guardado!",
+              description: "Tu flujo ha sido configurado exitosamente",
+            });
+          }}
         />
-
-        <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Actualizando...' : 'Guardar Cambios'}
-            </Button>
-          </div>
-        </form>
       </CardContent>
     </Card>
   );
