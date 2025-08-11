@@ -128,8 +128,13 @@ const ConditionNode = ({ data, id }: { data: any; id: string }) => {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="text-xs mb-2">
-          {data.condition || 'Nueva condición'}
+          <strong>Tipo:</strong> {data.conditionType === 'keyword' ? 'Palabra Clave' : 'Aleatorio'}
         </div>
+        {data.conditionType === 'keyword' && data.conditionKeywords && (
+          <div className="text-xs text-muted-foreground mb-2">
+            <strong>Palabras:</strong> {data.conditionKeywords.substring(0, 30)}...
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-xs text-green-600">✓ Sí</span>
           <span className="text-xs text-red-600">✗ No</span>
@@ -252,7 +257,9 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         };
       case 'condition':
         return {
-          condition: 'Nueva condición'
+          condition: 'Nueva condición',
+          conditionType: 'keyword',
+          conditionKeywords: ''
         };
       case 'action':
         return {
@@ -474,15 +481,39 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
               )}
 
               {configNodeData?.condition !== undefined && (
-                <div>
-                  <Label htmlFor="condition">Condición</Label>
-                  <Input
-                    id="condition"
-                    value={configNodeData.condition || ''}
-                    onChange={(e) => setConfigNodeData({...configNodeData, condition: e.target.value})}
-                    placeholder="Describe la condición"
-                  />
-                </div>
+                <>
+                  <div>
+                    <Label htmlFor="conditionType">Tipo de Condición</Label>
+                    <Select
+                      value={configNodeData.conditionType || 'keyword'}
+                      onValueChange={(value) => setConfigNodeData({...configNodeData, conditionType: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar tipo de condición" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="keyword">Por Palabra Clave</SelectItem>
+                        <SelectItem value="random">Aleatorio (50/50)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {configNodeData.conditionType === 'keyword' && (
+                    <div>
+                      <Label htmlFor="keywords">Palabras Clave (separadas por coma)</Label>
+                      <Input
+                        id="keywords"
+                        value={configNodeData.conditionKeywords || ''}
+                        onChange={(e) => setConfigNodeData({...configNodeData, conditionKeywords: e.target.value})}
+                        placeholder="sí, ok, acepto, continuar"
+                      />
+                    </div>
+                  )}
+                  {configNodeData.conditionType === 'random' && (
+                    <div className="text-sm text-muted-foreground">
+                      Esta condición dividirá aleatoriamente las respuestas 50/50 entre las dos salidas.
+                    </div>
+                  )}
+                </>
               )}
 
               {configNodeData?.actionType !== undefined && (
