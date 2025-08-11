@@ -484,17 +484,17 @@ const BetaOptimized: React.FC = () => {
                 Disponible solo este mes
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+              <div className="flex flex-col space-y-4 max-w-2xl mx-auto">
                 <Button
                   onClick={handleRegister}
-                  className="bg-white text-purple-900 hover:bg-gray-100 font-bold py-6 px-8 text-xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                  className="w-full bg-white text-purple-900 hover:bg-gray-100 font-bold py-6 px-8 text-xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
                 >
                   Quiero mi bot respondiendo hoy
                 </Button>
                 
                 <Button
                   onClick={handleRegister}
-                  className="bg-yellow-400 text-purple-900 hover:bg-yellow-300 font-bold py-6 px-8 text-xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                  className="w-full bg-yellow-400 text-purple-900 hover:bg-yellow-300 font-bold py-6 px-8 text-xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
                 >
                   Quiero ahorrar horas de responder mensajes
                 </Button>
