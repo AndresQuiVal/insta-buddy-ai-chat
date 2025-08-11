@@ -35,18 +35,20 @@ const AutoresponderNode = ({ data, id }: { data: any; id: string }) => {
 
   return (
     <Card className="min-w-[250px] shadow-lg border-2 border-primary/20 group relative">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded-full"
-        onClick={handleDelete}
-      >
-        <Trash2 className="w-3 h-3" />
-      </Button>
+      {id !== '1' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded-full"
+          onClick={handleDelete}
+        >
+          <Trash2 className="w-3 h-3" />
+        </Button>
+      )}
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <MessageCircle className="w-4 h-4" />
-          Mensaje Automático
+          Mensaje Automático {id === '1' && '(Inicial)'}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
