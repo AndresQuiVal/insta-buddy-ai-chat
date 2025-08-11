@@ -128,11 +128,16 @@ const ConditionNode = ({ data, id }: { data: any; id: string }) => {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="text-xs mb-2">
-          <strong>Tipo:</strong> {data.conditionType === 'keyword' ? 'Palabra Clave' : 'Aleatorio'}
+          <strong>Tipo:</strong> {data.conditionType === 'keyword' ? 'Palabra Clave' : data.conditionType === 'random' ? 'Aleatorio' : 'Palabra Clave'}
         </div>
-        {data.conditionType === 'keyword' && data.conditionKeywords && (
+        {(data.conditionType === 'keyword' || !data.conditionType) && data.conditionKeywords && (
           <div className="text-xs text-muted-foreground mb-2">
             <strong>Palabras:</strong> {data.conditionKeywords.substring(0, 30)}...
+          </div>
+        )}
+        {data.condition && !data.conditionType && (
+          <div className="text-xs text-muted-foreground mb-2">
+            {data.condition.substring(0, 40)}...
           </div>
         )}
         <div className="flex justify-between">
