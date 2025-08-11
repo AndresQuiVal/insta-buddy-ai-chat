@@ -11,6 +11,7 @@ import Guides from "./pages/Guides";
 import InstagramCallback from "./pages/InstagramCallback";
 import Settings from "./pages/Settings";
 import Beta from "./pages/Beta";
+import BetaOptimized from "./pages/BetaOptimized";
 import ProspectsDemo from "./pages/ProspectsDemo";
 import Debug from "./pages/Debug";
 import Hower15 from "./pages/Hower15";
@@ -32,10 +33,11 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/autoresponder-onboarding" element={<AutoresponderOnboarding />} />
-          <Route path="/guides" element={<Guides />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/beta" element={<Beta />} />
-          <Route path="/signup" element={<SignupForm />} />
+            <Route path="/guides" element={<Guides />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/beta" element={<Beta />} />
+            <Route path="/beta-optimized" element={<BetaOptimized />} />
+            <Route path="/signup" element={<SignupForm />} />
           <Route path="/prospects-demo" element={<ProspectsDemo />} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/hower-1-5" element={<Hower15 />} />
