@@ -19,6 +19,7 @@ import PricingIncruises from "./pages/PricingIncruises";
 import NotFound from "./pages/NotFound";
 import SignupForm from "./components/SignupForm";
 import AdminTable from "./pages/AdminTable";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/pricing-incruises" element={<PricingIncruises />} />
           <Route path="/admin-table" element={<AdminTable />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
