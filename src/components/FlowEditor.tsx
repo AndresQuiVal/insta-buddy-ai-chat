@@ -13,6 +13,7 @@ import {
   NodeTypes,
   Handle,
   Position,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from './ui/button';
@@ -21,12 +22,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import { MessageCircle, MousePointer, GitBranch, Send } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { MessageCircle, MousePointer, GitBranch, Send, Trash2 } from 'lucide-react';
 
 // Custom Node Types
-const AutoresponderNode = ({ data }: { data: any }) => {
+const AutoresponderNode = ({ data, id }: { data: any; id: string }) => {
+  const { deleteElements } = useReactFlow();
+  
+  const handleDelete = () => {
+    deleteElements({ nodes: [{ id }] });
+  };
+
   return (
-    <Card className="min-w-[250px] shadow-lg border-2 border-primary/20">
+    <Card className="min-w-[250px] shadow-lg border-2 border-primary/20 group relative">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded-full"
+        onClick={handleDelete}
+      >
+        <Trash2 className="w-3 h-3" />
+      </Button>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <MessageCircle className="w-4 h-4" />
@@ -35,7 +51,7 @@ const AutoresponderNode = ({ data }: { data: any }) => {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="text-xs text-muted-foreground mb-2">
-          {data.message?.substring(0, 50)}...
+          {data.message?.substring(0, 50) || 'Nuevo mensaje'}...
         </div>
         <div className="flex justify-between text-xs">
           <span>Keywords: {data.keywords?.length || 0}</span>
@@ -50,9 +66,23 @@ const AutoresponderNode = ({ data }: { data: any }) => {
   );
 };
 
-const ButtonNode = ({ data }: { data: any }) => {
+const ButtonNode = ({ data, id }: { data: any; id: string }) => {
+  const { deleteElements } = useReactFlow();
+  
+  const handleDelete = () => {
+    deleteElements({ nodes: [{ id }] });
+  };
+
   return (
-    <Card className="min-w-[200px] shadow-lg border-2 border-blue-500/20">
+    <Card className="min-w-[200px] shadow-lg border-2 border-blue-500/20 group relative">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded-full"
+        onClick={handleDelete}
+      >
+        <Trash2 className="w-3 h-3" />
+      </Button>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <MousePointer className="w-4 h-4" />
@@ -61,7 +91,7 @@ const ButtonNode = ({ data }: { data: any }) => {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="text-xs mb-2">
-          <strong>Texto:</strong> {data.buttonText}
+          <strong>Texto:</strong> {data.buttonText || 'Nuevo botón'}
         </div>
         <div className="text-xs">
           <strong>Tipo:</strong> {data.buttonType === 'url' ? 'URL' : 'Respuesta'}
@@ -73,9 +103,23 @@ const ButtonNode = ({ data }: { data: any }) => {
   );
 };
 
-const ConditionNode = ({ data }: { data: any }) => {
+const ConditionNode = ({ data, id }: { data: any; id: string }) => {
+  const { deleteElements } = useReactFlow();
+  
+  const handleDelete = () => {
+    deleteElements({ nodes: [{ id }] });
+  };
+
   return (
-    <Card className="min-w-[200px] shadow-lg border-2 border-yellow-500/20">
+    <Card className="min-w-[200px] shadow-lg border-2 border-yellow-500/20 group relative">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded-full"
+        onClick={handleDelete}
+      >
+        <Trash2 className="w-3 h-3" />
+      </Button>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <GitBranch className="w-4 h-4" />
@@ -98,9 +142,23 @@ const ConditionNode = ({ data }: { data: any }) => {
   );
 };
 
-const ActionNode = ({ data }: { data: any }) => {
+const ActionNode = ({ data, id }: { data: any; id: string }) => {
+  const { deleteElements } = useReactFlow();
+  
+  const handleDelete = () => {
+    deleteElements({ nodes: [{ id }] });
+  };
+
   return (
-    <Card className="min-w-[200px] shadow-lg border-2 border-green-500/20">
+    <Card className="min-w-[200px] shadow-lg border-2 border-green-500/20 group relative">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded-full"
+        onClick={handleDelete}
+      >
+        <Trash2 className="w-3 h-3" />
+      </Button>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Send className="w-4 h-4" />
@@ -313,7 +371,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
               </div>
             </div>
 
-            <div className="absolute bottom-4 left-4 right-4 space-y-2">
+            <div className="mt-8 pt-4 border-t space-y-2">
               <Button onClick={handleSaveFlow} className="w-full">
                 Guardar Flujo
               </Button>
@@ -388,16 +446,30 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                   </div>
                   <div>
                     <Label htmlFor="buttonType">Tipo de Botón</Label>
-                    <select
-                      id="buttonType"
-                      className="w-full p-2 border rounded"
+                    <Select
                       value={configNodeData.buttonType || 'postback'}
-                      onChange={(e) => setConfigNodeData({...configNodeData, buttonType: e.target.value})}
+                      onValueChange={(value) => setConfigNodeData({...configNodeData, buttonType: value})}
                     >
-                      <option value="postback">Respuesta Automática</option>
-                      <option value="url">URL Externa</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="postback">Respuesta Automática</SelectItem>
+                        <SelectItem value="url">URL Externa</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                  {configNodeData.buttonType === 'url' && (
+                    <div>
+                      <Label htmlFor="buttonUrl">URL del Botón</Label>
+                      <Input
+                        id="buttonUrl"
+                        value={configNodeData.buttonUrl || ''}
+                        onChange={(e) => setConfigNodeData({...configNodeData, buttonUrl: e.target.value})}
+                        placeholder="https://ejemplo.com"
+                      />
+                    </div>
+                  )}
                 </>
               )}
 
@@ -414,20 +486,48 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
               )}
 
               {configNodeData?.actionType !== undefined && (
-                <div>
-                  <Label htmlFor="actionType">Tipo de Acción</Label>
-                  <select
-                    id="actionType"
-                    className="w-full p-2 border rounded"
-                    value={configNodeData.actionType || ''}
-                    onChange={(e) => setConfigNodeData({...configNodeData, actionType: e.target.value})}
-                  >
-                    <option value="send_message">Enviar Mensaje</option>
-                    <option value="add_tag">Agregar Etiqueta</option>
-                    <option value="remove_tag">Quitar Etiqueta</option>
-                    <option value="notify_human">Notificar Humano</option>
-                  </select>
-                </div>
+                <>
+                  <div>
+                    <Label htmlFor="actionType">Tipo de Acción</Label>
+                    <Select
+                      value={configNodeData.actionType || 'send_message'}
+                      onValueChange={(value) => setConfigNodeData({...configNodeData, actionType: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar acción" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="send_message">Enviar Mensaje</SelectItem>
+                        <SelectItem value="add_tag">Agregar Etiqueta</SelectItem>
+                        <SelectItem value="remove_tag">Quitar Etiqueta</SelectItem>
+                        <SelectItem value="notify_human">Notificar Humano</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {configNodeData.actionType === 'send_message' && (
+                    <div>
+                      <Label htmlFor="actionMessage">Mensaje a Enviar</Label>
+                      <Textarea
+                        id="actionMessage"
+                        value={configNodeData.actionMessage || ''}
+                        onChange={(e) => setConfigNodeData({...configNodeData, actionMessage: e.target.value})}
+                        placeholder="Escribe el mensaje..."
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                  {(configNodeData.actionType === 'add_tag' || configNodeData.actionType === 'remove_tag') && (
+                    <div>
+                      <Label htmlFor="tagName">Nombre de la Etiqueta</Label>
+                      <Input
+                        id="tagName"
+                        value={configNodeData.tagName || ''}
+                        onChange={(e) => setConfigNodeData({...configNodeData, tagName: e.target.value})}
+                        placeholder="nombre-etiqueta"
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
