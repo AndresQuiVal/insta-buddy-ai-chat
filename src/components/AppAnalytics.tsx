@@ -16,9 +16,26 @@ import {
   UserPlus,
   Send,
   Inbox,
-  CheckCircle
+  CheckCircle,
+  Settings,
+  Bot,
+  User
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+
+interface RecentAutoresponder {
+  id: string;
+  name: string;
+  type: 'general' | 'comment' | 'dm';
+  created_at: string;
+  updated_at: string;
+  instagram_user_id?: string;
+  user_id?: string;
+  username?: string;
+  is_active: boolean;
+  keywords?: string[];
+  message_preview?: string;
+}
 
 interface AppAnalytics {
   // Estadísticas de usuarios
@@ -43,6 +60,9 @@ interface AppAnalytics {
   totalInvitations: number;
   totalPresentations: number;
   totalInscriptions: number;
+
+  // Autoresponders recientes
+  recentAutoresponders: RecentAutoresponder[];
 }
 
 const AppAnalytics: React.FC = () => {
@@ -104,6 +124,117 @@ const AppAnalytics: React.FC = () => {
         console.error('Error cargando prospects:', prospectsError);
       }
 
+      // Obtener autoresponders recientes con información del usuario
+      const { data: recentAutorespondersData, error: recentError } = await supabase
+        .from('autoresponder_messages')
+        .select(`
+          id,
+          name,
+          created_at,
+          updated_at,
+          is_active,
+          keywords,
+          message_text,
+          instagram_user_id_ref
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // Obtener autoresponders de comentarios
+      const { data: commentAutoresponders, error: commentError } = await supabase
+        .from('comment_autoresponders')
+        .select(`
+          id,
+          name,
+          created_at,
+          updated_at,
+          is_active,
+          keywords,
+          dm_message,
+          user_id
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // Obtener autoresponders generales de comentarios
+      const { data: generalAutoresponders, error: generalError } = await supabase
+        .from('general_comment_autoresponders')
+        .select(`
+          id,
+          name,
+          created_at,
+          updated_at,
+          is_active,
+          keywords,
+          dm_message,
+          user_id
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // Combinar todos los autoresponders y obtener información del usuario
+      const allAutoresponders: RecentAutoresponder[] = [];
+
+      // Procesar autoresponders de DM
+      if (recentAutorespondersData) {
+        for (const ar of recentAutorespondersData) {
+          const user = instagramUsers?.find(u => u.instagram_user_id === ar.instagram_user_id_ref);
+          allAutoresponders.push({
+            id: ar.id,
+            name: ar.name,
+            type: 'dm',
+            created_at: ar.created_at,
+            updated_at: ar.updated_at,
+            instagram_user_id: ar.instagram_user_id_ref,
+            username: user?.username || 'Usuario desconocido',
+            is_active: ar.is_active,
+            keywords: ar.keywords,
+            message_preview: ar.message_text?.substring(0, 100) + (ar.message_text?.length > 100 ? '...' : '')
+          });
+        }
+      }
+
+      // Procesar autoresponders de comentarios específicos
+      if (commentAutoresponders) {
+        for (const ar of commentAutoresponders) {
+          const user = instagramUsers?.find(u => u.instagram_user_id === ar.user_id);
+          allAutoresponders.push({
+            id: ar.id,
+            name: ar.name,
+            type: 'comment',
+            created_at: ar.created_at,
+            updated_at: ar.updated_at,
+            user_id: ar.user_id,
+            username: user?.username || 'Usuario desconocido',
+            is_active: ar.is_active,
+            keywords: ar.keywords,
+            message_preview: ar.dm_message?.substring(0, 100) + (ar.dm_message?.length > 100 ? '...' : '')
+          });
+        }
+      }
+
+      // Procesar autoresponders generales de comentarios
+      if (generalAutoresponders) {
+        for (const ar of generalAutoresponders) {
+          const user = instagramUsers?.find(u => u.instagram_user_id === ar.user_id);
+          allAutoresponders.push({
+            id: ar.id,
+            name: ar.name,
+            type: 'general',
+            created_at: ar.created_at,
+            updated_at: ar.updated_at,
+            user_id: ar.user_id,
+            username: user?.username || 'Usuario desconocido',
+            is_active: ar.is_active,
+            keywords: ar.keywords,
+            message_preview: ar.dm_message?.substring(0, 100) + (ar.dm_message?.length > 100 ? '...' : '')
+          });
+        }
+      }
+
+      // Ordenar todos los autoresponders por fecha de creación
+      allAutoresponders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
       // Calcular métricas
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -145,6 +276,8 @@ const AppAnalytics: React.FC = () => {
         prev.count > current.count ? prev : current
       );
 
+      const totalAutoresponderCount = allAutoresponders.length;
+
       const analyticsData: AppAnalytics = {
         totalUsers: profilesData?.length || 0,
         activeUsers: instagramUsers?.filter(u => u.is_active).length || 0,
@@ -153,14 +286,15 @@ const AppAnalytics: React.FC = () => {
         monthUsers,
         totalMessagesSent: messagesSent,
         totalMessagesReceived: messagesReceived,
-        totalAutoresponders: autoresponders?.length || 0,
+        totalAutoresponders: totalAutoresponderCount,
         totalProspects: prospects?.length || 0,
         globalResponseRate: responseRate,
         averageMessagesPerUser: averageMessagesPerUser,
         mostActiveUser: mostActive?.username || 'N/A',
         totalInvitations,
         totalPresentations,
-        totalInscriptions
+        totalInscriptions,
+        recentAutoresponders: allAutoresponders.slice(0, 15) // Mostrar los 15 más recientes
       };
 
       setAnalytics(analyticsData);
@@ -334,6 +468,82 @@ const AppAnalytics: React.FC = () => {
             icon={<Zap className="w-5 h-5 text-white" />}
             color="bg-pink-500"
           />
+        </div>
+      </div>
+
+      {/* Usuarios Recientes que Configuraron Autoresponders */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">🤖 Usuarios Recientes con Autoresponders</h3>
+        <div className="space-y-4">
+          {analytics.recentAutoresponders.length > 0 ? (
+            analytics.recentAutoresponders.map((autoresponder) => (
+              <Card key={autoresponder.id} className="p-4 bg-white/90 backdrop-blur-lg border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      autoresponder.type === 'dm' ? 'bg-blue-500' :
+                      autoresponder.type === 'comment' ? 'bg-orange-500' : 'bg-purple-500'
+                    }`}>
+                      {autoresponder.type === 'dm' ? <Send className="w-5 h-5 text-white" /> :
+                       autoresponder.type === 'comment' ? <MessageSquare className="w-5 h-5 text-white" /> :
+                       <Bot className="w-5 h-5 text-white" />}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">@{autoresponder.username}</h4>
+                      <p className="text-sm text-gray-600">{autoresponder.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {autoresponder.type === 'dm' ? 'Autoresponder DM' :
+                         autoresponder.type === 'comment' ? 'Autoresponder Comentarios' : 'Autoresponder General'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                      autoresponder.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {autoresponder.is_active ? 'Activo' : 'Inactivo'}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(autoresponder.created_at).toLocaleDateString('es-ES', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+                {autoresponder.keywords && autoresponder.keywords.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500 mb-1">Palabras clave:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {autoresponder.keywords.slice(0, 3).map((keyword, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                          {keyword}
+                        </span>
+                      ))}
+                      {autoresponder.keywords.length > 3 && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded">
+                          +{autoresponder.keywords.length - 3} más
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {autoresponder.message_preview && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500 mb-1">Vista previa del mensaje:</p>
+                    <p className="text-sm text-gray-700 italic">"{autoresponder.message_preview}"</p>
+                  </div>
+                )}
+              </Card>
+            ))
+          ) : (
+            <Card className="p-6 text-center bg-white/90 backdrop-blur-lg">
+              <Bot className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-600">No hay autoresponders configurados recientemente</p>
+            </Card>
+          )}
         </div>
       </div>
 
