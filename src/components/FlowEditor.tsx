@@ -286,14 +286,68 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
   const loadAutoresponders = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Cargar autoresponders simples
+
+      // Si se abre desde un autoresponder específico, solo mostramos ese flujo
+      if (autoresponderData) {
+        const flowNodes: Node[] = [];
+        const flowEdges: Edge[] = [];
+
+        // Nodo inicial (protegido)
+        flowNodes.push({
+          id: '1',
+          type: 'autoresponder',
+          position: { x: 250, y: 50 },
+          data: {
+            message: autoresponderData.message_text || autoresponderData.dm_message || 'Mensaje',
+            keywords: autoresponderData.keywords || [],
+            active: !!autoresponderData.is_active,
+            autoresponder_id: autoresponderData.id,
+            autoresponder_type: autoresponderData.post_id ? 'comment' : 'message',
+            name: autoresponderData.name,
+          },
+        });
+
+        // Si tiene botón configurado, añadimos el nodo de botón y lo conectamos
+        const hasButtonsArray = Array.isArray(autoresponderData.buttons) && autoresponderData.buttons.length > 0;
+        const hasSingleButton = !!autoresponderData.button_text;
+        const useButtons = !!autoresponderData.use_buttons || !!autoresponderData.use_button_message;
+
+        if (useButtons && (hasButtonsArray || hasSingleButton)) {
+          const firstBtn = hasButtonsArray ? autoresponderData.buttons[0] : {
+            text: autoresponderData.button_text,
+            type: autoresponderData.button_type || 'postback',
+            url: autoresponderData.button_url || '',
+          };
+
+          flowNodes.push({
+            id: '2',
+            type: 'button',
+            position: { x: 250, y: 200 },
+            data: {
+              message: autoresponderData.message_text || autoresponderData.dm_message || '',
+              buttonText: firstBtn?.text || 'Botón',
+              buttonType: firstBtn?.type || 'postback',
+              buttonUrl: firstBtn?.url || '',
+              autoresponder_id: autoresponderData.id,
+            },
+          });
+
+          flowEdges.push({ id: 'e-1-2', source: '1', target: '2' });
+        }
+
+        setNodes(flowNodes);
+        setEdges(flowEdges);
+        // Mensaje amigable (no confunde con conteos)
+        // toast.success('Flujo del autoresponder cargado');
+        return;
+      }
+
+      // Vista general: cargar todos los autoresponders activos
       const { data: autoresponderMessages } = await supabase
         .from('autoresponder_messages')
         .select('*')
         .eq('is_active', true);
 
-      // Cargar autoresponders de comentarios
       const { data: commentAutoresponders } = await supabase
         .from('comment_autoresponders')
         .select('*')
@@ -304,12 +358,9 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
       let yPosition = 50;
       let nodeCounter = 1;
 
-      // Convertir autoresponders simples a nodos
       if (autoresponderMessages && autoresponderMessages.length > 0) {
         autoresponderMessages.forEach((autoresponder) => {
           const nodeId = `${nodeCounter++}`;
-          
-          // Nodo principal del autoresponder (NUNCA se puede eliminar)
           flowNodes.push({
             id: nodeId,
             type: 'autoresponder',
@@ -320,44 +371,35 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
               active: autoresponder.is_active,
               autoresponder_id: autoresponder.id,
               autoresponder_type: 'message',
-              name: autoresponder.name
+              name: autoresponder.name,
             },
           });
 
-          // Si tiene botones, agregar nodo de botón
           if (autoresponder.use_buttons && autoresponder.buttons) {
             const buttonNodeId = `${nodeCounter++}`;
+            const firstBtn = autoresponder.buttons[0];
             flowNodes.push({
               id: buttonNodeId,
               type: 'button',
               position: { x: 250, y: yPosition + 150 },
               data: {
                 message: autoresponder.message_text,
-                buttonText: autoresponder.buttons[0]?.text || 'Botón',
-                buttonType: autoresponder.buttons[0]?.type || 'postback',
-                buttonUrl: autoresponder.buttons[0]?.url || '',
-                autoresponder_id: autoresponder.id
+                buttonText: firstBtn?.text || 'Botón',
+                buttonType: firstBtn?.type || 'postback',
+                buttonUrl: firstBtn?.url || '',
+                autoresponder_id: autoresponder.id,
               },
             });
-
-            // Conectar autoresponder con botón
-            flowEdges.push({
-              id: `e-${nodeId}-${buttonNodeId}`,
-              source: nodeId,
-              target: buttonNodeId,
-            });
+            flowEdges.push({ id: `e-${nodeId}-${buttonNodeId}`, source: nodeId, target: buttonNodeId });
           }
 
           yPosition += 300;
         });
       }
 
-      // Convertir comment autoresponders a nodos
       if (commentAutoresponders && commentAutoresponders.length > 0) {
         commentAutoresponders.forEach((autoresponder) => {
           const nodeId = `${nodeCounter++}`;
-          
-          // Nodo principal del autoresponder (NUNCA se puede eliminar)
           flowNodes.push({
             id: nodeId,
             type: 'autoresponder',
@@ -368,11 +410,10 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
               active: autoresponder.is_active,
               autoresponder_id: autoresponder.id,
               autoresponder_type: 'comment',
-              name: autoresponder.name
+              name: autoresponder.name,
             },
           });
 
-          // Si tiene botón, agregar nodo de botón
           if (autoresponder.use_button_message && autoresponder.button_text) {
             const buttonNodeId = `${nodeCounter++}`;
             flowNodes.push({
@@ -384,23 +425,16 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                 buttonText: autoresponder.button_text,
                 buttonType: autoresponder.button_type || 'postback',
                 buttonUrl: autoresponder.button_url || '',
-                autoresponder_id: autoresponder.id
+                autoresponder_id: autoresponder.id,
               },
             });
-
-            // Conectar autoresponder con botón
-            flowEdges.push({
-              id: `e-${nodeId}-${buttonNodeId}`,
-              source: nodeId,
-              target: buttonNodeId,
-            });
+            flowEdges.push({ id: `e-${nodeId}-${buttonNodeId}`, source: nodeId, target: buttonNodeId });
           }
 
           yPosition += 300;
         });
       }
 
-      // Si no hay autoresponders, crear nodo inicial por defecto
       if (flowNodes.length === 0) {
         flowNodes.push({
           id: '1',
@@ -412,22 +446,22 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
             active: false,
             autoresponder_id: null,
             autoresponder_type: 'new',
-            name: 'Nuevo Autoresponder'
+            name: 'Nuevo Autoresponder',
           },
         });
       }
 
       setNodes(flowNodes);
       setEdges(flowEdges);
-      
-      toast.success(`${flowNodes.length} autoresponders cargados en FlowEditor`);
+      // Evitamos mensajes confusos de conteo
+      // toast.success('Flujos cargados');
     } catch (error) {
       console.error('Error cargando autoresponders:', error);
-      toast.error('Error cargando autoresponders');
+      // toast.error('Error cargando autoresponders');
     } finally {
       setLoading(false);
     }
-  }, [setNodes, setEdges]);
+  }, [autoresponderData, setNodes, setEdges]);
 
   // Cargar autoresponders cuando se abre el modal
   useEffect(() => {
