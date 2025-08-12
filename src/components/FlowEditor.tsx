@@ -544,16 +544,89 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
     setConfigNodeId('');
   };
 
-  const handleSaveFlow = () => {
+  const handleSaveFlow = async () => {
     const flowData = {
       nodes,
       edges,
-      autoresponderData
+      autoresponderData,
     };
-    onSave(flowData);
+
+    try {
+      // Guardado automático para autoresponders de comentarios (posts)
+      if (autoresponderData?.post_id && currentUser) {
+        // Extraer datos del flujo
+        const conditionNode = nodes.find((n) => n.type === 'condition');
+        const buttonNode = nodes.find((n) => n.type === 'button');
+        const igMsgNode = nodes.find((n) => n.type === 'instagramMessage');
+        const autoresponderNode = nodes.find((n) => n.type === 'autoresponder');
+
+        const keywords = conditionNode?.data?.conditionKeywords
+          ? String(conditionNode.data.conditionKeywords)
+              .split(',')
+              .map((k) => k.trim())
+              .filter(Boolean)
+          : Array.isArray(autoresponderData.keywords)
+          ? autoresponderData.keywords
+          : [];
+
+        const dmMessage =
+          buttonNode?.data?.message ??
+          autoresponderNode?.data?.message ??
+          autoresponderData?.dm_message ??
+          autoresponderData?.message_text ??
+          '';
+
+        const hasButton = !!buttonNode;
+        const btnType = buttonNode?.data?.buttonType; // 'url' | 'postback'
+        const payloadToSave: any = {
+          user_id: currentUser.instagram_user_id,
+          post_id: autoresponderData.post_id,
+          post_url: autoresponderData.post_url || null,
+          post_caption: autoresponderData.post_caption || null,
+          name: autoresponderData.name || 'Autoresponder',
+          keywords,
+          dm_message: dmMessage,
+          public_reply_messages:
+            autoresponderData.public_reply_messages || [
+              '¡Gracias por tu comentario! Te he enviado más información por mensaje privado 😊',
+            ],
+          is_active: true,
+          use_buttons: hasButton,
+          use_button_message: hasButton,
+          button_text: hasButton ? buttonNode?.data?.buttonText || null : null,
+          button_type: hasButton ? (btnType === 'url' ? 'web_url' : 'postback') : null,
+          button_url: hasButton && btnType === 'url' ? buttonNode?.data?.buttonUrl || null : null,
+          postback_response:
+            hasButton && btnType !== 'url'
+              ? buttonNode?.data?.postbackResponse || igMsgNode?.data?.message || null
+              : null,
+          require_follower: false,
+        };
+
+        if (autoresponderData.id) {
+          const { error } = await supabase
+            .from('comment_autoresponders')
+            .update(payloadToSave)
+            .eq('id', autoresponderData.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('comment_autoresponders')
+            .insert(payloadToSave)
+            .maybeSingle();
+          if (error) throw error;
+        }
+
+        toast.success('Flujo guardado y autoresponder aplicado');
+      }
+    } catch (e: any) {
+      console.error('Error guardando flujo:', e);
+      toast.error(e?.message || 'No se pudo guardar el flujo');
+    }
+
+    onSave?.(flowData);
     onClose();
   };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl w-full h-[90vh] p-0">

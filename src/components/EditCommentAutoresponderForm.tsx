@@ -874,6 +874,9 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
             button_url: buttonType === 'web_url' ? buttonUrl : undefined,
             postback_response: buttonType === 'postback' ? postbackResponse : undefined,
             post_id: autoresponder.post_id,
+            post_url: autoresponder.post_url,
+            post_caption: autoresponder.post_caption,
+            public_reply_messages: publicReplyMessages,
           }}
           onSave={(data) => {
             setFlowData(data);
