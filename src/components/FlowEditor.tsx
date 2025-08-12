@@ -23,7 +23,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { MessageCircle, MousePointer, GitBranch, Send, Trash2 } from 'lucide-react';
+import { MessageCircle, MousePointer, GitBranch, Send, Trash2, Instagram } from 'lucide-react';
 
 // Custom Node Types
 const AutoresponderNode = ({ data, id }: { data: any; id: string }) => {
@@ -146,15 +146,49 @@ const ConditionNode = ({ data, id }: { data: any; id: string }) => {
           <span className="text-xs text-green-600">✓ Sí</span>
           <span className="text-xs text-red-600">✗ No</span>
         </div>
-        {(data.whatsappMessageYes || data.whatsappMessageNo) && (
-          <div className="text-xs text-blue-600 mt-2 pt-2 border-t">
-            📱 WhatsApp configurado
-          </div>
-        )}
       </CardContent>
       <Handle type="target" position={Position.Top} />
       <Handle type="source" position={Position.Left} id="yes" />
       <Handle type="source" position={Position.Right} id="no" />
+    </Card>
+  );
+};
+
+const InstagramMessageNode = ({ data, id }: { data: any; id: string }) => {
+  const { deleteElements } = useReactFlow();
+  
+  const handleDelete = () => {
+    deleteElements({ nodes: [{ id }] });
+  };
+
+  return (
+    <Card className="min-w-[200px] shadow-lg border-2 border-purple-500/20 group relative">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded-full"
+        onClick={handleDelete}
+      >
+        <Trash2 className="w-3 h-3" />
+      </Button>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Instagram className="w-4 h-4" />
+          Mensaje Instagram
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="text-xs text-muted-foreground mb-2">
+          {data.message?.substring(0, 40) || 'Nuevo mensaje de Instagram'}...
+        </div>
+        <div className="text-xs">
+          <span className={`px-2 py-1 rounded ${data.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {data.active ? 'Activo' : 'Inactivo'}
+          </span>
+        </div>
+      </CardContent>
+      <Handle type="target" position={Position.Top} />
+      <Handle type="source" position={Position.Bottom} />
     </Card>
   );
 };
@@ -198,6 +232,7 @@ const nodeTypes: NodeTypes = {
   button: ButtonNode,
   condition: ConditionNode,
   action: ActionNode,
+  instagramMessage: InstagramMessageNode,
 };
 
 const initialNodes: Node[] = [
@@ -271,9 +306,12 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         return {
           condition: 'Nueva condición',
           conditionType: 'keyword',
-          conditionKeywords: '',
-          whatsappMessageYes: '',
-          whatsappMessageNo: ''
+          conditionKeywords: ''
+        };
+      case 'instagramMessage':
+        return {
+          message: 'Nuevo mensaje de Instagram',
+          active: true
         };
       case 'action':
         return {
@@ -366,6 +404,18 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                   >
                     <GitBranch className="w-4 h-4 mr-2" />
                     Condición
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedNodeType('instagramMessage');
+                      addNode();
+                    }}
+                    className="justify-start"
+                  >
+                    <Instagram className="w-4 h-4 mr-2" />
+                    Mensaje Instagram
                   </Button>
                   <Button
                     variant="outline"
@@ -527,30 +577,6 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                       Esta condición dividirá aleatoriamente las respuestas 50/50 entre las dos salidas.
                     </div>
                   )}
-                  
-                  <div className="pt-4 border-t">
-                    <h4 className="text-sm font-medium mb-3">Mensajes de WhatsApp</h4>
-                    <div>
-                      <Label htmlFor="whatsappMessageYes">Mensaje cuando SÍ se cumple</Label>
-                      <Textarea
-                        id="whatsappMessageYes"
-                        value={configNodeData.whatsappMessageYes || ''}
-                        onChange={(e) => setConfigNodeData({...configNodeData, whatsappMessageYes: e.target.value})}
-                        placeholder="Mensaje para WhatsApp cuando la condición es verdadera..."
-                        rows={2}
-                      />
-                    </div>
-                    <div className="mt-3">
-                      <Label htmlFor="whatsappMessageNo">Mensaje cuando NO se cumple</Label>
-                      <Textarea
-                        id="whatsappMessageNo"
-                        value={configNodeData.whatsappMessageNo || ''}
-                        onChange={(e) => setConfigNodeData({...configNodeData, whatsappMessageNo: e.target.value})}
-                        placeholder="Mensaje para WhatsApp cuando la condición es falsa..."
-                        rows={2}
-                      />
-                    </div>
-                  </div>
                 </>
               )}
 
@@ -596,6 +622,30 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                       />
                     </div>
                   )}
+                </>
+              )}
+
+              {(configNodeData?.message !== undefined && configNodeData?.active !== undefined && !configNodeData?.keywords) && (
+                <>
+                  <div>
+                    <Label htmlFor="instagramMessage">Mensaje de Instagram</Label>
+                    <Textarea
+                      id="instagramMessage"
+                      value={configNodeData.message || ''}
+                      onChange={(e) => setConfigNodeData({...configNodeData, message: e.target.value})}
+                      placeholder="Escribe el mensaje de Instagram..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="instagramActive"
+                      checked={configNodeData.active || false}
+                      onChange={(e) => setConfigNodeData({...configNodeData, active: e.target.checked})}
+                    />
+                    <Label htmlFor="instagramActive">Activo</Label>
+                  </div>
                 </>
               )}
             </div>
