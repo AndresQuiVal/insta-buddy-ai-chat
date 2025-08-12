@@ -205,6 +205,9 @@ const Index = () => {
               <LogOut className="w-4 h-4 mr-2" />
               Cerrar Sesión
             </Button>
+            <Button onClick={() => navigate('/prospects')} variant="secondary" size="sm">
+              Ir a Prospectos
+            </Button>
             <div className="hidden">
               <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
             </div>

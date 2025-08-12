@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import SignupForm from "./components/SignupForm";
 import AdminTable from "./pages/AdminTable";
 import Analytics from "./pages/Analytics";
+import Prospects from "./pages/Prospects";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/admin-table" element={<AdminTable />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
+          <Route path="/prospects" element={<Prospects />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
