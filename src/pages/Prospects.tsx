@@ -272,18 +272,18 @@ const ProspectsPage: React.FC = () => {
   const progreso = totalHoy > 0 ? Math.round((contactadosHoy / totalHoy) * 100) : 0;
 
   return (
-    <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold">Prospectos</h1>
-        <p className="text-sm text-muted-foreground">Gestiona tus nuevos prospectos, tus números y tus seguimientos.</p>
-      </header>
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <header className="mb-6">
+          <h1 className="text-3xl font-semibold tracking-tight">Prospectos</h1>
+          <p className="text-sm text-muted-foreground">Gestiona tus nuevos prospectos, tus números y tus seguimientos.</p>
+        </header>
 
       <main>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="nuevos">Nuevos Prospectos</TabsTrigger>
-            <TabsTrigger value="numeros">Mis Números</TabsTrigger>
-            <TabsTrigger value="mis">Mis Prospectos</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-3 rounded-lg border bg-muted/40 p-1">
+            <TabsTrigger value="nuevos" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">Nuevos Prospectos</TabsTrigger>
+            <TabsTrigger value="numeros" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">Mis Números</TabsTrigger>
+            <TabsTrigger value="mis" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">Mis Prospectos</TabsTrigger>
           </TabsList>
 
           {/* Nuevos Prospectos */}
@@ -312,20 +312,22 @@ const ProspectsPage: React.FC = () => {
               </div>
 
               {/* Progreso gamificación */}
-              <div className="mt-4">
-                <div className="h-2 bg-muted rounded">
-                  <div className="h-2 bg-primary rounded" style={{ width: `${progreso}%` }} />
+                <div className="mt-4">
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="h-2 rounded-full bg-gradient-to-r from-primary/80 to-primary" style={{ width: `${progreso}%` }} />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Progreso del día: {progreso}%</p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Progreso del día: {progreso}%</p>
-              </div>
             </section>
 
             {/* ICP Config */}
             <section className="mt-6">
               <h3 className="text-sm font-medium mb-2">Configura tu ICP (Cliente Ideal)</h3>
-              <div className="border rounded-md p-3">
-                <IdealClientTraits />
-              </div>
+              <Card>
+                <CardContent className="p-4">
+                  <IdealClientTraits />
+                </CardContent>
+              </Card>
             </section>
 
             {/* Listado */}
@@ -333,7 +335,7 @@ const ProspectsPage: React.FC = () => {
               <div className="grid grid-cols-1 gap-2">
                 {loadingToday && <div className="text-sm text-muted-foreground">Cargando...</div>}
                 {!loadingToday && todayProspects.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between border rounded-md px-3 py-2">
+                  <div key={p.id} className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
                     <div className="text-sm font-medium">@{p.username}</div>
                     <div>
                       <Button size="sm" onClick={() => openOnboarding(p.username, 'outreach')}>Contactar</Button>
@@ -349,19 +351,23 @@ const ProspectsPage: React.FC = () => {
 
           {/* Mis Números */}
           <TabsContent value="numeros" className="space-y-6 mt-6">
-            <section className="flex items-end gap-3">
-              <div className="flex-1">
-                <Label>Desde</Label>
-                <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-              </div>
-              <div className="flex-1">
-                <Label>Hasta</Label>
-                <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-              </div>
-              <Button onClick={refreshCounts} disabled={loadingCounts} variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" /> Actualizar
-              </Button>
-            </section>
+            <Card>
+              <CardContent className="p-4">
+                <section className="flex flex-col sm:flex-row items-end gap-3">
+                  <div className="flex-1">
+                    <Label>Desde</Label>
+                    <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+                  </div>
+                  <div className="flex-1">
+                    <Label>Hasta</Label>
+                    <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+                  </div>
+                  <Button onClick={refreshCounts} disabled={loadingCounts} variant="outline">
+                    <RefreshCw className="w-4 h-4 mr-2" /> Actualizar
+                  </Button>
+                </section>
+              </CardContent>
+            </Card>
 
             <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
@@ -382,68 +388,76 @@ const ProspectsPage: React.FC = () => {
             {/* Asistente por WhatsApp */}
             <section className="mt-6">
               <h3 className="text-sm font-medium mb-2">Asistente por WhatsApp</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                <div className="sm:col-span-2">
-                  <Label>Tu número de WhatsApp</Label>
-                  <Input placeholder="+521234567890" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
-                </div>
-                <Button onClick={saveWhatsApp}>Guardar</Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Recibirás recordatorios para contactar, dar seguimiento y un resumen semanal. (Próximamente)
-              </p>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                    <div className="sm:col-span-2">
+                      <Label>Tu número de WhatsApp</Label>
+                      <Input placeholder="+521234567890" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
+                    </div>
+                    <Button onClick={saveWhatsApp}>Guardar</Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Recibirás recordatorios para contactar, dar seguimiento y un resumen semanal. (Próximamente)
+                  </p>
+                </CardContent>
+              </Card>
             </section>
           </TabsContent>
 
           {/* Mis Prospectos */}
           <TabsContent value="mis" className="space-y-4 mt-6">
             <section>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-muted-foreground">
-                      <th className="py-2">Prospecto</th>
-                      <th className="py-2">Estado</th>
-                      <th className="py-2 text-right">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loadingProspects && (
-                      <tr><td className="py-4" colSpan={3}>Cargando...</td></tr>
-                    )}
-                    {!loadingProspects && prospects.map((p) => (
-                      <tr key={p.id} className="border-t">
-                        <td className="py-2">
-                          <a
-                            href={instaUrl(p.username)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-3 hover:underline"
-                          >
-                            <img
-                              src={p.profile_picture_url || '/placeholder.svg'}
-                              alt={`Avatar de @${p.username}`}
-                              className="w-8 h-8 rounded-full object-cover"
-                              loading="lazy"
-                            />
-                            <span>@{p.username}</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </td>
-                        <td className="py-2">{statusLabel(p)}</td>
-                        <td className="py-2 text-right">
-                          <Button size="sm" variant="outline" onClick={() => openOnboarding(p.username, 'followup')}>
-                            Mensaje Seguimiento Sugerido
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                    {!loadingProspects && prospects.length === 0 && (
-                      <tr><td className="py-4" colSpan={3}>Sin prospectos todavía.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto rounded-lg">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left bg-muted/40 text-muted-foreground">
+                          <th className="py-2 px-3">Prospecto</th>
+                          <th className="py-2 px-3">Estado</th>
+                          <th className="py-2 px-3 text-right">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loadingProspects && (
+                          <tr><td className="py-4 px-3" colSpan={3}>Cargando...</td></tr>
+                        )}
+                        {!loadingProspects && prospects.map((p) => (
+                          <tr key={p.id} className="border-t hover:bg-muted/30 transition-colors">
+                            <td className="py-2 px-3">
+                              <a
+                                href={instaUrl(p.username)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-3 hover:underline"
+                              >
+                                <img
+                                  src={p.profile_picture_url || '/placeholder.svg'}
+                                  alt={`Avatar de @${p.username}`}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                  loading="lazy"
+                                />
+                                <span>@{p.username}</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </td>
+                            <td className="py-2 px-3">{statusLabel(p)}</td>
+                            <td className="py-2 px-3 text-right">
+                              <Button size="sm" variant="outline" onClick={() => openOnboarding(p.username, 'followup')}>
+                                Mensaje Seguimiento Sugerido
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                        {!loadingProspects && prospects.length === 0 && (
+                          <tr><td className="py-4 px-3" colSpan={3}>Sin prospectos todavía.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
             </section>
           </TabsContent>
         </Tabs>
