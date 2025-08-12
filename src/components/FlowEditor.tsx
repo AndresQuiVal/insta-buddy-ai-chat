@@ -277,14 +277,16 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
   );
 
   const addNode = useCallback((nodeType: string) => {
-    const newNode: Node = {
-      id: `${nodes.length + 1}`,
-      type: nodeType,
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: getDefaultNodeData(nodeType),
-    };
-    setNodes((nds) => nds.concat(newNode));
-  }, [nodes.length, setNodes]);
+    setNodes((nds) => {
+      const newNode: Node = {
+        id: `${nds.length + 1}`,
+        type: nodeType,
+        position: { x: Math.random() * 400, y: Math.random() * 400 },
+        data: getDefaultNodeData(nodeType),
+      };
+      return nds.concat(newNode);
+    });
+  }, []);
 
   const getDefaultNodeData = (type: string) => {
     switch (type) {
