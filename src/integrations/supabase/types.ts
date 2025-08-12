@@ -359,6 +359,48 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_flows: {
+        Row: {
+          created_at: string
+          edges: Json
+          id: string
+          is_active: boolean
+          metadata: Json | null
+          name: string
+          nodes: Json
+          source_ref: string
+          source_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          edges?: Json
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          name: string
+          nodes?: Json
+          source_ref: string
+          source_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          edges?: Json
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          name?: string
+          nodes?: Json
+          source_ref?: string
+          source_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       general_comment_autoresponders: {
         Row: {
           auto_assign_to_all_posts: boolean | null
