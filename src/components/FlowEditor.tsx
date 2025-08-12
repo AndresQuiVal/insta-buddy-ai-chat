@@ -27,6 +27,7 @@ import { MessageCircle, MousePointer, GitBranch, Send, Trash2, Instagram, Pencil
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import { useNavigate } from 'react-router-dom';
 
 // Custom Node Types
 const AutoresponderNode = ({ data, id }: { data: any; id: string }) => {
@@ -284,6 +285,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
   const [configNodeData, setConfigNodeData] = useState<any>(null);
   const [configNodeId, setConfigNodeId] = useState<string>('');
   const { currentUser, loading: userLoading } = useInstagramUsers();
+  const navigate = useNavigate();
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -618,6 +620,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         }
 
         toast.success('Flujo guardado y autoresponder aplicado');
+        navigate('/');
       }
     } catch (e: any) {
       console.error('Error guardando flujo:', e);
