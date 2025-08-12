@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import IdealClientTraits from '@/components/IdealClientTraits';
-import { ArrowRight, Copy, ExternalLink, RefreshCw } from 'lucide-react';
+import { ArrowRight, Copy, ExternalLink, RefreshCw, MessageSquare, Send, CalendarClock, Repeat } from 'lucide-react';
 import howerLogo from '@/assets/hower-logo.png';
 
 interface ProspectRow {
@@ -378,15 +378,20 @@ const ProspectsPage: React.FC = () => {
 
             <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { label: 'Respuestas', value: counts.respuestas },
-                { label: 'Mensajes enviados', value: counts.enviados },
-                { label: 'Agendados', value: counts.agendados },
-                { label: 'Seguimientos enviados', value: counts.seguimientos },
-              ].map((c) => (
-                <Card key={c.label}>
-                  <CardContent className="p-5 text-center">
-                    <div className="text-4xl font-semibold">{c.value}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{c.label}</div>
+                { label: 'Respuestas', value: counts.respuestas, Icon: MessageSquare },
+                { label: 'Mensajes enviados', value: counts.enviados, Icon: Send },
+                { label: 'Agendados', value: counts.agendados, Icon: CalendarClock },
+                { label: 'Seguimientos enviados', value: counts.seguimientos, Icon: Repeat },
+              ].map(({ label, value, Icon }) => (
+                <Card key={label}>
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <div className="text-4xl font-semibold leading-none">{value}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{label}</div>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
