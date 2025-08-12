@@ -555,7 +555,12 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
 
     try {
       // Guardado automático para autoresponders de comentarios (posts)
-      if (autoresponderData?.post_id && currentUser) {
+      if (autoresponderData?.post_id) {
+        if (!currentUser) {
+          toast.error('No se detectó usuario de Instagram activo. Inicia sesión e inténtalo de nuevo.');
+          return;
+        }
+
         // Extraer datos del flujo
         const conditionNode = nodes.find((n) => n.type === 'condition');
         const buttonNode = nodes.find((n) => n.type === 'button');
@@ -624,10 +629,93 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         setTimeout(() => {
           window.location.href = '/';
         }, 50);
+      } else {
+        // Guardado para mensajes directos (autoresponder_messages)
+        if (!autoresponderData?.id) {
+          toast.error('No se encontró el ID del autoresponder para guardar.');
+          return;
+        }
+
+        const conditionNode = nodes.find((n) => n.type === 'condition');
+        const buttonNode = nodes.find((n) => n.type === 'button');
+        const autoresponderNode = nodes.find((n) => n.type === 'autoresponder');
+
+        const keywords = conditionNode?.data?.conditionKeywords
+          ? String(conditionNode.data.conditionKeywords)
+              .split(',')
+              .map((k) => k.trim())
+              .filter(Boolean)
+          : Array.isArray(autoresponderData.keywords)
+          ? autoresponderData.keywords
+          : [];
+
+        const baseMessage =
+          buttonNode?.data?.message ??
+          autoresponderNode?.data?.message ??
+          autoresponderData?.message_text ??
+          '';
+
+        const hasButton = !!buttonNode;
+        const btnType = buttonNode?.data?.buttonType; // 'url' | 'postback'
+        const buttonText = hasButton ? buttonNode?.data?.buttonText || 'Botón' : undefined;
+        const buttonUrl = hasButton && btnType === 'url' ? buttonNode?.data?.buttonUrl || '' : undefined;
+
+        const buttons = hasButton
+          ? [
+              btnType === 'url'
+                ? {
+                    type: 'web_url',
+                    text: buttonText,
+                    title: buttonText,
+                    url: buttonUrl,
+                  }
+                : {
+                    type: 'postback',
+                    text: buttonText,
+                    title: buttonText,
+                    payload: `FLOW_${autoresponderData.id}`,
+                  },
+            ]
+          : null;
+
+        // Actualizar el autoresponder principal
+        const { error: updateError } = await supabase
+          .from('autoresponder_messages')
+          .update({
+            message_text: baseMessage,
+            keywords,
+            use_buttons: hasButton,
+            buttons,
+          })
+          .eq('id', autoresponderData.id);
+        if (updateError) throw updateError;
+
+        // Guardar acción postback si aplica
+        if (hasButton && btnType !== 'url') {
+          const postbackResponse = buttonNode?.data?.postbackResponse || '';
+          if (!currentUser) {
+            toast.warning('Botón postback guardado sin acción por falta de usuario activo.');
+          } else {
+            const payloadKey = `FLOW_${autoresponderData.id}`;
+            const { error: actionError } = await supabase
+              .from('button_postback_actions')
+              .insert({
+                user_id: currentUser.instagram_user_id,
+                autoresponder_id: autoresponderData.id,
+                action_type: 'send_message',
+                payload_key: payloadKey,
+                action_data: { message: postbackResponse },
+              });
+            if (actionError) throw actionError;
+          }
+        }
+
+        toast.success('Flujo guardado');
       }
     } catch (e: any) {
       console.error('Error guardando flujo:', e);
       toast.error(e?.message || 'No se pudo guardar el flujo');
+      return;
     }
 
     onSave?.(flowData);
