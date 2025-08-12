@@ -275,15 +275,16 @@ const ProspectsPage: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 py-6">
         <header className="mb-6">
           <h1 className="text-3xl font-semibold tracking-tight">Prospectos</h1>
-          <p className="text-sm text-muted-foreground">Gestiona tus nuevos prospectos, tus números y tus seguimientos.</p>
+          <div className="h-1 w-20 rounded-full mt-2" style={{ background: 'var(--gradient-hower)' }} />
+          <p className="mt-3 text-sm text-muted-foreground">Gestiona tus nuevos prospectos, tus números y tus seguimientos.</p>
         </header>
 
       <main>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 rounded-lg border bg-muted/40 p-1">
-            <TabsTrigger value="nuevos" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">Nuevos Prospectos</TabsTrigger>
-            <TabsTrigger value="numeros" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">Mis Números</TabsTrigger>
-            <TabsTrigger value="mis" className="rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">Mis Prospectos</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-3 rounded-xl border bg-card p-1 shadow-sm">
+            <TabsTrigger value="nuevos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Nuevos Prospectos</TabsTrigger>
+            <TabsTrigger value="numeros" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Mis Números</TabsTrigger>
+            <TabsTrigger value="mis" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Mis Prospectos</TabsTrigger>
           </TabsList>
 
           {/* Nuevos Prospectos */}
@@ -292,29 +293,29 @@ const ProspectsPage: React.FC = () => {
               <h2 className="text-lg font-medium">Prospectos de Hoy</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
                 <Card>
-                  <CardContent className="p-4 flex flex-col items-center">
-                    <div className="text-3xl font-semibold">{totalHoy}</div>
-                    <div className="text-xs text-muted-foreground mt-1">Cantidad Total de Hoy</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 flex flex-col items-center">
-                    <div className="text-3xl font-semibold">{contactadosHoy}</div>
-                    <div className="text-xs text-muted-foreground mt-1">Cantidad Contactados</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 flex flex-col items-center">
-                    <div className="text-3xl font-semibold">{porContactarHoy}</div>
-                    <div className="text-xs text-muted-foreground mt-1">Cantidad por contactar</div>
-                  </CardContent>
+                    <CardContent className="p-5 flex flex-col items-center">
+                      <div className="text-4xl font-semibold">{totalHoy}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Cantidad Total de Hoy</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-5 flex flex-col items-center">
+                      <div className="text-4xl font-semibold">{contactadosHoy}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Cantidad Contactados</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-5 flex flex-col items-center">
+                      <div className="text-4xl font-semibold">{porContactarHoy}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Cantidad por contactar</div>
+                    </CardContent>
                 </Card>
               </div>
 
               {/* Progreso gamificación */}
                 <div className="mt-4">
                   <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                    <div className="h-2 rounded-full bg-gradient-to-r from-primary/80 to-primary" style={{ width: `${progreso}%` }} />
+                    <div className="h-2 rounded-full" style={{ width: `${progreso}%`, background: 'var(--gradient-hower)' }} />
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Progreso del día: {progreso}%</p>
                 </div>
@@ -338,7 +339,7 @@ const ProspectsPage: React.FC = () => {
                   <div key={p.id} className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
                     <div className="text-sm font-medium">@{p.username}</div>
                     <div>
-                      <Button size="sm" onClick={() => openOnboarding(p.username, 'outreach')}>Contactar</Button>
+                      <Button size="sm" onClick={() => openOnboarding(p.username, 'outreach')} className="">Contactar</Button>
                     </div>
                   </div>
                 ))}
@@ -377,8 +378,8 @@ const ProspectsPage: React.FC = () => {
                 { label: 'Seguimientos enviados', value: counts.seguimientos },
               ].map((c) => (
                 <Card key={c.label}>
-                  <CardContent className="p-4 text-center">
-                    <div className="text-3xl font-semibold">{c.value}</div>
+                  <CardContent className="p-5 text-center">
+                    <div className="text-4xl font-semibold">{c.value}</div>
                     <div className="text-xs text-muted-foreground mt-1">{c.label}</div>
                   </CardContent>
                 </Card>
@@ -435,7 +436,7 @@ const ProspectsPage: React.FC = () => {
                                 <img
                                   src={p.profile_picture_url || '/placeholder.svg'}
                                   alt={`Avatar de @${p.username}`}
-                                  className="w-8 h-8 rounded-full object-cover"
+                                  className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
                                   loading="lazy"
                                 />
                                 <span>@{p.username}</span>
