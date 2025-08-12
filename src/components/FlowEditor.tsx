@@ -23,7 +23,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { MessageCircle, MousePointer, GitBranch, Send, Trash2, Instagram } from 'lucide-react';
+import { MessageCircle, MousePointer, GitBranch, Send, Trash2, Instagram, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';

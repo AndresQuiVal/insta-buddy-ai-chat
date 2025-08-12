@@ -704,6 +704,30 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
           }}
           onSave={(data) => {
             setFlowData(data);
+            // Aplicar cambios del flujo al formulario
+            const extract = (d: any) => {
+              const nodes = d?.nodes || [];
+              const button = nodes.find((n: any) => n.type === 'button')?.data || {};
+              const condition = nodes.find((n: any) => n.type === 'condition')?.data || {};
+              const igMsg = nodes.find((n: any) => n.type === 'instagramMessage')?.data || {};
+              return { button, condition, igMsg };
+            };
+            const { button, condition, igMsg } = extract(data);
+            if (condition?.conditionKeywords) {
+              setKeywords(
+                condition.conditionKeywords
+                  .split(',')
+                  .map((k: string) => k.trim())
+                  .filter(Boolean)
+              );
+            }
+            if (button?.message !== undefined) setDmMessage(button.message);
+            if (button?.buttonText !== undefined) setButtonText(button.buttonText);
+            if (button?.buttonType !== undefined) setButtonType(button.buttonType === 'url' ? 'web_url' : 'postback');
+            if (button?.buttonUrl !== undefined) setButtonUrl(button.buttonUrl);
+            const resp = button?.postbackResponse || igMsg?.message;
+            if (resp !== undefined) setPostbackResponse(resp);
+            setUseButtonMessage(!!button?.buttonText);
           }}
         />
       </CardContent>

@@ -90,6 +90,8 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
+  const [isFlowEditorOpen, setIsFlowEditorOpen] = useState(false);
+  const [flowData, setFlowData] = useState<any>(null);
 
   // Cargar datos iniciales y follow-ups al montar el componente
   useEffect(() => {
@@ -494,6 +496,12 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
       </CardHeader>
 
       <CardContent className="p-6">
+        <div className="flex justify-end mb-4">
+          <Button variant="outline" onClick={() => setIsFlowEditorOpen(true)}>
+            <GitBranch className="w-4 h-4 mr-2" />
+            Abrir Editor de Flujos
+          </Button>
+        </div>
         {/* Post Seleccionado */}
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
@@ -851,6 +859,45 @@ const EditCommentAutoresponderForm = ({ autoresponder, onBack, onSubmit }: EditC
             </Button>
           </div>
         </form>
+        <FlowEditor
+          isOpen={isFlowEditorOpen}
+          onClose={() => setIsFlowEditorOpen(false)}
+          autoresponderData={{
+            id: autoresponder.id,
+            name,
+            dm_message: dmMessage,
+            keywords,
+            is_active: true,
+            use_buttons: useButtons,
+            button_text: useButtons ? buttonText : undefined,
+            button_type: buttonType,
+            button_url: buttonType === 'web_url' ? buttonUrl : undefined,
+            postback_response: buttonType === 'postback' ? postbackResponse : undefined,
+            post_id: autoresponder.post_id,
+          }}
+          onSave={(data) => {
+            setFlowData(data);
+            const nodes = data?.nodes || [];
+            const button = nodes.find((n: any) => n.type === 'button')?.data || {};
+            const condition = nodes.find((n: any) => n.type === 'condition')?.data || {};
+            const igMsg = nodes.find((n: any) => n.type === 'instagramMessage')?.data || {};
+            if (condition?.conditionKeywords) {
+              setKeywords(
+                condition.conditionKeywords
+                  .split(',')
+                  .map((k: string) => k.trim())
+                  .filter(Boolean)
+              );
+            }
+            if (button?.message !== undefined) setDmMessage(button.message);
+            if (button?.buttonText !== undefined) setButtonText(button.buttonText);
+            if (button?.buttonType !== undefined) setButtonType(button.buttonType === 'url' ? 'web_url' : 'postback');
+            if (button?.buttonUrl !== undefined) setButtonUrl(button.buttonUrl);
+            const resp = button?.postbackResponse || igMsg?.message;
+            if (resp !== undefined) setPostbackResponse(resp);
+            setUseButtons(!!button?.buttonText);
+          }}
+        />
       </CardContent>
     </Card>
   );
