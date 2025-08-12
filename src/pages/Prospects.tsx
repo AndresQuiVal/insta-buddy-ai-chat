@@ -54,7 +54,7 @@ const ProspectsPage: React.FC = () => {
     }
   }, []);
 
-  const [activeTab, setActiveTab] = useState<'nuevos' | 'numeros' | 'mis'>('nuevos');
+  const [activeTab, setActiveTab] = useState<'nuevos' | 'numeros' | 'mis'>('numeros');
 
   // Date range for Mis Números
   const [from, setFrom] = useState(() => {
@@ -288,8 +288,8 @@ const ProspectsPage: React.FC = () => {
       <main>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="w-full grid grid-cols-3 rounded-xl border bg-card p-1 shadow-sm">
-            <TabsTrigger value="nuevos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Nuevos Prospectos</TabsTrigger>
             <TabsTrigger value="numeros" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Mis Números</TabsTrigger>
+            <TabsTrigger value="nuevos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Nuevos Prospectos</TabsTrigger>
             <TabsTrigger value="mis" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Mis Prospectos</TabsTrigger>
           </TabsList>
 
