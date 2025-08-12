@@ -621,6 +621,9 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
 
         toast.success('Flujo guardado y autoresponder aplicado');
         navigate('/', { replace: true });
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 50);
       }
     } catch (e: any) {
       console.error('Error guardando flujo:', e);
@@ -631,6 +634,9 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
     onClose();
     if (autoresponderData?.post_id) {
       navigate('/', { replace: true });
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 50);
     }
   };
   return (
