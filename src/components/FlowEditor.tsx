@@ -344,142 +344,25 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         return;
       }
 
-      // Vista general: cargar solo los autoresponders del usuario actual
-      if (!currentUser) {
-        // Si no hay usuario, mostrar un nodo vacío para no confundir
-        setNodes([
-          {
-            id: '1',
-            type: 'autoresponder',
-            position: { x: 250, y: 50 },
-            data: {
-              message: 'Configura tu primer autoresponder para comenzar',
-              keywords: [],
-              active: false,
-              autoresponder_id: null,
-              autoresponder_type: 'new',
-              name: 'Nuevo Autoresponder',
-            },
-          },
-        ]);
-        setEdges([]);
-        return;
-      }
-
-      const { data: autoresponderMessages } = await supabase
-        .from('autoresponder_messages')
-        .select('*')
-        .eq('is_active', true)
-        .eq('instagram_user_id_ref', currentUser.instagram_user_id);
-
-      const { data: commentAutoresponders } = await supabase
-        .from('comment_autoresponders')
-        .select('*')
-        .eq('is_active', true)
-        .eq('user_id', currentUser.instagram_user_id);
-
-      const flowNodes: Node[] = [];
-      const flowEdges: Edge[] = [];
-      let yPosition = 50;
-      let nodeCounter = 1;
-
-      if (autoresponderMessages && autoresponderMessages.length > 0) {
-        autoresponderMessages.forEach((autoresponder) => {
-          const nodeId = `${nodeCounter++}`;
-          flowNodes.push({
-            id: nodeId,
-            type: 'autoresponder',
-            position: { x: 250, y: yPosition },
-            data: {
-              message: autoresponder.message_text,
-              keywords: autoresponder.keywords || [],
-              active: autoresponder.is_active,
-              autoresponder_id: autoresponder.id,
-              autoresponder_type: 'message',
-              name: autoresponder.name,
-            },
-          });
-
-          if (autoresponder.use_buttons && autoresponder.buttons) {
-            const buttonNodeId = `${nodeCounter++}`;
-            const firstBtn = autoresponder.buttons[0];
-            flowNodes.push({
-              id: buttonNodeId,
-              type: 'button',
-              position: { x: 250, y: yPosition + 150 },
-              data: {
-                message: autoresponder.message_text,
-                buttonText: firstBtn?.text || 'Botón',
-                buttonType: firstBtn?.type || 'postback',
-                buttonUrl: firstBtn?.url || '',
-                autoresponder_id: autoresponder.id,
-              },
-            });
-            flowEdges.push({ id: `e-${nodeId}-${buttonNodeId}`, source: nodeId, target: buttonNodeId });
-          }
-
-          yPosition += 300;
-        });
-      }
-
-      if (commentAutoresponders && commentAutoresponders.length > 0) {
-        commentAutoresponders.forEach((autoresponder) => {
-          const nodeId = `${nodeCounter++}`;
-          flowNodes.push({
-            id: nodeId,
-            type: 'autoresponder',
-            position: { x: 600, y: yPosition },
-            data: {
-              message: autoresponder.dm_message,
-              keywords: autoresponder.keywords || [],
-              active: autoresponder.is_active,
-              autoresponder_id: autoresponder.id,
-              autoresponder_type: 'comment',
-              name: autoresponder.name,
-            },
-          });
-
-          if (autoresponder.use_button_message && autoresponder.button_text) {
-            const buttonNodeId = `${nodeCounter++}`;
-            flowNodes.push({
-              id: buttonNodeId,
-              type: 'button',
-              position: { x: 600, y: yPosition + 150 },
-              data: {
-                message: autoresponder.dm_message,
-                buttonText: autoresponder.button_text,
-                buttonType: autoresponder.button_type || 'postback',
-                buttonUrl: autoresponder.button_url || '',
-                autoresponder_id: autoresponder.id,
-              },
-            });
-            flowEdges.push({ id: `e-${nodeId}-${buttonNodeId}`, source: nodeId, target: buttonNodeId });
-          }
-
-          yPosition += 300;
-        });
-      }
-
-      if (flowNodes.length === 0) {
-        flowNodes.push({
+      // Modo creación: sin autoresponderData, mostrar solo un nodo inicial
+      const initialOnly: Node[] = [
+        {
           id: '1',
           type: 'autoresponder',
           position: { x: 250, y: 50 },
           data: {
-            message: 'Hola! Gracias por contactarnos. ¿En qué podemos ayudarte?',
-            keywords: ['hola', 'ayuda', 'info'],
+            message: 'Configura tu mensaje inicial aquí',
+            keywords: [],
             active: false,
             autoresponder_id: null,
             autoresponder_type: 'new',
             name: 'Nuevo Autoresponder',
           },
-        });
-      }
-
-      setNodes(flowNodes);
-      setEdges(flowEdges);
-      // Evitamos mensajes confusos de conteo
-      // toast.success('Flujos cargados');
+        },
+      ];
+      setNodes(initialOnly);
+      setEdges([]);
+      return;
     } catch (error) {
       console.error('Error cargando autoresponders:', error);
       // toast.error('Error cargando autoresponders');
