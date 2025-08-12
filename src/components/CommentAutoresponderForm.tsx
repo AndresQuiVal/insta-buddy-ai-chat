@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare, UserCheck, MousePointer } from 'lucide-react';
+import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare, UserCheck, MousePointer, GitBranch } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { InstagramPost, formatPostDate, truncateCaption } from '@/services/instagramPostsService';
 import FollowUpConfig, { FollowUp } from './FollowUpConfig';
 import { Switch } from '@/components/ui/switch';
+import { FlowEditor } from './FlowEditor';
 
 export interface CommentAutoresponderConfig {
   name: string;
@@ -67,6 +68,8 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
+  const [isFlowEditorOpen, setIsFlowEditorOpen] = useState(false);
+  const [flowData, setFlowData] = useState<any>(null);
 
   const addKeyword = () => {
     if (newKeyword.trim() && !keywords.includes(newKeyword.trim().toLowerCase())) {
@@ -320,6 +323,12 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
       </CardHeader>
 
       <CardContent className="p-6">
+        <div className="flex justify-end mb-4">
+          <Button variant="outline" onClick={() => setIsFlowEditorOpen(true)}>
+            <GitBranch className="w-4 h-4 mr-2" />
+            Abrir Editor de Flujos
+          </Button>
+        </div>
         {/* Post Seleccionado */}
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
@@ -678,6 +687,23 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
             </Button>
           </div>
         </form>
+        <FlowEditor
+          isOpen={isFlowEditorOpen}
+          onClose={() => setIsFlowEditorOpen(false)}
+          autoresponderData={{
+            name,
+            dm_message: dmMessage,
+            keywords,
+            is_active: true,
+            use_button_message: useButtonMessage,
+            button_text: useButtonMessage ? buttonText : undefined,
+            button_type: buttonType,
+            button_url: buttonType === 'web_url' ? buttonUrl : undefined,
+          }}
+          onSave={(data) => {
+            setFlowData(data);
+          }}
+        />
       </CardContent>
     </Card>
   );

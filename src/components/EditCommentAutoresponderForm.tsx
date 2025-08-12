@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare, MousePointer, Link, UserCheck } from 'lucide-react';
+import { ArrowLeft, Plus, X, Save, MessageCircle, Key, ExternalLink, MessageSquare, MousePointer, Link, UserCheck, GitBranch } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FollowUpConfig, { FollowUp } from './FollowUpConfig';
+import { FlowEditor } from './FlowEditor';
 
 interface CommentAutoresponder {
   id: string;
