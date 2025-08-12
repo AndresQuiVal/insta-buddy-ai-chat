@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import IdealClientTraits from '@/components/IdealClientTraits';
 import { ArrowRight, Copy, ExternalLink, RefreshCw } from 'lucide-react';
+import howerLogo from '@/assets/hower-logo.png';
 
 interface ProspectRow {
   id: string;
@@ -274,8 +275,13 @@ const ProspectsPage: React.FC = () => {
   return (
       <div className="max-w-6xl mx-auto px-4 py-6">
         <header className="mb-6">
-          <h1 className="text-3xl font-semibold tracking-tight">Prospectos</h1>
-          <div className="h-1 w-20 rounded-full mt-2" style={{ background: 'var(--gradient-hower)' }} />
+          <div className="flex items-center gap-3">
+            <img src={howerLogo} alt="Logo Hower Assistant" className="w-10 h-10 rounded-xl object-cover ring-2 ring-primary/20" loading="lazy" />
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight">Prospectos</h1>
+              <div className="h-1 w-20 rounded-full mt-2" style={{ background: 'var(--gradient-hower)' }} />
+            </div>
+          </div>
           <p className="mt-3 text-sm text-muted-foreground">Gestiona tus nuevos prospectos, tus números y tus seguimientos.</p>
         </header>
 
