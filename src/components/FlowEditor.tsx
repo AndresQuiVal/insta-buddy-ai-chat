@@ -23,7 +23,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { MessageCircle, MousePointer, GitBranch, Send, Trash2, Instagram, Pencil } from 'lucide-react';
+import { MessageCircle, MousePointer, GitBranch, Send, Trash2, Instagram, Pencil, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
@@ -240,12 +240,47 @@ const ActionNode = ({ data, id }: { data: any; id: string }) => {
   );
 };
 
+// Nuevo nodo: Tiempo de espera
+const WaitNode = ({ data, id }: { data: any; id: string }) => {
+  const { deleteElements } = useReactFlow();
+  const handleDelete = () => {
+    deleteElements({ nodes: [{ id }] });
+  };
+
+  return (
+    <Card className="min-w-[200px] shadow-lg border-2 border-gray-500/20 group relative">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute -top-2 -right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-600 text-white rounded-full"
+        onClick={handleDelete}
+      >
+        <Trash2 className="w-3 h-3" />
+      </Button>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Clock className="w-4 h-4" />
+          Tiempo de espera
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="text-xs">
+          Esperar: {data.duration} {data.unit === 'seconds' ? 'seg' : data.unit === 'minutes' ? 'min' : 'hora(s)'}
+        </div>
+      </CardContent>
+      <Handle type="target" position={Position.Top} />
+      <Handle type="source" position={Position.Bottom} />
+    </Card>
+  );
+};
+
 const nodeTypes: NodeTypes = {
   autoresponder: AutoresponderNode,
   button: ButtonNode,
   condition: ConditionNode,
   action: ActionNode,
   instagramMessage: InstagramMessageNode,
+  wait: WaitNode,
 };
 
 const initialNodes: Node[] = [
@@ -517,6 +552,11 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
       case 'action':
         return {
           actionType: 'Enviar mensaje'
+        };
+      case 'wait':
+        return {
+          duration: 5,
+          unit: 'minutes'
         };
       default:
         return {};
@@ -822,6 +862,15 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => addNode('wait')}
+                    className="justify-start"
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    Tiempo de espera
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => addNode('action')}
                     className="justify-start"
                   >
@@ -1023,6 +1072,39 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                       Esta condición dividirá aleatoriamente las respuestas 50/50 entre las dos salidas.
                     </div>
                   )}
+                </>
+              )}
+
+              {configNodeData?.duration !== undefined && configNodeData?.unit !== undefined && (
+                <>
+                  <div>
+                    <Label htmlFor="waitDuration">Tiempo de espera estimado</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-1">
+                      <Input
+                        id="waitDuration"
+                        type="number"
+                        min={0}
+                        value={Number(configNodeData.duration) ?? 0}
+                        onChange={(e) => setConfigNodeData({ ...configNodeData, duration: Number(e.target.value) })}
+                      />
+                      <div className="col-span-2">
+                        <Select
+                          value={configNodeData.unit || 'minutes'}
+                          onValueChange={(value) => setConfigNodeData({ ...configNodeData, unit: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Unidad" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="seconds">Segundos</SelectItem>
+                            <SelectItem value="minutes">Minutos</SelectItem>
+                            <SelectItem value="hours">Horas</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Se usará como espera estimada entre pasos.</p>
+                  </div>
                 </>
               )}
 
