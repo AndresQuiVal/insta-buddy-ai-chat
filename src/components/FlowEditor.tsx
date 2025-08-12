@@ -731,27 +731,26 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
            }
          }
  
-+        // Guardar/actualizar el flujo visual completo para DMs
-+        try {
-+          await supabase
-+            .from('conversation_flows')
-+            .upsert(
-+              {
-+                user_id: currentUser.instagram_user_id,
-+                name: autoresponderData.name || 'Flujo de DM',
-+                source_type: 'dm',
-+                source_ref: String(autoresponderData.id),
-+                nodes: nodes as any,
-+                edges: edges as any,
-+                metadata: { origin: 'FlowEditor', updatedAt: new Date().toISOString() },
-+                is_active: true,
-+              },
-+              { onConflict: 'user_id,source_type,source_ref' }
-+            )
-+        } catch (e) {
-+          console.warn('No se pudo guardar conversation_flows (dm):', e)
-+        }
-+
+        // Guardar/actualizar el flujo visual completo para DMs
+        try {
+          await supabase
+            .from('conversation_flows')
+            .upsert(
+              {
+                user_id: currentUser.instagram_user_id,
+                name: autoresponderData.name || 'Flujo de DM',
+                source_type: 'dm',
+                source_ref: String(autoresponderData.id),
+                nodes: nodes as any,
+                edges: edges as any,
+                metadata: { origin: 'FlowEditor', updatedAt: new Date().toISOString() },
+                is_active: true,
+              },
+              { onConflict: 'user_id,source_type,source_ref' }
+            )
+        } catch (e) {
+          console.warn('No se pudo guardar conversation_flows (dm):', e)
+        }
          toast.success('Flujo guardado');
        }
      } catch (e: any) {
@@ -760,13 +759,17 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
        return;
      }
  
-     onSave?.(flowData);
-     onClose();
-     if (autoresponderData?.post_id) {
-       navigate('/', { replace: true });
-       setTimeout(() => {
-         window.location.href = '/';
-       }, 50);
+    onSave?.(flowData);
+    onClose();
+    if (autoresponderData?.post_id) {
+      navigate('/', { replace: true });
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 50);
+    }
+  };
+
+  return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl w-full h-[90vh] p-0">
         <div className="flex h-full">
