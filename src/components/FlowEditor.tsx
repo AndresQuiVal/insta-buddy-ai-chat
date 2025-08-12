@@ -480,30 +480,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
             </DialogHeader>
             
             <div className="space-y-4">
-              {(configNodeData?.message !== undefined && configNodeData?.keywords !== undefined) && (
-                <>
-                  <div>
-                    <Label htmlFor="message">Mensaje</Label>
-                    <Textarea
-                      id="message"
-                      value={configNodeData.message || ''}
-                      onChange={(e) => setConfigNodeData({...configNodeData, message: e.target.value})}
-                      placeholder="Escribe tu mensaje automático..."
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="keywords">Palabras Clave (separadas por coma)</Label>
-                    <Input
-                      id="keywords"
-                      value={configNodeData.keywords?.join(', ') || ''}
-                      onChange={(e) => setConfigNodeData({...configNodeData, keywords: e.target.value.split(',').map((k: string) => k.trim())})}
-                      placeholder="hola, info, ayuda"
-                    />
-                  </div>
-                </>
-              )}
-
+              {/* Instagram Message Node Configuration */}
               {(configNodeData?.message !== undefined && configNodeData?.active !== undefined && configNodeData?.keywords === undefined) && (
                 <>
                   <div>
@@ -524,6 +501,31 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                       onChange={(e) => setConfigNodeData({...configNodeData, active: e.target.checked})}
                     />
                     <Label htmlFor="instagramActive">Activo</Label>
+                  </div>
+                </>
+              )}
+
+              {/* Autoresponder Node Configuration */}
+              {(configNodeData?.message !== undefined && configNodeData?.keywords !== undefined) && (
+                <>
+                  <div>
+                    <Label htmlFor="message">Mensaje</Label>
+                    <Textarea
+                      id="message"
+                      value={configNodeData.message || ''}
+                      onChange={(e) => setConfigNodeData({...configNodeData, message: e.target.value})}
+                      placeholder="Escribe tu mensaje automático..."
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="keywords">Palabras Clave (separadas por coma)</Label>
+                    <Input
+                      id="keywords"
+                      value={configNodeData.keywords?.join(', ') || ''}
+                      onChange={(e) => setConfigNodeData({...configNodeData, keywords: e.target.value.split(',').map((k: string) => k.trim())})}
+                      placeholder="hola, info, ayuda"
+                    />
                   </div>
                 </>
               )}
