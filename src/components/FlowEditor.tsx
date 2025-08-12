@@ -327,9 +327,51 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
 
         // Mensaje base desde datos del autoresponder
         const baseMessage = autoresponderData.message_text || autoresponderData.dm_message || '';
+        const keywordsArr = Array.isArray(autoresponderData.keywords) ? autoresponderData.keywords : [];
 
-        if (isCommentAutoresponder && useButtons && firstBtnRaw) {
-          // Escenario solicitado: el primer elemento es un Botón Interactivo con el texto del mensaje y del botón
+        if (isCommentAutoresponder && useButtons && firstBtnRaw && keywordsArr.length > 0) {
+          // Editor de flujos para comentarios: 1) Condición por palabra clave → 2) Botón → 3) (opcional) Mensaje Instagram
+          flowNodes.push({
+            id: '1',
+            type: 'condition',
+            position: { x: 250, y: 30 },
+            data: {
+              conditionType: 'keyword',
+              conditionKeywords: keywordsArr.join(', '),
+              caseSensitive: false,
+            },
+          });
+
+          flowNodes.push({
+            id: '2',
+            type: 'button',
+            position: { x: 250, y: 180 },
+            data: {
+              message: baseMessage,
+              buttonText: btnText,
+              buttonType: btnTypeNorm,
+              buttonUrl: btnUrl,
+              postbackResponse: autoresponderData.postback_response || '',
+              autoresponder_id: autoresponderData.id,
+            },
+          });
+
+          flowEdges.push({ id: 'e-1-2', source: '1', sourceHandle: 'yes', target: '2' });
+
+          if (btnTypeNorm !== 'url' && autoresponderData.postback_response) {
+            flowNodes.push({
+              id: '3',
+              type: 'instagramMessage',
+              position: { x: 250, y: 330 },
+              data: {
+                message: autoresponderData.postback_response,
+                active: true,
+              },
+            });
+            flowEdges.push({ id: 'e-2-3', source: '2', target: '3' });
+          }
+        } else if (isCommentAutoresponder && useButtons && firstBtnRaw) {
+          // Sin keywords, mostrar boton primero
           flowNodes.push({
             id: '1',
             type: 'button',
@@ -344,21 +386,17 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
             },
           });
 
-          // Si el botón es de tipo respuesta (postback), crear el nodo de Mensaje de Instagram conectado
-          if (btnTypeNorm !== 'url') {
-            const postbackMsg = autoresponderData.postback_response || '';
-            if (postbackMsg) {
-              flowNodes.push({
-                id: '2',
-                type: 'instagramMessage',
-                position: { x: 250, y: 200 },
-                data: {
-                  message: postbackMsg,
-                  active: true,
-                },
-              });
-              flowEdges.push({ id: 'e-1-2', source: '1', target: '2' });
-            }
+          if (btnTypeNorm !== 'url' && autoresponderData.postback_response) {
+            flowNodes.push({
+              id: '2',
+              type: 'instagramMessage',
+              position: { x: 250, y: 200 },
+              data: {
+                message: autoresponderData.postback_response,
+                active: true,
+              },
+            });
+            flowEdges.push({ id: 'e-1-2', source: '1', target: '2' });
           }
         } else {
           // Comportamiento por defecto: nodo de autoresponder inicial y opcionalmente un nodo de botón
@@ -386,26 +424,14 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                 buttonText: btnText,
                 buttonType: btnTypeNorm,
                 buttonUrl: btnUrl,
+                postbackResponse: autoresponderData.postback_response || '',
                 autoresponder_id: autoresponderData.id,
               },
             });
 
             flowEdges.push({ id: 'e-1-2', source: '1', target: '2' });
-
-            // Si el botón es postback y hay respuesta configurada, añadir el mensaje de Instagram conectado
-            if (btnTypeNorm !== 'url' && autoresponderData.postback_response) {
-              flowNodes.push({
-                id: '3',
-                type: 'instagramMessage',
-                position: { x: 250, y: 350 },
-                data: {
-                  message: autoresponderData.postback_response,
-                  active: true,
-                },
-              });
-              flowEdges.push({ id: 'e-2-3', source: '2', target: '3' });
-            }
           }
+        }
         }
 
         setNodes(flowNodes);
