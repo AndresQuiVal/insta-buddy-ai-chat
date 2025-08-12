@@ -378,14 +378,17 @@ const ProspectsPage: React.FC = () => {
 
             <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { label: 'Respuestas', value: counts.respuestas, Icon: MessageSquare },
-                { label: 'Mensajes enviados', value: counts.enviados, Icon: Send },
-                { label: 'Agendados', value: counts.agendados, Icon: CalendarClock },
-                { label: 'Seguimientos enviados', value: counts.seguimientos, Icon: Repeat },
-              ].map(({ label, value, Icon }) => (
+                { label: 'Respuestas', value: counts.respuestas, Icon: MessageSquare, color: '--success' },
+                { label: 'Mensajes enviados', value: counts.enviados, Icon: Send, color: '--hower-primary' },
+                { label: 'Agendados', value: counts.agendados, Icon: CalendarClock, color: '--foreground' },
+                { label: 'Seguimientos enviados', value: counts.seguimientos, Icon: Repeat, color: '--hower-medium' },
+              ].map(({ label, value, Icon, color }) => (
                 <Card key={label}>
                   <CardContent className="p-5 flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
+                    <div
+                      className="h-10 w-10 rounded-full flex items-center justify-center"
+                      style={{ background: `hsl(var(${color}) / 0.12)`, color: `hsl(var(${color}))` }}
+                    >
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <div>

@@ -57,6 +57,10 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Semantic success (pastel green) */
+    --success: 152 58% 52%;
+    --success-foreground: 152 90% 10%;
   }
 
   .dark {
@@ -95,6 +99,10 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Dark mode success */
+    --success: 152 58% 52%;
+    --success-foreground: 210 40% 98%;
   }
 }
 
