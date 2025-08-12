@@ -480,7 +480,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
             </DialogHeader>
             
             <div className="space-y-4">
-              {configNodeData?.message !== undefined && (
+              {(configNodeData?.message !== undefined && configNodeData?.keywords !== undefined) && (
                 <>
                   <div>
                     <Label htmlFor="message">Mensaje</Label>
@@ -500,6 +500,30 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                       onChange={(e) => setConfigNodeData({...configNodeData, keywords: e.target.value.split(',').map((k: string) => k.trim())})}
                       placeholder="hola, info, ayuda"
                     />
+                  </div>
+                </>
+              )}
+
+              {(configNodeData?.message !== undefined && configNodeData?.active !== undefined && configNodeData?.keywords === undefined) && (
+                <>
+                  <div>
+                    <Label htmlFor="instagramMessage">Mensaje de Instagram</Label>
+                    <Textarea
+                      id="instagramMessage"
+                      value={configNodeData.message || ''}
+                      onChange={(e) => setConfigNodeData({...configNodeData, message: e.target.value})}
+                      placeholder="Escribe el mensaje de Instagram..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="instagramActive"
+                      checked={configNodeData.active || false}
+                      onChange={(e) => setConfigNodeData({...configNodeData, active: e.target.checked})}
+                    />
+                    <Label htmlFor="instagramActive">Activo</Label>
                   </div>
                 </>
               )}
@@ -625,29 +649,6 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                 </>
               )}
 
-              {(configNodeData?.message !== undefined && configNodeData?.active !== undefined && !configNodeData?.keywords) && (
-                <>
-                  <div>
-                    <Label htmlFor="instagramMessage">Mensaje de Instagram</Label>
-                    <Textarea
-                      id="instagramMessage"
-                      value={configNodeData.message || ''}
-                      onChange={(e) => setConfigNodeData({...configNodeData, message: e.target.value})}
-                      placeholder="Escribe el mensaje de Instagram..."
-                      rows={3}
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="instagramActive"
-                      checked={configNodeData.active || false}
-                      onChange={(e) => setConfigNodeData({...configNodeData, active: e.target.checked})}
-                    />
-                    <Label htmlFor="instagramActive">Activo</Label>
-                  </div>
-                </>
-              )}
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
