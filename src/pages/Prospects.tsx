@@ -3,14 +3,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import IdealClientTraits from '@/components/IdealClientTraits';
-import { ArrowRight, Copy, ExternalLink, RefreshCw, MessageSquare, Send, CalendarClock, Repeat } from 'lucide-react';
+import { ArrowRight, Copy, ExternalLink, RefreshCw, MessageSquare, Send, CalendarClock, Repeat, BarChart3, UserPlus, Users, CheckCircle, Clock, Wand2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import howerLogo from '@/assets/hower-logo.png';
 
 interface ProspectRow {
@@ -288,9 +289,15 @@ const ProspectsPage: React.FC = () => {
       <main>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="w-full grid grid-cols-3 rounded-xl border bg-card p-1 shadow-sm">
-            <TabsTrigger value="numeros" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Mis Números</TabsTrigger>
-            <TabsTrigger value="nuevos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Nuevos Prospectos</TabsTrigger>
-            <TabsTrigger value="mis" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">Mis Prospectos</TabsTrigger>
+            <TabsTrigger value="numeros" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
+              <BarChart3 className="mr-2 h-4 w-4" /> Mis Números
+            </TabsTrigger>
+            <TabsTrigger value="nuevos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
+              <UserPlus className="mr-2 h-4 w-4" /> Nuevos Prospectos
+            </TabsTrigger>
+            <TabsTrigger value="mis" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
+              <Users className="mr-2 h-4 w-4" /> Mis Prospectos
+            </TabsTrigger>
           </TabsList>
 
           {/* Nuevos Prospectos */}
@@ -299,22 +306,37 @@ const ProspectsPage: React.FC = () => {
               <h2 className="text-lg font-medium">Prospectos de Hoy</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
                 <Card>
-                    <CardContent className="p-5 flex flex-col items-center">
-                      <div className="text-4xl font-semibold">{totalHoy}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Cantidad Total de Hoy</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-5 flex flex-col items-center">
-                      <div className="text-4xl font-semibold">{contactadosHoy}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Cantidad Contactados</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-5 flex flex-col items-center">
-                      <div className="text-4xl font-semibold">{porContactarHoy}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Cantidad por contactar</div>
-                    </CardContent>
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--hower-primary) / 0.12)', color: 'hsl(var(--hower-primary))' }}>
+                      <Users className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-4xl font-semibold leading-none">{totalHoy}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Hoy</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--success) / 0.12)', color: 'hsl(var(--success))' }}>
+                      <CheckCircle className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-4xl font-semibold leading-none">{contactadosHoy}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Contactados</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--hower-medium) / 0.12)', color: 'hsl(var(--hower-medium))' }}>
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-4xl font-semibold leading-none">{porContactarHoy}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Por contactar</div>
+                    </div>
+                  </CardContent>
                 </Card>
               </div>
 
@@ -323,7 +345,7 @@ const ProspectsPage: React.FC = () => {
                   <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                     <div className="h-2 rounded-full" style={{ width: `${progreso}%`, background: 'var(--gradient-hower)' }} />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Progreso del día: {progreso}%</p>
+                  <p className="text-xs text-muted-foreground mt-1">{progreso}%</p>
                 </div>
             </section>
 
@@ -345,7 +367,16 @@ const ProspectsPage: React.FC = () => {
                   <div key={p.id} className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
                     <div className="text-sm font-medium">@{p.username}</div>
                     <div>
-                      <Button size="sm" onClick={() => openOnboarding(p.username, 'outreach')} className="">Contactar</Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" onClick={() => openOnboarding(p.username, 'outreach')} aria-label="Contactar">
+                              <Send className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Contactar</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                 ))}
@@ -362,16 +393,21 @@ const ProspectsPage: React.FC = () => {
               <CardContent className="p-4">
                 <section className="flex flex-col sm:flex-row items-end gap-3">
                   <div className="flex-1">
-                    <Label>Desde</Label>
-                    <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+                    <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="Desde" aria-label="Desde" />
                   </div>
                   <div className="flex-1">
-                    <Label>Hasta</Label>
-                    <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+                    <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} placeholder="Hasta" aria-label="Hasta" />
                   </div>
-                  <Button onClick={refreshCounts} disabled={loadingCounts} variant="outline">
-                    <RefreshCw className="w-4 h-4 mr-2" /> Actualizar
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button onClick={refreshCounts} disabled={loadingCounts} variant="outline" aria-label="Actualizar">
+                          <RefreshCw className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Actualizar</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </section>
               </CardContent>
             </Card>
@@ -379,9 +415,9 @@ const ProspectsPage: React.FC = () => {
             <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
                 { label: 'Respuestas', value: counts.respuestas, Icon: MessageSquare, color: '--success' },
-                { label: 'Mensajes enviados', value: counts.enviados, Icon: Send, color: '--hower-primary' },
+                { label: 'Enviados', value: counts.enviados, Icon: Send, color: '--hower-primary' },
                 { label: 'Agendados', value: counts.agendados, Icon: CalendarClock, color: '--foreground' },
-                { label: 'Seguimientos enviados', value: counts.seguimientos, Icon: Repeat, color: '--hower-medium' },
+                { label: 'Seguimientos', value: counts.seguimientos, Icon: Repeat, color: '--hower-medium' },
               ].map(({ label, value, Icon, color }) => (
                 <Card key={label}>
                   <CardContent className="p-5 flex items-center gap-4">
@@ -402,19 +438,15 @@ const ProspectsPage: React.FC = () => {
 
             {/* Asistente por WhatsApp */}
             <section className="mt-6">
-              <h3 className="text-sm font-medium mb-2">Asistente por WhatsApp</h3>
+              <h3 className="text-sm font-medium mb-2">WhatsApp</h3>
               <Card>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                     <div className="sm:col-span-2">
-                      <Label>Tu número de WhatsApp</Label>
-                      <Input placeholder="+521234567890" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} />
+                      <Input placeholder="+52 WhatsApp" value={whatsApp} onChange={(e) => setWhatsApp(e.target.value)} aria-label="WhatsApp" />
                     </div>
-                    <Button onClick={saveWhatsApp}>Guardar</Button>
+                    <Button onClick={saveWhatsApp} aria-label="Guardar">Guardar</Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Recibirás recordatorios para contactar, dar seguimiento y un resumen semanal. (Próximamente)
-                  </p>
                 </CardContent>
               </Card>
             </section>
@@ -431,7 +463,7 @@ const ProspectsPage: React.FC = () => {
                         <tr className="text-left bg-muted/40 text-muted-foreground">
                           <th className="py-2 px-3">Prospecto</th>
                           <th className="py-2 px-3">Estado</th>
-                          <th className="py-2 px-3 text-right">Acción</th>
+                          <th className="py-2 px-3 text-right"><Wand2 className="w-4 h-4 inline" aria-label="Acción" /></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -459,9 +491,16 @@ const ProspectsPage: React.FC = () => {
                             </td>
                             <td className="py-2 px-3">{statusLabel(p)}</td>
                             <td className="py-2 px-3 text-right">
-                              <Button size="sm" variant="outline" onClick={() => openOnboarding(p.username, 'followup')}>
-                                Mensaje Seguimiento Sugerido
-                              </Button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button size="sm" variant="outline" onClick={() => openOnboarding(p.username, 'followup')} aria-label="Seguimiento sugerido">
+                                      <Wand2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Seguimiento sugerido</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </td>
                           </tr>
                         ))}
@@ -482,7 +521,7 @@ const ProspectsPage: React.FC = () => {
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Enviar mensaje a @{dialogUser}</DialogTitle>
+            <DialogTitle>Enviar a @{dialogUser}</DialogTitle>
             <DialogDescription>
               Paso {dialogStep} de 2
             </DialogDescription>
