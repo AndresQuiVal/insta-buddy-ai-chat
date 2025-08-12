@@ -265,7 +265,6 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [selectedNodeType, setSelectedNodeType] = useState<string>('autoresponder');
 
   // Node configuration dialogs
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
