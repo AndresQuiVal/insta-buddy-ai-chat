@@ -620,7 +620,6 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         }
 
         toast.success('Flujo guardado y autoresponder aplicado');
-        navigate('/admin-table');
       }
     } catch (e: any) {
       console.error('Error guardando flujo:', e);
