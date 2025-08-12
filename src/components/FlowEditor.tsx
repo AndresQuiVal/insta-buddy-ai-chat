@@ -92,8 +92,11 @@ const ButtonNode = ({ data, id }: { data: any; id: string }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="text-xs mb-2">
-          <strong>Texto:</strong> {data.buttonText || 'Nuevo botón'}
+        <div className="text-xs text-muted-foreground mb-2">
+          {data.message?.substring(0, 40) || 'Nuevo mensaje con botón'}...
+        </div>
+        <div className="text-xs mb-1">
+          <strong>Botón:</strong> {data.buttonText || 'Nuevo botón'}
         </div>
         <div className="text-xs">
           <strong>Tipo:</strong> {data.buttonType === 'url' ? 'URL' : 'Respuesta'}
@@ -298,6 +301,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         };
       case 'button':
         return {
+          message: 'Nuevo mensaje con botón',
           buttonText: 'Botón',
           buttonType: 'postback',
           buttonUrl: '',
@@ -519,6 +523,16 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
               
               {configNodeData?.buttonText !== undefined && (
                 <>
+                  <div>
+                    <Label htmlFor="buttonMessage">Mensaje de Texto</Label>
+                    <Textarea
+                      id="buttonMessage"
+                      value={configNodeData.message || ''}
+                      onChange={(e) => setConfigNodeData({...configNodeData, message: e.target.value})}
+                      placeholder="Escribe el mensaje que acompaña al botón..."
+                      rows={3}
+                    />
+                  </div>
                   <div>
                     <Label htmlFor="buttonText">Texto del Botón</Label>
                     <Input
