@@ -104,6 +104,12 @@ const ButtonNode = ({ data, id }: { data: any; id: string }) => {
         <div className="text-xs">
           <strong>Tipo:</strong> {data.buttonType === 'url' ? 'URL' : 'Respuesta'}
         </div>
+        {data.buttonType !== 'url' && data.postbackResponse && (
+          <div className="text-xs mt-1 text-muted-foreground">
+            <strong>Respuesta:</strong> {`${(data.postbackResponse as string).substring(0, 40)}...`}
+          </div>
+        )}
+
       </CardContent>
       <Handle type="target" position={Position.Top} />
       <Handle type="source" position={Position.Bottom} />
@@ -333,6 +339,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
               buttonText: btnText,
               buttonType: btnTypeNorm,
               buttonUrl: btnUrl,
+              postbackResponse: autoresponderData.postback_response || '',
               autoresponder_id: autoresponderData.id,
             },
           });
@@ -384,6 +391,20 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
             });
 
             flowEdges.push({ id: 'e-1-2', source: '1', target: '2' });
+
+            // Si el botón es postback y hay respuesta configurada, añadir el mensaje de Instagram conectado
+            if (btnTypeNorm !== 'url' && autoresponderData.postback_response) {
+              flowNodes.push({
+                id: '3',
+                type: 'instagramMessage',
+                position: { x: 250, y: 350 },
+                data: {
+                  message: autoresponderData.postback_response,
+                  active: true,
+                },
+              });
+              flowEdges.push({ id: 'e-2-3', source: '2', target: '3' });
+            }
           }
         }
 
