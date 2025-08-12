@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { MessageCircle, MousePointer, GitBranch, Send, Trash2, Instagram } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 
 // Custom Node Types
 const AutoresponderNode = ({ data, id }: { data: any; id: string }) => {
@@ -276,6 +277,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [configNodeData, setConfigNodeData] = useState<any>(null);
   const [configNodeId, setConfigNodeId] = useState<string>('');
+  const { currentUser, loading: userLoading } = useInstagramUsers();
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -342,16 +344,39 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         return;
       }
 
-      // Vista general: cargar todos los autoresponders activos
+      // Vista general: cargar solo los autoresponders del usuario actual
+      if (!currentUser) {
+        // Si no hay usuario, mostrar un nodo vacío para no confundir
+        setNodes([
+          {
+            id: '1',
+            type: 'autoresponder',
+            position: { x: 250, y: 50 },
+            data: {
+              message: 'Configura tu primer autoresponder para comenzar',
+              keywords: [],
+              active: false,
+              autoresponder_id: null,
+              autoresponder_type: 'new',
+              name: 'Nuevo Autoresponder',
+            },
+          },
+        ]);
+        setEdges([]);
+        return;
+      }
+
       const { data: autoresponderMessages } = await supabase
         .from('autoresponder_messages')
         .select('*')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('instagram_user_id_ref', currentUser.instagram_user_id);
 
       const { data: commentAutoresponders } = await supabase
         .from('comment_autoresponders')
         .select('*')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('user_id', currentUser.instagram_user_id);
 
       const flowNodes: Node[] = [];
       const flowEdges: Edge[] = [];
@@ -465,10 +490,10 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
 
   // Cargar autoresponders cuando se abre el modal
   useEffect(() => {
-    if (isOpen && !loading) {
+    if (isOpen && !loading && !userLoading) {
       loadAutoresponders();
     }
-  }, [isOpen, loadAutoresponders, loading]);
+  }, [isOpen, loadAutoresponders, loading, userLoading]);
 
   const addNode = useCallback((nodeType: string) => {
     setNodes((nds) => {
