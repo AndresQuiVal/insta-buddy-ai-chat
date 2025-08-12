@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -24,6 +24,8 @@ import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { MessageCircle, MousePointer, GitBranch, Send, Trash2, Instagram } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Custom Node Types
 const AutoresponderNode = ({ data, id }: { data: any; id: string }) => {
@@ -35,7 +37,7 @@ const AutoresponderNode = ({ data, id }: { data: any; id: string }) => {
 
   return (
     <Card className="min-w-[250px] shadow-lg border-2 border-primary/20 group relative">
-      {id !== '1' && (
+      {!data.autoresponder_id && id !== '1' && (
         <Button
           variant="ghost"
           size="sm"
@@ -266,8 +268,9 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
   autoresponderData,
   onSave
 }) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [loading, setLoading] = useState(false);
 
   // Node configuration dialogs
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
@@ -278,6 +281,160 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges],
   );
+
+  // Cargar autoresponders existentes
+  const loadAutoresponders = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Cargar autoresponders simples
+      const { data: autoresponderMessages } = await supabase
+        .from('autoresponder_messages')
+        .select('*')
+        .eq('is_active', true);
+
+      // Cargar autoresponders de comentarios
+      const { data: commentAutoresponders } = await supabase
+        .from('comment_autoresponders')
+        .select('*')
+        .eq('is_active', true);
+
+      const flowNodes: Node[] = [];
+      const flowEdges: Edge[] = [];
+      let yPosition = 50;
+      let nodeCounter = 1;
+
+      // Convertir autoresponders simples a nodos
+      if (autoresponderMessages && autoresponderMessages.length > 0) {
+        autoresponderMessages.forEach((autoresponder) => {
+          const nodeId = `${nodeCounter++}`;
+          
+          // Nodo principal del autoresponder (NUNCA se puede eliminar)
+          flowNodes.push({
+            id: nodeId,
+            type: 'autoresponder',
+            position: { x: 250, y: yPosition },
+            data: {
+              message: autoresponder.message_text,
+              keywords: autoresponder.keywords || [],
+              active: autoresponder.is_active,
+              autoresponder_id: autoresponder.id,
+              autoresponder_type: 'message',
+              name: autoresponder.name
+            },
+          });
+
+          // Si tiene botones, agregar nodo de botón
+          if (autoresponder.use_buttons && autoresponder.buttons) {
+            const buttonNodeId = `${nodeCounter++}`;
+            flowNodes.push({
+              id: buttonNodeId,
+              type: 'button',
+              position: { x: 250, y: yPosition + 150 },
+              data: {
+                message: autoresponder.message_text,
+                buttonText: autoresponder.buttons[0]?.text || 'Botón',
+                buttonType: autoresponder.buttons[0]?.type || 'postback',
+                buttonUrl: autoresponder.buttons[0]?.url || '',
+                autoresponder_id: autoresponder.id
+              },
+            });
+
+            // Conectar autoresponder con botón
+            flowEdges.push({
+              id: `e-${nodeId}-${buttonNodeId}`,
+              source: nodeId,
+              target: buttonNodeId,
+            });
+          }
+
+          yPosition += 300;
+        });
+      }
+
+      // Convertir comment autoresponders a nodos
+      if (commentAutoresponders && commentAutoresponders.length > 0) {
+        commentAutoresponders.forEach((autoresponder) => {
+          const nodeId = `${nodeCounter++}`;
+          
+          // Nodo principal del autoresponder (NUNCA se puede eliminar)
+          flowNodes.push({
+            id: nodeId,
+            type: 'autoresponder',
+            position: { x: 600, y: yPosition },
+            data: {
+              message: autoresponder.dm_message,
+              keywords: autoresponder.keywords || [],
+              active: autoresponder.is_active,
+              autoresponder_id: autoresponder.id,
+              autoresponder_type: 'comment',
+              name: autoresponder.name
+            },
+          });
+
+          // Si tiene botón, agregar nodo de botón
+          if (autoresponder.use_button_message && autoresponder.button_text) {
+            const buttonNodeId = `${nodeCounter++}`;
+            flowNodes.push({
+              id: buttonNodeId,
+              type: 'button',
+              position: { x: 600, y: yPosition + 150 },
+              data: {
+                message: autoresponder.dm_message,
+                buttonText: autoresponder.button_text,
+                buttonType: autoresponder.button_type || 'postback',
+                buttonUrl: autoresponder.button_url || '',
+                autoresponder_id: autoresponder.id
+              },
+            });
+
+            // Conectar autoresponder con botón
+            flowEdges.push({
+              id: `e-${nodeId}-${buttonNodeId}`,
+              source: nodeId,
+              target: buttonNodeId,
+            });
+          }
+
+          yPosition += 300;
+        });
+      }
+
+      // Si no hay autoresponders, crear nodo inicial por defecto
+      if (flowNodes.length === 0) {
+        flowNodes.push({
+          id: '1',
+          type: 'autoresponder',
+          position: { x: 250, y: 50 },
+          data: {
+            message: 'Hola! Gracias por contactarnos. ¿En qué podemos ayudarte?',
+            keywords: ['hola', 'ayuda', 'info'],
+            active: false,
+            autoresponder_id: null,
+            autoresponder_type: 'new',
+            name: 'Nuevo Autoresponder'
+          },
+        });
+      }
+
+      setNodes(flowNodes);
+      setEdges(flowEdges);
+      
+      toast.success(`${flowNodes.length} autoresponders cargados en FlowEditor`);
+    } catch (error) {
+      console.error('Error cargando autoresponders:', error);
+      toast.error('Error cargando autoresponders');
+    } finally {
+      setLoading(false);
+    }
+  }, [setNodes, setEdges]);
+
+  // Cargar autoresponders cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && !loading) {
+      loadAutoresponders();
+    }
+  }, [isOpen, loadAutoresponders, loading]);
 
   const addNode = useCallback((nodeType: string) => {
     setNodes((nds) => {
