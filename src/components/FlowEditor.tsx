@@ -146,6 +146,11 @@ const ConditionNode = ({ data, id }: { data: any; id: string }) => {
           <span className="text-xs text-green-600">✓ Sí</span>
           <span className="text-xs text-red-600">✗ No</span>
         </div>
+        {(data.whatsappMessageYes || data.whatsappMessageNo) && (
+          <div className="text-xs text-blue-600 mt-2 pt-2 border-t">
+            📱 WhatsApp configurado
+          </div>
+        )}
       </CardContent>
       <Handle type="target" position={Position.Top} />
       <Handle type="source" position={Position.Left} id="yes" />
@@ -266,7 +271,9 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         return {
           condition: 'Nueva condición',
           conditionType: 'keyword',
-          conditionKeywords: ''
+          conditionKeywords: '',
+          whatsappMessageYes: '',
+          whatsappMessageNo: ''
         };
       case 'action':
         return {
@@ -520,6 +527,30 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                       Esta condición dividirá aleatoriamente las respuestas 50/50 entre las dos salidas.
                     </div>
                   )}
+                  
+                  <div className="pt-4 border-t">
+                    <h4 className="text-sm font-medium mb-3">Mensajes de WhatsApp</h4>
+                    <div>
+                      <Label htmlFor="whatsappMessageYes">Mensaje cuando SÍ se cumple</Label>
+                      <Textarea
+                        id="whatsappMessageYes"
+                        value={configNodeData.whatsappMessageYes || ''}
+                        onChange={(e) => setConfigNodeData({...configNodeData, whatsappMessageYes: e.target.value})}
+                        placeholder="Mensaje para WhatsApp cuando la condición es verdadera..."
+                        rows={2}
+                      />
+                    </div>
+                    <div className="mt-3">
+                      <Label htmlFor="whatsappMessageNo">Mensaje cuando NO se cumple</Label>
+                      <Textarea
+                        id="whatsappMessageNo"
+                        value={configNodeData.whatsappMessageNo || ''}
+                        onChange={(e) => setConfigNodeData({...configNodeData, whatsappMessageNo: e.target.value})}
+                        placeholder="Mensaje para WhatsApp cuando la condición es falsa..."
+                        rows={2}
+                      />
+                    </div>
+                  </div>
                 </>
               )}
 
