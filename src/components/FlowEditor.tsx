@@ -629,6 +629,9 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
 
     onSave?.(flowData);
     onClose();
+    if (autoresponderData?.post_id) {
+      navigate('/', { replace: true });
+    }
   };
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
