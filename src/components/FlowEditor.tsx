@@ -306,7 +306,8 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         return {
           condition: 'Nueva condición',
           conditionType: 'keyword',
-          conditionKeywords: ''
+          conditionKeywords: '',
+          caseSensitive: false
         };
       case 'instagramMessage':
         return {
@@ -588,15 +589,26 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                     </Select>
                   </div>
                   {configNodeData.conditionType === 'keyword' && (
-                    <div>
-                      <Label htmlFor="keywords">Palabras Clave (separadas por coma)</Label>
-                      <Input
-                        id="keywords"
-                        value={configNodeData.conditionKeywords || ''}
-                        onChange={(e) => setConfigNodeData({...configNodeData, conditionKeywords: e.target.value})}
-                        placeholder="sí, ok, acepto, continuar"
-                      />
-                    </div>
+                    <>
+                      <div>
+                        <Label htmlFor="keywords">Palabras Clave (separadas por coma)</Label>
+                        <Input
+                          id="keywords"
+                          value={configNodeData.conditionKeywords || ''}
+                          onChange={(e) => setConfigNodeData({...configNodeData, conditionKeywords: e.target.value})}
+                          placeholder="sí, ok, acepto, continuar"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="caseSensitive"
+                          checked={configNodeData.caseSensitive || false}
+                          onChange={(e) => setConfigNodeData({...configNodeData, caseSensitive: e.target.checked})}
+                        />
+                        <Label htmlFor="caseSensitive">Respetar mayúsculas y minúsculas</Label>
+                      </div>
+                    </>
                   )}
                   {configNodeData.conditionType === 'random' && (
                     <div className="text-sm text-muted-foreground">
