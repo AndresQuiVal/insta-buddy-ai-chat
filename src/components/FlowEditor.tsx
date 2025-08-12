@@ -432,7 +432,6 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
             flowEdges.push({ id: 'e-1-2', source: '1', target: '2' });
           }
         }
-        }
 
         setNodes(flowNodes);
         setEdges(flowEdges);
