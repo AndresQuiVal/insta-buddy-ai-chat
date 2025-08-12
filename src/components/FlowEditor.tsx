@@ -315,11 +315,16 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         const useButtons = !!autoresponderData.use_buttons || !!autoresponderData.use_button_message;
 
         if (useButtons && (hasButtonsArray || hasSingleButton)) {
-          const firstBtn = hasButtonsArray ? autoresponderData.buttons[0] : {
+          const firstBtnRaw = hasButtonsArray ? autoresponderData.buttons[0] : {
             text: autoresponderData.button_text,
+            title: autoresponderData.button_text,
             type: autoresponderData.button_type || 'postback',
             url: autoresponderData.button_url || '',
-          };
+          } as any;
+
+          const btnText = firstBtnRaw?.text ?? firstBtnRaw?.title ?? 'Botón';
+          const btnTypeNorm = (firstBtnRaw?.type === 'web_url' || firstBtnRaw?.type === 'url') ? 'url' : 'postback';
+          const btnUrl = firstBtnRaw?.url || '';
 
           flowNodes.push({
             id: '2',
@@ -327,9 +332,9 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
             position: { x: 250, y: 200 },
             data: {
               message: autoresponderData.message_text || autoresponderData.dm_message || '',
-              buttonText: firstBtn?.text || 'Botón',
-              buttonType: firstBtn?.type || 'postback',
-              buttonUrl: firstBtn?.url || '',
+              buttonText: btnText,
+              buttonType: btnTypeNorm,
+              buttonUrl: btnUrl,
               autoresponder_id: autoresponderData.id,
             },
           });

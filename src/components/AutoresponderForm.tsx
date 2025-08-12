@@ -426,7 +426,15 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         <FlowEditor
           isOpen={isFlowEditorOpen}
           onClose={() => setIsFlowEditorOpen(false)}
-          autoresponderData={message}
+          autoresponderData={{
+            id: message?.id,
+            name,
+            message_text: messageText,
+            is_active: isActive,
+            keywords: useKeywords ? keywords : [],
+            use_buttons: false,
+            buttons: null,
+          }}
           onSave={(data) => {
             setFlowData(data);
             console.log('✅ Flujo guardado:', data);

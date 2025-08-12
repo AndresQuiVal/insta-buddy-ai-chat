@@ -709,7 +709,21 @@ const EditAutoresponderForm = ({ message, onSubmit, onCancel }: EditAutoresponde
         <FlowEditor
           isOpen={isFlowEditorOpen}
           onClose={() => setIsFlowEditorOpen(false)}
-          autoresponderData={message}
+          autoresponderData={{
+            id: message.id,
+            name,
+            message_text: messageText,
+            is_active: isActive,
+            keywords: useKeywords ? keywords : [],
+            use_buttons: useButtons,
+            buttons: useButtons ? [{
+              type: buttonType,
+              text: buttonText,
+              title: buttonText,
+              url: buttonType === 'web_url' ? buttonUrl : undefined,
+              payload: buttonType === 'postback' ? (postbackPayload || 'POSTBACK') : undefined,
+            }] : null,
+          }}
           onSave={(data) => {
             setFlowData(data);
             console.log('✅ Flujo guardado:', data);
