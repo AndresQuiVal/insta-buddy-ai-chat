@@ -277,15 +277,15 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
     [setEdges],
   );
 
-  const addNode = useCallback(() => {
+  const addNode = useCallback((nodeType: string) => {
     const newNode: Node = {
       id: `${nodes.length + 1}`,
-      type: selectedNodeType,
+      type: nodeType,
       position: { x: Math.random() * 400, y: Math.random() * 400 },
-      data: getDefaultNodeData(selectedNodeType),
+      data: getDefaultNodeData(nodeType),
     };
     setNodes((nds) => nds.concat(newNode));
-  }, [nodes.length, selectedNodeType, setNodes]);
+  }, [nodes.length, setNodes]);
 
   const getDefaultNodeData = (type: string) => {
     switch (type) {
@@ -373,10 +373,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setSelectedNodeType('autoresponder');
-                      addNode();
-                    }}
+                    onClick={() => addNode('autoresponder')}
                     className="justify-start"
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
@@ -385,10 +382,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setSelectedNodeType('button');
-                      addNode();
-                    }}
+                    onClick={() => addNode('button')}
                     className="justify-start"
                   >
                     <MousePointer className="w-4 h-4 mr-2" />
@@ -397,10 +391,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setSelectedNodeType('condition');
-                      addNode();
-                    }}
+                    onClick={() => addNode('condition')}
                     className="justify-start"
                   >
                     <GitBranch className="w-4 h-4 mr-2" />
@@ -409,10 +400,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setSelectedNodeType('instagramMessage');
-                      addNode();
-                    }}
+                    onClick={() => addNode('instagramMessage')}
                     className="justify-start"
                   >
                     <Instagram className="w-4 h-4 mr-2" />
@@ -421,10 +409,7 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setSelectedNodeType('action');
-                      addNode();
-                    }}
+                    onClick={() => addNode('action')}
                     className="justify-start"
                   >
                     <Send className="w-4 h-4 mr-2" />
