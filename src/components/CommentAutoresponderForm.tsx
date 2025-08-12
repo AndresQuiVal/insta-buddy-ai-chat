@@ -699,6 +699,8 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
             button_text: useButtonMessage ? buttonText : undefined,
             button_type: buttonType,
             button_url: buttonType === 'web_url' ? buttonUrl : undefined,
+            postback_response: buttonType === 'postback' ? postbackResponse : undefined,
+            post_id: selectedPost.id,
           }}
           onSave={(data) => {
             setFlowData(data);

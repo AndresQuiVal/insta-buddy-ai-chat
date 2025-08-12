@@ -294,44 +294,42 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
         const flowNodes: Node[] = [];
         const flowEdges: Edge[] = [];
 
-        // Nodo inicial (protegido)
-        flowNodes.push({
-          id: '1',
-          type: 'autoresponder',
-          position: { x: 250, y: 50 },
-          data: {
-            message: autoresponderData.message_text || autoresponderData.dm_message || 'Mensaje',
-            keywords: autoresponderData.keywords || [],
-            active: !!autoresponderData.is_active,
-            autoresponder_id: autoresponderData.id,
-            autoresponder_type: autoresponderData.post_id ? 'comment' : 'message',
-            name: autoresponderData.name,
-          },
-        });
-
-        // Si tiene botón configurado, añadimos el nodo de botón y lo conectamos
+        // Detectar si es autoresponder de comentarios (posts) y si usa botón
         const hasButtonsArray = Array.isArray(autoresponderData.buttons) && autoresponderData.buttons.length > 0;
         const hasSingleButton = !!autoresponderData.button_text;
         const useButtons = !!autoresponderData.use_buttons || !!autoresponderData.use_button_message;
+        const isCommentAutoresponder = !!autoresponderData.post_id;
 
-        if (useButtons && (hasButtonsArray || hasSingleButton)) {
-          const firstBtnRaw = hasButtonsArray ? autoresponderData.buttons[0] : {
-            text: autoresponderData.button_text,
-            title: autoresponderData.button_text,
-            type: autoresponderData.button_type || 'postback',
-            url: autoresponderData.button_url || '',
-          } as any;
+        // Normalizar primer botón (si existe)
+        const firstBtnRaw = hasButtonsArray
+          ? autoresponderData.buttons[0]
+          : hasSingleButton
+          ? {
+              text: autoresponderData.button_text,
+              title: autoresponderData.button_text,
+              type: autoresponderData.button_type || 'postback',
+              url: autoresponderData.button_url || '',
+            }
+          : null;
+        const btnText = firstBtnRaw?.text ?? firstBtnRaw?.title ?? '';
+        const btnTypeNorm = firstBtnRaw
+          ? (firstBtnRaw.type === 'web_url' || firstBtnRaw.type === 'url')
+            ? 'url'
+            : 'postback'
+          : undefined;
+        const btnUrl = firstBtnRaw?.url || '';
 
-          const btnText = firstBtnRaw?.text ?? firstBtnRaw?.title ?? 'Botón';
-          const btnTypeNorm = (firstBtnRaw?.type === 'web_url' || firstBtnRaw?.type === 'url') ? 'url' : 'postback';
-          const btnUrl = firstBtnRaw?.url || '';
+        // Mensaje base desde datos del autoresponder
+        const baseMessage = autoresponderData.message_text || autoresponderData.dm_message || '';
 
+        if (isCommentAutoresponder && useButtons && firstBtnRaw) {
+          // Escenario solicitado: el primer elemento es un Botón Interactivo con el texto del mensaje y del botón
           flowNodes.push({
-            id: '2',
+            id: '1',
             type: 'button',
-            position: { x: 250, y: 200 },
+            position: { x: 250, y: 50 },
             data: {
-              message: autoresponderData.message_text || autoresponderData.dm_message || '',
+              message: baseMessage,
               buttonText: btnText,
               buttonType: btnTypeNorm,
               buttonUrl: btnUrl,
@@ -339,13 +337,58 @@ export const FlowEditor: React.FC<FlowEditorProps> = ({
             },
           });
 
-          flowEdges.push({ id: 'e-1-2', source: '1', target: '2' });
+          // Si el botón es de tipo respuesta (postback), crear el nodo de Mensaje de Instagram conectado
+          if (btnTypeNorm !== 'url') {
+            const postbackMsg = autoresponderData.postback_response || '';
+            if (postbackMsg) {
+              flowNodes.push({
+                id: '2',
+                type: 'instagramMessage',
+                position: { x: 250, y: 200 },
+                data: {
+                  message: postbackMsg,
+                  active: true,
+                },
+              });
+              flowEdges.push({ id: 'e-1-2', source: '1', target: '2' });
+            }
+          }
+        } else {
+          // Comportamiento por defecto: nodo de autoresponder inicial y opcionalmente un nodo de botón
+          flowNodes.push({
+            id: '1',
+            type: 'autoresponder',
+            position: { x: 250, y: 50 },
+            data: {
+              message: baseMessage || 'Mensaje',
+              keywords: autoresponderData.keywords || [],
+              active: !!autoresponderData.is_active,
+              autoresponder_id: autoresponderData.id,
+              autoresponder_type: isCommentAutoresponder ? 'comment' : 'message',
+              name: autoresponderData.name,
+            },
+          });
+
+          if (useButtons && firstBtnRaw) {
+            flowNodes.push({
+              id: '2',
+              type: 'button',
+              position: { x: 250, y: 200 },
+              data: {
+                message: baseMessage,
+                buttonText: btnText,
+                buttonType: btnTypeNorm,
+                buttonUrl: btnUrl,
+                autoresponder_id: autoresponderData.id,
+              },
+            });
+
+            flowEdges.push({ id: 'e-1-2', source: '1', target: '2' });
+          }
         }
 
         setNodes(flowNodes);
         setEdges(flowEdges);
-        // Mensaje amigable (no confunde con conteos)
-        // toast.success('Flujo del autoresponder cargado');
         return;
       }
 
