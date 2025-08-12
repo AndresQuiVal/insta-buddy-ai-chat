@@ -283,27 +283,27 @@ const ProspectsPage: React.FC = () => {
               <div className="h-1 w-20 rounded-full mt-2" style={{ background: 'var(--gradient-hower)' }} />
             </div>
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">Gestiona tus nuevos prospectos, tus números y tus seguimientos.</p>
+          
         </header>
 
       <main>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="w-full grid grid-cols-3 rounded-xl border bg-card p-1 shadow-sm">
-            <TabsTrigger value="numeros" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
-              <BarChart3 className="mr-2 h-4 w-4" /> Mis Números
+            <TabsTrigger value="numeros" aria-label="Mis Números" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
+              <BarChart3 className="h-4 w-4" />
             </TabsTrigger>
-            <TabsTrigger value="nuevos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
-              <UserPlus className="mr-2 h-4 w-4" /> Nuevos Prospectos
+            <TabsTrigger value="nuevos" aria-label="Nuevos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
+              <UserPlus className="h-4 w-4" />
             </TabsTrigger>
-            <TabsTrigger value="mis" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
-              <Users className="mr-2 h-4 w-4" /> Mis Prospectos
+            <TabsTrigger value="mis" aria-label="Mis Prospectos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
+              <Users className="h-4 w-4" />
             </TabsTrigger>
           </TabsList>
 
           {/* Nuevos Prospectos */}
           <TabsContent value="nuevos" className="space-y-6 mt-6">
             <section>
-              <h2 className="text-lg font-medium">Prospectos de Hoy</h2>
+              
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
                 <Card>
                   <CardContent className="p-5 flex items-center gap-4">
@@ -351,7 +351,7 @@ const ProspectsPage: React.FC = () => {
 
             {/* ICP Config */}
             <section className="mt-6">
-              <h3 className="text-sm font-medium mb-2">Configura tu ICP (Cliente Ideal)</h3>
+              
               <Card>
                 <CardContent className="p-4">
                   <IdealClientTraits />
@@ -414,22 +414,16 @@ const ProspectsPage: React.FC = () => {
 
             <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { label: 'Respuestas', value: counts.respuestas, Icon: MessageSquare, color: '--success' },
-                { label: 'Enviados', value: counts.enviados, Icon: Send, color: '--hower-primary' },
-                { label: 'Agendados', value: counts.agendados, Icon: CalendarClock, color: '--foreground' },
-                { label: 'Seguimientos', value: counts.seguimientos, Icon: Repeat, color: '--hower-medium' },
-              ].map(({ label, value, Icon, color }) => (
-                <Card key={label}>
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div
-                      className="h-10 w-10 rounded-full flex items-center justify-center"
-                      style={{ background: `hsl(var(${color}) / 0.12)`, color: `hsl(var(${color}))` }}
-                    >
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                    </div>
-                    <div>
+                { label: 'Respuestas', value: counts.respuestas, Icon: MessageSquare, bg: '--success', fg: '--primary-foreground' },
+                { label: 'Enviados', value: counts.enviados, Icon: Send, bg: '--hower-primary', fg: '--primary-foreground' },
+                { label: 'Agendados', value: counts.agendados, Icon: CalendarClock, bg: '--foreground', fg: '--primary-foreground' },
+                { label: 'Seguimientos', value: counts.seguimientos, Icon: Repeat, bg: '--background', fg: '--foreground' },
+              ].map(({ label, value, Icon, bg, fg }) => (
+                <Card key={label} className="overflow-hidden">
+                  <CardContent className="p-5" style={{ background: `hsl(var(${bg}))`, color: `hsl(var(${fg}))` }}>
+                    <div className="flex items-center justify-between">
+                      <Icon className="h-5 w-5 opacity-90" aria-hidden="true" />
                       <div className="text-4xl font-semibold leading-none">{value}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{label}</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -438,7 +432,7 @@ const ProspectsPage: React.FC = () => {
 
             {/* Asistente por WhatsApp */}
             <section className="mt-6">
-              <h3 className="text-sm font-medium mb-2">WhatsApp</h3>
+              
               <Card>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
