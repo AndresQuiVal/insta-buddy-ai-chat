@@ -57,13 +57,6 @@ const ProspectsPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'nuevos' | 'numeros' | 'mis'>('numeros');
 
-  // Date range for Mis Números
-  const [from, setFrom] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    return d.toISOString().slice(0, 10);
-  });
-  const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
 
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [counts, setCounts] = useState({
@@ -111,8 +104,10 @@ const ProspectsPage: React.FC = () => {
         setCounts({ respuestas: 0, enviados: 0, agendados: 0, seguimientos: 0 });
         return;
       }
-      const fromDt = new Date(from);
-      const toDt = new Date(to);
+      // Use last 7 days as default range
+      const fromDt = new Date();
+      fromDt.setDate(fromDt.getDate() - 7);
+      const toDt = new Date();
       toDt.setHours(23, 59, 59, 999);
 
       const fromISO = formatDateISO(fromDt);
@@ -389,28 +384,6 @@ const ProspectsPage: React.FC = () => {
 
           {/* Mis Números */}
           <TabsContent value="numeros" className="space-y-6 mt-6">
-            <Card>
-              <CardContent className="p-4">
-                <section className="flex flex-col sm:flex-row items-end gap-3">
-                  <div className="flex-1">
-                    <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="Desde" aria-label="Desde" />
-                  </div>
-                  <div className="flex-1">
-                    <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} placeholder="Hasta" aria-label="Hasta" />
-                  </div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button onClick={refreshCounts} disabled={loadingCounts} variant="outline" aria-label="Actualizar">
-                          <RefreshCw className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Actualizar</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </section>
-              </CardContent>
-            </Card>
 
             <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
