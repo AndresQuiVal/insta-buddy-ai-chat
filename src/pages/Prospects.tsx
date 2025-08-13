@@ -344,23 +344,92 @@ const ProspectsPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* ICP Config */}
-            <section className="mt-6">
-              
-              <Card>
-                <CardContent className="p-4">
-                  <IdealClientTraits />
-                </CardContent>
-              </Card>
-            </section>
 
-            {/* Listado */}
+            {/* Listado de Prospectos de Ejemplo */}
             <section className="mt-6">
-              <div className="grid grid-cols-1 gap-2">
-                {loadingToday && <div className="text-sm text-muted-foreground">Cargando...</div>}
+              <div className="grid grid-cols-1 gap-3">
+                {/* Ejemplos de prospectos */}
+                {[
+                  {
+                    username: "maria_fitness_coach",
+                    profilePic: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo"
+                  },
+                  {
+                    username: "carlos_entrepreneur",
+                    profilePic: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face", 
+                    status: "contactado"
+                  },
+                  {
+                    username: "ana_marketing_pro",
+                    profilePic: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo"
+                  },
+                  {
+                    username: "luis_designer_mx",
+                    profilePic: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+                    status: "respondió"
+                  },
+                  {
+                    username: "sofia_coach_life",
+                    profilePic: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo"
+                  }
+                ].map((prospect, index) => (
+                  <div key={index} className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={prospect.profilePic} 
+                        alt={`Perfil de ${prospect.username}`}
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
+                        loading="lazy"
+                      />
+                      <div>
+                        <div className="text-sm font-medium">@{prospect.username}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {prospect.status === "nuevo" && "🆕 Nuevo prospecto"}
+                          {prospect.status === "contactado" && "✅ Ya contactado"}  
+                          {prospect.status === "respondió" && "💬 Respondió"}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              onClick={() => openOnboarding(prospect.username, 'outreach')} 
+                              aria-label="Contactar"
+                              variant={prospect.status === "nuevo" ? "default" : "outline"}
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {prospect.status === "nuevo" ? "Contactar ahora" : "Ver conversación"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Mostrar prospectos reales si los hay */}
                 {!loadingToday && todayProspects.map((p) => (
                   <div key={p.id} className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
-                    <div className="text-sm font-medium">@{p.username}</div>
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={p.profile_picture_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"} 
+                        alt={`Perfil de ${p.username}`}
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
+                        loading="lazy"
+                      />
+                      <div>
+                        <div className="text-sm font-medium">@{p.username}</div>
+                        <div className="text-xs text-muted-foreground">🔴 Real - {statusLabel(p)}</div>
+                      </div>
+                    </div>
                     <div>
                       <TooltipProvider>
                         <Tooltip>
@@ -375,8 +444,12 @@ const ProspectsPage: React.FC = () => {
                     </div>
                   </div>
                 ))}
+                
+                {loadingToday && <div className="text-sm text-muted-foreground">Cargando...</div>}
                 {!loadingToday && todayProspects.length === 0 && (
-                  <div className="text-sm text-muted-foreground">No hay prospectos hoy.</div>
+                  <div className="text-sm text-muted-foreground mt-4">
+                    Por ahora mostramos ejemplos. Los prospectos reales aparecerán aquí cuando se sincronicen.
+                  </div>
                 )}
               </div>
             </section>
