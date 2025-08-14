@@ -478,43 +478,43 @@ const ProspectsPage: React.FC = () => {
 
             <section>
               <div className="mb-8">
-                <h2 className="text-lg font-medium text-foreground mb-2">Métricas de Prospección</h2>
-                <p className="text-sm text-muted-foreground">Últimos 7 días - Actualizado en tiempo real</p>
+                <h2 className="text-lg font-medium text-foreground mb-2">Mis Números</h2>
+                <p className="text-sm text-muted-foreground">Últimos 7 días</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 {[
                   { 
-                    label: 'Respuestas Recibidas', 
+                    label: 'Respuestas', 
                     value: counts.respuestas, 
                     Icon: MessageSquare, 
                     color: 'hsl(var(--success))',
                     lightBg: 'hsl(var(--success) / 0.1)',
-                    description: 'Prospectos que te respondieron'
+                    description: 'Te respondieron'
                   },
                   { 
-                    label: 'Mensajes Enviados', 
+                    label: 'Enviados', 
                     value: counts.enviados, 
                     Icon: Send, 
                     color: 'hsl(var(--hower-primary))',
                     lightBg: 'hsl(var(--hower-primary) / 0.1)',
-                    description: 'Total de mensajes outbound'
+                    description: 'Mensajes que enviaste'
                   },
                   { 
-                    label: 'Reuniones Agendadas', 
+                    label: 'Agendados', 
                     value: counts.agendados, 
                     Icon: CalendarClock, 
                     color: 'hsl(var(--hower-medium))',
                     lightBg: 'hsl(var(--hower-medium) / 0.1)',
-                    description: 'Meetings programados'
+                    description: 'Reuniones programadas'
                   },
                   { 
-                    label: 'Seguimientos Hechos', 
+                    label: 'Seguimientos', 
                     value: counts.seguimientos, 
                     Icon: Repeat, 
                     color: 'hsl(var(--chart-4))',
                     lightBg: 'hsl(var(--chart-4) / 0.1)',
-                    description: 'Follow-ups automáticos'
+                    description: 'Segundos mensajes'
                   },
                 ].map(({ label, value, Icon, color, lightBg, description }) => (
                   <Card key={label} className="group border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-gradient-to-br from-background to-muted/20">
@@ -570,14 +570,13 @@ const ProspectsPage: React.FC = () => {
                   className="gap-2 text-xs hover:bg-muted/50"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${loadingCounts ? 'animate-spin' : ''}`} />
-                  {loadingCounts ? 'Actualizando...' : 'Actualizar métricas'}
+                  {loadingCounts ? 'Cargando...' : 'Actualizar'}
                 </Button>
               </div>
             </section>
 
-            {/* Asistente por WhatsApp */}
+            {/* WhatsApp */}
             <section className="mt-6">
-              
               <Card>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
