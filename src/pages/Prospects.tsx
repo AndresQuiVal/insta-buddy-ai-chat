@@ -67,6 +67,27 @@ const ProspectsPage: React.FC = () => {
     seguimientos: 0,
   });
 
+  // Estados para gamificación y fuentes de prospectos
+  const [showProspectSources, setShowProspectSources] = useState(false);
+  const [dailySentMessages, setDailySentMessages] = useState(() => {
+    const saved = localStorage.getItem('hower-daily-sent');
+    return saved ? parseInt(saved) : 0;
+  });
+  
+  // Datos mock de fuentes de prospectos
+  const prospectSources = [
+    { username: 'fitness_motivation_mx', color: '#8B5CF6', followers: 15000 },
+    { username: 'entrepreneur_tips_latam', color: '#EC4899', followers: 8500 },
+    { username: 'marketing_digital_pro', color: '#06B6D4', followers: 12000 },
+    { username: 'coach_exito_personal', color: '#10B981', followers: 6800 }
+  ];
+
+  // Función para obtener color aleatorio de fuente
+  const getRandomSourceColor = () => {
+    const colors = ['#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
   const [prospects, setProspects] = useState<ProspectRow[]>([]);
   const [loadingProspects, setLoadingProspects] = useState(false);
 
@@ -261,6 +282,25 @@ const ProspectsPage: React.FC = () => {
     }
   };
 
+  // Función para manejar el envío de mensaje y gamificación
+  const handleMessageSent = () => {
+    const newCount = dailySentMessages + 1;
+    setDailySentMessages(newCount);
+    localStorage.setItem('hower-daily-sent', newCount.toString());
+    
+    // Actualizar contador de enviados en el dashboard
+    setCounts(prev => ({ ...prev, enviados: prev.enviados + 1 }));
+    
+    // Verificar si completó todos los prospectos del día
+    if (newCount >= totalHoy) {
+      toast({
+        title: '🎉 ¡Increíble trabajo!',
+        description: 'Has contactado todos los prospectos de hoy. ¡Sigue así!',
+        duration: 5000,
+      });
+    }
+  };
+
   const instaUrl = (username: string) => `https://www.instagram.com/m/${username}`;
 
   // Gamificación simple (progreso del día)
@@ -331,94 +371,149 @@ const ProspectsPage: React.FC = () => {
           {/* Nuevos Prospectos */}
           <TabsContent value="nuevos" className="space-y-6 mt-6">
             <section>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
-                <Card>
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--hower-primary) / 0.12)', color: 'hsl(var(--hower-primary))' }}>
-                      <Users className="h-5 w-5" />
+              {/* Callout para fuentes de prospectos */}
+              <div className="mb-6">
+                <div 
+                  className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-200"
+                  onClick={() => setShowProspectSources(!showProspectSources)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-blue-900">Ver de donde se obtuvieron los prospectos</h3>
+                        <p className="text-sm text-blue-700">Cuentas de Instagram analizadas</p>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-4xl font-semibold leading-none">{totalHoy}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Hoy</div>
+                    <ArrowRight className={`w-5 h-5 text-blue-600 transition-transform duration-200 ${showProspectSources ? 'rotate-90' : ''}`} />
+                  </div>
+                  
+                  {showProspectSources && (
+                    <div className="mt-4 pt-4 border-t border-blue-200">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {prospectSources.map((source, index) => (
+                          <div 
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-100 hover:bg-blue-50 transition-colors cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`https://www.instagram.com/${source.username}`, '_blank');
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: source.color }}
+                              />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">@{source.username}</p>
+                                <p className="text-xs text-gray-500">{source.followers.toLocaleString()} seguidores</p>
+                              </div>
+                            </div>
+                            <ExternalLink className="w-4 h-4 text-gray-400" />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--success) / 0.12)', color: 'hsl(var(--success))' }}>
-                      <CheckCircle className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="text-4xl font-semibold leading-none">{contactadosHoy}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Contactados</div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--hower-medium) / 0.12)', color: 'hsl(var(--hower-medium))' }}>
-                      <Clock className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="text-4xl font-semibold leading-none">{porContactarHoy}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Por contactar</div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  )}
+                </div>
               </div>
 
-              {/* Progreso gamificación */}
-                <div className="mt-4">
-                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                    <div className="h-2 rounded-full" style={{ width: `${progreso}%`, background: 'var(--gradient-hower)' }} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{progreso}%</p>
+              {/* Progreso gamificación mejorado */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-medium">Progreso de hoy</h3>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {dailySentMessages}/{totalHoy} contactados
+                  </span>
                 </div>
+                <div className="relative">
+                  <div className="h-4 w-full rounded-full bg-gradient-to-r from-gray-100 to-gray-200 overflow-hidden shadow-inner">
+                    <div 
+                      className="h-full rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 transition-all duration-700 ease-out shadow-lg relative overflow-hidden"
+                      style={{ width: `${totalHoy > 0 ? (dailySentMessages / totalHoy) * 100 : 0}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="text-center mt-2">
+                    <span className="text-sm font-medium bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      {totalHoy > 0 ? Math.round((dailySentMessages / totalHoy) * 100) : 0}% completado
+                    </span>
+                  </div>
+                </div>
+              </div>
             </section>
 
 
-            {/* Listado de Prospectos de Ejemplo */}
+            {/* Listado de Prospectos */}
             <section className="mt-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-medium">Prospectos para contactar</h3>
+                <p className="text-sm text-muted-foreground">Lista de personas para contactar hoy</p>
+              </div>
               <div className="grid grid-cols-1 gap-3">
-                {/* Ejemplos de prospectos */}
+                {/* Ejemplos de prospectos con etiquetas de color */}
                 {[
                   {
                     username: "maria_fitness_coach",
                     profilePic: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo"
+                    status: "nuevo",
+                    sourceColor: "#8B5CF6"
                   },
                   {
                     username: "carlos_entrepreneur",
                     profilePic: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face", 
-                    status: "contactado"
+                    status: "contactado",
+                    sourceColor: "#EC4899"
                   },
                   {
                     username: "ana_marketing_pro",
                     profilePic: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo"
+                    status: "nuevo",
+                    sourceColor: "#06B6D4"
                   },
                   {
                     username: "luis_designer_mx",
                     profilePic: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-                    status: "respondió"
+                    status: "respondió",
+                    sourceColor: "#10B981"
                   },
                   {
                     username: "sofia_coach_life",
                     profilePic: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo"
+                    status: "nuevo",
+                    sourceColor: "#F59E0B"
                   }
                 ].map((prospect, index) => (
-                  <div key={index} className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <img 
-                        src={prospect.profilePic} 
-                        alt={`Perfil de ${prospect.username}`}
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
-                        loading="lazy"
-                      />
+                  <div key={index} className="flex items-center justify-between rounded-xl border bg-card px-4 py-4 hover:bg-muted/30 transition-all duration-200 hover:shadow-md">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <img 
+                          src={prospect.profilePic} 
+                          alt={`Perfil de ${prospect.username}`}
+                          className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20"
+                          loading="lazy"
+                        />
+                        {/* Etiqueta de color de fuente */}
+                        <div 
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                          style={{ backgroundColor: prospect.sourceColor }}
+                          title="Fuente del prospecto"
+                        />
+                      </div>
                       <div>
-                        <div className="text-sm font-medium">@{prospect.username}</div>
+                        <div className="text-sm font-medium flex items-center gap-2">
+                          @{prospect.username}
+                          <span 
+                            className="px-2 py-1 text-xs rounded-full text-white font-medium"
+                            style={{ backgroundColor: prospect.sourceColor }}
+                          >
+                            Fuente
+                          </span>
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {prospect.status === "nuevo" && "🆕 Nuevo prospecto"}
                           {prospect.status === "contactado" && "✅ Ya contactado"}  
@@ -426,7 +521,7 @@ const ProspectsPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div>
+                    <div className="flex gap-2">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -435,8 +530,10 @@ const ProspectsPage: React.FC = () => {
                               onClick={() => openOnboarding(prospect.username, 'outreach')} 
                               aria-label="Contactar"
                               variant={prospect.status === "nuevo" ? "default" : "outline"}
+                              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
                             >
-                              <Send className="h-4 w-4" />
+                              <Send className="h-4 w-4 mr-1" />
+                              {prospect.status === "nuevo" ? "Contactar" : "Ver"}
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -450,25 +547,43 @@ const ProspectsPage: React.FC = () => {
                 
                 {/* Mostrar prospectos reales si los hay */}
                 {!loadingToday && todayProspects.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <img 
-                        src={p.profile_picture_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"} 
-                        alt={`Perfil de ${p.username}`}
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
-                        loading="lazy"
-                      />
+                  <div key={p.id} className="flex items-center justify-between rounded-xl border bg-card px-4 py-4 hover:bg-muted/30 transition-all duration-200 hover:shadow-md">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <img 
+                          src={p.profile_picture_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"} 
+                          alt={`Perfil de ${p.username}`}
+                          className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20"
+                          loading="lazy"
+                        />
+                        <div 
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                          style={{ backgroundColor: getRandomSourceColor() }}
+                          title="Fuente del prospecto"
+                        />
+                      </div>
                       <div>
-                        <div className="text-sm font-medium">@{p.username}</div>
-                        <div className="text-xs text-muted-foreground">🔴 Real - {statusLabel(p)}</div>
+                        <div className="text-sm font-medium flex items-center gap-2">
+                          @{p.username}
+                          <span className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded-full font-medium">
+                            Real
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">{statusLabel(p)}</div>
                       </div>
                     </div>
                     <div>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button size="sm" onClick={() => openOnboarding(p.username, 'outreach')} aria-label="Contactar">
-                              <Send className="h-4 w-4" />
+                            <Button 
+                              size="sm" 
+                              onClick={() => openOnboarding(p.username, 'outreach')} 
+                              aria-label="Contactar"
+                              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                            >
+                              <Send className="h-4 w-4 mr-1" />
+                              Contactar
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Contactar</TooltipContent>
@@ -478,10 +593,17 @@ const ProspectsPage: React.FC = () => {
                   </div>
                 ))}
                 
-                {loadingToday && <div className="text-sm text-muted-foreground">Cargando...</div>}
+                {loadingToday && (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
+                    <span className="ml-2 text-sm text-muted-foreground">Cargando prospectos...</span>
+                  </div>
+                )}
                 {!loadingToday && todayProspects.length === 0 && (
-                  <div className="text-sm text-muted-foreground mt-4">
-                    Por ahora mostramos ejemplos. Los prospectos reales aparecerán aquí cuando se sincronicen.
+                  <div className="text-center py-8 px-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                    <UserPlus className="h-12 w-12 text-purple-400 mx-auto mb-3" />
+                    <p className="text-sm text-purple-700 font-medium mb-1">Mostrando prospectos de ejemplo</p>
+                    <p className="text-xs text-purple-600">Los prospectos reales aparecerán aquí cuando se sincronicen</p>
                   </div>
                 )}
               </div>
@@ -700,7 +822,16 @@ const ProspectsPage: React.FC = () => {
             {dialogStep === 1 ? (
               <Button onClick={() => setDialogStep(2)}>Continuar</Button>
             ) : (
-              <Button variant="outline" onClick={() => setOpenDialog(false)}>Listo</Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  handleMessageSent();
+                  setOpenDialog(false);
+                }}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+              >
+                Listo
+              </Button>
             )}
           </DialogFooter>
         </DialogContent>
