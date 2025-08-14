@@ -426,7 +426,7 @@ const ProspectsPage: React.FC = () => {
   const instaUrl = (username: string) => `https://www.instagram.com/m/${username}`;
 
   // Gamificación mejorada - considerar ejemplos cuando no hay prospectos reales
-  const ejemplosCount = 10; // Número de prospectos reales de @marikowskaya
+  const ejemplosCount = 17; // Número total de prospectos reales de @marikowskaya
   const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : ejemplosCount;
   const totalParaContactar = prospectsToShow;
   const progreso = totalParaContactar > 0 ? Math.round((dailySentMessages / totalParaContactar) * 100) : 0;
@@ -576,112 +576,162 @@ const ProspectsPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Lista de personas para contactar hoy</p>
               </div>
               <div className="grid grid-cols-1 gap-3">
-                {/* Prospectos reales de @marikowskaya */}
+                {/* Prospectos reales completos de @marikowskaya */}
                 {[
                   {
                     username: "salonantoniacb",
                     firstName: "Salon",
                     fullName: "Salon Antonia Cuerpo & Belleza",
                     profilePic: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Holaaa [NOMBRE], Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? vi tus publicaciones recientes y se siente mucha vibra positiva"
+                    message: "Holaaa Salon, Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? vi tus publicaciones recientes y se siente mucha vibra positiva"
                   },
                   {
                     username: "aran_alma",
                     firstName: "Aran",
                     fullName: "Aran Alcalde",
                     profilePic: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Hey!, Hola [NOMBRE], Vi que sigues a @marikowskaya ... Te sirvieron sus ideas para armar una rutina cosmética sencilla? P. D. vi tus publicaciones recientes y tienen un estilo muy único"
+                    message: "Hey!, Hola Aran, Vi que sigues a @marikowskaya ... Te sirvieron sus ideas para armar una rutina cosmética sencilla? P. D. vi tus publicaciones recientes y tienen un estilo muy único"
                   },
                   {
                     username: "love_roll",
                     firstName: "Love",
                     fullName: "Love & Roll Torrelavega",
                     profilePic: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Hola hola [NOMBRE]!!, Vi que sigues a @marikowskaya ... Has probado algún consejo de sus tutoriales de maquillaje? vi tus publicaciones recientes y se nota tu dedicación"
+                    message: "Hola hola Love!!, Vi que sigues a @marikowskaya ... Has probado algún consejo de sus tutoriales de maquillaje? vi tus publicaciones recientes y se nota tu dedicación"
                   },
                   {
                     username: "sarahkeer_es",
                     firstName: "SarahKeer",
                     fullName: "SarahKeer España",
                     profilePic: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Ey [NOMBRE], Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? vi tus publicaciones recientes y se nota tu dedicación"
+                    message: "Ey SarahKeer, Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? vi tus publicaciones recientes y se nota tu dedicación"
                   },
                   {
                     username: "imeibarcelona",
                     firstName: "Clínicas",
                     fullName: "Clínicas IMÈI",
                     profilePic: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Hey!, Hola [NOMBRE], Vi que sigues a @marikowskaya ... Has probado algún consejo de sus tutoriales de maquillaje? vi tus posts recientes y se siente mucha vibra positiva"
+                    message: "Hey!, Hola Clínicas, Vi que sigues a @marikowskaya ... Has probado algún consejo de sus tutoriales de maquillaje? vi tus posts recientes y se siente mucha vibra positiva"
                   },
                   {
                     username: "isacar_natural",
                     firstName: "Angela",
                     fullName: "Angela",
                     profilePic: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Hey!, Hola [NOMBRE], Vi que sigues a @marikowskaya ... Has aplicado alguna de sus rutinas de skincare paso a paso? P. D. vi tus publicaciones recientes y se nota tu dedicación"
+                    message: "Hey!, Hola Angela, Vi que sigues a @marikowskaya ... Has aplicado alguna de sus rutinas de skincare paso a paso? P. D. vi tus publicaciones recientes y se nota tu dedicación"
                   },
                   {
                     username: "clara_nails89",
-                    firstName: "UÑAS💫PESTAÑAS💫MAQUILLAJE💫",
+                    firstName: "Clara",
                     fullName: "UÑAS💫PESTAÑAS💫MAQUILLAJE💫",
                     profilePic: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Ey [NOMBRE], Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? P. D. vi tus posts recientes y se nota tu dedicación"
+                    message: "Ey Clara, Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? P. D. vi tus posts recientes y se nota tu dedicación"
                   },
                   {
                     username: "juaniflower_5",
                     firstName: "Juana",
                     fullName: "Juana Lopera López",
                     profilePic: "https://images.unsplash.com/photo-1592188657297-c6473609e988?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Hey!, Hola [NOMBRE], Vi que sigues a @marikowskaya ... Qué opinas de su enfoque de skincare sin filtros? P. D. vi tus posts recientes y me parecieron súper auténticas"
+                    message: "Hey!, Hola Juana, Vi que sigues a @marikowskaya ... Qué opinas de su enfoque de skincare sin filtros? P. D. vi tus posts recientes y me parecieron súper auténticas"
                   },
                   {
                     username: "mariarieramakeup",
                     firstName: "Maria",
                     fullName: "Maria Riera • Maquillaje profesional",
                     profilePic: "https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Holaaa [NOMBRE], Vi que sigues a @marikowskaya ... Qué opinas de su enfoque de skincare sin filtros? vi tus posts recientes y me parecieron súper auténticas"
+                    message: "Holaaa Maria, Vi que sigues a @marikowskaya ... Qué opinas de su enfoque de skincare sin filtros? vi tus posts recientes y me parecieron súper auténticas"
                   },
                   {
                     username: "rfl.solorio",
                     firstName: "Rafael",
                     fullName: "Rafael Solorio",
                     profilePic: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
                     sourceColor: "#EC4899",
                     sourceType: "Sigue a @marikowskaya",
-                    message: "Cómo te va [NOMBRE]!, Vi que sigues a @marikowskaya ... Te sirvieron sus ideas para armar una rutina cosmética sencilla? P. D. vi tus posts recientes y tienen un estilo muy único"
+                    message: "Cómo te va Rafael!, Vi que sigues a @marikowskaya ... Te sirvieron sus ideas para armar una rutina cosmética sencilla? P. D. vi tus posts recientes y tienen un estilo muy único"
+                  },
+                  {
+                    username: "remax_susan_siso.synergy",
+                    firstName: "Susan",
+                    fullName: "Susan Siso",
+                    profilePic: "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=100&h=100&fit=crop&crop=face",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Holaaa Susan, Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? vi tus publicaciones recientes y se siente mucha vibra positiva"
+                  },
+                  {
+                    username: "invitada_perfecta",
+                    firstName: "Sandra",
+                    fullName: "Sandra Majada",
+                    profilePic: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=face",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Holaaa Sandra, Vi que sigues a @marikowskaya ... Te sirvieron sus ideas para armar una rutina cosmética sencilla? P. D. vi tus posts recientes y se nota tu dedicación"
+                  },
+                  {
+                    username: "jessie_naturalandhair",
+                    firstName: "Jessie",
+                    fullName: "Maquillaje Peluquería Málaga",
+                    profilePic: "https://images.unsplash.com/photo-1526736947343-afea1ec891dc?w=100&h=100&fit=crop&crop=face",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Ey Jessie, Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? vi tus posts recientes y me parecieron súper auténticas"
+                  },
+                  {
+                    username: "itsandra_tgn",
+                    firstName: "Sandra",
+                    fullName: "ⓢⓐⓝⓓⓡⓐ - inspofashion",
+                    profilePic: "https://images.unsplash.com/photo-1611695434398-4f4b330623e6?w=100&h=100&fit=crop&crop=face",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Hola hola Sandra!!, Vi que sigues a @marikowskaya ... Qué opinas de su enfoque de skincare sin filtros? P. D. vi tus posts recientes y me parecieron súper auténticas"
+                  },
+                  {
+                    username: "marikowskaya",
+                    firstName: "Marikowskaya",
+                    fullName: "Marikowskaya",
+                    profilePic: "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=100&h=100&fit=crop&crop=face",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Hey!, Hola Marikowskaya, Vi que sigues a @marikowskaya ... Has probado algún consejo de sus tutoriales de maquillaje? vi tus publicaciones recientes y tienen un estilo muy único"
+                  },
+                  {
+                    username: "marsunestilistasalgorta",
+                    firstName: "Marsun",
+                    fullName: "Marsun Estilistas",
+                    profilePic: "https://images.unsplash.com/photo-1595475207225-428b62bda831?w=100&h=100&fit=crop&crop=face",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Cómo te va Marsun!, Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? P. D. vi tus posts recientes y se nota tu dedicación"
+                  },
+                  {
+                    username: "nuclear.beauty",
+                    firstName: "Amparo",
+                    fullName: "Amparo Violero ⚛ Ciencia Cosmética",
+                    profilePic: "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=100&h=100&fit=crop&crop=face",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Hey!, Hola Amparo, Vi que sigues a @marikowskaya ... Has aplicado alguna de sus rutinas de skincare paso a paso? vi tus posts recientes y se siente mucha vibra positiva"
                   }
                 ].map((prospect, index) => {
-                  // Personalizar mensaje reemplazando [NOMBRE] con el firstName
-                  const personalizedMessage = prospect.message.replace('[NOMBRE]', prospect.firstName);
-                  
                   return (
                     <div key={index} className="flex items-center justify-between rounded-xl border bg-card px-4 py-4 hover:bg-muted/30 transition-all duration-200 hover:shadow-md">
                       <div className="flex items-center gap-4">
@@ -714,9 +764,9 @@ const ProspectsPage: React.FC = () => {
                               {prospect.sourceType}
                             </span>
                           </div>
-                          {/* Preview del mensaje personalizado */}
+                          {/* Preview del mensaje */}
                           <div className="mt-2 p-2 bg-muted/50 rounded-lg text-xs text-muted-foreground italic max-w-md">
-                            "{personalizedMessage.substring(0, 80)}..."
+                            "{prospect.message.substring(0, 80)}..."
                           </div>
                         </div>
                       </div>
@@ -727,9 +777,9 @@ const ProspectsPage: React.FC = () => {
                               <Button 
                                 size="sm" 
                                 onClick={() => {
-                                  // Usar el mensaje predefinido directamente
-                                  openOnboarding(prospect.username, 'outreach', personalizedMessage);
-                                }}
+                                  // Usar el mensaje directo
+                                  openOnboarding(prospect.username, 'outreach', prospect.message);
+                                }} 
                                 aria-label="Contactar"
                                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
                               >
@@ -747,7 +797,7 @@ const ProspectsPage: React.FC = () => {
                   );
                 })}
                 
-                {/* Mostrar prospectos reales si los hay */}
+                {/* Mostrar prospectos reales de la BD si los hay */}
                 {!loadingToday && todayProspects.map((p) => {
                   const sourceInfo = getProspectSourceWithColor();
                   return (
@@ -806,13 +856,6 @@ const ProspectsPage: React.FC = () => {
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600"></div>
                     <span className="ml-2 text-sm text-muted-foreground">Cargando prospectos...</span>
-                  </div>
-                )}
-                {!loadingToday && todayProspects.length === 0 && (
-                  <div className="text-center py-8 px-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
-                    <UserPlus className="h-12 w-12 text-purple-400 mx-auto mb-3" />
-                    <p className="text-sm text-purple-700 font-medium mb-1">Mostrando prospectos de ejemplo</p>
-                    <p className="text-xs text-purple-600">Los prospectos reales aparecerán aquí cuando se sincronicen</p>
                   </div>
                 )}
               </div>
