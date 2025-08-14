@@ -325,12 +325,18 @@ const ProspectsPage: React.FC = () => {
   const [dialogUser, setDialogUser] = useState<string>('');
   const [dialogMessage, setDialogMessage] = useState<string>('');
 
-  const openOnboarding = async (username: string, type: 'followup' | 'outreach') => {
+  const openOnboarding = async (username: string, type: 'followup' | 'outreach', predefinedMessage?: string) => {
     setDialogUser(username);
     setDialogStep(1);
     setOpenDialog(true);
-    const msg = await generateMessage(username, type);
-    setDialogMessage(msg);
+    
+    // Si hay un mensaje predefinido, usarlo directamente, sino generar con IA
+    if (predefinedMessage) {
+      setDialogMessage(predefinedMessage);
+    } else {
+      const msg = await generateMessage(username, type);
+      setDialogMessage(msg);
+    }
   };
 
   const copyMessage = async () => {
@@ -721,10 +727,9 @@ const ProspectsPage: React.FC = () => {
                               <Button 
                                 size="sm" 
                                 onClick={() => {
-                                  // Usar el mensaje personalizado cuando se genera
-                                  setDialogMessage(personalizedMessage);
-                                  openOnboarding(prospect.username, 'outreach');
-                                }} 
+                                  // Usar el mensaje predefinido directamente
+                                  openOnboarding(prospect.username, 'outreach', personalizedMessage);
+                                }}
                                 aria-label="Contactar"
                                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
                               >
