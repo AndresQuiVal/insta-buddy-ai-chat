@@ -76,10 +76,10 @@ const ProspectsPage: React.FC = () => {
   
   // Datos mock de fuentes de prospectos
   const prospectSources = [
-    { username: 'fitness_motivation_mx', color: '#8B5CF6', followers: 15000 },
-    { username: 'entrepreneur_tips_latam', color: '#EC4899', followers: 8500 },
-    { username: 'marketing_digital_pro', color: '#06B6D4', followers: 12000 },
-    { username: 'coach_exito_personal', color: '#10B981', followers: 6800 }
+    { username: 'fitness_motivation_mx', color: '#8B5CF6' },
+    { username: 'entrepreneur_tips_latam', color: '#EC4899' },
+    { username: 'marketing_digital_pro', color: '#06B6D4' },
+    { username: 'coach_exito_personal', color: '#10B981' }
   ];
 
   
@@ -431,10 +431,9 @@ const ProspectsPage: React.FC = () => {
                                 className="w-3 h-3 rounded-full"
                                 style={{ backgroundColor: source.color }}
                               />
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">@{source.username}</p>
-                                <p className="text-xs text-gray-500">{source.followers.toLocaleString()} seguidores</p>
-                              </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">@{source.username}</p>
+                            </div>
                             </div>
                             <ExternalLink className="w-4 h-4 text-gray-400" />
                           </div>
