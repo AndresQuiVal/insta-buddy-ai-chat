@@ -100,11 +100,15 @@ const ProspectsPage: React.FC = () => {
 
 
   const [loadingCounts, setLoadingCounts] = useState(false);
-  const [counts, setCounts] = useState({
-    respuestas: 0,
-    enviados: 0,
-    agendados: 0,
-    seguimientos: 0,
+  const [counts, setCounts] = useState(() => {
+    // Inicializar con valores guardados en localStorage
+    const savedEnviados = localStorage.getItem('hower-dashboard-enviados');
+    return {
+      respuestas: 0,
+      enviados: savedEnviados ? parseInt(savedEnviados) : 0,
+      agendados: 0,
+      seguimientos: 0,
+    };
   });
 
   const [showProspectSources, setShowProspectSources] = useState(false);
@@ -224,12 +228,19 @@ const ProspectsPage: React.FC = () => {
           .lte('followup_sent_at', toISO),
       ]);
 
-      setCounts({
+      const newCounts = {
         respuestas: rec.count || 0,
-        enviados: sent.count || 0,
+        enviados: Math.max(sent.count || 0, counts.enviados), // Mantener el máximo entre BD y localStorage
         agendados: pres.count || 0,
         seguimientos: fol.count || 0,
-      });
+      };
+      
+      setCounts(newCounts);
+      
+      // Actualizar localStorage con el nuevo valor de enviados si es mayor
+      if (newCounts.enviados > counts.enviados) {
+        localStorage.setItem('hower-dashboard-enviados', newCounts.enviados.toString());
+      }
     } finally {
       setLoadingCounts(false);
     }
@@ -350,8 +361,10 @@ const ProspectsPage: React.FC = () => {
     setDailySentMessages(newCount);
     localStorage.setItem('hower-daily-sent', newCount.toString());
     
-    // Actualizar contador de enviados en el dashboard
-    setCounts(prev => ({ ...prev, enviados: prev.enviados + 1 }));
+    // Actualizar contador de enviados en el dashboard y guardarlo
+    const newEnviados = counts.enviados + 1;
+    setCounts(prev => ({ ...prev, enviados: newEnviados }));
+    localStorage.setItem('hower-dashboard-enviados', newEnviados.toString());
     
     // Verificar si completó todos los prospectos del día
     if (newCount >= prospectsToShow) {
