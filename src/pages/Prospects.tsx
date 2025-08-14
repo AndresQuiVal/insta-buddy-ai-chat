@@ -82,10 +82,23 @@ const ProspectsPage: React.FC = () => {
     { username: 'coach_exito_personal', color: '#10B981', followers: 6800 }
   ];
 
+  
   // Función para obtener color aleatorio de fuente
   const getRandomSourceColor = () => {
     const colors = ['#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
     return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  // Función para obtener descripción de origen de prospecto
+  const getProspectSourceDescription = () => {
+    const sources = [
+      "Sigue a @fitness_motivation_mx",
+      "Comentó en @entrepreneur_tips_latam", 
+      "Sigue a @marketing_digital_pro",
+      "Comentó en @coach_exito_personal",
+      "Sigue a @business_tips_mx"
+    ];
+    return sources[Math.floor(Math.random() * sources.length)];
   };
 
   const [prospects, setProspects] = useState<ProspectRow[]>([]);
@@ -461,31 +474,36 @@ const ProspectsPage: React.FC = () => {
                     username: "maria_fitness_coach",
                     profilePic: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
                     status: "nuevo",
-                    sourceColor: "#8B5CF6"
+                    sourceColor: "#8B5CF6",
+                    sourceType: "Sigue a @fitness_motivation_mx"
                   },
                   {
                     username: "carlos_entrepreneur",
                     profilePic: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face", 
-                    status: "contactado",
-                    sourceColor: "#EC4899"
+                    status: "nuevo",
+                    sourceColor: "#EC4899",
+                    sourceType: "Comentó en @entrepreneur_tips_latam"
                   },
                   {
                     username: "ana_marketing_pro",
                     profilePic: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
                     status: "nuevo",
-                    sourceColor: "#06B6D4"
+                    sourceColor: "#06B6D4",
+                    sourceType: "Sigue a @marketing_digital_pro"
                   },
                   {
                     username: "luis_designer_mx",
                     profilePic: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-                    status: "respondió",
-                    sourceColor: "#10B981"
+                    status: "nuevo",
+                    sourceColor: "#10B981",
+                    sourceType: "Comentó en @coach_exito_personal"
                   },
                   {
                     username: "sofia_coach_life",
                     profilePic: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
                     status: "nuevo",
-                    sourceColor: "#F59E0B"
+                    sourceColor: "#F59E0B",
+                    sourceType: "Sigue a @fitness_motivation_mx"
                   }
                 ].map((prospect, index) => (
                   <div key={index} className="flex items-center justify-between rounded-xl border bg-card px-4 py-4 hover:bg-muted/30 transition-all duration-200 hover:shadow-md">
@@ -501,21 +519,15 @@ const ProspectsPage: React.FC = () => {
                         <div 
                           className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm"
                           style={{ backgroundColor: prospect.sourceColor }}
-                          title="Fuente del prospecto"
+                          title={prospect.sourceType}
                         />
                       </div>
                       <div>
                         <div className="text-sm font-medium flex items-center gap-2">
                           @{prospect.username}
-                          <span 
-                            className="px-2 py-1 text-xs rounded-full text-white font-medium"
-                            style={{ backgroundColor: prospect.sourceColor }}
-                          >
-                            Fuente
-                          </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {prospect.status === "nuevo" && "🆕 Nuevo prospecto"}
+                          🆕 {prospect.sourceType}
                           {prospect.status === "contactado" && "✅ Ya contactado"}  
                           {prospect.status === "respondió" && "💬 Respondió"}
                         </div>
@@ -529,15 +541,14 @@ const ProspectsPage: React.FC = () => {
                               size="sm" 
                               onClick={() => openOnboarding(prospect.username, 'outreach')} 
                               aria-label="Contactar"
-                              variant={prospect.status === "nuevo" ? "default" : "outline"}
                               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
                             >
                               <Send className="h-4 w-4 mr-1" />
-                              {prospect.status === "nuevo" ? "Contactar" : "Ver"}
+                              Contactar
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            {prospect.status === "nuevo" ? "Contactar ahora" : "Ver conversación"}
+                            Contactar prospecto
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -565,11 +576,8 @@ const ProspectsPage: React.FC = () => {
                       <div>
                         <div className="text-sm font-medium flex items-center gap-2">
                           @{p.username}
-                          <span className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded-full font-medium">
-                            Real
-                          </span>
                         </div>
-                        <div className="text-xs text-muted-foreground">{statusLabel(p)}</div>
+                        <div className="text-xs text-muted-foreground">🔴 {getProspectSourceDescription()}</div>
                       </div>
                     </div>
                     <div>
