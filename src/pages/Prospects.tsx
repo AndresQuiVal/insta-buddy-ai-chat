@@ -537,10 +537,13 @@ const ProspectsPage: React.FC = () => {
                         <div className="text-sm font-medium flex items-center gap-2">
                           @{prospect.username}
                         </div>
-                        <div className="text-xs font-medium" style={{ color: prospect.sourceColor }}>
-                          🆕 {prospect.sourceType}
-                          {prospect.status === "contactado" && "✅ Ya contactado"}  
-                          {prospect.status === "respondió" && "💬 Respondió"}
+                        <div className="flex items-center gap-2 mt-1">
+                          <span 
+                            className="px-2 py-1 text-xs rounded-full text-white font-medium"
+                            style={{ backgroundColor: prospect.sourceColor }}
+                          >
+                            {prospect.sourceType}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -590,7 +593,14 @@ const ProspectsPage: React.FC = () => {
                           <div className="text-sm font-medium flex items-center gap-2">
                             @{p.username}
                           </div>
-                          <div className="text-xs font-medium" style={{ color: sourceInfo.color }}>🔴 {sourceInfo.text}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span 
+                              className="px-2 py-1 text-xs rounded-full text-white font-medium"
+                              style={{ backgroundColor: sourceInfo.color }}
+                            >
+                              {sourceInfo.text}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div>
