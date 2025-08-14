@@ -89,14 +89,14 @@ const ProspectsPage: React.FC = () => {
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  // Función para obtener descripción de origen de prospecto
-  const getProspectSourceDescription = () => {
+  // Función para obtener descripción de origen de prospecto con color
+  const getProspectSourceWithColor = () => {
     const sources = [
-      "Sigue a @fitness_motivation_mx",
-      "Comentó en @entrepreneur_tips_latam", 
-      "Sigue a @marketing_digital_pro",
-      "Comentó en @coach_exito_personal",
-      "Sigue a @business_tips_mx"
+      { text: "Sigue a @fitness_motivation_mx", color: "#8B5CF6" },
+      { text: "Comentó en @entrepreneur_tips_latam", color: "#EC4899" }, 
+      { text: "Sigue a @marketing_digital_pro", color: "#06B6D4" },
+      { text: "Comentó en @coach_exito_personal", color: "#10B981" },
+      { text: "Sigue a @business_tips_mx", color: "#F59E0B" }
     ];
     return sources[Math.floor(Math.random() * sources.length)];
   };
@@ -537,7 +537,7 @@ const ProspectsPage: React.FC = () => {
                         <div className="text-sm font-medium flex items-center gap-2">
                           @{prospect.username}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs font-medium" style={{ color: prospect.sourceColor }}>
                           🆕 {prospect.sourceType}
                           {prospect.status === "contactado" && "✅ Ya contactado"}  
                           {prospect.status === "respondió" && "💬 Respondió"}
@@ -568,49 +568,52 @@ const ProspectsPage: React.FC = () => {
                 ))}
                 
                 {/* Mostrar prospectos reales si los hay */}
-                {!loadingToday && todayProspects.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between rounded-xl border bg-card px-4 py-4 hover:bg-muted/30 transition-all duration-200 hover:shadow-md">
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <img 
-                          src={p.profile_picture_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"} 
-                          alt={`Perfil de ${p.username}`}
-                          className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20"
-                          loading="lazy"
-                        />
-                        <div 
-                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                          style={{ backgroundColor: getRandomSourceColor() }}
-                          title="Fuente del prospecto"
-                        />
+                {!loadingToday && todayProspects.map((p) => {
+                  const sourceInfo = getProspectSourceWithColor();
+                  return (
+                    <div key={p.id} className="flex items-center justify-between rounded-xl border bg-card px-4 py-4 hover:bg-muted/30 transition-all duration-200 hover:shadow-md">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <img 
+                            src={p.profile_picture_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"} 
+                            alt={`Perfil de ${p.username}`}
+                            className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20"
+                            loading="lazy"
+                          />
+                          <div 
+                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                            style={{ backgroundColor: sourceInfo.color }}
+                            title={sourceInfo.text}
+                          />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium flex items-center gap-2">
+                            @{p.username}
+                          </div>
+                          <div className="text-xs font-medium" style={{ color: sourceInfo.color }}>🔴 {sourceInfo.text}</div>
+                        </div>
                       </div>
                       <div>
-                        <div className="text-sm font-medium flex items-center gap-2">
-                          @{p.username}
-                        </div>
-                        <div className="text-xs text-muted-foreground">🔴 {getProspectSourceDescription()}</div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                onClick={() => openOnboarding(p.username, 'outreach')} 
+                                aria-label="Contactar"
+                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                              >
+                                <Send className="h-4 w-4 mr-1" />
+                                Contactar
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Contactar</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
-                    <div>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              onClick={() => openOnboarding(p.username, 'outreach')} 
-                              aria-label="Contactar"
-                              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
-                            >
-                              <Send className="h-4 w-4 mr-1" />
-                              Contactar
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Contactar</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 {loadingToday && (
                   <div className="flex items-center justify-center py-8">
