@@ -56,6 +56,46 @@ const ProspectsPage: React.FC = () => {
     }
   }, []);
 
+  // Agregar estilos de confeti
+  useEffect(() => {
+    if (!document.querySelector('#confetti-styles')) {
+      const style = document.createElement('style');
+      style.id = 'confetti-styles';
+      style.textContent = `
+        @keyframes confetti-fall {
+          0% {
+            transform: translateY(-100vh) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+        @keyframes celebration-bounce {
+          0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0) scale(1);
+          }
+          40% {
+            transform: translateY(-20px) scale(1.05);
+          }
+          60% {
+            transform: translateY(-10px) scale(1.02);
+          }
+        }
+        @keyframes celebration-glow {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+          }
+          50% {
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.8), 0 0 60px rgba(236, 72, 153, 0.6);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'nuevos' | 'numeros' | 'mis'>('numeros');
 
 
@@ -67,11 +107,17 @@ const ProspectsPage: React.FC = () => {
     seguimientos: 0,
   });
 
-  // Estados para gamificación y fuentes de prospectos
   const [showProspectSources, setShowProspectSources] = useState(false);
   const [dailySentMessages, setDailySentMessages] = useState(() => {
     const saved = localStorage.getItem('hower-daily-sent');
     return saved ? parseInt(saved) : 0;
+  });
+  
+  // Estados para celebración
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [dailyStreak, setDailyStreak] = useState(() => {
+    const saved = localStorage.getItem('hower-daily-streak');
+    return saved ? parseInt(saved) : 1;
   });
   
   // Datos mock de fuentes de prospectos
@@ -309,11 +355,16 @@ const ProspectsPage: React.FC = () => {
     
     // Verificar si completó todos los prospectos del día
     if (newCount >= prospectsToShow) {
-      toast({
-        title: '🎉 ¡Increíble trabajo!',
-        description: `Has contactado todos los ${prospectsToShow} prospectos de hoy. ¡Sigue así!`,
-        duration: 5000,
-      });
+      // ¡CELEBRACIÓN ÉPICA!
+      const newStreak = dailyStreak + 1;
+      setDailyStreak(newStreak);
+      localStorage.setItem('hower-daily-streak', newStreak.toString());
+      
+      setShowCelebration(true);
+      
+      // Confeti
+      createConfetti();
+      
     } else {
       // Mensaje de progreso intermedio
       const restantes = prospectsToShow - newCount;
@@ -323,6 +374,44 @@ const ProspectsPage: React.FC = () => {
         duration: 3000,
       });
     }
+  };
+
+  // Función para crear confeti
+  const createConfetti = () => {
+    const colors = ['#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
+    const confettiContainer = document.createElement('div');
+    confettiContainer.style.position = 'fixed';
+    confettiContainer.style.top = '0';
+    confettiContainer.style.left = '0';
+    confettiContainer.style.width = '100vw';
+    confettiContainer.style.height = '100vh';
+    confettiContainer.style.pointerEvents = 'none';
+    confettiContainer.style.zIndex = '9999';
+    document.body.appendChild(confettiContainer);
+
+    for (let i = 0; i < 50; i++) {
+      setTimeout(() => {
+        const confetti = document.createElement('div');
+        confetti.style.position = 'absolute';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.top = '-10px';
+        confetti.style.width = '10px';
+        confetti.style.height = '10px';
+        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+        confetti.style.borderRadius = '50%';
+        confetti.style.animation = 'confetti-fall 3s linear forwards';
+        confettiContainer.appendChild(confetti);
+        
+        setTimeout(() => {
+          confetti.remove();
+        }, 3000);
+      }, i * 50);
+    }
+    
+    setTimeout(() => {
+      confettiContainer.remove();
+    }, 4000);
   };
 
   const instaUrl = (username: string) => `https://www.instagram.com/m/${username}`;
@@ -865,6 +954,68 @@ const ProspectsPage: React.FC = () => {
               </Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Celebración Épica */}
+      <Dialog open={showCelebration} onOpenChange={setShowCelebration}>
+        <DialogContent className="max-w-md mx-auto bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 border-0 text-white overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/90 via-pink-600/90 to-blue-600/90" />
+          <div className="relative z-10">
+            <DialogHeader className="text-center pb-6">
+              <div className="mx-auto w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-4 animate-bounce shadow-2xl" style={{ animation: 'celebration-bounce 2s infinite, celebration-glow 2s infinite' }}>
+                <span className="text-3xl">🎉</span>
+              </div>
+              <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-yellow-300 to-white bg-clip-text text-transparent">
+                ¡NIVEL COMPLETADO!
+              </DialogTitle>
+              <DialogDescription className="text-lg text-purple-100 mt-2">
+                ¡Has contactado todos los prospectos de hoy!
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 text-center">
+              {/* Stats de celebración */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <h3 className="text-xl font-semibold mb-4 text-yellow-300">🔥 ¡Subiste de nivel!</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-purple-500/30 to-pink-500/30 rounded-xl p-3 border border-white/10">
+                    <div className="text-2xl font-bold text-yellow-300">{dailyStreak}</div>
+                    <div className="text-xs text-purple-100">Días seguidos</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-xl p-3 border border-white/10">
+                    <div className="text-2xl font-bold text-yellow-300">100%</div>
+                    <div className="text-xs text-purple-100">Completado</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mensaje motivacional */}
+              <div className="bg-gradient-to-r from-yellow-400/20 to-orange-400/20 rounded-2xl p-6 border-2 border-yellow-400/30">
+                <div className="text-yellow-300 text-lg font-semibold mb-2">🎯 ¡Sigue así!</div>
+                <p className="text-white/90 text-sm leading-relaxed">
+                  Estás construyendo un hábito increíble. A los <span className="font-bold text-yellow-300">10 días seguidos</span> de prospectar recibirás una <span className="font-bold text-yellow-300">sesión exclusiva con un mentor</span> para llevar tu prospección al siguiente nivel.
+                </p>
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <div className="flex-1 bg-white/20 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full transition-all duration-1000"
+                      style={{ width: `${Math.min((dailyStreak / 10) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-yellow-300 font-medium">{dailyStreak}/10</span>
+                </div>
+              </div>
+
+              {/* Botón de continuar */}
+              <Button 
+                onClick={() => setShowCelebration(false)}
+                className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-purple-900 font-bold py-4 text-lg shadow-2xl border-0 transition-all duration-300 hover:scale-105"
+              >
+                ¡Continuar conquistando! 🚀
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
