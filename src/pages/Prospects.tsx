@@ -297,6 +297,9 @@ const ProspectsPage: React.FC = () => {
 
   // Función para manejar el envío de mensaje y gamificación
   const handleMessageSent = () => {
+    const ejemplosCount = 5;
+    const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : ejemplosCount;
+    
     const newCount = dailySentMessages + 1;
     setDailySentMessages(newCount);
     localStorage.setItem('hower-daily-sent', newCount.toString());
@@ -305,22 +308,30 @@ const ProspectsPage: React.FC = () => {
     setCounts(prev => ({ ...prev, enviados: prev.enviados + 1 }));
     
     // Verificar si completó todos los prospectos del día
-    if (newCount >= totalHoy) {
+    if (newCount >= prospectsToShow) {
       toast({
         title: '🎉 ¡Increíble trabajo!',
-        description: 'Has contactado todos los prospectos de hoy. ¡Sigue así!',
+        description: `Has contactado todos los ${prospectsToShow} prospectos de hoy. ¡Sigue así!`,
         duration: 5000,
+      });
+    } else {
+      // Mensaje de progreso intermedio
+      const restantes = prospectsToShow - newCount;
+      toast({
+        title: '📩 Mensaje enviado',
+        description: `Te faltan ${restantes} prospectos por contactar hoy.`,
+        duration: 3000,
       });
     }
   };
 
   const instaUrl = (username: string) => `https://www.instagram.com/m/${username}`;
 
-  // Gamificación simple (progreso del día)
-  const totalHoy = todayProspects.length;
-  const contactadosHoy = todayProspects.filter(p => p.status === 'en_seguimiento').length;
-  const porContactarHoy = Math.max(0, totalHoy - contactadosHoy);
-  const progreso = totalHoy > 0 ? Math.round((contactadosHoy / totalHoy) * 100) : 0;
+  // Gamificación mejorada - considerar ejemplos cuando no hay prospectos reales
+  const ejemplosCount = 5; // Número de prospectos de ejemplo que mostramos
+  const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : ejemplosCount;
+  const totalParaContactar = prospectsToShow;
+  const progreso = totalParaContactar > 0 ? Math.round((dailySentMessages / totalParaContactar) * 100) : 0;
 
   // Si está cargando, mostrar loading
   if (userLoading) {
@@ -439,21 +450,21 @@ const ProspectsPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-medium">Progreso de hoy</h3>
                   <span className="text-sm font-medium text-muted-foreground">
-                    {dailySentMessages}/{totalHoy} contactados
+                    {dailySentMessages}/{totalParaContactar} contactados
                   </span>
                 </div>
                 <div className="relative">
                   <div className="h-4 w-full rounded-full bg-gradient-to-r from-gray-100 to-gray-200 overflow-hidden shadow-inner">
                     <div 
                       className="h-full rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 transition-all duration-700 ease-out shadow-lg relative overflow-hidden"
-                      style={{ width: `${totalHoy > 0 ? (dailySentMessages / totalHoy) * 100 : 0}%` }}
+                      style={{ width: `${totalParaContactar > 0 ? (dailySentMessages / totalParaContactar) * 100 : 0}%` }}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 animate-pulse" />
                     </div>
                   </div>
                   <div className="text-center mt-2">
                     <span className="text-sm font-medium bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      {totalHoy > 0 ? Math.round((dailySentMessages / totalHoy) * 100) : 0}% completado
+                      {totalParaContactar > 0 ? Math.round((dailySentMessages / totalParaContactar) * 100) : 0}% completado
                     </span>
                   </div>
                 </div>
