@@ -301,15 +301,30 @@ const ProspectsPage: React.FC = () => {
 
       <main>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 rounded-xl border bg-card p-1 shadow-sm">
-            <TabsTrigger value="numeros" aria-label="Mis Números" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
-              <BarChart3 className="h-4 w-4" />
+          <TabsList className="w-full grid grid-cols-3 bg-gradient-to-r from-purple-50 to-pink-50 p-2 rounded-2xl border-0 shadow-lg">
+            <TabsTrigger 
+              value="numeros" 
+              aria-label="Mis Números" 
+              className="rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-lg data-[state=active]:scale-105 text-gray-600 hover:text-purple-500 font-medium border-0"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Números
             </TabsTrigger>
-            <TabsTrigger value="nuevos" aria-label="Nuevos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
-              <UserPlus className="h-4 w-4" />
+            <TabsTrigger 
+              value="nuevos" 
+              aria-label="Nuevos" 
+              className="rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-lg data-[state=active]:scale-105 text-gray-600 hover:text-purple-500 font-medium border-0"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Nuevos
             </TabsTrigger>
-            <TabsTrigger value="mis" aria-label="Mis Prospectos" className="rounded-lg transition-colors data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:ring-1 data-[state=active]:ring-primary/30">
-              <Users className="h-4 w-4" />
+            <TabsTrigger 
+              value="mis" 
+              aria-label="Mis Prospectos" 
+              className="rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-lg data-[state=active]:scale-105 text-gray-600 hover:text-purple-500 font-medium border-0"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Lista
             </TabsTrigger>
           </TabsList>
 
@@ -477,9 +492,8 @@ const ProspectsPage: React.FC = () => {
           <TabsContent value="numeros" className="space-y-6 mt-6">
 
             <section>
-              <div className="mb-8">
-                <h2 className="text-lg font-medium text-foreground mb-2">Mis Números</h2>
-                <p className="text-sm text-muted-foreground">Últimos 7 días</p>
+              <div className="mb-6">
+                <h2 className="text-lg font-medium text-foreground">Mis Números</h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -489,34 +503,30 @@ const ProspectsPage: React.FC = () => {
                     value: counts.respuestas, 
                     Icon: MessageSquare, 
                     color: 'hsl(var(--success))',
-                    lightBg: 'hsl(var(--success) / 0.1)',
-                    description: 'Te respondieron'
+                    lightBg: 'hsl(var(--success) / 0.1)'
                   },
                   { 
                     label: 'Enviados', 
                     value: counts.enviados, 
                     Icon: Send, 
                     color: 'hsl(var(--hower-primary))',
-                    lightBg: 'hsl(var(--hower-primary) / 0.1)',
-                    description: 'Mensajes que enviaste'
+                    lightBg: 'hsl(var(--hower-primary) / 0.1)'
                   },
                   { 
                     label: 'Agendados', 
                     value: counts.agendados, 
                     Icon: CalendarClock, 
                     color: 'hsl(var(--hower-medium))',
-                    lightBg: 'hsl(var(--hower-medium) / 0.1)',
-                    description: 'Reuniones programadas'
+                    lightBg: 'hsl(var(--hower-medium) / 0.1)'
                   },
                   { 
                     label: 'Seguimientos', 
                     value: counts.seguimientos, 
                     Icon: Repeat, 
                     color: 'hsl(var(--chart-4))',
-                    lightBg: 'hsl(var(--chart-4) / 0.1)',
-                    description: 'Segundos mensajes'
+                    lightBg: 'hsl(var(--chart-4) / 0.1)'
                   },
-                ].map(({ label, value, Icon, color, lightBg, description }) => (
+                ].map(({ label, value, Icon, color, lightBg }) => (
                   <Card key={label} className="group border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-gradient-to-br from-background to-muted/20">
                     <CardContent className="p-0">
                       <div className="p-6">
@@ -538,10 +548,9 @@ const ProspectsPage: React.FC = () => {
                           </div>
                         </div>
                         
-                        {/* Descripción */}
+                        {/* Título */}
                         <div>
-                          <h3 className="font-semibold text-sm text-foreground mb-1">{label}</h3>
-                          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+                          <h3 className="font-semibold text-sm text-foreground">{label}</h3>
                         </div>
 
                         {/* Indicador de progreso sutil */}
