@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import InstagramLogin from '@/components/InstagramLogin';
 import IdealClientTraits from '@/components/IdealClientTraits';
-import { ArrowRight, Copy, ExternalLink, RefreshCw, MessageSquare, Send, CalendarClock, Repeat, BarChart3, UserPlus, Users, CheckCircle, Clock, Wand2 } from 'lucide-react';
+import { ArrowRight, Copy, ExternalLink, RefreshCw, MessageSquare, Send, CalendarClock, Repeat, BarChart3, UserPlus, Users, CheckCircle, Clock, Wand2, TrendingUp } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import howerLogo from '@/assets/hower-logo.png';
 
@@ -29,7 +30,7 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 
 const ProspectsPage: React.FC = () => {
   const { toast } = useToast();
-  const { currentUser } = useInstagramUsers();
+  const { currentUser, loading: userLoading } = useInstagramUsers();
 
   // SEO minimal
   useEffect(() => {
@@ -268,6 +269,23 @@ const ProspectsPage: React.FC = () => {
   const porContactarHoy = Math.max(0, totalHoy - contactadosHoy);
   const progreso = totalHoy > 0 ? Math.round((contactadosHoy / totalHoy) * 100) : 0;
 
+  // Si está cargando, mostrar loading
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando conexión...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no hay usuario conectado, mostrar login de Instagram
+  if (!currentUser) {
+    return <InstagramLogin />;
+  }
+
   return (
       <div className="max-w-6xl mx-auto px-4 py-6">
         <header className="mb-6">
@@ -458,22 +476,103 @@ const ProspectsPage: React.FC = () => {
           {/* Mis Números */}
           <TabsContent value="numeros" className="space-y-6 mt-6">
 
-            <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
-                { label: 'Respuestas', value: counts.respuestas, Icon: MessageSquare, bg: '--success', fg: '--primary-foreground' },
-                { label: 'Enviados', value: counts.enviados, Icon: Send, bg: '--hower-primary', fg: '--primary-foreground' },
-                { label: 'Agendados', value: counts.agendados, Icon: CalendarClock, bg: '--foreground', fg: '--primary-foreground' },
-                { label: 'Seguimientos', value: counts.seguimientos, Icon: Repeat, bg: '--background', fg: '--foreground' },
-              ].map(({ label, value, Icon, bg, fg }) => (
-                <Card key={label} className="overflow-hidden">
-                  <CardContent className="p-5" style={{ background: `hsl(var(${bg}))`, color: `hsl(var(${fg}))` }}>
-                    <div className="flex items-center justify-between">
-                      <Icon className="h-5 w-5 opacity-90" aria-hidden="true" />
-                      <div className="text-4xl font-semibold leading-none">{value}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <section>
+              <div className="mb-8">
+                <h2 className="text-lg font-medium text-foreground mb-2">Métricas de Prospección</h2>
+                <p className="text-sm text-muted-foreground">Últimos 7 días - Actualizado en tiempo real</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                {[
+                  { 
+                    label: 'Respuestas Recibidas', 
+                    value: counts.respuestas, 
+                    Icon: MessageSquare, 
+                    color: 'hsl(var(--success))',
+                    lightBg: 'hsl(var(--success) / 0.1)',
+                    description: 'Prospectos que te respondieron'
+                  },
+                  { 
+                    label: 'Mensajes Enviados', 
+                    value: counts.enviados, 
+                    Icon: Send, 
+                    color: 'hsl(var(--hower-primary))',
+                    lightBg: 'hsl(var(--hower-primary) / 0.1)',
+                    description: 'Total de mensajes outbound'
+                  },
+                  { 
+                    label: 'Reuniones Agendadas', 
+                    value: counts.agendados, 
+                    Icon: CalendarClock, 
+                    color: 'hsl(var(--hower-medium))',
+                    lightBg: 'hsl(var(--hower-medium) / 0.1)',
+                    description: 'Meetings programados'
+                  },
+                  { 
+                    label: 'Seguimientos Hechos', 
+                    value: counts.seguimientos, 
+                    Icon: Repeat, 
+                    color: 'hsl(var(--chart-4))',
+                    lightBg: 'hsl(var(--chart-4) / 0.1)',
+                    description: 'Follow-ups automáticos'
+                  },
+                ].map(({ label, value, Icon, color, lightBg, description }) => (
+                  <Card key={label} className="group border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-gradient-to-br from-background to-muted/20">
+                    <CardContent className="p-0">
+                      <div className="p-6">
+                        {/* Header con ícono */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div 
+                            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+                            style={{ 
+                              backgroundColor: lightBg,
+                              color: color
+                            }}
+                          >
+                            <Icon className="h-6 w-6" aria-hidden="true" />
+                          </div>
+                          <div className="text-right">
+                            <div className="text-3xl font-bold tracking-tight" style={{ color: color }}>
+                              {loadingCounts ? '...' : value.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Descripción */}
+                        <div>
+                          <h3 className="font-semibold text-sm text-foreground mb-1">{label}</h3>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+                        </div>
+
+                        {/* Indicador de progreso sutil */}
+                        <div className="mt-4 h-1 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full transition-all duration-1000 ease-out"
+                            style={{ 
+                              backgroundColor: color,
+                              width: value > 0 ? '100%' : '0%'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Refresh button */}
+              <div className="flex justify-center mt-8">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={refreshCounts} 
+                  disabled={loadingCounts}
+                  className="gap-2 text-xs hover:bg-muted/50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingCounts ? 'animate-spin' : ''}`} />
+                  {loadingCounts ? 'Actualizando...' : 'Actualizar métricas'}
+                </Button>
+              </div>
             </section>
 
             {/* Asistente por WhatsApp */}
