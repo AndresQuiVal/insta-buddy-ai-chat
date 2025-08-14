@@ -124,12 +124,9 @@ const ProspectsPage: React.FC = () => {
     return saved ? parseInt(saved) : 1;
   });
   
-  // Datos mock de fuentes de prospectos
+  // Datos reales de fuentes de prospectos basados en @marikowskaya
   const prospectSources = [
-    { username: 'fitness_motivation_mx', color: '#8B5CF6' },
-    { username: 'entrepreneur_tips_latam', color: '#EC4899' },
-    { username: 'marketing_digital_pro', color: '#06B6D4' },
-    { username: 'coach_exito_personal', color: '#10B981' }
+    { username: 'marikowskaya', color: '#EC4899' }
   ];
 
   
@@ -141,14 +138,7 @@ const ProspectsPage: React.FC = () => {
 
   // Función para obtener descripción de origen de prospecto con color
   const getProspectSourceWithColor = () => {
-    const sources = [
-      { text: "Sigue a @fitness_motivation_mx", color: "#8B5CF6" },
-      { text: "Comentó en @entrepreneur_tips_latam", color: "#EC4899" }, 
-      { text: "Sigue a @marketing_digital_pro", color: "#06B6D4" },
-      { text: "Comentó en @coach_exito_personal", color: "#10B981" },
-      { text: "Sigue a @business_tips_mx", color: "#F59E0B" }
-    ];
-    return sources[Math.floor(Math.random() * sources.length)];
+    return { text: "Sigue a @marikowskaya", color: "#EC4899" };
   };
 
   const [prospects, setProspects] = useState<ProspectRow[]>([]);
@@ -430,7 +420,7 @@ const ProspectsPage: React.FC = () => {
   const instaUrl = (username: string) => `https://www.instagram.com/m/${username}`;
 
   // Gamificación mejorada - considerar ejemplos cuando no hay prospectos reales
-  const ejemplosCount = 5; // Número de prospectos de ejemplo que mostramos
+  const ejemplosCount = 10; // Número de prospectos reales de @marikowskaya
   const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : ejemplosCount;
   const totalParaContactar = prospectsToShow;
   const progreso = totalParaContactar > 0 ? Math.round((dailySentMessages / totalParaContactar) * 100) : 0;
@@ -580,96 +570,177 @@ const ProspectsPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Lista de personas para contactar hoy</p>
               </div>
               <div className="grid grid-cols-1 gap-3">
-                {/* Ejemplos de prospectos con etiquetas de color */}
+                {/* Prospectos reales de @marikowskaya */}
                 {[
                   {
-                    username: "maria_fitness_coach",
-                    profilePic: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
-                    sourceColor: "#8B5CF6",
-                    sourceType: "Sigue a @fitness_motivation_mx"
-                  },
-                  {
-                    username: "carlos_entrepreneur",
-                    profilePic: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face", 
+                    username: "salonantoniacb",
+                    firstName: "Salon",
+                    fullName: "Salon Antonia Cuerpo & Belleza",
+                    profilePic: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=face",
                     status: "nuevo",
                     sourceColor: "#EC4899",
-                    sourceType: "Comentó en @entrepreneur_tips_latam"
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Holaaa [NOMBRE], Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? vi tus publicaciones recientes y se siente mucha vibra positiva"
                   },
                   {
-                    username: "ana_marketing_pro",
+                    username: "aran_alma",
+                    firstName: "Aran",
+                    fullName: "Aran Alcalde",
+                    profilePic: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Hey!, Hola [NOMBRE], Vi que sigues a @marikowskaya ... Te sirvieron sus ideas para armar una rutina cosmética sencilla? P. D. vi tus publicaciones recientes y tienen un estilo muy único"
+                  },
+                  {
+                    username: "love_roll",
+                    firstName: "Love",
+                    fullName: "Love & Roll Torrelavega",
                     profilePic: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
                     status: "nuevo",
-                    sourceColor: "#06B6D4",
-                    sourceType: "Sigue a @marketing_digital_pro"
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Hola hola [NOMBRE]!!, Vi que sigues a @marikowskaya ... Has probado algún consejo de sus tutoriales de maquillaje? vi tus publicaciones recientes y se nota tu dedicación"
                   },
                   {
-                    username: "luis_designer_mx",
-                    profilePic: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-                    status: "nuevo",
-                    sourceColor: "#10B981",
-                    sourceType: "Comentó en @coach_exito_personal"
-                  },
-                  {
-                    username: "sofia_coach_life",
+                    username: "sarahkeer_es",
+                    firstName: "SarahKeer",
+                    fullName: "SarahKeer España",
                     profilePic: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
                     status: "nuevo",
-                    sourceColor: "#F59E0B",
-                    sourceType: "Sigue a @fitness_motivation_mx"
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Ey [NOMBRE], Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? vi tus publicaciones recientes y se nota tu dedicación"
+                  },
+                  {
+                    username: "imeibarcelona",
+                    firstName: "Clínicas",
+                    fullName: "Clínicas IMÈI",
+                    profilePic: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Hey!, Hola [NOMBRE], Vi que sigues a @marikowskaya ... Has probado algún consejo de sus tutoriales de maquillaje? vi tus posts recientes y se siente mucha vibra positiva"
+                  },
+                  {
+                    username: "isacar_natural",
+                    firstName: "Angela",
+                    fullName: "Angela",
+                    profilePic: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Hey!, Hola [NOMBRE], Vi que sigues a @marikowskaya ... Has aplicado alguna de sus rutinas de skincare paso a paso? P. D. vi tus publicaciones recientes y se nota tu dedicación"
+                  },
+                  {
+                    username: "clara_nails89",
+                    firstName: "UÑAS💫PESTAÑAS💫MAQUILLAJE💫",
+                    fullName: "UÑAS💫PESTAÑAS💫MAQUILLAJE💫",
+                    profilePic: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Ey [NOMBRE], Vi que sigues a @marikowskaya ... Te identificas con su manera de explicar belleza sin complicaciones? P. D. vi tus posts recientes y se nota tu dedicación"
+                  },
+                  {
+                    username: "juaniflower_5",
+                    firstName: "Juana",
+                    fullName: "Juana Lopera López",
+                    profilePic: "https://images.unsplash.com/photo-1592188657297-c6473609e988?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Hey!, Hola [NOMBRE], Vi que sigues a @marikowskaya ... Qué opinas de su enfoque de skincare sin filtros? P. D. vi tus posts recientes y me parecieron súper auténticas"
+                  },
+                  {
+                    username: "mariarieramakeup",
+                    firstName: "Maria",
+                    fullName: "Maria Riera • Maquillaje profesional",
+                    profilePic: "https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Holaaa [NOMBRE], Vi que sigues a @marikowskaya ... Qué opinas de su enfoque de skincare sin filtros? vi tus posts recientes y me parecieron súper auténticas"
+                  },
+                  {
+                    username: "rfl.solorio",
+                    firstName: "Rafael",
+                    fullName: "Rafael Solorio",
+                    profilePic: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+                    status: "nuevo",
+                    sourceColor: "#EC4899",
+                    sourceType: "Sigue a @marikowskaya",
+                    message: "Cómo te va [NOMBRE]!, Vi que sigues a @marikowskaya ... Te sirvieron sus ideas para armar una rutina cosmética sencilla? P. D. vi tus posts recientes y tienen un estilo muy único"
                   }
-                ].map((prospect, index) => (
-                  <div key={index} className="flex items-center justify-between rounded-xl border bg-card px-4 py-4 hover:bg-muted/30 transition-all duration-200 hover:shadow-md">
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <img 
-                          src={prospect.profilePic} 
-                          alt={`Perfil de ${prospect.username}`}
-                          className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20"
-                          loading="lazy"
-                        />
-                        {/* Etiqueta de color de fuente */}
-                        <div 
-                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                          style={{ backgroundColor: prospect.sourceColor }}
-                          title={prospect.sourceType}
-                        />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium flex items-center gap-2">
-                          @{prospect.username}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span 
-                            className="px-2 py-1 text-xs rounded-full text-white font-medium"
+                ].map((prospect, index) => {
+                  // Personalizar mensaje reemplazando [NOMBRE] con el firstName
+                  const personalizedMessage = prospect.message.replace('[NOMBRE]', prospect.firstName);
+                  
+                  return (
+                    <div key={index} className="flex items-center justify-between rounded-xl border bg-card px-4 py-4 hover:bg-muted/30 transition-all duration-200 hover:shadow-md">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <img 
+                            src={prospect.profilePic} 
+                            alt={`Perfil de ${prospect.username}`}
+                            className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20"
+                            loading="lazy"
+                          />
+                          {/* Etiqueta de color de fuente */}
+                          <div 
+                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm"
                             style={{ backgroundColor: prospect.sourceColor }}
-                          >
-                            {prospect.sourceType}
-                          </span>
+                            title={prospect.sourceType}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium flex items-center gap-2">
+                            @{prospect.username}
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-1">
+                            {prospect.fullName}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span 
+                              className="px-2 py-1 text-xs rounded-full text-white font-medium"
+                              style={{ backgroundColor: prospect.sourceColor }}
+                            >
+                              {prospect.sourceType}
+                            </span>
+                          </div>
+                          {/* Preview del mensaje personalizado */}
+                          <div className="mt-2 p-2 bg-muted/50 rounded-lg text-xs text-muted-foreground italic max-w-md">
+                            "{personalizedMessage.substring(0, 80)}..."
+                          </div>
                         </div>
                       </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                onClick={() => {
+                                  // Usar el mensaje personalizado cuando se genera
+                                  setDialogMessage(personalizedMessage);
+                                  openOnboarding(prospect.username, 'outreach');
+                                }} 
+                                aria-label="Contactar"
+                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                              >
+                                <Send className="h-4 w-4 mr-1" />
+                                Contactar
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Contactar prospecto
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              onClick={() => openOnboarding(prospect.username, 'outreach')} 
-                              aria-label="Contactar"
-                              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
-                            >
-                              <Send className="h-4 w-4 mr-1" />
-                              Contactar
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            Contactar prospecto
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 {/* Mostrar prospectos reales si los hay */}
                 {!loadingToday && todayProspects.map((p) => {
