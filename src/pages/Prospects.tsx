@@ -492,7 +492,7 @@ const ProspectsPage: React.FC = () => {
 
       <main>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 bg-gradient-to-r from-purple-50 to-pink-50 p-2 rounded-2xl border-0 shadow-lg">
+          <TabsList className="w-full grid grid-cols-3 bg-gradient-to-r from-purple-50 to-pink-50 p-2 rounded-2xl border-0 shadow-lg mb-6">
             <TabsTrigger 
               value="numeros" 
               aria-label="Mis Números" 
@@ -788,31 +788,31 @@ const ProspectsPage: React.FC = () => {
                             </div>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium flex items-center gap-2 flex-wrap">
                             @{prospect.username}
-                            {isContacted && <span className="text-xs text-green-600 font-semibold">✓ Contactado</span>}
+                            {isContacted && <span className="text-xs text-green-600 font-semibold whitespace-nowrap">✓ Contactado</span>}
                           </div>
-                          <div className="text-xs text-muted-foreground mb-1">
+                          <div className="text-xs text-muted-foreground mb-2 truncate">
                             {prospect.fullName}
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 mb-2">
                             <span 
-                              className="px-2 py-1 text-xs rounded-full text-white font-medium"
+                              className="px-2 py-1 text-xs rounded-full text-white font-medium whitespace-nowrap"
                               style={{ backgroundColor: prospect.sourceColor }}
                             >
                               {prospect.sourceType}
                             </span>
                           </div>
-                          {/* Preview del mensaje */}
-                          <div className="mt-2 p-2 bg-muted/50 rounded-lg text-xs text-muted-foreground italic max-w-md">
+                          {/* Preview del mensaje - oculto en móvil para ahorrar espacio */}
+                          <div className="hidden sm:block mt-2 p-2 bg-muted/50 rounded-lg text-xs text-muted-foreground italic max-w-md">
                             "{prospect.message.substring(0, 80)}..."
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2 flex-shrink-0">
+                      <div className="flex gap-2 w-full sm:w-auto justify-end">
                         {isContacted ? (
-                          <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                          <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-medium whitespace-nowrap">
                             <CheckCircle className="w-4 h-4" />
                             Ya contactado
                           </div>
@@ -826,9 +826,9 @@ const ProspectsPage: React.FC = () => {
                                     openOnboarding(prospect.username, 'outreach', prospect.message);
                                   }} 
                                   aria-label="Contactar"
-                                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
                                 >
-                                  <Send className="h-4 w-4 mr-1" />
+                                  <Send className="w-4 h-4 mr-1" />
                                   Contactar
                                 </Button>
                               </TooltipTrigger>
