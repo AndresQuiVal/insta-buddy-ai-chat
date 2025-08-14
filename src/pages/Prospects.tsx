@@ -113,8 +113,20 @@ const ProspectsPage: React.FC = () => {
 
   const [showProspectSources, setShowProspectSources] = useState(false);
   const [dailySentMessages, setDailySentMessages] = useState(() => {
-    const saved = localStorage.getItem('hower-daily-sent');
-    return saved ? parseInt(saved) : 0;
+    // Resetear contactados si es un nuevo día
+    const today = new Date().toDateString();
+    const lastResetDate = localStorage.getItem('hower-last-reset-date');
+    
+    if (lastResetDate !== today) {
+      localStorage.setItem('hower-last-reset-date', today);
+      localStorage.removeItem('hower-contacted-prospects');
+      localStorage.setItem('hower-daily-sent', '0');
+      return 0;
+    }
+    
+    // Inicializar con el conteo real de prospectos contactados
+    const contactedProspects = JSON.parse(localStorage.getItem('hower-contacted-prospects') || '[]');
+    return contactedProspects.length;
   });
   
   // Estados para celebración
@@ -349,11 +361,28 @@ const ProspectsPage: React.FC = () => {
   };
 
   // Función para manejar el envío de mensaje y gamificación
-  const handleMessageSent = () => {
-    const ejemplosCount = 5;
-    const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : ejemplosCount;
+  const handleMessageSent = (username: string) => {
+    const totalProspectos = 17; // Total de prospectos reales de @marikowskaya
+    const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : totalProspectos;
     
-    const newCount = dailySentMessages + 1;
+    // Obtener lista de prospectos ya contactados
+    const contactedProspects = JSON.parse(localStorage.getItem('hower-contacted-prospects') || '[]');
+    
+    // Si ya se contactó este prospecto, no incrementar contador
+    if (contactedProspects.includes(username)) {
+      toast({
+        title: '⚠️ Ya contactado',
+        description: `Ya enviaste un mensaje a @${username} hoy.`,
+        duration: 3000,
+      });
+      return;
+    }
+    
+    // Agregar prospecto a la lista de contactados
+    const newContactedProspects = [...contactedProspects, username];
+    localStorage.setItem('hower-contacted-prospects', JSON.stringify(newContactedProspects));
+    
+    const newCount = newContactedProspects.length;
     setDailySentMessages(newCount);
     localStorage.setItem('hower-daily-sent', newCount.toString());
     
@@ -379,7 +408,7 @@ const ProspectsPage: React.FC = () => {
       const restantes = prospectsToShow - newCount;
       toast({
         title: '📩 Mensaje enviado',
-        description: `Te faltan ${restantes} prospectos por contactar hoy.`,
+        description: `¡Perfecto! Te faltan ${restantes} prospectos por contactar hoy.`,
         duration: 3000,
       });
     }
@@ -425,9 +454,9 @@ const ProspectsPage: React.FC = () => {
 
   const instaUrl = (username: string) => `https://www.instagram.com/m/${username}`;
 
-  // Gamificación mejorada - considerar ejemplos cuando no hay prospectos reales
-  const ejemplosCount = 17; // Número total de prospectos reales de @marikowskaya
-  const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : ejemplosCount;
+  // Gamificación mejorada
+  const totalProspectos = 17; // Total de prospectos reales de @marikowskaya
+  const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : totalProspectos;
   const totalParaContactar = prospectsToShow;
   const progreso = totalParaContactar > 0 ? Math.round((dailySentMessages / totalParaContactar) * 100) : 0;
 
@@ -732,8 +761,12 @@ const ProspectsPage: React.FC = () => {
                     message: "Hey!, Hola Amparo, Vi que sigues a @marikowskaya ... Has aplicado alguna de sus rutinas de skincare paso a paso? vi tus posts recientes y se siente mucha vibra positiva"
                   }
                 ].map((prospect, index) => {
+                  // Verificar si ya fue contactado
+                  const contactedProspects = JSON.parse(localStorage.getItem('hower-contacted-prospects') || '[]');
+                  const isContacted = contactedProspects.includes(prospect.username);
+                  
                   return (
-                    <div key={index} className="flex items-center justify-between rounded-xl border bg-card px-4 py-4 hover:bg-muted/30 transition-all duration-200 hover:shadow-md">
+                    <div key={index} className={`flex items-center justify-between rounded-xl border bg-card px-4 py-4 transition-all duration-200 hover:shadow-md ${isContacted ? 'opacity-60 bg-green-50 border-green-200' : 'hover:bg-muted/30'}`}>
                       <div className="flex items-center gap-4">
                         <div className="relative">
                           <img 
@@ -748,10 +781,17 @@ const ProspectsPage: React.FC = () => {
                             style={{ backgroundColor: prospect.sourceColor }}
                             title={prospect.sourceType}
                           />
+                          {/* Indicador de contactado */}
+                          {isContacted && (
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                              <CheckCircle className="w-2.5 h-2.5 text-white" />
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1">
                           <div className="text-sm font-medium flex items-center gap-2">
                             @{prospect.username}
+                            {isContacted && <span className="text-xs text-green-600 font-semibold">✓ Contactado</span>}
                           </div>
                           <div className="text-xs text-muted-foreground mb-1">
                             {prospect.fullName}
@@ -771,27 +811,33 @@ const ProspectsPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                onClick={() => {
-                                  // Usar el mensaje directo
-                                  openOnboarding(prospect.username, 'outreach', prospect.message);
-                                }} 
-                                aria-label="Contactar"
-                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
-                              >
-                                <Send className="h-4 w-4 mr-1" />
-                                Contactar
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Contactar prospecto
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        {isContacted ? (
+                          <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                            <CheckCircle className="w-4 h-4" />
+                            Ya contactado
+                          </div>
+                        ) : (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => {
+                                    openOnboarding(prospect.username, 'outreach', prospect.message);
+                                  }} 
+                                  aria-label="Contactar"
+                                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                                >
+                                  <Send className="h-4 w-4 mr-1" />
+                                  Contactar
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Contactar prospecto
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                     </div>
                   );
@@ -1077,7 +1123,7 @@ const ProspectsPage: React.FC = () => {
               <Button 
                 variant="outline" 
                 onClick={() => {
-                  handleMessageSent();
+                  handleMessageSent(dialogUser);
                   setOpenDialog(false);
                 }}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
