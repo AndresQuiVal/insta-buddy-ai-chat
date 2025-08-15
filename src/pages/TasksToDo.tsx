@@ -344,15 +344,8 @@ const TasksToDo: React.FC = () => {
               </div>
               
               <div className="text-center ml-4 sm:ml-6">
-                <div className="inline-block p-2 sm:p-3 bg-red-100 rounded-full mb-3 sm:mb-4">
-                  <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono">
-                  📋 Lista de Tareas de Hoy
-                </h1>
-                
-                {/* Botón para mostrar estadísticas */}
-                <div className="mt-4">
+                {/* Botón para mostrar estadísticas - ARRIBA del título */}
+                <div className="mb-4">
                   <Button
                     onClick={() => setShowStats(!showStats)}
                     variant="outline"
@@ -362,9 +355,9 @@ const TasksToDo: React.FC = () => {
                   </Button>
                 </div>
                 
-                {/* Estadísticas - Aparece justo debajo del botón */}
+                {/* Estadísticas - Aparece arriba del título cuando se hace click */}
                 {showStats && (
-                  <div className="mt-6">
+                  <div className="mb-6">
                     <div 
                       className="bg-white rounded-xl shadow-lg border-l-4 border-blue-400 p-4 sm:p-6"
                       style={{
@@ -452,6 +445,13 @@ const TasksToDo: React.FC = () => {
                     </div>
                   </div>
                 )}
+                
+                <div className="inline-block p-2 sm:p-3 bg-red-100 rounded-full mb-3 sm:mb-4">
+                  <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono">
+                  📋 Lista de Tareas de Hoy
+                </h1>
               </div>
             </div>
           </div>
