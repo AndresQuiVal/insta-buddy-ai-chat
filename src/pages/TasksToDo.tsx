@@ -408,6 +408,54 @@ const TasksToDo: React.FC = () => {
       setExpandedTips(prev => ({ ...prev, [tipKey]: !prev[tipKey] }));
     };
 
+    // Hook personalizado según el tipo de tarea
+    const getCustomHook = (taskType: string) => {
+      switch(taskType) {
+        case 'yesterday':
+          return {
+            title: "🎯 MENSAJE AUDIO que funciona al 90%",
+            subtitle: "La fórmula exacta que usan los TOP performers",
+            gradient: "from-green-100 via-emerald-100 to-teal-100",
+            border: "border-green-300",
+            textColor: "text-green-800",
+            subtitle2: "text-green-700",
+            dotColor: "bg-green-500"
+          };
+        case 'week':
+          return {
+            title: "🚀 FRASE que revive contactos MUERTOS",
+            subtitle: "El texto mágico para recuperar prospectos perdidos",
+            gradient: "from-blue-100 via-indigo-100 to-purple-100",
+            border: "border-blue-300", 
+            textColor: "text-blue-800",
+            subtitle2: "text-blue-700",
+            dotColor: "bg-blue-500"
+          };
+        case 'new':
+          return {
+            title: "💎 SISTEMA de prospección de ÉLITE",
+            subtitle: "Cómo conseguir prospectos de ALTA CALIDAD en minutos",
+            gradient: "from-pink-100 via-rose-100 to-red-100",
+            border: "border-pink-300",
+            textColor: "text-pink-800", 
+            subtitle2: "text-pink-700",
+            dotColor: "bg-pink-500"
+          };
+        default:
+          return {
+            title: "🔥 SECRETO que aumenta respuestas 10x",
+            subtitle: "Click aquí para descubrir el truco que usan los PROs",
+            gradient: "from-yellow-100 via-orange-100 to-red-100",
+            border: "border-orange-300",
+            textColor: "text-orange-800",
+            subtitle2: "text-orange-700", 
+            dotColor: "bg-red-500"
+          };
+      }
+    };
+
+    const customHook = getCustomHook(taskType);
+
     return (
       <div className="mb-4 sm:mb-6">
         <Card 
@@ -445,13 +493,17 @@ const TasksToDo: React.FC = () => {
                 <div className="mb-4">
                   {!isTipExpanded ? (
                     <div 
-                      className="bg-blue-50 border border-blue-200 rounded-lg p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+                      className={`bg-gradient-to-r ${customHook.gradient} border-2 ${customHook.border} rounded-xl p-4 cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 animate-pulse`}
                       onClick={toggleTip}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-blue-700 font-semibold text-sm">💡 Ver tip</span>
-                        <ChevronRight className="h-4 w-4 text-blue-600" />
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 ${customHook.dotColor} rounded-full animate-bounce`}></div>
+                          <span className={`${customHook.textColor} font-bold text-sm`}>{customHook.title}</span>
+                        </div>
+                        <ChevronRight className={`h-5 w-5 ${customHook.textColor} animate-bounce`} />
                       </div>
+                      <p className={`${customHook.subtitle2} text-xs mt-2 font-medium`}>{customHook.subtitle}</p>
                     </div>
                   ) : (
                     <Alert className="border-blue-200 bg-blue-50">
@@ -840,13 +892,17 @@ const TasksToDo: React.FC = () => {
                   <div className="mb-4">
                     {!expandedTips['tip-pending'] ? (
                       <div 
-                        className="bg-blue-50 border border-blue-200 rounded-lg p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+                        className="bg-gradient-to-r from-purple-100 via-blue-100 to-cyan-100 border-2 border-purple-300 rounded-xl p-4 cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
                         onClick={() => setExpandedTips(prev => ({ ...prev, ['tip-pending']: !prev['tip-pending'] }))}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-blue-700 font-semibold text-sm">💡 Ver tip</span>
-                          <ChevronRight className="h-4 w-4 text-blue-600" />
+                          <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 bg-purple-500 rounded-full animate-ping"></div>
+                            <span className="text-purple-800 font-bold text-sm">⚡ HACK de velocidad que genera 3X MÁS RESPUESTAS</span>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-purple-600 animate-pulse" />
                         </div>
+                        <p className="text-purple-700 text-xs mt-2 font-medium">El secreto que usan los EXPERTOS para responder como un PRO 👑</p>
                       </div>
                     ) : (
                       <Alert className="border-blue-200 bg-blue-50">
