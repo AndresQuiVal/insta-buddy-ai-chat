@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -50,6 +51,12 @@ const TasksToDo: React.FC = () => {
   });
   const [activeProspectTab, setActiveProspectTab] = useState('hower');
   const [expandedTips, setExpandedTips] = useState<{[key: string]: boolean}>({});
+  
+  // Estados para diálogo de contacto guiado
+  const [openDialog, setOpenDialog] = useState(false);
+  const [dialogStep, setDialogStep] = useState<1 | 2>(1);
+  const [dialogUser, setDialogUser] = useState<string>('');
+  const [dialogMessage, setDialogMessage] = useState<string>('');
 
   // SEO
   useEffect(() => {
@@ -68,6 +75,7 @@ const TasksToDo: React.FC = () => {
   useEffect(() => {
     loadProspects();
   }, []);
+
 
   const loadProspects = async () => {
     try {
@@ -91,37 +99,50 @@ const TasksToDo: React.FC = () => {
     }
   };
 
-  const handleContact = async (username: string) => {
+  // AI message generation via Edge Function
+  const generateMessage = async (username: string, type: 'followup' | 'outreach') => {
+    const base = type === 'followup'
+      ? `Genera un mensaje breve y cordial de seguimiento para Instagram en español para @${username}. Tono humano, 1-2 líneas, con CTA amable para continuar la conversación.`
+      : `Genera un primer mensaje breve y humano para iniciar conversación con @${username} en Instagram. Español, 1-2 líneas, con valor y CTA sutil.`;
+
     try {
-      const message = `¡Hola @${username}! 👋 Soy Andrés y me encanta conectar con personas increíbles como tú. He visto tu contenido y me parece súper interesante. ¿Te gustaría conectar? 🌟`;
-      
-      await navigator.clipboard.writeText(message);
-      
-      toast({
-        title: "¡Mensaje copiado!",
-        description: `El mensaje para ${username} está listo para enviar`,
-        duration: 3000,
+      const { data, error } = await supabase.functions.invoke('chatgpt-response', {
+        body: { prompt: base },
       });
-
-      // Actualizar estado del prospecto
-      await supabase
-        .from('prospects')
-        .update({ 
-          status: 'contacted',
-          last_message_date: new Date().toISOString()
-        })
-        .eq('username', username);
-
-      loadProspects();
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo copiar el mensaje",
-        variant: "destructive"
-      });
+      if (error) throw error;
+      const text = (data as any)?.generatedText || (data as any)?.message || JSON.stringify(data);
+      return String(text).trim();
+    } catch (e) {
+      console.error('AI error', e);
+      toast({ title: 'Error generando mensaje', description: 'Intenta de nuevo en un momento.' });
+      return '';
     }
   };
+
+  const openOnboarding = async (username: string, type: 'followup' | 'outreach', predefinedMessage?: string) => {
+    setDialogUser(username);
+    setDialogStep(1);
+    setOpenDialog(true);
+    
+    // Si hay un mensaje predefinido, usarlo directamente, sino generar con IA
+    if (predefinedMessage) {
+      setDialogMessage(predefinedMessage);
+    } else {
+      const msg = await generateMessage(username, type);
+      setDialogMessage(msg);
+    }
+  };
+
+  const copyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(dialogMessage);
+      toast({ title: 'Copiado', description: 'Mensaje copiado al portapapeles.' });
+    } catch {
+      toast({ title: 'No se pudo copiar', description: 'Copia manualmente el texto.' });
+    }
+  };
+
+  const instaUrl = (username: string) => `https://www.instagram.com/m/${username}`;
 
   // Clasificar prospectos y calcular estadísticas
   const prospectsClassification = useMemo(() => {
@@ -293,7 +314,7 @@ const TasksToDo: React.FC = () => {
               </Button>
             )}
             <Button 
-              onClick={() => handleContact(prospect.username)}
+              onClick={() => openOnboarding(prospect.username, 'outreach')}
               size="sm"
               className="bg-primary hover:bg-primary/90 text-xs sm:text-sm"
               disabled={isCompleted}
@@ -413,43 +434,31 @@ const TasksToDo: React.FC = () => {
       switch(taskType) {
         case 'yesterday':
           return {
-            title: "🎯 MENSAJE AUDIO que funciona al 90%",
-            subtitle: "La fórmula exacta que usan los TOP performers",
-            gradient: "from-green-100 via-emerald-100 to-teal-100",
+            title: "🎯 Mensaje audio que funciona al 90%",
+            gradient: "from-green-100 to-green-200",
             border: "border-green-300",
-            textColor: "text-green-800",
-            subtitle2: "text-green-700",
-            dotColor: "bg-green-500"
+            textColor: "text-green-800"
           };
         case 'week':
           return {
-            title: "🚀 FRASE que revive contactos MUERTOS",
-            subtitle: "El texto mágico para recuperar prospectos perdidos",
-            gradient: "from-blue-100 via-indigo-100 to-purple-100",
+            title: "🚀 Frase que revive contactos muertos",
+            gradient: "from-blue-100 to-blue-200",
             border: "border-blue-300", 
-            textColor: "text-blue-800",
-            subtitle2: "text-blue-700",
-            dotColor: "bg-blue-500"
+            textColor: "text-blue-800"
           };
         case 'new':
           return {
-            title: "💎 SISTEMA de prospección de ÉLITE",
-            subtitle: "Cómo conseguir prospectos de ALTA CALIDAD en minutos",
-            gradient: "from-pink-100 via-rose-100 to-red-100",
+            title: "💎 Sistema de prospección élite",
+            gradient: "from-pink-100 to-pink-200",
             border: "border-pink-300",
-            textColor: "text-pink-800", 
-            subtitle2: "text-pink-700",
-            dotColor: "bg-pink-500"
+            textColor: "text-pink-800"
           };
         default:
           return {
-            title: "🔥 SECRETO que aumenta respuestas 10x",
-            subtitle: "Click aquí para descubrir el truco que usan los PROs",
-            gradient: "from-yellow-100 via-orange-100 to-red-100",
+            title: "🔥 Secreto que aumenta respuestas 10x",
+            gradient: "from-orange-100 to-orange-200",
             border: "border-orange-300",
-            textColor: "text-orange-800",
-            subtitle2: "text-orange-700", 
-            dotColor: "bg-red-500"
+            textColor: "text-orange-800"
           };
       }
     };
@@ -493,17 +502,13 @@ const TasksToDo: React.FC = () => {
                 <div className="mb-4">
                   {!isTipExpanded ? (
                     <div 
-                      className={`bg-gradient-to-r ${customHook.gradient} border-2 ${customHook.border} rounded-xl p-4 cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 animate-pulse`}
+                      className={`bg-gradient-to-r ${customHook.gradient} border ${customHook.border} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
                       onClick={toggleTip}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 ${customHook.dotColor} rounded-full animate-bounce`}></div>
-                          <span className={`${customHook.textColor} font-bold text-sm`}>{customHook.title}</span>
-                        </div>
-                        <ChevronRight className={`h-5 w-5 ${customHook.textColor} animate-bounce`} />
+                        <span className={`${customHook.textColor} font-semibold text-sm`}>{customHook.title}</span>
+                        <ChevronRight className={`h-4 w-4 ${customHook.textColor}`} />
                       </div>
-                      <p className={`${customHook.subtitle2} text-xs mt-2 font-medium`}>{customHook.subtitle}</p>
                     </div>
                   ) : (
                     <Alert className="border-blue-200 bg-blue-50">
@@ -896,13 +901,9 @@ const TasksToDo: React.FC = () => {
                         onClick={() => setExpandedTips(prev => ({ ...prev, ['tip-pending']: !prev['tip-pending'] }))}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-3 h-3 bg-purple-500 rounded-full animate-ping"></div>
-                            <span className="text-purple-800 font-bold text-sm">⚡ HACK de velocidad que genera 3X MÁS RESPUESTAS</span>
-                          </div>
-                          <ChevronRight className="h-5 w-5 text-purple-600 animate-pulse" />
+                          <span className="text-purple-800 font-semibold text-sm">⚡ Hack de velocidad 3X más respuestas</span>
+                          <ChevronRight className="h-4 w-4 text-purple-600" />
                         </div>
-                        <p className="text-purple-700 text-xs mt-2 font-medium">El secreto que usan los EXPERTOS para responder como un PRO 👑</p>
                       </div>
                     ) : (
                       <Alert className="border-blue-200 bg-blue-50">
@@ -1125,9 +1126,64 @@ const TasksToDo: React.FC = () => {
                   }
                   taskType="week"
                 />
+        </div>
+      )}
+      
+      {/* Diálogo de contacto guiado */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar a @{dialogUser}</DialogTitle>
+            <DialogDescription>
+              Paso {dialogStep} de 2
+            </DialogDescription>
+          </DialogHeader>
+
+          {dialogStep === 1 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">1) Copia el mensaje generado por IA:</p>
+              <div className="border rounded-md p-3 text-sm whitespace-pre-wrap bg-muted/30">
+                {dialogMessage || 'Generando sugerencia…'}
               </div>
+              <div className="flex justify-end">
+                <Button onClick={copyMessage}><Copy className="w-4 h-4 mr-2" /> Copiar mensaje</Button>
+              </div>
+            </div>
+          )}
+
+          {dialogStep === 2 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">2) Ahora, envía el mensaje:</p>
+              <a className="inline-flex items-center gap-2 text-primary underline" href={instaUrl(dialogUser)} target="_blank" rel="noopener noreferrer">
+                Abrir conversación en Instagram <ArrowRight className="w-4 h-4" />
+              </a>
+              <p className="text-xs text-muted-foreground">Se abrirá en una nueva pestaña. Pega el mensaje y envíalo.</p>
+            </div>
+          )}
+
+          <DialogFooter>
+            {dialogStep === 1 ? (
+              <Button onClick={() => setDialogStep(2)}>Continuar</Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setOpenDialog(false);
+                  toast({
+                    title: "¡Mensaje enviado!",
+                    description: `Prospecto contactado exitosamente.`,
+                    duration: 3000,
+                  });
+                }}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+              >
+                Listo
+              </Button>
             )}
-          </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
 
           {/* 3. Prospectar a nuevos */}
           <TaskSection
