@@ -658,9 +658,6 @@ const TasksToDo: React.FC = () => {
                       <span className="text-orange-700 font-mono text-xs block mt-1">
                         {calculateEstimatedTime().equivalencia}
                       </span>
-                      <span className="text-xs text-orange-600 mt-1 block">
-                        ({calculateEstimatedTime().totalProspects} prospectos × ~11seg c/u)
-                      </span>
                     </div>
                   </div>
                 </div>
