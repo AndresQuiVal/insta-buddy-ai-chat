@@ -49,6 +49,7 @@ const TasksToDo: React.FC = () => {
     sunday: { enabled: false, time: '09:00' },
   });
   const [activeProspectTab, setActiveProspectTab] = useState('hower');
+  const [expandedTips, setExpandedTips] = useState<{[key: string]: boolean}>({});
 
   // SEO
   useEffect(() => {
@@ -399,6 +400,13 @@ const TasksToDo: React.FC = () => {
     const taskKey = `section-${taskType}`;
     const sectionCompleted = completedTasks[taskKey];
     const allProspectsCompleted = prospects.every(p => completedTasks[`${taskType}-${p.id}`]);
+    const tipKey = `tip-${taskType}`;
+    const isTipExpanded = expandedTips[tipKey];
+
+    const toggleTip = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setExpandedTips(prev => ({ ...prev, [tipKey]: !prev[tipKey] }));
+    };
 
     return (
       <div className="mb-4 sm:mb-6">
@@ -434,12 +442,36 @@ const TasksToDo: React.FC = () => {
           {isActive && (
             <CardContent className="pt-0 px-3 sm:px-6">
               {tip && (
-                <Alert className="mb-4 border-blue-200 bg-blue-50">
-                  <Search className="h-4 w-4" />
-                  <AlertDescription className="text-xs sm:text-sm">
-                    <strong>💡 Tip:</strong> {tip}
-                  </AlertDescription>
-                </Alert>
+                <div className="mb-4">
+                  {!isTipExpanded ? (
+                    <div 
+                      className="bg-blue-50 border border-blue-200 rounded-lg p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+                      onClick={toggleTip}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-700 font-semibold text-sm">💡 Ver tip</span>
+                        <ChevronRight className="h-4 w-4 text-blue-600" />
+                      </div>
+                    </div>
+                  ) : (
+                    <Alert className="border-blue-200 bg-blue-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-2 flex-1">
+                          <Search className="h-4 w-4 mt-0.5" />
+                          <AlertDescription className="text-xs sm:text-sm">
+                            <strong>💡 Tip:</strong> {tip}
+                          </AlertDescription>
+                        </div>
+                        <button 
+                          onClick={toggleTip}
+                          className="text-blue-600 hover:text-blue-800 transition-colors ml-2"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </Alert>
+                  )}
+                </div>
               )}
               
               <div className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
@@ -805,12 +837,36 @@ const TasksToDo: React.FC = () => {
               
               {activeSection === 'pending' && (
                 <CardContent className="pt-0 px-3 sm:px-6">
-                  <Alert className="mb-4 border-blue-200 bg-blue-50">
-                    <Search className="h-4 w-4" />
-                    <AlertDescription className="text-xs sm:text-sm">
-                      <strong>💡 Tip:</strong> Responde rápido para mantener el engagement. ¡La velocidad de respuesta es clave!
-                    </AlertDescription>
-                  </Alert>
+                  <div className="mb-4">
+                    {!expandedTips['tip-pending'] ? (
+                      <div 
+                        className="bg-blue-50 border border-blue-200 rounded-lg p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+                        onClick={() => setExpandedTips(prev => ({ ...prev, ['tip-pending']: !prev['tip-pending'] }))}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-blue-700 font-semibold text-sm">💡 Ver tip</span>
+                          <ChevronRight className="h-4 w-4 text-blue-600" />
+                        </div>
+                      </div>
+                    ) : (
+                      <Alert className="border-blue-200 bg-blue-50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-2 flex-1">
+                            <Search className="h-4 w-4 mt-0.5" />
+                            <AlertDescription className="text-xs sm:text-sm">
+                              <strong>💡 Tip:</strong> Responde rápido para mantener el engagement. ¡La velocidad de respuesta es clave!
+                            </AlertDescription>
+                          </div>
+                          <button 
+                            onClick={() => setExpandedTips(prev => ({ ...prev, ['tip-pending']: false }))}
+                            className="text-blue-600 hover:text-blue-800 transition-colors ml-2"
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </Alert>
+                    )}
+                  </div>
                   
                   {/* Tabs estilo cuaderno */}
                   <div className="mb-4">
