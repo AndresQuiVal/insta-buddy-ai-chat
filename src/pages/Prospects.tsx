@@ -487,6 +487,17 @@ const ProspectsPage: React.FC = () => {
           
         </header>
 
+        {/* Botón Tareas de Hoy */}
+        <div className="text-center mb-8">
+          <Button 
+            onClick={() => window.location.href = '/tasks-to-do'}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <CalendarClock className="h-5 w-5 mr-2" />
+            Tareas de Hoy
+          </Button>
+        </div>
+
       <main>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="w-full grid grid-cols-3 bg-gradient-to-r from-purple-50 to-pink-50 p-2 rounded-2xl border-0 shadow-lg mb-6">
