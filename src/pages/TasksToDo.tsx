@@ -817,7 +817,7 @@ const TasksToDo: React.FC = () => {
                           <TabsTrigger value="ads" className="font-mono text-xs sm:text-sm">📢 Anuncios</TabsTrigger>
                         </TabsList>
                         
-                        <TabsContent value="hower" className="space-y-2 max-h-96 overflow-y-auto">
+                        <TabsContent value="hower" className="space-y-3 max-h-80 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 0).length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
@@ -825,9 +825,9 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 0).map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible">
-                                <div className="absolute -top-3 -right-3 z-20">
-                                  <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold shadow-md border-2 border-white px-3 py-1 rounded-full">
+                              <div key={prospect.id} className="relative overflow-visible mb-4">
+                                <div className="absolute -top-2 -right-2 z-20">
+                                  <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
                                     📱 Hower
                                   </Badge>
                                 </div>
@@ -837,7 +837,7 @@ const TasksToDo: React.FC = () => {
                           )}
                         </TabsContent>
                         
-                        <TabsContent value="dms" className="space-y-2 max-h-96 overflow-y-auto">
+                        <TabsContent value="dms" className="space-y-3 max-h-80 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 1).length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
@@ -845,9 +845,9 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 1).map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible">
-                                <div className="absolute -top-3 -right-3 z-20">
-                                  <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold shadow-md border-2 border-white px-3 py-1 rounded-full">
+                              <div key={prospect.id} className="relative overflow-visible mb-4">
+                                <div className="absolute -top-2 -right-2 z-20">
+                                  <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
                                     💬 DM's
                                   </Badge>
                                 </div>
@@ -857,7 +857,7 @@ const TasksToDo: React.FC = () => {
                           )}
                         </TabsContent>
                         
-                        <TabsContent value="comments" className="space-y-2 max-h-96 overflow-y-auto">
+                        <TabsContent value="comments" className="space-y-3 max-h-80 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 2).length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
@@ -865,9 +865,9 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 2).map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible">
-                                <div className="absolute -top-3 -right-3 z-20">
-                                  <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold shadow-md border-2 border-white px-3 py-1 rounded-full">
+                              <div key={prospect.id} className="relative overflow-visible mb-4">
+                                <div className="absolute -top-2 -right-2 z-20">
+                                  <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
                                     💭 Comentarios
                                   </Badge>
                                 </div>
@@ -877,7 +877,7 @@ const TasksToDo: React.FC = () => {
                           )}
                         </TabsContent>
                         
-                        <TabsContent value="ads" className="space-y-2 max-h-96 overflow-y-auto">
+                        <TabsContent value="ads" className="space-y-3 max-h-80 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 3).length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
@@ -885,9 +885,9 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 3).map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible">
-                                <div className="absolute -top-3 -right-3 z-20">
-                                  <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold shadow-md border-2 border-white px-3 py-1 rounded-full">
+                              <div key={prospect.id} className="relative overflow-visible mb-4">
+                                <div className="absolute -top-2 -right-2 z-20">
+                                  <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
                                     📢 Anuncios
                                   </Badge>
                                 </div>
