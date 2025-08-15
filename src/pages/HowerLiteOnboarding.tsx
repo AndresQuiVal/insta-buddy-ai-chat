@@ -92,9 +92,6 @@ const HowerLiteOnboarding = () => {
               <Instagram className="w-10 h-10 text-purple-600" />
             </div>
             <h2 className="text-2xl font-bold text-gray-800">Conecta tu Instagram</h2>
-            <p className="text-gray-600 max-w-md mx-auto">
-              Necesitamos acceso a tu cuenta de Instagram para analizar tus seguidores y encontrar prospectos ideales.
-            </p>
             
             {!instagramConnected ? (
               <Button
