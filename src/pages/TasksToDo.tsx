@@ -32,6 +32,7 @@ const TasksToDo: React.FC = () => {
   const [showFollowUpSections, setShowFollowUpSections] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [activeStatsSection, setActiveStatsSection] = useState<string | null>(null);
+  const [activeInteractionTip, setActiveInteractionTip] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<CompletedTasks>({});
 
   // SEO
@@ -227,38 +228,97 @@ const TasksToDo: React.FC = () => {
   const ProspectCard = ({ prospect, taskType }: { prospect: ProspectData; taskType: string }) => {
     const taskKey = `${taskType}-${prospect.id}`;
     const isCompleted = completedTasks[taskKey];
+    const isFollowUpProspect = taskType === 'yesterday' || taskType === 'week';
+    const interactionTipKey = `interaction-${prospect.id}`;
+    const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
     return (
-      <div className={`flex items-center justify-between p-3 sm:p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all ${isCompleted ? 'opacity-60 line-through' : ''}`}>
-        <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-          <Checkbox 
-            checked={isCompleted}
-            onCheckedChange={(checked) => {
-              setCompletedTasks(prev => ({ ...prev, [taskKey]: !!checked }));
-            }}
-            className="flex-shrink-0"
-          />
-          <Avatar className="h-8 w-8 sm:h-12 sm:w-12 flex-shrink-0">
-            <AvatarImage src={prospect.profile_picture_url || ''} />
-            <AvatarFallback className="text-xs sm:text-sm">{prospect.username[0]?.toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold text-sm sm:text-base truncate">@{prospect.username}</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {new Date(prospect.last_message_date).toLocaleDateString()}
-            </p>
+      <div className={`bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all ${isCompleted ? 'opacity-60 line-through' : ''}`}>
+        {/* Información principal del prospecto */}
+        <div className="flex items-center justify-between p-3 sm:p-4">
+          <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+            <Checkbox 
+              checked={isCompleted}
+              onCheckedChange={(checked) => {
+                setCompletedTasks(prev => ({ ...prev, [taskKey]: !!checked }));
+              }}
+              className="flex-shrink-0"
+            />
+            <Avatar className="h-8 w-8 sm:h-12 sm:w-12 flex-shrink-0">
+              <AvatarImage src={prospect.profile_picture_url || ''} />
+              <AvatarFallback className="text-xs sm:text-sm">{prospect.username[0]?.toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm sm:text-base truncate">@{prospect.username}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                {new Date(prospect.last_message_date).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+          <div className="flex space-x-2 flex-shrink-0">
+            {/* Botón de interacción solo para prospectos de seguimiento */}
+            {isFollowUpProspect && (
+              <Button 
+                onClick={() => setActiveInteractionTip(isInteractionTipActive ? null : interactionTipKey)}
+                size="sm"
+                variant="outline"
+                className="text-xs sm:text-sm bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                disabled={isCompleted}
+              >
+                <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="hidden sm:inline">¿Cómo interactúo?</span>
+                <span className="sm:hidden">💡</span>
+              </Button>
+            )}
+            <Button 
+              onClick={() => handleContact(prospect.username)}
+              size="sm"
+              className="bg-primary hover:bg-primary/90 text-xs sm:text-sm"
+              disabled={isCompleted}
+            >
+              <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Contactar</span>
+              <span className="sm:hidden">💬</span>
+            </Button>
           </div>
         </div>
-        <Button 
-          onClick={() => handleContact(prospect.username)}
-          size="sm"
-          className="bg-primary hover:bg-primary/90 text-xs sm:text-sm flex-shrink-0 ml-2"
-          disabled={isCompleted}
-        >
-          <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-          <span className="hidden sm:inline">Contactar</span>
-          <span className="sm:hidden">💬</span>
-        </Button>
+
+        {/* Tip de interacción desplegable */}
+        {isFollowUpProspect && isInteractionTipActive && (
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
+            <div 
+              className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-200 mt-3"
+              style={{
+                backgroundImage: 'linear-gradient(90deg, #e0e7ff 1px, transparent 1px)',
+                backgroundSize: '20px 1px',
+                backgroundPosition: '0 15px'
+              }}
+            >
+              <h4 className="font-bold text-blue-800 text-sm mb-3 font-mono">💡 Cómo interactuar con @{prospect.username}:</h4>
+              
+              <div className="space-y-2">
+                <div className="flex items-center p-2 bg-white rounded border-l-4 border-pink-400">
+                  <Share2 className="h-4 w-4 text-pink-600 mr-2 flex-shrink-0" />
+                  <span className="text-sm font-mono">Comentar en su historia</span>
+                </div>
+                
+                <div className="flex items-center p-2 bg-white rounded border-l-4 border-green-400">
+                  <MessageCircle className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
+                  <span className="text-sm font-mono">Comentar en su último post algo positivo</span>
+                </div>
+                
+                <div className="flex items-center p-2 bg-white rounded border-l-4 border-red-400">
+                  <Heart className="h-4 w-4 text-red-600 mr-2 flex-shrink-0" />
+                  <span className="text-sm font-mono">Dar like a sus posts recientes</span>
+                </div>
+              </div>
+              
+              <p className="text-xs text-blue-600 mt-3 font-mono">
+                ⚡ Haz esto ANTES de enviar el mensaje para aumentar las posibilidades de respuesta
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
