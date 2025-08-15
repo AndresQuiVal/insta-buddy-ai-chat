@@ -250,10 +250,13 @@ const TasksToDo: React.FC = () => {
     const interactionTipKey = `interaction-${prospect.id}`;
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
+    console.log('Rendering ProspectCard for:', prospect.username, 'Task type:', taskType);
+    console.log('Is interaction tip active?', isInteractionTipActive);
+    
     return (
-      <div className={`bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all ${isCompleted ? 'opacity-60 line-through' : ''} mb-2`}>
+      <div className={`bg-gradient-to-r from-white to-blue-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all duration-300 ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}>
         {/* Información principal del prospecto */}
-        <div className="flex items-center justify-between p-4 sm:p-5">
+        <div className="flex items-center justify-between p-6 bg-white rounded-xl border border-gray-100">
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
             <Checkbox 
               checked={isCompleted}
@@ -306,14 +309,17 @@ const TasksToDo: React.FC = () => {
           <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
             <div className="mt-3">
               {!isInteractionTipActive ? (
-                // Vista compacta - solo título
+                // Vista compacta - solo título con estilo más llamativo
                 <div 
-                  className="bg-gradient-to-r from-blue-50 to-purple-50 p-2 rounded-lg border border-blue-200 cursor-pointer hover:shadow-sm transition-all"
-                  onClick={() => setActiveInteractionTip(interactionTipKey)}
+                  className="bg-gradient-to-r from-blue-100 to-purple-100 p-4 rounded-xl border-2 border-blue-300 cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  onClick={() => {
+                    console.log('Expandiendo tip para:', prospect.username);
+                    setActiveInteractionTip(interactionTipKey);
+                  }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-blue-800 text-xs sm:text-sm font-mono">💡 Cómo aumentar respuestas</span>
-                    <ChevronRight className="h-3 w-3 text-blue-600" />
+                    <span className="font-bold text-blue-900 text-sm font-mono">💡 Cómo aumentar respuestas - CLICK AQUÍ</span>
+                    <ChevronRight className="h-4 w-4 text-blue-700 animate-pulse" />
                   </div>
                 </div>
               ) : (
@@ -839,15 +845,15 @@ const TasksToDo: React.FC = () => {
                             <span className="block sm:hidden">📱</span>
                             <span className="hidden sm:block">📱 Hower</span>
                           </TabsTrigger>
-                          <TabsTrigger value="dms" className="font-mono text-xs px-1 sm:px-3 py-2">
+                          <TabsTrigger value="dms" className="font-mono text-xs px-2 py-3 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white">
                             <span className="block sm:hidden">💬</span>
                             <span className="hidden sm:block">💬 DM's</span>
                           </TabsTrigger>
-                          <TabsTrigger value="comments" className="font-mono text-xs px-1 sm:px-3 py-2">
+                          <TabsTrigger value="comments" className="font-mono text-xs px-2 py-3 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white">
                             <span className="block sm:hidden">💭</span>
                             <span className="hidden sm:block">💭 Comentarios</span>
                           </TabsTrigger>
-                          <TabsTrigger value="ads" className="font-mono text-xs px-1 sm:px-3 py-2">
+                          <TabsTrigger value="ads" className="font-mono text-xs px-2 py-3 rounded-lg bg-white shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white">
                             <span className="block sm:hidden">📢</span>
                             <span className="hidden sm:block">📢 Anuncios</span>
                           </TabsTrigger>
