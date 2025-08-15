@@ -26,15 +26,14 @@ const HowerLiteOnboarding = () => {
   const [whatsappData, setWhatsappData] = useState({
     countryCode: "+52",
     phone: "",
-    time: "09:00",
     days: {
-      monday: false,
-      tuesday: false,
-      wednesday: false,
-      thursday: false,
-      friday: false,
-      saturday: false,
-      sunday: false
+      monday: { enabled: false, time: "09:00" },
+      tuesday: { enabled: false, time: "09:00" },
+      wednesday: { enabled: false, time: "09:00" },
+      thursday: { enabled: false, time: "09:00" },
+      friday: { enabled: false, time: "09:00" },
+      saturday: { enabled: false, time: "09:00" },
+      sunday: { enabled: false, time: "09:00" }
     }
   });
 
@@ -117,7 +116,7 @@ const HowerLiteOnboarding = () => {
       case 2:
         return clientData.age && clientData.gender && clientData.pain_points;
       case 3:
-        return whatsappData.phone && Object.values(whatsappData.days).some(day => day);
+        return whatsappData.phone && Object.values(whatsappData.days).some(day => day.enabled);
       default:
         return false;
     }
@@ -240,11 +239,11 @@ const HowerLiteOnboarding = () => {
 
             {/* Configuración de WhatsApp en formato cuaderno */}
             <div 
-              className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200"
+              className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200"
               style={{
                 backgroundImage: 'linear-gradient(90deg, #e0e7ff 1px, transparent 1px)',
                 backgroundSize: '20px 1px',
-                backgroundPosition: '0 20px'
+                backgroundPosition: '0 15px'
               }}
             >
               <div className="flex items-center space-x-2 mb-4">
@@ -254,90 +253,106 @@ const HowerLiteOnboarding = () => {
               
               {/* Número de WhatsApp con selector de país */}
               <div className="mb-4">
-                <Label className="text-sm font-mono font-bold text-gray-700">Número de WhatsApp *</Label>
-                <div className="flex space-x-2 mt-1">
-                  <Select
-                    value={whatsappData.countryCode}
-                    onValueChange={(value) => setWhatsappData({...whatsappData, countryCode: value})}
-                  >
-                    <SelectTrigger className="w-24 bg-white font-mono">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="+1">🇺🇸 +1</SelectItem>
-                      <SelectItem value="+52">🇲🇽 +52</SelectItem>
-                      <SelectItem value="+34">🇪🇸 +34</SelectItem>
-                      <SelectItem value="+57">🇨🇴 +57</SelectItem>
-                      <SelectItem value="+54">🇦🇷 +54</SelectItem>
-                      <SelectItem value="+56">🇨🇱 +56</SelectItem>
-                      <SelectItem value="+51">🇵🇪 +51</SelectItem>
-                      <SelectItem value="+593">🇪🇨 +593</SelectItem>
-                      <SelectItem value="+58">🇻🇪 +58</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="1234567890"
-                    value={whatsappData.phone}
-                    onChange={(e) => setWhatsappData({...whatsappData, phone: e.target.value})}
-                    className="flex-1 bg-white font-mono"
-                  />
+                <div className="bg-white rounded border-l-4 border-blue-400 p-3 mb-3">
+                  <Label className="text-sm font-mono font-bold text-gray-700">Número de WhatsApp *</Label>
+                  <div className="flex space-x-2 mt-2">
+                    <Select
+                      value={whatsappData.countryCode}
+                      onValueChange={(value) => setWhatsappData({...whatsappData, countryCode: value})}
+                    >
+                      <SelectTrigger className="w-28 bg-white font-mono border-gray-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border border-gray-300 shadow-lg z-50">
+                        <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                        <SelectItem value="+52">🇲🇽 +52</SelectItem>
+                        <SelectItem value="+34">🇪🇸 +34</SelectItem>
+                        <SelectItem value="+57">🇨🇴 +57</SelectItem>
+                        <SelectItem value="+54">🇦🇷 +54</SelectItem>
+                        <SelectItem value="+56">🇨🇱 +56</SelectItem>
+                        <SelectItem value="+51">🇵🇪 +51</SelectItem>
+                        <SelectItem value="+593">🇪🇨 +593</SelectItem>
+                        <SelectItem value="+58">🇻🇪 +58</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder="1234567890"
+                      value={whatsappData.phone}
+                      onChange={(e) => setWhatsappData({...whatsappData, phone: e.target.value})}
+                      className="flex-1 bg-white font-mono border-gray-300"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Días de la semana */}
+              {/* Días de la semana con horarios individuales */}
               <div className="mb-4">
-                <Label className="text-sm font-mono font-bold text-gray-700 mb-3 block">
-                  📅 Días para recibir recordatorios *
-                </Label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { key: 'monday', label: 'Lunes' },
-                    { key: 'tuesday', label: 'Martes' },
-                    { key: 'wednesday', label: 'Miércoles' },
-                    { key: 'thursday', label: 'Jueves' },
-                    { key: 'friday', label: 'Viernes' },
-                    { key: 'saturday', label: 'Sábado' },
-                    { key: 'sunday', label: 'Domingo' }
-                  ].map(({ key, label }) => (
-                    <div key={key} className="flex items-center space-x-2 bg-white p-2 rounded border">
-                      <Checkbox
-                        id={key}
-                        checked={whatsappData.days[key as keyof typeof whatsappData.days]}
-                        onCheckedChange={(checked) => 
-                          setWhatsappData({
-                            ...whatsappData, 
-                            days: { ...whatsappData.days, [key]: checked }
-                          })
-                        }
-                      />
-                      <Label htmlFor={key} className="text-xs font-mono cursor-pointer">
-                        {label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Hora preferida */}
-              <div>
-                <Label className="text-sm font-mono font-bold text-gray-700 mb-2 block">
-                  🕐 Hora preferida para recordatorios
-                </Label>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <Input
-                    type="time"
-                    value={whatsappData.time}
-                    onChange={(e) => setWhatsappData({...whatsappData, time: e.target.value})}
-                    className="bg-white font-mono max-w-32"
-                  />
-                  <span className="text-sm text-gray-500 font-mono">
-                    ({new Date(`2000-01-01T${whatsappData.time}`).toLocaleTimeString('es-ES', { 
-                      hour: 'numeric', 
-                      minute: '2-digit',
-                      hour12: true 
-                    })})
-                  </span>
+                <div className="bg-white rounded border-l-4 border-green-400 p-3">
+                  <Label className="text-sm font-mono font-bold text-gray-700 mb-3 block">
+                    📅 Días y horarios para recibir recordatorios *
+                  </Label>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'monday', label: 'Lunes' },
+                      { key: 'tuesday', label: 'Martes' },
+                      { key: 'wednesday', label: 'Miércoles' },
+                      { key: 'thursday', label: 'Jueves' },
+                      { key: 'friday', label: 'Viernes' },
+                      { key: 'saturday', label: 'Sábado' },
+                      { key: 'sunday', label: 'Domingo' }
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center space-x-3 bg-gray-50 p-3 rounded border">
+                        <Checkbox
+                          id={key}
+                          checked={whatsappData.days[key as keyof typeof whatsappData.days].enabled}
+                          onCheckedChange={(checked) => 
+                            setWhatsappData({
+                              ...whatsappData, 
+                              days: { 
+                                ...whatsappData.days, 
+                                [key]: { 
+                                  ...whatsappData.days[key as keyof typeof whatsappData.days], 
+                                  enabled: checked as boolean 
+                                } 
+                              }
+                            })
+                          }
+                        />
+                        <Label htmlFor={key} className="text-sm font-mono cursor-pointer min-w-[80px]">
+                          {label}
+                        </Label>
+                        {whatsappData.days[key as keyof typeof whatsappData.days].enabled && (
+                          <div className="flex items-center space-x-2 ml-auto">
+                            <Clock className="w-4 h-4 text-gray-400" />
+                            <Input
+                              type="time"
+                              value={whatsappData.days[key as keyof typeof whatsappData.days].time}
+                              onChange={(e) => 
+                                setWhatsappData({
+                                  ...whatsappData, 
+                                  days: { 
+                                    ...whatsappData.days, 
+                                    [key]: { 
+                                      ...whatsappData.days[key as keyof typeof whatsappData.days], 
+                                      time: e.target.value 
+                                    } 
+                                  }
+                                })
+                              }
+                              className="bg-white font-mono max-w-32 border-gray-300"
+                            />
+                            <span className="text-xs text-gray-500 font-mono min-w-[60px]">
+                              ({new Date(`2000-01-01T${whatsappData.days[key as keyof typeof whatsappData.days].time}`).toLocaleTimeString('es-ES', { 
+                                hour: 'numeric', 
+                                minute: '2-digit',
+                                hour12: true 
+                              })})
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -351,14 +366,16 @@ const HowerLiteOnboarding = () => {
                 backgroundPosition: '0 15px'
               }}
             >
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="text-yellow-600 text-lg">🚀</span>
-                <span className="font-bold font-mono text-yellow-800">¡Tip de éxito!</span>
+              <div className="bg-white rounded border-l-4 border-yellow-400 p-3">
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-yellow-600 text-lg">🚀</span>
+                  <span className="font-bold font-mono text-yellow-800">¡Tip de éxito!</span>
+                </div>
+                <p className="text-yellow-700 text-sm font-mono">
+                  La constancia es clave en la prospección. Los recordatorios te ayudarán a mantener 
+                  el ritmo perfecto para convertir seguidores en clientes potenciales.
+                </p>
               </div>
-              <p className="text-yellow-700 text-sm font-mono">
-                La constancia es clave en la prospección. Los recordatorios te ayudarán a mantener 
-                el ritmo perfecto para convertir seguidores en clientes potenciales.
-              </p>
             </div>
           </div>
         );
