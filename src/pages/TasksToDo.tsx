@@ -194,7 +194,20 @@ const TasksToDo: React.FC = () => {
     const secondsPerProspect = 11; // Promedio entre 10-12 segundos
     const totalSeconds = totalProspects * secondsPerProspect;
     const minutes = Math.ceil(totalSeconds / 60); // Redondeamos hacia arriba
-    return { minutes, totalProspects };
+    
+    // Determinar equivalencia según el tiempo
+    let equivalencia = '';
+    if (minutes < 5) {
+      equivalencia = 'Tiempo que tardas en servirte un café ☕';
+    } else if (minutes >= 5 && minutes <= 10) {
+      equivalencia = 'Tiempo que demoras en ducharte 🚿';
+    } else if (minutes >= 15) {
+      equivalencia = 'Tiempo que demoras en ir por el super 🛒';
+    } else {
+      equivalencia = 'Menos de lo que tardas en desayunar 🍳';
+    }
+    
+    return { minutes, totalProspects, equivalencia };
   };
 
   // Función para obtener prospectos según la sección de estadísticas
@@ -577,13 +590,18 @@ const TasksToDo: React.FC = () => {
                 
                 {/* Tag de tiempo estimado */}
                 <div className="mt-3">
-                  <div className="inline-block bg-gradient-to-r from-orange-100 to-yellow-100 border-2 border-dashed border-orange-300 px-4 py-2 rounded-lg">
-                    <span className="text-orange-800 font-mono text-sm font-bold">
-                      ⏱️ Tiempo estimado total: {calculateEstimatedTime().minutes} minutos 
-                      <span className="text-xs text-orange-600 ml-1">
-                        ({calculateEstimatedTime().totalProspects} prospectos × ~11seg cada uno)
+                  <div className="inline-block bg-gradient-to-r from-orange-100 to-yellow-100 border-2 border-dashed border-orange-300 px-4 py-2 rounded-lg max-w-md">
+                    <div className="text-center">
+                      <span className="text-orange-800 font-mono text-sm font-bold block">
+                        ⏱️ Tiempo estimado: {calculateEstimatedTime().minutes} minutos
                       </span>
-                    </span>
+                      <span className="text-orange-700 font-mono text-xs block mt-1">
+                        {calculateEstimatedTime().equivalencia}
+                      </span>
+                      <span className="text-xs text-orange-600 mt-1 block">
+                        ({calculateEstimatedTime().totalProspects} prospectos × ~11seg c/u)
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
