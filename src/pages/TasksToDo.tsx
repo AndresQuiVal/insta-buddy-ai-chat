@@ -450,7 +450,7 @@ const TasksToDo: React.FC = () => {
                   <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono">
-                  📋 Lista de Tareas de Hoy
+                  👇 Lista de Tareas de Hoy
                 </h1>
               </div>
             </div>
