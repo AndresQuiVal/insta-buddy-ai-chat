@@ -229,7 +229,7 @@ const TasksToDo: React.FC = () => {
     isActive: boolean;
     icon: any;
     prospects: ProspectData[];
-    tip?: string;
+    tip?: string | React.ReactNode;
     taskType: string;
     showCheckbox?: boolean;
   }) => {
@@ -516,7 +516,19 @@ const TasksToDo: React.FC = () => {
                   isActive={activeSection === 'yesterday'}
                   icon={Clock}
                   prospects={prospectsClassification.noResponseYesterday}
-                  tip='Menciona algo como: "Holaa [NOMBRE] todo bien? soy Andrés! pasaba a dejarte un mensaje y saber si aun sigues por aca? por cierto vi tu perfil y [COMPLEMENTO DEL PERFIL]" pero por audio. No olvides interactuar con sus posts: dar like, comentar, compartir. ¡La interacción aumenta las respuestas!'
+                  tip={
+                    <div className="space-y-3">
+                      <p>Envía este mensaje por <strong>audio</strong>:</p>
+                      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded font-mono text-sm" style={{
+                        backgroundImage: 'linear-gradient(90deg, #fef3c7 1px, transparent 1px)',
+                        backgroundSize: '20px 1px',
+                        backgroundPosition: '0 15px'
+                      }}>
+                        "Holaa [NOMBRE] todo bien? soy Andrés! pasaba a dejarte un mensaje y saber si aun sigues por aca? por cierto vi tu perfil y [COMPLEMENTO DEL PERFIL]"
+                      </div>
+                      <p><strong>💡 Tip:</strong> No olvides interactuar con sus posts: dar like, comentar, compartir. ¡La interacción aumenta las respuestas!</p>
+                    </div>
+                  }
                   taskType="yesterday"
                 />
                 
@@ -528,7 +540,19 @@ const TasksToDo: React.FC = () => {
                   isActive={activeSection === 'week'}
                   icon={Calendar}
                   prospects={prospectsClassification.noResponse7Days}
-                  tip='Menciona algo como: "Hey hey [NOMBRE] oye, hace 7 días no escucho de ti, todo bien?" pero en texto. Aprovecha para interactuar con sus posts recientes: da like, comenta algo genuino, comparte si es relevante. ¡La interacción previa aumenta las posibilidades de respuesta!'
+                  tip={
+                    <div className="space-y-3">
+                      <p>Envía este mensaje por <strong>texto</strong>:</p>
+                      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded font-mono text-sm" style={{
+                        backgroundImage: 'linear-gradient(90deg, #dbeafe 1px, transparent 1px)',
+                        backgroundSize: '20px 1px',
+                        backgroundPosition: '0 15px'
+                      }}>
+                        "Hey hey [NOMBRE] oye, hace 7 días no escucho de ti, todo bien?"
+                      </div>
+                      <p><strong>💡 Tip:</strong> Aprovecha para interactuar con sus posts recientes: da like, comenta algo genuino, comparte si es relevante. ¡La interacción previa aumenta las posibilidades de respuesta!</p>
+                    </div>
+                  }
                   taskType="week"
                 />
               </div>
