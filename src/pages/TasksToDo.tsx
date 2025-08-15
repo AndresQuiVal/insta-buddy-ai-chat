@@ -133,6 +133,29 @@ const TasksToDo: React.FC = () => {
     }
   };
 
+  // Función para manejar cuando se envía un mensaje (marcar como completado automáticamente)
+  const handleMessageSent = (username: string) => {
+    // Marcar este prospecto como completado automáticamente
+    const prospect = prospects.find(p => p.username === username);
+    if (prospect) {
+      // Marcar en todas las secciones donde puede aparecer este prospecto
+      const taskTypes = ['pending', 'yesterday', 'week', 'new'];
+      const updates: {[key: string]: boolean} = {};
+      
+      taskTypes.forEach(type => {
+        updates[`${type}-${prospect.id}`] = true;
+      });
+      
+      setCompletedTasks(prev => ({ ...prev, ...updates }));
+      
+      toast({
+        title: "¡Prospecto contactado!",
+        description: `@${username} marcado como completado.`,
+        duration: 3000,
+      });
+    }
+  };
+
   const copyMessage = async () => {
     try {
       await navigator.clipboard.writeText(dialogMessage);
@@ -280,13 +303,6 @@ const TasksToDo: React.FC = () => {
         {/* Información principal del prospecto */}
         <div className="flex items-center justify-between p-6 bg-white rounded-xl border border-gray-100">
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-            <Checkbox 
-              checked={isCompleted}
-              onCheckedChange={(checked) => {
-                setCompletedTasks(prev => ({ ...prev, [taskKey]: !!checked }));
-              }}
-              className="flex-shrink-0"
-            />
             <Avatar className="h-8 w-8 sm:h-12 sm:w-12 flex-shrink-0">
               <AvatarImage src={prospect.profile_picture_url || ''} />
               <AvatarFallback className="text-xs sm:text-sm">{prospect.username[0]?.toUpperCase()}</AvatarFallback>
@@ -1168,11 +1184,7 @@ const TasksToDo: React.FC = () => {
                 variant="outline" 
                 onClick={() => {
                   setOpenDialog(false);
-                  toast({
-                    title: "¡Mensaje enviado!",
-                    description: `Prospecto contactado exitosamente.`,
-                    duration: 3000,
-                  });
+                  handleMessageSent(dialogUser);
                 }}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
               >
