@@ -300,19 +300,40 @@ const TasksToDo: React.FC = () => {
               <h4 className="font-bold text-blue-800 text-sm mb-3 font-mono">💡 Cómo interactuar con @{prospect.username}:</h4>
               
               <div className="space-y-2">
-                <div className="flex items-center p-2 bg-white rounded border-l-4 border-pink-400">
-                  <Share2 className="h-4 w-4 text-pink-600 mr-2 flex-shrink-0" />
-                  <span className="text-sm font-mono">Comentar en su historia</span>
+                <div className="bg-white rounded border-l-4 border-pink-400 overflow-hidden">
+                  <div className="flex items-center p-2">
+                    <Share2 className="h-4 w-4 text-pink-600 mr-2 flex-shrink-0" />
+                    <span className="text-sm font-mono font-bold">Comentar en su historia</span>
+                  </div>
+                  <div className="px-2 pb-2 ml-6">
+                    <p className="text-xs text-pink-700 bg-pink-50 p-2 rounded font-mono">
+                      💡 "Me encanta esto! 😍" o "Qué buena foto! 🔥" o "Increíble! 👏"
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="flex items-center p-2 bg-white rounded border-l-4 border-green-400">
-                  <MessageCircle className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
-                  <span className="text-sm font-mono">Comentar en su último post algo positivo</span>
+                <div className="bg-white rounded border-l-4 border-green-400 overflow-hidden">
+                  <div className="flex items-center p-2">
+                    <MessageCircle className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
+                    <span className="text-sm font-mono font-bold">Comentar en su último post algo positivo</span>
+                  </div>
+                  <div className="px-2 pb-2 ml-6">
+                    <p className="text-xs text-green-700 bg-green-50 p-2 rounded font-mono">
+                      💡 "Excelente contenido! 💪" o "Muy inspirador! ✨" o "Me gusta mucho tu estilo 🎯"
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="flex items-center p-2 bg-white rounded border-l-4 border-red-400">
-                  <Heart className="h-4 w-4 text-red-600 mr-2 flex-shrink-0" />
-                  <span className="text-sm font-mono">Dar like a sus posts recientes</span>
+                <div className="bg-white rounded border-l-4 border-red-400 overflow-hidden">
+                  <div className="flex items-center p-2">
+                    <Heart className="h-4 w-4 text-red-600 mr-2 flex-shrink-0" />
+                    <span className="text-sm font-mono font-bold">Dar like a sus posts recientes</span>
+                  </div>
+                  <div className="px-2 pb-2 ml-6">
+                    <p className="text-xs text-red-700 bg-red-50 p-2 rounded font-mono">
+                      💡 Dale like a sus últimos 3-5 posts para aparecer en su radar
+                    </p>
+                  </div>
                 </div>
               </div>
               
