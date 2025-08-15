@@ -825,8 +825,12 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 0).map((prospect) => (
-                              <div key={prospect.id} className="relative">
-                                <Badge className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs z-10">Hower</Badge>
+                              <div key={prospect.id} className="relative overflow-visible">
+                                <div className="absolute -top-3 -right-3 z-20">
+                                  <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold shadow-md border-2 border-white px-3 py-1 rounded-full">
+                                    📱 Hower
+                                  </Badge>
+                                </div>
                                 <ProspectCard prospect={prospect} taskType="pending" />
                               </div>
                             ))
@@ -841,8 +845,12 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 1).map((prospect) => (
-                              <div key={prospect.id} className="relative">
-                                <Badge className="absolute -top-2 -right-2 bg-green-500 text-white text-xs z-10">DM's</Badge>
+                              <div key={prospect.id} className="relative overflow-visible">
+                                <div className="absolute -top-3 -right-3 z-20">
+                                  <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold shadow-md border-2 border-white px-3 py-1 rounded-full">
+                                    💬 DM's
+                                  </Badge>
+                                </div>
                                 <ProspectCard prospect={prospect} taskType="pending" />
                               </div>
                             ))
@@ -857,8 +865,12 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 2).map((prospect) => (
-                              <div key={prospect.id} className="relative">
-                                <Badge className="absolute -top-2 -right-2 bg-purple-500 text-white text-xs z-10">Comentarios</Badge>
+                              <div key={prospect.id} className="relative overflow-visible">
+                                <div className="absolute -top-3 -right-3 z-20">
+                                  <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold shadow-md border-2 border-white px-3 py-1 rounded-full">
+                                    💭 Comentarios
+                                  </Badge>
+                                </div>
                                 <ProspectCard prospect={prospect} taskType="pending" />
                               </div>
                             ))
@@ -873,8 +885,12 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 3).map((prospect) => (
-                              <div key={prospect.id} className="relative">
-                                <Badge className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs z-10">Anuncios</Badge>
+                              <div key={prospect.id} className="relative overflow-visible">
+                                <div className="absolute -top-3 -right-3 z-20">
+                                  <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold shadow-md border-2 border-white px-3 py-1 rounded-full">
+                                    📢 Anuncios
+                                  </Badge>
+                                </div>
                                 <ProspectCard prospect={prospect} taskType="pending" />
                               </div>
                             ))
