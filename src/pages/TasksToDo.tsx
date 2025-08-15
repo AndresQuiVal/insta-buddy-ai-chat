@@ -269,8 +269,8 @@ const TasksToDo: React.FC = () => {
                 disabled={isCompleted}
               >
                 <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                <span className="hidden sm:inline">¿Cómo interactúo?</span>
-                <span className="sm:hidden">💡</span>
+                <span className="hidden sm:inline">¿Cómo aumento respuesta?</span>
+                <span className="sm:hidden">📈</span>
               </Button>
             )}
             <Button 
