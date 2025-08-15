@@ -332,7 +332,7 @@ const TasksToDo: React.FC = () => {
               className="bg-primary hover:bg-primary/90 text-xs sm:text-sm"
               disabled={isCompleted}
             >
-              <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 mr-1 hidden sm:inline-block" />
               <span className="hidden sm:inline">Contactar</span>
               <span className="sm:hidden">💬</span>
             </Button>
