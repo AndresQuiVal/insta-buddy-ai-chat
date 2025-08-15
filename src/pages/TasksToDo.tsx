@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface ProspectData {
   id: string;
@@ -31,9 +33,22 @@ const TasksToDo: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [showFollowUpSections, setShowFollowUpSections] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
   const [activeStatsSection, setActiveStatsSection] = useState<string | null>(null);
   const [activeInteractionTip, setActiveInteractionTip] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<CompletedTasks>({});
+  const [showWhatsAppConfig, setShowWhatsAppConfig] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [weekSchedule, setWeekSchedule] = useState({
+    monday: { enabled: false, time: '09:00' },
+    tuesday: { enabled: false, time: '09:00' },
+    wednesday: { enabled: false, time: '09:00' },
+    thursday: { enabled: false, time: '09:00' },
+    friday: { enabled: false, time: '09:00' },
+    saturday: { enabled: false, time: '09:00' },
+    sunday: { enabled: false, time: '09:00' },
+  });
+  const [activeProspectTab, setActiveProspectTab] = useState('hower');
 
   // SEO
   useEffect(() => {
@@ -484,9 +499,9 @@ const TasksToDo: React.FC = () => {
                   <Button
                     onClick={() => setShowStats(!showStats)}
                     variant="outline"
-                    className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 font-mono text-sm"
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600 font-mono text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
                   >
-                    {showStats ? '📊 Ocultar mis números' : '📊 ¿Cómo lo hice ayer?'}
+                    {showStats ? '📊 Ocultar mis números' : '🚀 ¿Cómo lo hice ayer?'}
                   </Button>
                 </div>
                 
@@ -528,7 +543,7 @@ const TasksToDo: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-nuevos' ? null : 'ayer-nuevos')}
                               >
-                                <span className="font-mono text-sm">🆕 Prospectos Nuevos</span>
+                                <span className="font-mono text-sm">💬 Conversaciones Abiertas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.nuevosProspectos}
                                 </div>
@@ -599,7 +614,7 @@ const TasksToDo: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
                               >
-                                <span className="font-mono text-sm">🆕 Prospectos Nuevos</span>
+                                <span className="font-mono text-sm">💬 Conversaciones Abiertas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.weekStats.nuevosProspectos}
                                 </div>
@@ -661,6 +676,61 @@ const TasksToDo: React.FC = () => {
                           </div>
                         </TabsContent>
                       </Tabs>
+                      
+                      {/* Botón Más Detalles */}
+                      <div className="text-center mt-4">
+                        <Button
+                          onClick={() => setShowDetailedMetrics(!showDetailedMetrics)}
+                          variant="outline"
+                          className="bg-gradient-to-r from-blue-100 to-cyan-100 border-blue-300 text-blue-700 hover:from-blue-200 hover:to-cyan-200 font-mono text-sm"
+                        >
+                          {showDetailedMetrics ? '📈 Ocultar detalles' : '📊 Más Detalles'}
+                        </Button>
+                      </div>
+                      
+                      {/* Métricas Detalladas */}
+                      {showDetailedMetrics && (
+                        <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
+                          <h3 className="text-center font-bold text-gray-800 mb-4 font-mono">📊 Métricas Detalladas</h3>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="bg-white p-3 rounded-lg border-l-4 border-green-400">
+                              <div className="text-sm font-mono font-bold text-green-800">📧 # de Mensajes para Tener 1 Respuesta</div>
+                              <div className="text-2xl font-bold text-green-600">4.2</div>
+                            </div>
+                            
+                            <div className="bg-white p-3 rounded-lg border-l-4 border-blue-400">
+                              <div className="text-sm font-mono font-bold text-blue-800">🎯 # de Mensajes para Lograr 1 Invitación</div>
+                              <div className="text-2xl font-bold text-blue-600">8.7</div>
+                            </div>
+                            
+                            <div className="bg-white p-3 rounded-lg border-l-4 border-purple-400">
+                              <div className="text-sm font-mono font-bold text-purple-800">📋 # de Mensajes para Tener 1 Presentación</div>
+                              <div className="text-2xl font-bold text-purple-600">12.3</div>
+                            </div>
+                            
+                            <div className="bg-white p-3 rounded-lg border-l-4 border-orange-400">
+                              <div className="text-sm font-mono font-bold text-orange-800">🤝 # de Invitaciones para Tener 1 Presentación</div>
+                              <div className="text-2xl font-bold text-orange-600">2.1</div>
+                            </div>
+                            
+                            <div className="bg-white p-3 rounded-lg border-l-4 border-red-400">
+                              <div className="text-sm font-mono font-bold text-red-800">✅ # de Mensajes para Lograr 1 Inscripción</div>
+                              <div className="text-2xl font-bold text-red-600">25.4</div>
+                            </div>
+                            
+                            <div className="bg-white p-3 rounded-lg border-l-4 border-yellow-400">
+                              <div className="text-sm font-mono font-bold text-yellow-800">🎫 # de Invitaciones para Lograr 1 Inscripción</div>
+                              <div className="text-2xl font-bold text-yellow-600">5.8</div>
+                            </div>
+                            
+                            <div className="bg-white p-3 rounded-lg border-l-4 border-indigo-400 sm:col-span-2">
+                              <div className="text-sm font-mono font-bold text-indigo-800">📊 # de Presentaciones para Lograr 1 Inscripción</div>
+                              <div className="text-2xl font-bold text-indigo-600">3.2</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -692,17 +762,131 @@ const TasksToDo: React.FC = () => {
 
         {/* Tasks List - Notebook Style */}
         <div className="space-y-3 sm:space-y-4">
-          {/* 1. Responder prospectos pendientes */}
-          <TaskSection
-            title="Prospectos pendientes"
-            count={prospectsClassification.pendingResponses.length}
-            onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}
-            isActive={activeSection === 'pending'}
-            icon={MessageSquare}
-            prospects={prospectsClassification.pendingResponses}
-            tip="Responde rápido para mantener el engagement. ¡La velocidad de respuesta es clave!"
-            taskType="pending"
-          />
+          {/* 1. Responder prospectos pendientes con tabs */}
+          <div className="mb-4 sm:mb-6">
+            <Card
+              className="transition-all hover:shadow-md border-l-4 border-l-primary"
+              style={{
+                background: 'linear-gradient(to right, #fefefe 0%, #f8fafc 100%)',
+                boxShadow: activeSection === 'pending' ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
+              }}
+            >
+              <CardHeader className="pb-2 sm:pb-3" onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}>
+                <CardTitle className="flex items-center justify-between text-base sm:text-lg cursor-pointer">
+                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
+                    <Checkbox 
+                      checked={completedTasks['section-pending']}
+                      onCheckedChange={(checked) => {
+                        setCompletedTasks(prev => ({ ...prev, ['section-pending']: !!checked }));
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <span className={`${completedTasks['section-pending'] ? 'line-through' : ''} text-sm sm:text-base`}>Prospectos pendientes</span>
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.length}</Badge>
+                    {activeSection === 'pending' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              
+              {activeSection === 'pending' && (
+                <CardContent className="pt-0 px-3 sm:px-6">
+                  <Alert className="mb-4 border-blue-200 bg-blue-50">
+                    <Search className="h-4 w-4" />
+                    <AlertDescription className="text-xs sm:text-sm">
+                      <strong>💡 Tip:</strong> Responde rápido para mantener el engagement. ¡La velocidad de respuesta es clave!
+                    </AlertDescription>
+                  </Alert>
+                  
+                  {/* Tabs estilo cuaderno */}
+                  <div className="mb-4">
+                    <div 
+                      className="bg-white rounded-lg border border-gray-200 p-4"
+                      style={{
+                        backgroundImage: 'linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
+                        backgroundSize: '20px 1px',
+                        backgroundPosition: '0 20px'
+                      }}
+                    >
+                      <Tabs value={activeProspectTab} onValueChange={setActiveProspectTab} className="w-full">
+                        <TabsList className="grid w-full grid-cols-4 mb-4 bg-gray-100">
+                          <TabsTrigger value="hower" className="font-mono text-xs sm:text-sm">📱 Hower</TabsTrigger>
+                          <TabsTrigger value="dms" className="font-mono text-xs sm:text-sm">💬 DM's</TabsTrigger>
+                          <TabsTrigger value="comments" className="font-mono text-xs sm:text-sm">💭 Comentarios</TabsTrigger>
+                          <TabsTrigger value="ads" className="font-mono text-xs sm:text-sm">📢 Anuncios</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="hower" className="space-y-2 max-h-96 overflow-y-auto">
+                          {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 0).length === 0 ? (
+                            <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                              <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                              <p className="text-sm sm:text-base">¡Excelente! No hay prospectos de Hower pendientes.</p>
+                            </div>
+                          ) : (
+                            prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 0).map((prospect) => (
+                              <div key={prospect.id} className="relative">
+                                <Badge className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs z-10">Hower</Badge>
+                                <ProspectCard prospect={prospect} taskType="pending" />
+                              </div>
+                            ))
+                          )}
+                        </TabsContent>
+                        
+                        <TabsContent value="dms" className="space-y-2 max-h-96 overflow-y-auto">
+                          {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 1).length === 0 ? (
+                            <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                              <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                              <p className="text-sm sm:text-base">¡Excelente! No hay DM's pendientes.</p>
+                            </div>
+                          ) : (
+                            prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 1).map((prospect) => (
+                              <div key={prospect.id} className="relative">
+                                <Badge className="absolute -top-2 -right-2 bg-green-500 text-white text-xs z-10">DM's</Badge>
+                                <ProspectCard prospect={prospect} taskType="pending" />
+                              </div>
+                            ))
+                          )}
+                        </TabsContent>
+                        
+                        <TabsContent value="comments" className="space-y-2 max-h-96 overflow-y-auto">
+                          {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 2).length === 0 ? (
+                            <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                              <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                              <p className="text-sm sm:text-base">¡Excelente! No hay comentarios pendientes.</p>
+                            </div>
+                          ) : (
+                            prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 2).map((prospect) => (
+                              <div key={prospect.id} className="relative">
+                                <Badge className="absolute -top-2 -right-2 bg-purple-500 text-white text-xs z-10">Comentarios</Badge>
+                                <ProspectCard prospect={prospect} taskType="pending" />
+                              </div>
+                            ))
+                          )}
+                        </TabsContent>
+                        
+                        <TabsContent value="ads" className="space-y-2 max-h-96 overflow-y-auto">
+                          {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 3).length === 0 ? (
+                            <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                              <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                              <p className="text-sm sm:text-base">¡Excelente! No hay anuncios pendientes.</p>
+                            </div>
+                          ) : (
+                            prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 3).map((prospect) => (
+                              <div key={prospect.id} className="relative">
+                                <Badge className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs z-10">Anuncios</Badge>
+                                <ProspectCard prospect={prospect} taskType="pending" />
+                              </div>
+                            ))
+                          )}
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          </div>
 
           {/* 2. Dar Seguimientos e Interactuar */}
           <div className="mb-4 sm:mb-6">
@@ -804,6 +988,113 @@ const TasksToDo: React.FC = () => {
             taskType="new"
           />
         </div>
+
+        {/* Configuración WhatsApp */}
+        <div className="mt-6 sm:mt-8 text-center">
+          <Button
+            onClick={() => setShowWhatsAppConfig(!showWhatsAppConfig)}
+            variant="outline"
+            className="bg-gradient-to-r from-green-100 to-emerald-100 border-green-300 text-green-700 hover:from-green-200 hover:to-emerald-200 font-mono text-sm transform hover:scale-105 transition-all"
+          >
+            <Phone className="h-4 w-4 mr-2" />
+            {showWhatsAppConfig ? '📱 Ocultar configuración' : '📱 Configurar Conexión a WhatsApp'}
+          </Button>
+        </div>
+
+        {showWhatsAppConfig && (
+          <div className="mt-4">
+            <div 
+              className="bg-white rounded-xl shadow-lg border-l-4 border-green-400 p-4 sm:p-6"
+              style={{
+                backgroundImage: `
+                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                  linear-gradient(#f0fdf4 0%, #ffffff 100%)
+                `,
+                backgroundSize: '20px 1px, 100% 100%',
+                backgroundPosition: '0 20px, 0 0'
+              }}
+            >
+              <div className="text-center mb-4">
+                <div className="inline-block p-2 bg-green-100 rounded-full mb-3">
+                  <Phone className="h-6 w-6 text-green-600" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-800 font-mono">
+                  📱 Configuración de WhatsApp
+                </h2>
+              </div>
+
+              {/* Número de WhatsApp */}
+              <div className="mb-6">
+                <Label htmlFor="whatsapp-number" className="text-sm font-mono font-bold text-green-800">
+                  📞 Número de WhatsApp
+                </Label>
+                <Input
+                  id="whatsapp-number"
+                  type="tel"
+                  placeholder="+1 234 567 8900"
+                  value={whatsappNumber}
+                  onChange={(e) => setWhatsappNumber(e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+
+              {/* Horarios por día */}
+              <div>
+                <h3 className="text-sm font-mono font-bold text-green-800 mb-4">⏰ Horarios de Mensajes</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Object.entries(weekSchedule).map(([day, config]) => {
+                    const dayNames = {
+                      monday: 'Lunes',
+                      tuesday: 'Martes', 
+                      wednesday: 'Miércoles',
+                      thursday: 'Jueves',
+                      friday: 'Viernes',
+                      saturday: 'Sábado',
+                      sunday: 'Domingo'
+                    };
+                    
+                    return (
+                      <div key={day} className="bg-gray-50 p-3 rounded-lg border">
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-sm font-mono font-bold">{dayNames[day as keyof typeof dayNames]}</Label>
+                          <Checkbox
+                            checked={config.enabled}
+                            onCheckedChange={(checked) => {
+                              setWeekSchedule(prev => ({
+                                ...prev,
+                                [day]: { ...prev[day as keyof typeof prev], enabled: !!checked }
+                              }));
+                            }}
+                          />
+                        </div>
+                        <Input
+                          type="time"
+                          value={config.time}
+                          onChange={(e) => {
+                            setWeekSchedule(prev => ({
+                              ...prev,
+                              [day]: { ...prev[day as keyof typeof prev], time: e.target.value }
+                            }));
+                          }}
+                          disabled={!config.enabled}
+                          className="text-sm"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Botón guardar */}
+              <div className="text-center mt-6">
+                <Button className="bg-green-600 hover:bg-green-700 text-white font-mono">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Guardar Configuración
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tips generales - Notebook style */}
         <div className="mt-6 sm:mt-8">
