@@ -472,10 +472,7 @@ const ProspectsPage: React.FC = () => {
     );
   }
 
-  // Si no hay usuario conectado, mostrar login de Instagram
-  if (!currentUser) {
-    return <InstagramLogin />;
-  }
+  // Login de Instagram removido - acceso libre a prospectos
 
   return (
       <div className="max-w-6xl mx-auto px-4 py-6">
