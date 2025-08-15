@@ -304,87 +304,70 @@ const TasksToDo: React.FC = () => {
           </div>
         </div>
 
-        {/* Tip de interacción colapsable */}
-        {isFollowUpProspect && (
+        {/* Tip de interacción - SOLO aparece cuando se hace click */}
+        {isFollowUpProspect && isInteractionTipActive && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
             <div className="mt-3">
-              {!isInteractionTipActive ? (
-                // Vista compacta - solo título con estilo más llamativo
-                <div 
-                  className="bg-gradient-to-r from-blue-100 to-purple-100 p-4 rounded-xl border-2 border-blue-300 cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
-                  onClick={() => {
-                    console.log('Expandiendo tip para:', prospect.username);
-                    setActiveInteractionTip(interactionTipKey);
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-blue-900 text-sm font-mono">💡 Cómo aumentar respuestas - CLICK AQUÍ</span>
-                    <ChevronRight className="h-4 w-4 text-blue-700 animate-pulse" />
-                  </div>
+              <div 
+                className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-200"
+                style={{
+                  backgroundImage: 'linear-gradient(90deg, #e0e7ff 1px, transparent 1px)',
+                  backgroundSize: '20px 1px',
+                  backgroundPosition: '0 15px'
+                }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-bold text-blue-800 text-sm font-mono">💡 Cómo interactuar con @{prospect.username}:</h4>
+                  <button 
+                    onClick={() => setActiveInteractionTip(null)}
+                    className="text-blue-600 hover:text-blue-800 transition-colors"
+                  >
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
                 </div>
-              ) : (
-                // Vista expandida - contenido completo
-                <div 
-                  className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-200"
-                  style={{
-                    backgroundImage: 'linear-gradient(90deg, #e0e7ff 1px, transparent 1px)',
-                    backgroundSize: '20px 1px',
-                    backgroundPosition: '0 15px'
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-bold text-blue-800 text-sm font-mono">💡 Cómo interactuar con @{prospect.username}:</h4>
-                    <button 
-                      onClick={() => setActiveInteractionTip(null)}
-                      className="text-blue-600 hover:text-blue-800 transition-colors"
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="bg-white rounded border-l-4 border-pink-400 overflow-hidden">
-                      <div className="flex items-center p-2">
-                        <Share2 className="h-4 w-4 text-pink-600 mr-2 flex-shrink-0" />
-                        <span className="text-sm font-mono font-bold">Comentar en su historia</span>
-                      </div>
-                      <div className="px-2 pb-2 ml-6">
-                        <p className="text-xs text-pink-700 bg-pink-50 p-2 rounded font-mono">
-                          💡 "Me encanta esto! 😍" o "Qué buena foto! 🔥" o "Increíble! 👏"
-                        </p>
-                      </div>
+                
+                <div className="space-y-2">
+                  <div className="bg-white rounded border-l-4 border-pink-400 overflow-hidden">
+                    <div className="flex items-center p-2">
+                      <Share2 className="h-4 w-4 text-pink-600 mr-2 flex-shrink-0" />
+                      <span className="text-sm font-mono font-bold">Comentar en su historia</span>
                     </div>
-                    
-                    <div className="bg-white rounded border-l-4 border-green-400 overflow-hidden">
-                      <div className="flex items-center p-2">
-                        <MessageCircle className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
-                        <span className="text-sm font-mono font-bold">Comentar en su último post algo positivo</span>
-                      </div>
-                      <div className="px-2 pb-2 ml-6">
-                        <p className="text-xs text-green-700 bg-green-50 p-2 rounded font-mono">
-                          💡 "Excelente contenido! 💪" o "Muy inspirador! ✨" o "Me gusta mucho tu estilo 🎯"
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-white rounded border-l-4 border-red-400 overflow-hidden">
-                      <div className="flex items-center p-2">
-                        <Heart className="h-4 w-4 text-red-600 mr-2 flex-shrink-0" />
-                        <span className="text-sm font-mono font-bold">Dar like a sus posts recientes</span>
-                      </div>
-                      <div className="px-2 pb-2 ml-6">
-                        <p className="text-xs text-red-700 bg-red-50 p-2 rounded font-mono">
-                          💡 Dale like a sus últimos 3-5 posts para aparecer en su radar
-                        </p>
-                      </div>
+                    <div className="px-2 pb-2 ml-6">
+                      <p className="text-xs text-pink-700 bg-pink-50 p-2 rounded font-mono">
+                        💡 "Me encanta esto! 😍" o "Qué buena foto! 🔥" o "Increíble! 👏"
+                      </p>
                     </div>
                   </div>
                   
-                  <p className="text-xs text-blue-600 mt-3 font-mono">
-                    ⚡ Haz esto ANTES de enviar el mensaje para aumentar las posibilidades de respuesta
-                  </p>
+                  <div className="bg-white rounded border-l-4 border-green-400 overflow-hidden">
+                    <div className="flex items-center p-2">
+                      <MessageCircle className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
+                      <span className="text-sm font-mono font-bold">Comentar en su último post algo positivo</span>
+                    </div>
+                    <div className="px-2 pb-2 ml-6">
+                      <p className="text-xs text-green-700 bg-green-50 p-2 rounded font-mono">
+                        💡 "Excelente contenido! 💪" o "Muy inspirador! ✨" o "Me gusta mucho tu estilo 🎯"
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded border-l-4 border-red-400 overflow-hidden">
+                    <div className="flex items-center p-2">
+                      <Heart className="h-4 w-4 text-red-600 mr-2 flex-shrink-0" />
+                      <span className="text-sm font-mono font-bold">Dar like a sus posts recientes</span>
+                    </div>
+                    <div className="px-2 pb-2 ml-6">
+                      <p className="text-xs text-red-700 bg-red-50 p-2 rounded font-mono">
+                        💡 Dale like a sus últimos 3-5 posts para aparecer en su radar
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              )}
+                
+                <p className="text-xs text-blue-600 mt-3 font-mono">
+                  ⚡ Haz esto ANTES de enviar el mensaje para aumentar las posibilidades de respuesta
+                </p>
+              </div>
             </div>
           </div>
         )}
