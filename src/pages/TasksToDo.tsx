@@ -932,25 +932,27 @@ const TasksToDo: React.FC = () => {
                         backgroundPosition: '0 20px'
                       }}
                     >
-                      <Tabs value={activeProspectTab} onValueChange={setActiveProspectTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 mb-4 bg-gray-100 p-1">
-                          <TabsTrigger value="hower" className="font-mono text-xs px-1 sm:px-3 py-2">
-                            <span className="block sm:hidden">📱</span>
-                            <span className="hidden sm:block">📱 Hower</span>
-                          </TabsTrigger>
-                          <TabsTrigger value="dms" className="font-mono text-xs px-2 py-3 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white">
-                            <span className="block sm:hidden">💬</span>
-                            <span className="hidden sm:block">💬 DM's</span>
-                          </TabsTrigger>
-                          <TabsTrigger value="comments" className="font-mono text-xs px-2 py-3 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white">
-                            <span className="block sm:hidden">💭</span>
-                            <span className="hidden sm:block">💭 Comentarios</span>
-                          </TabsTrigger>
-                          <TabsTrigger value="ads" className="font-mono text-xs px-2 py-3 rounded-lg bg-white shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-                            <span className="block sm:hidden">📢</span>
-                            <span className="hidden sm:block">📢 Anuncios</span>
-                          </TabsTrigger>
-                        </TabsList>
+                       <Tabs value={activeProspectTab} onValueChange={setActiveProspectTab} className="w-full">
+                         <div className="overflow-x-auto pb-2">
+                           <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
+                             <TabsTrigger value="hower" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-blue-500 data-[state=active]:text-white whitespace-nowrap">
+                               <span className="block sm:hidden">📱</span>
+                               <span className="hidden sm:block">📱 Hower</span>
+                             </TabsTrigger>
+                             <TabsTrigger value="dms" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white whitespace-nowrap">
+                               <span className="block sm:hidden">💬</span>
+                               <span className="hidden sm:block">💬 DM's</span>
+                             </TabsTrigger>
+                             <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
+                               <span className="block sm:hidden">💭</span>
+                               <span className="hidden sm:block">💭 Comentarios</span>
+                             </TabsTrigger>
+                             <TabsTrigger value="ads" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white whitespace-nowrap">
+                               <span className="block sm:hidden">📢</span>
+                               <span className="hidden sm:block">📢 Anuncios</span>
+                             </TabsTrigger>
+                           </TabsList>
+                         </div>
                         
                         <TabsContent value="hower" className="space-y-4 max-h-96 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 0).length === 0 ? (
