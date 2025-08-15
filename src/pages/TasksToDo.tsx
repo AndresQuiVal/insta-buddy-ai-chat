@@ -315,9 +315,6 @@ const TasksToDo: React.FC = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono">
                   📋 Lista de Tareas de Hoy
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600 font-mono">
-                  Organiza tu día para maximizar resultados ✨
-                </p>
               </div>
             </div>
           </div>
@@ -345,15 +342,23 @@ const TasksToDo: React.FC = () => {
                 background: 'linear-gradient(to right, #fefefe 0%, #f8fafc 100%)',
                 boxShadow: showFollowUpSections ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
               }}
-              onClick={() => setShowFollowUpSections(!showFollowUpSections)}
             >
-              <CardHeader className="pb-2 sm:pb-3">
+              <CardHeader className="pb-2 sm:pb-3" onClick={() => setShowFollowUpSections(!showFollowUpSections)}>
                 <CardTitle className="flex items-center justify-between text-base sm:text-lg">
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
-                    <span className="text-sm sm:text-base">2. Dar Seguimientos e Interactuar</span>
+                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
+                    <Checkbox 
+                      checked={completedTasks['section-followup']}
+                      onCheckedChange={(checked) => {
+                        setCompletedTasks(prev => ({ ...prev, ['section-followup']: !!checked }));
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0" />
+                    <span className={`text-sm sm:text-base ${completedTasks['section-followup'] ? 'line-through' : ''}`}>
+                      2. Dar Seguimientos e Interactuar
+                    </span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-shrink-0">
                     <Badge variant="secondary" className="text-xs">
                       {prospectsClassification.noResponseYesterday.length + prospectsClassification.noResponse7Days.length}
                     </Badge>
