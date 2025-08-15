@@ -361,6 +361,97 @@ const TasksToDo: React.FC = () => {
                     {showStats ? '📊 Ocultar mis números' : '📊 ¿Cómo lo hice ayer?'}
                   </Button>
                 </div>
+                
+                {/* Estadísticas - Aparece justo debajo del botón */}
+                {showStats && (
+                  <div className="mt-6">
+                    <div 
+                      className="bg-white rounded-xl shadow-lg border-l-4 border-blue-400 p-4 sm:p-6"
+                      style={{
+                        backgroundImage: `
+                          linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                          linear-gradient(#f8fafc 0%, #ffffff 100%)
+                        `,
+                        backgroundSize: '24px 1px, 100% 100%',
+                        backgroundPosition: '0 30px, 0 0'
+                      }}
+                    >
+                      <div className="text-center mb-4">
+                        <div className="inline-block p-2 bg-blue-100 rounded-full mb-3">
+                          <BarChart3 className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <h2 className="text-lg font-bold text-gray-800 font-mono">
+                          📊 Mis Números
+                        </h2>
+                      </div>
+
+                      <Tabs defaultValue="ayer" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                          <TabsTrigger value="ayer" className="font-mono text-sm">Ayer</TabsTrigger>
+                          <TabsTrigger value="semana" className="font-mono text-sm">Esta Semana</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="ayer" className="space-y-3">
+                          <div className="bg-gradient-to-r from-blue-50 to-white p-3 rounded-lg border border-blue-200">
+                            <h3 className="text-base font-bold text-blue-800 mb-3 font-mono">📅 Ayer</h3>
+                            
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400">
+                                <span className="font-mono text-sm">🆕 Prospectos Nuevos</span>
+                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {prospectsClassification.yesterdayStats.nuevosProspectos}
+                                </div>
+                              </div>
+                              
+                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-yellow-400">
+                                <span className="font-mono text-sm">💬 Seguimientos hechos</span>
+                                <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {prospectsClassification.yesterdayStats.seguimientosHechos}
+                                </div>
+                              </div>
+                              
+                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400">
+                                <span className="font-mono text-sm">📅 Agendados</span>
+                                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {prospectsClassification.yesterdayStats.agendados}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="semana" className="space-y-3">
+                          <div className="bg-gradient-to-r from-purple-50 to-white p-3 rounded-lg border border-purple-200">
+                            <h3 className="text-base font-bold text-purple-800 mb-3 font-mono">📊 Esta Semana</h3>
+                            
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400">
+                                <span className="font-mono text-sm">🆕 Prospectos Nuevos</span>
+                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {prospectsClassification.weekStats.nuevosProspectos}
+                                </div>
+                              </div>
+                              
+                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-yellow-400">
+                                <span className="font-mono text-sm">💬 Seguimientos hechos</span>
+                                <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {prospectsClassification.weekStats.seguimientosHechos}
+                                </div>
+                              </div>
+                              
+                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400">
+                                <span className="font-mono text-sm">📅 Agendados</span>
+                                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {prospectsClassification.weekStats.agendados}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -483,98 +574,6 @@ const TasksToDo: React.FC = () => {
           </div>
         </div>
 
-        {/* Estadísticas - Notebook Style */}
-        {showStats && (
-          <div className="mt-6 sm:mt-8">
-            <div 
-              className="bg-white rounded-2xl shadow-xl border-t-8 border-blue-400 p-6 sm:p-8"
-              style={{
-                backgroundImage: `
-                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
-                  linear-gradient(#f8fafc 0%, #ffffff 100%)
-                `,
-                backgroundSize: '24px 1px, 100% 100%',
-                backgroundPosition: '0 40px, 0 0'
-              }}
-            >
-              <div className="text-center mb-6">
-                <div className="inline-block p-2 sm:p-3 bg-blue-100 rounded-full mb-3 sm:mb-4">
-                  <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-                </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 font-mono">
-                  📊 Mis Números
-                </h2>
-              </div>
-
-              <Tabs defaultValue="ayer" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="ayer" className="font-mono">Ayer</TabsTrigger>
-                  <TabsTrigger value="semana" className="font-mono">Esta Semana</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="ayer" className="space-y-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-white p-4 rounded-lg border-2 border-dashed border-blue-200">
-                    <h3 className="text-lg font-bold text-blue-800 mb-4 font-mono">📅 Ayer</h3>
-                    
-                    {/* Tabla simple estilo cuaderno */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-green-400">
-                        <span className="font-mono text-sm sm:text-base">🆕 Prospectos Nuevos</span>
-                        <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold text-lg">
-                          {prospectsClassification.yesterdayStats.nuevosProspectos}
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-yellow-400">
-                        <span className="font-mono text-sm sm:text-base">💬 Seguimientos que hiciste</span>
-                        <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold text-lg">
-                          {prospectsClassification.yesterdayStats.seguimientosHechos}
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-purple-400">
-                        <span className="font-mono text-sm sm:text-base">📅 Agendados</span>
-                        <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-bold text-lg">
-                          {prospectsClassification.yesterdayStats.agendados}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="semana" className="space-y-4">
-                  <div className="bg-gradient-to-r from-purple-50 to-white p-4 rounded-lg border-2 border-dashed border-purple-200">
-                    <h3 className="text-lg font-bold text-purple-800 mb-4 font-mono">📊 Esta Semana</h3>
-                    
-                    {/* Tabla simple estilo cuaderno */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-green-400">
-                        <span className="font-mono text-sm sm:text-base">🆕 Prospectos Nuevos</span>
-                        <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold text-lg">
-                          {prospectsClassification.weekStats.nuevosProspectos}
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-yellow-400">
-                        <span className="font-mono text-sm sm:text-base">💬 Seguimientos que hiciste</span>
-                        <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold text-lg">
-                          {prospectsClassification.weekStats.seguimientosHechos}
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-purple-400">
-                        <span className="font-mono text-sm sm:text-base">📅 Agendados</span>
-                        <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-bold text-lg">
-                          {prospectsClassification.weekStats.agendados}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
