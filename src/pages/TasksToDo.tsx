@@ -293,9 +293,6 @@ const TasksToDo: React.FC = () => {
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-sm sm:text-base truncate">@{prospect.username}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                {new Date(prospect.last_message_date).toLocaleDateString()}
-              </p>
             </div>
           </div>
           <div className="flex space-x-2 flex-shrink-0">
