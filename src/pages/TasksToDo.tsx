@@ -31,6 +31,7 @@ const TasksToDo: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [showFollowUpSections, setShowFollowUpSections] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [activeStatsSection, setActiveStatsSection] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<CompletedTasks>({});
 
   // SEO
@@ -132,34 +133,44 @@ const TasksToDo: React.FC = () => {
 
     const newProspects = prospects.filter(p => p.status === 'new');
 
+    // Prospectos específicos para estadísticas AYER
+    const yesterdayNewProspects = prospects.filter(p => {
+      const contactDate = new Date(p.first_contact_date);
+      return contactDate >= yesterday && contactDate < now && p.status === 'new';
+    });
+
+    const yesterdayFollowUps = prospects.filter(p => {
+      const lastMessage = new Date(p.last_message_date);
+      return !p.last_message_from_prospect && 
+             lastMessage >= yesterday && 
+             lastMessage < now &&
+             p.status === 'contacted';
+    });
+
+    // Prospectos específicos para estadísticas SEMANA
+    const weekNewProspects = prospects.filter(p => {
+      const contactDate = new Date(p.first_contact_date);
+      return contactDate >= sevenDaysAgo && p.status === 'new';
+    });
+
+    const weekFollowUps = prospects.filter(p => {
+      const lastMessage = new Date(p.last_message_date);
+      return !p.last_message_from_prospect && 
+             lastMessage >= sevenDaysAgo &&
+             p.status === 'contacted';
+    });
+
     // Estadísticas para AYER
     const yesterdayStats = {
-      nuevosProspectos: prospects.filter(p => {
-        const contactDate = new Date(p.first_contact_date);
-        return contactDate >= yesterday && contactDate < now && p.status === 'new';
-      }).length,
-      seguimientosHechos: prospects.filter(p => {
-        const lastMessage = new Date(p.last_message_date);
-        return !p.last_message_from_prospect && 
-               lastMessage >= yesterday && 
-               lastMessage < now &&
-               p.status === 'contacted';
-      }).length,
+      nuevosProspectos: yesterdayNewProspects.length,
+      seguimientosHechos: yesterdayFollowUps.length,
       agendados: 0 // Por ahora 0, se puede conectar con sistema de citas
     };
 
     // Estadísticas para LA SEMANA
     const weekStats = {
-      nuevosProspectos: prospects.filter(p => {
-        const contactDate = new Date(p.first_contact_date);
-        return contactDate >= sevenDaysAgo && p.status === 'new';
-      }).length,
-      seguimientosHechos: prospects.filter(p => {
-        const lastMessage = new Date(p.last_message_date);
-        return !p.last_message_from_prospect && 
-               lastMessage >= sevenDaysAgo &&
-               p.status === 'contacted';
-      }).length,
+      nuevosProspectos: weekNewProspects.length,
+      seguimientosHechos: weekFollowUps.length,
       agendados: 0 // Por ahora 0, se puede conectar con sistema de citas
     };
 
@@ -169,9 +180,27 @@ const TasksToDo: React.FC = () => {
       noResponse7Days,
       newProspects,
       yesterdayStats,
-      weekStats
+      weekStats,
+      yesterdayNewProspects,
+      yesterdayFollowUps,
+      weekNewProspects,
+      weekFollowUps
     };
   }, [prospects]);
+
+  // Función para obtener prospectos según la sección de estadísticas
+  const getStatsProspects = (statsType: string, period: string) => {
+    switch (statsType) {
+      case 'nuevos':
+        return period === 'ayer' ? prospectsClassification.yesterdayNewProspects : prospectsClassification.weekNewProspects;
+      case 'seguimientos':
+        return period === 'ayer' ? prospectsClassification.yesterdayFollowUps : prospectsClassification.weekFollowUps;
+      case 'agendados':
+        return []; // Por ahora vacío, se puede implementar después
+      default:
+        return [];
+    }
+  };
 
   const ProspectCard = ({ prospect, taskType }: { prospect: ProspectData; taskType: string }) => {
     const taskKey = `${taskType}-${prospect.id}`;
@@ -389,26 +418,68 @@ const TasksToDo: React.FC = () => {
                             <h3 className="text-base font-bold text-blue-800 mb-3 font-mono">📅 Ayer</h3>
                             
                             <div className="space-y-2">
-                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400">
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-nuevos' ? null : 'ayer-nuevos')}
+                              >
                                 <span className="font-mono text-sm">🆕 Prospectos Nuevos</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.nuevosProspectos}
                                 </div>
                               </div>
                               
-                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-yellow-400">
+                              {/* Listado de prospectos nuevos de ayer */}
+                              {activeStatsSection === 'ayer-nuevos' && (
+                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                  {getStatsProspects('nuevos', 'ayer').length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos de ayer</p>
+                                  ) : (
+                                    getStatsProspects('nuevos', 'ayer').map((prospect) => (
+                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-ayer-nuevos" />
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                              
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-yellow-400 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-seguimientos' ? null : 'ayer-seguimientos')}
+                              >
                                 <span className="font-mono text-sm">💬 Seguimientos hechos</span>
                                 <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.seguimientosHechos}
                                 </div>
                               </div>
                               
-                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400">
+                              {/* Listado de seguimientos de ayer */}
+                              {activeStatsSection === 'ayer-seguimientos' && (
+                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                  {getStatsProspects('seguimientos', 'ayer').length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic">No hay seguimientos de ayer</p>
+                                  ) : (
+                                    getStatsProspects('seguimientos', 'ayer').map((prospect) => (
+                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-ayer-seguimientos" />
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                              
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-agendados' ? null : 'ayer-agendados')}
+                              >
                                 <span className="font-mono text-sm">📅 Agendados</span>
                                 <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.agendados}
                                 </div>
                               </div>
+                              
+                              {/* Listado de agendados de ayer */}
+                              {activeStatsSection === 'ayer-agendados' && (
+                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                  <p className="text-xs text-muted-foreground italic">Funcionalidad próximamente</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </TabsContent>
@@ -418,26 +489,68 @@ const TasksToDo: React.FC = () => {
                             <h3 className="text-base font-bold text-purple-800 mb-3 font-mono">📊 Esta Semana</h3>
                             
                             <div className="space-y-2">
-                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400">
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
+                              >
                                 <span className="font-mono text-sm">🆕 Prospectos Nuevos</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.weekStats.nuevosProspectos}
                                 </div>
                               </div>
                               
-                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-yellow-400">
+                              {/* Listado de prospectos nuevos de la semana */}
+                              {activeStatsSection === 'semana-nuevos' && (
+                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                  {getStatsProspects('nuevos', 'semana').length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
+                                  ) : (
+                                    getStatsProspects('nuevos', 'semana').map((prospect) => (
+                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                              
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-yellow-400 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
+                              >
                                 <span className="font-mono text-sm">💬 Seguimientos hechos</span>
                                 <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.weekStats.seguimientosHechos}
                                 </div>
                               </div>
                               
-                              <div className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400">
+                              {/* Listado de seguimientos de la semana */}
+                              {activeStatsSection === 'semana-seguimientos' && (
+                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                  {getStatsProspects('seguimientos', 'semana').length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic">No hay seguimientos esta semana</p>
+                                  ) : (
+                                    getStatsProspects('seguimientos', 'semana').map((prospect) => (
+                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-seguimientos" />
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                              
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => setActiveStatsSection(activeStatsSection === 'semana-agendados' ? null : 'semana-agendados')}
+                              >
                                 <span className="font-mono text-sm">📅 Agendados</span>
                                 <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.weekStats.agendados}
                                 </div>
                               </div>
+                              
+                              {/* Listado de agendados de la semana */}
+                              {activeStatsSection === 'semana-agendados' && (
+                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                  <p className="text-xs text-muted-foreground italic">Funcionalidad próximamente</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </TabsContent>
