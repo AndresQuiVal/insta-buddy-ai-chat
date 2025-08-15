@@ -251,9 +251,9 @@ const TasksToDo: React.FC = () => {
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
     return (
-      <div className={`bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all ${isCompleted ? 'opacity-60 line-through' : ''}`}>
+      <div className={`bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all ${isCompleted ? 'opacity-60 line-through' : ''} mb-2`}>
         {/* Información principal del prospecto */}
-        <div className="flex items-center justify-between p-3 sm:p-4">
+        <div className="flex items-center justify-between p-4 sm:p-5">
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
             <Checkbox 
               checked={isCompleted}
@@ -301,60 +301,84 @@ const TasksToDo: React.FC = () => {
           </div>
         </div>
 
-        {/* Tip de interacción desplegable */}
-        {isFollowUpProspect && isInteractionTipActive && (
+        {/* Tip de interacción colapsable */}
+        {isFollowUpProspect && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
-            <div 
-              className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-200 mt-3"
-              style={{
-                backgroundImage: 'linear-gradient(90deg, #e0e7ff 1px, transparent 1px)',
-                backgroundSize: '20px 1px',
-                backgroundPosition: '0 15px'
-              }}
-            >
-              <h4 className="font-bold text-blue-800 text-sm mb-3 font-mono">💡 Cómo interactuar con @{prospect.username}:</h4>
-              
-              <div className="space-y-2">
-                <div className="bg-white rounded border-l-4 border-pink-400 overflow-hidden">
-                  <div className="flex items-center p-2">
-                    <Share2 className="h-4 w-4 text-pink-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm font-mono font-bold">Comentar en su historia</span>
-                  </div>
-                  <div className="px-2 pb-2 ml-6">
-                    <p className="text-xs text-pink-700 bg-pink-50 p-2 rounded font-mono">
-                      💡 "Me encanta esto! 😍" o "Qué buena foto! 🔥" o "Increíble! 👏"
-                    </p>
+            <div className="mt-3">
+              {!isInteractionTipActive ? (
+                // Vista compacta - solo título
+                <div 
+                  className="bg-gradient-to-r from-blue-50 to-purple-50 p-2 rounded-lg border border-blue-200 cursor-pointer hover:shadow-sm transition-all"
+                  onClick={() => setActiveInteractionTip(interactionTipKey)}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-blue-800 text-xs sm:text-sm font-mono">💡 Cómo aumentar respuestas</span>
+                    <ChevronRight className="h-3 w-3 text-blue-600" />
                   </div>
                 </div>
-                
-                <div className="bg-white rounded border-l-4 border-green-400 overflow-hidden">
-                  <div className="flex items-center p-2">
-                    <MessageCircle className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm font-mono font-bold">Comentar en su último post algo positivo</span>
+              ) : (
+                // Vista expandida - contenido completo
+                <div 
+                  className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-200"
+                  style={{
+                    backgroundImage: 'linear-gradient(90deg, #e0e7ff 1px, transparent 1px)',
+                    backgroundSize: '20px 1px',
+                    backgroundPosition: '0 15px'
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-bold text-blue-800 text-sm font-mono">💡 Cómo interactuar con @{prospect.username}:</h4>
+                    <button 
+                      onClick={() => setActiveInteractionTip(null)}
+                      className="text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
                   </div>
-                  <div className="px-2 pb-2 ml-6">
-                    <p className="text-xs text-green-700 bg-green-50 p-2 rounded font-mono">
-                      💡 "Excelente contenido! 💪" o "Muy inspirador! ✨" o "Me gusta mucho tu estilo 🎯"
-                    </p>
+                  
+                  <div className="space-y-2">
+                    <div className="bg-white rounded border-l-4 border-pink-400 overflow-hidden">
+                      <div className="flex items-center p-2">
+                        <Share2 className="h-4 w-4 text-pink-600 mr-2 flex-shrink-0" />
+                        <span className="text-sm font-mono font-bold">Comentar en su historia</span>
+                      </div>
+                      <div className="px-2 pb-2 ml-6">
+                        <p className="text-xs text-pink-700 bg-pink-50 p-2 rounded font-mono">
+                          💡 "Me encanta esto! 😍" o "Qué buena foto! 🔥" o "Increíble! 👏"
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white rounded border-l-4 border-green-400 overflow-hidden">
+                      <div className="flex items-center p-2">
+                        <MessageCircle className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
+                        <span className="text-sm font-mono font-bold">Comentar en su último post algo positivo</span>
+                      </div>
+                      <div className="px-2 pb-2 ml-6">
+                        <p className="text-xs text-green-700 bg-green-50 p-2 rounded font-mono">
+                          💡 "Excelente contenido! 💪" o "Muy inspirador! ✨" o "Me gusta mucho tu estilo 🎯"
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white rounded border-l-4 border-red-400 overflow-hidden">
+                      <div className="flex items-center p-2">
+                        <Heart className="h-4 w-4 text-red-600 mr-2 flex-shrink-0" />
+                        <span className="text-sm font-mono font-bold">Dar like a sus posts recientes</span>
+                      </div>
+                      <div className="px-2 pb-2 ml-6">
+                        <p className="text-xs text-red-700 bg-red-50 p-2 rounded font-mono">
+                          💡 Dale like a sus últimos 3-5 posts para aparecer en su radar
+                        </p>
+                      </div>
+                    </div>
                   </div>
+                  
+                  <p className="text-xs text-blue-600 mt-3 font-mono">
+                    ⚡ Haz esto ANTES de enviar el mensaje para aumentar las posibilidades de respuesta
+                  </p>
                 </div>
-                
-                <div className="bg-white rounded border-l-4 border-red-400 overflow-hidden">
-                  <div className="flex items-center p-2">
-                    <Heart className="h-4 w-4 text-red-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm font-mono font-bold">Dar like a sus posts recientes</span>
-                  </div>
-                  <div className="px-2 pb-2 ml-6">
-                    <p className="text-xs text-red-700 bg-red-50 p-2 rounded font-mono">
-                      💡 Dale like a sus últimos 3-5 posts para aparecer en su radar
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <p className="text-xs text-blue-600 mt-3 font-mono">
-                ⚡ Haz esto ANTES de enviar el mensaje para aumentar las posibilidades de respuesta
-              </p>
+              )}
             </div>
           </div>
         )}
@@ -810,14 +834,26 @@ const TasksToDo: React.FC = () => {
                       }}
                     >
                       <Tabs value={activeProspectTab} onValueChange={setActiveProspectTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-4 mb-4 bg-gray-100">
-                          <TabsTrigger value="hower" className="font-mono text-xs sm:text-sm">📱 Hower</TabsTrigger>
-                          <TabsTrigger value="dms" className="font-mono text-xs sm:text-sm">💬 DM's</TabsTrigger>
-                          <TabsTrigger value="comments" className="font-mono text-xs sm:text-sm">💭 Comentarios</TabsTrigger>
-                          <TabsTrigger value="ads" className="font-mono text-xs sm:text-sm">📢 Anuncios</TabsTrigger>
+                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 mb-4 bg-gray-100 p-1">
+                          <TabsTrigger value="hower" className="font-mono text-xs px-1 sm:px-3 py-2">
+                            <span className="block sm:hidden">📱</span>
+                            <span className="hidden sm:block">📱 Hower</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="dms" className="font-mono text-xs px-1 sm:px-3 py-2">
+                            <span className="block sm:hidden">💬</span>
+                            <span className="hidden sm:block">💬 DM's</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="comments" className="font-mono text-xs px-1 sm:px-3 py-2">
+                            <span className="block sm:hidden">💭</span>
+                            <span className="hidden sm:block">💭 Comentarios</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="ads" className="font-mono text-xs px-1 sm:px-3 py-2">
+                            <span className="block sm:hidden">📢</span>
+                            <span className="hidden sm:block">📢 Anuncios</span>
+                          </TabsTrigger>
                         </TabsList>
                         
-                        <TabsContent value="hower" className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                        <TabsContent value="hower" className="space-y-4 max-h-96 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 0).length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
@@ -825,7 +861,7 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 0).map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible mb-4">
+                              <div key={prospect.id} className="relative overflow-visible mb-5">
                                 <div className="absolute -top-2 -right-2 z-20">
                                   <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
                                     📱 Hower
@@ -837,7 +873,7 @@ const TasksToDo: React.FC = () => {
                           )}
                         </TabsContent>
                         
-                        <TabsContent value="dms" className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                        <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 1).length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
@@ -845,7 +881,7 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 1).map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible mb-4">
+                              <div key={prospect.id} className="relative overflow-visible mb-5">
                                 <div className="absolute -top-2 -right-2 z-20">
                                   <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
                                     💬 DM's
@@ -857,7 +893,7 @@ const TasksToDo: React.FC = () => {
                           )}
                         </TabsContent>
                         
-                        <TabsContent value="comments" className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                        <TabsContent value="comments" className="space-y-4 max-h-96 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 2).length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
@@ -865,7 +901,7 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 2).map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible mb-4">
+                              <div key={prospect.id} className="relative overflow-visible mb-5">
                                 <div className="absolute -top-2 -right-2 z-20">
                                   <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
                                     💭 Comentarios
@@ -877,7 +913,7 @@ const TasksToDo: React.FC = () => {
                           )}
                         </TabsContent>
                         
-                        <TabsContent value="ads" className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                        <TabsContent value="ads" className="space-y-4 max-h-96 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 3).length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
@@ -885,7 +921,7 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.filter((_, i) => i % 4 === 3).map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible mb-4">
+                              <div key={prospect.id} className="relative overflow-visible mb-5">
                                 <div className="absolute -top-2 -right-2 z-20">
                                   <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
                                     📢 Anuncios
