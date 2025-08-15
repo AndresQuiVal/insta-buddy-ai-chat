@@ -23,6 +23,7 @@ import AdminTable from "./pages/AdminTable";
 import Analytics from "./pages/Analytics";
 import Prospects from "./pages/Prospects";
 import TasksToDo from "./pages/TasksToDo";
+import HowerLiteOnboarding from "./pages/HowerLiteOnboarding";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
           <Route path="/prospects" element={<Prospects />} />
+          <Route path="/hower-lite-onboarding" element={<HowerLiteOnboarding />} />
           <Route path="/tasks-to-do" element={<TasksToDo />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
