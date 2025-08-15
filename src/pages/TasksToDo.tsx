@@ -113,25 +113,28 @@ const TasksToDo: React.FC = () => {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+    // Prospectos pendientes: último mensaje es del prospecto, necesitan respuesta
     const pendingResponses = prospects.filter(p => 
-      p.last_message_from_prospect && p.status !== 'contacted'
+      p.last_message_from_prospect && (p.status === 'esperando_respuesta' || p.status !== 'new')
     );
 
+    // Prospectos de seguimiento: último mensaje es nuestro, no han respondido
     const noResponseYesterday = prospects.filter(p => {
       const lastMessageDate = new Date(p.last_message_date);
       return !p.last_message_from_prospect && 
              lastMessageDate >= yesterday && 
              lastMessageDate < now &&
-             p.status === 'contacted';
+             (p.status === 'contacted' || p.status === 'en_seguimiento');
     });
 
     const noResponse7Days = prospects.filter(p => {
       const lastMessageDate = new Date(p.last_message_date);
       return !p.last_message_from_prospect && 
              lastMessageDate <= sevenDaysAgo &&
-             p.status === 'contacted';
+             (p.status === 'contacted' || p.status === 'en_seguimiento');
     });
 
+    // Prospectos nuevos: nunca contactados
     const newProspects = prospects.filter(p => p.status === 'new');
 
     // Prospectos específicos para estadísticas AYER
