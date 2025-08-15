@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -103,7 +104,7 @@ const TasksToDo: React.FC = () => {
     }
   };
 
-  // Clasificar prospectos
+  // Clasificar prospectos y calcular estadísticas
   const prospectsClassification = useMemo(() => {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -130,11 +131,44 @@ const TasksToDo: React.FC = () => {
 
     const newProspects = prospects.filter(p => p.status === 'new');
 
+    // Estadísticas para AYER
+    const yesterdayStats = {
+      nuevosProspectos: prospects.filter(p => {
+        const contactDate = new Date(p.first_contact_date);
+        return contactDate >= yesterday && contactDate < now && p.status === 'new';
+      }).length,
+      seguimientosHechos: prospects.filter(p => {
+        const lastMessage = new Date(p.last_message_date);
+        return !p.last_message_from_prospect && 
+               lastMessage >= yesterday && 
+               lastMessage < now &&
+               p.status === 'contacted';
+      }).length,
+      agendados: 0 // Por ahora 0, se puede conectar con sistema de citas
+    };
+
+    // Estadísticas para LA SEMANA
+    const weekStats = {
+      nuevosProspectos: prospects.filter(p => {
+        const contactDate = new Date(p.first_contact_date);
+        return contactDate >= sevenDaysAgo && p.status === 'new';
+      }).length,
+      seguimientosHechos: prospects.filter(p => {
+        const lastMessage = new Date(p.last_message_date);
+        return !p.last_message_from_prospect && 
+               lastMessage >= sevenDaysAgo &&
+               p.status === 'contacted';
+      }).length,
+      agendados: 0 // Por ahora 0, se puede conectar con sistema de citas
+    };
+
     return {
       pendingResponses,
       noResponseYesterday,
       noResponse7Days,
-      newProspects
+      newProspects,
+      yesterdayStats,
+      weekStats
     };
   }, [prospects]);
 
@@ -433,6 +467,106 @@ const TasksToDo: React.FC = () => {
                   Un like + comentario genuino puede triplicar tu tasa de respuesta. ¡La interacción es la clave del éxito!
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Estadísticas - Notebook Style */}
+        <div className="mt-6 sm:mt-8">
+          <div 
+            className="bg-white rounded-2xl shadow-xl border-t-8 border-blue-400 p-6 sm:p-8"
+            style={{
+              backgroundImage: `
+                linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                linear-gradient(#f8fafc 0%, #ffffff 100%)
+              `,
+              backgroundSize: '24px 1px, 100% 100%',
+              backgroundPosition: '0 40px, 0 0'
+            }}
+          >
+            {/* Spiral binding holes */}
+            <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
+              {Array.from({length: 6}).map((_, i) => (
+                <div key={i} className="w-3 h-3 rounded-full bg-blue-400 shadow-inner" />
+              ))}
+            </div>
+            
+            <div className="ml-4 sm:ml-6">
+              <div className="text-center mb-6">
+                <div className="inline-block p-2 sm:p-3 bg-blue-100 rounded-full mb-3 sm:mb-4">
+                  <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 font-mono">
+                  📊 Mis Números
+                </h2>
+              </div>
+
+              <Tabs defaultValue="ayer" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="ayer" className="font-mono">Ayer</TabsTrigger>
+                  <TabsTrigger value="semana" className="font-mono">Esta Semana</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="ayer" className="space-y-4">
+                  <div className="bg-gradient-to-r from-blue-50 to-white p-4 rounded-lg border-2 border-dashed border-blue-200">
+                    <h3 className="text-lg font-bold text-blue-800 mb-4 font-mono">📅 Ayer</h3>
+                    
+                    {/* Tabla simple estilo cuaderno */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-green-400">
+                        <span className="font-mono text-sm sm:text-base">🆕 Prospectos Nuevos</span>
+                        <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold text-lg">
+                          {prospectsClassification.yesterdayStats.nuevosProspectos}
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-yellow-400">
+                        <span className="font-mono text-sm sm:text-base">💬 Seguimientos que hiciste</span>
+                        <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold text-lg">
+                          {prospectsClassification.yesterdayStats.seguimientosHechos}
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-purple-400">
+                        <span className="font-mono text-sm sm:text-base">📅 Agendados</span>
+                        <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-bold text-lg">
+                          {prospectsClassification.yesterdayStats.agendados}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="semana" className="space-y-4">
+                  <div className="bg-gradient-to-r from-purple-50 to-white p-4 rounded-lg border-2 border-dashed border-purple-200">
+                    <h3 className="text-lg font-bold text-purple-800 mb-4 font-mono">📊 Esta Semana</h3>
+                    
+                    {/* Tabla simple estilo cuaderno */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-green-400">
+                        <span className="font-mono text-sm sm:text-base">🆕 Prospectos Nuevos</span>
+                        <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold text-lg">
+                          {prospectsClassification.weekStats.nuevosProspectos}
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-yellow-400">
+                        <span className="font-mono text-sm sm:text-base">💬 Seguimientos que hiciste</span>
+                        <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold text-lg">
+                          {prospectsClassification.weekStats.seguimientosHechos}
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-3 bg-white rounded border-l-4 border-purple-400">
+                        <span className="font-mono text-sm sm:text-base">📅 Agendados</span>
+                        <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-bold text-lg">
+                          {prospectsClassification.weekStats.agendados}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>
