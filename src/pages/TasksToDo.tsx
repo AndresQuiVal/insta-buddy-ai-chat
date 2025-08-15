@@ -199,13 +199,13 @@ const TasksToDo: React.FC = () => {
     // Determinar equivalencia según el tiempo
     let equivalencia = '';
     if (minutes < 5) {
-      equivalencia = 'Tiempo que tardas en servirte un café ☕';
+      equivalencia = 'pts... Tiempo que tardas en servirte un café ☕';
     } else if (minutes >= 5 && minutes <= 10) {
-      equivalencia = 'Tiempo que demoras en ducharte 🚿';
+      equivalencia = 'pts... Tiempo que demoras en ducharte 🚿';
     } else if (minutes >= 15) {
-      equivalencia = 'Tiempo que demoras en ir por el super 🛒';
+      equivalencia = 'pts... Tiempo que demoras en ir por el super 🛒';
     } else {
-      equivalencia = 'Menos de lo que tardas en desayunar 🍳';
+      equivalencia = 'pts... Menos de lo que tardas en desayunar 🍳';
     }
     
     return { minutes, totalProspects, equivalencia };
