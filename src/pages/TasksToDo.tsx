@@ -862,7 +862,7 @@ const TasksToDo: React.FC = () => {
                   <div className="inline-block bg-gradient-to-r from-orange-100 to-yellow-100 border-2 border-dashed border-orange-300 px-4 py-2 rounded-lg max-w-md">
                     <div className="text-center">
                       <span className="text-orange-800 font-mono text-sm font-bold block">
-                        ⏱️ Tiempo estimado: {calculateEstimatedTime().minutes} minutos
+                        ⏱️ Te demorarás: {calculateEstimatedTime().minutes} minutos
                       </span>
                       <span className="text-orange-700 font-mono text-xs block mt-1">
                         {calculateEstimatedTime().equivalencia}
