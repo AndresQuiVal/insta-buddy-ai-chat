@@ -30,6 +30,7 @@ const TasksToDo: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [showFollowUpSections, setShowFollowUpSections] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<CompletedTasks>({});
 
   // SEO
@@ -349,6 +350,17 @@ const TasksToDo: React.FC = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono">
                   📋 Lista de Tareas de Hoy
                 </h1>
+                
+                {/* Botón para mostrar estadísticas */}
+                <div className="mt-4">
+                  <Button
+                    onClick={() => setShowStats(!showStats)}
+                    variant="outline"
+                    className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 font-mono text-sm"
+                  >
+                    {showStats ? '📊 Ocultar mis números' : '📊 ¿Cómo lo hice ayer?'}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -472,26 +484,19 @@ const TasksToDo: React.FC = () => {
         </div>
 
         {/* Estadísticas - Notebook Style */}
-        <div className="mt-6 sm:mt-8">
-          <div 
-            className="bg-white rounded-2xl shadow-xl border-t-8 border-blue-400 p-6 sm:p-8"
-            style={{
-              backgroundImage: `
-                linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
-                linear-gradient(#f8fafc 0%, #ffffff 100%)
-              `,
-              backgroundSize: '24px 1px, 100% 100%',
-              backgroundPosition: '0 40px, 0 0'
-            }}
-          >
-            {/* Spiral binding holes */}
-            <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
-              {Array.from({length: 6}).map((_, i) => (
-                <div key={i} className="w-3 h-3 rounded-full bg-blue-400 shadow-inner" />
-              ))}
-            </div>
-            
-            <div className="ml-4 sm:ml-6">
+        {showStats && (
+          <div className="mt-6 sm:mt-8">
+            <div 
+              className="bg-white rounded-2xl shadow-xl border-t-8 border-blue-400 p-6 sm:p-8"
+              style={{
+                backgroundImage: `
+                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                  linear-gradient(#f8fafc 0%, #ffffff 100%)
+                `,
+                backgroundSize: '24px 1px, 100% 100%',
+                backgroundPosition: '0 40px, 0 0'
+              }}
+            >
               <div className="text-center mb-6">
                 <div className="inline-block p-2 sm:p-3 bg-blue-100 rounded-full mb-3 sm:mb-4">
                   <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
@@ -569,7 +574,7 @@ const TasksToDo: React.FC = () => {
               </Tabs>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
