@@ -78,6 +78,13 @@ const InstagramCallback: React.FC = () => {
           console.log('- Final ID usado:', userData.instagram?.id || userData.facebook?.id);
         }
         
+        // Verificar si venimos del onboarding y marcar como exitoso
+        const authSource = localStorage.getItem('instagram_auth_source');
+        if (authSource === 'onboarding') {
+          localStorage.setItem('instagram_auth_success', 'true');
+          console.log('🚀 Marcando auth exitoso para onboarding...');
+        }
+        
         // Disparar evento inmediatamente
         window.dispatchEvent(new CustomEvent('instagram-auth-success', { 
           detail: { user: result.user } 
@@ -85,7 +92,6 @@ const InstagramCallback: React.FC = () => {
         
         setTimeout(() => {
           // Verificar si venimos del onboarding
-          const authSource = localStorage.getItem('instagram_auth_source');
           if (authSource === 'onboarding') {
             localStorage.removeItem('instagram_auth_source');
             console.log('🚀 Regresando al onboarding...');

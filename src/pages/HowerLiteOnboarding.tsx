@@ -32,15 +32,28 @@ const HowerLiteOnboarding = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Escuchar cuando regrese del auth de Instagram
-    const handleInstagramAuthSuccess = () => {
+    // Verificar si ya regresó exitosamente del auth de Instagram
+    const instagramAuthSuccess = localStorage.getItem('instagram_auth_success');
+    if (instagramAuthSuccess === 'true') {
+      console.log('🎉 Detectado auth exitoso de Instagram, actualizando estado...');
       setInstagramConnected(true);
+      setCurrentStep(2);
+      localStorage.removeItem('instagram_auth_success'); // Limpiar flag
       toast({
         title: "✅ Instagram conectado",
         description: "Tu cuenta se ha vinculado correctamente"
       });
-      // Avanzar automáticamente al paso 2
+    }
+
+    // Escuchar cuando regrese del auth de Instagram (fallback)
+    const handleInstagramAuthSuccess = () => {
+      console.log('🎉 Evento instagram-auth-success recibido');
+      setInstagramConnected(true);
       setCurrentStep(2);
+      toast({
+        title: "✅ Instagram conectado",
+        description: "Tu cuenta se ha vinculado correctamente"
+      });
     };
 
     window.addEventListener('instagram-auth-success', handleInstagramAuthSuccess);
@@ -51,6 +64,7 @@ const HowerLiteOnboarding = () => {
   }, [toast]);
 
   const handleInstagramConnect = () => {
+    console.log('🔗 Iniciando conexión con Instagram desde onboarding...');
     // Marcar que venimos del onboarding
     localStorage.setItem('instagram_auth_source', 'onboarding');
     const success = initiateInstagramAuth();
