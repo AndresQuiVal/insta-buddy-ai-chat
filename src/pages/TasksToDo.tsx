@@ -188,6 +188,15 @@ const TasksToDo: React.FC = () => {
     };
   }, [prospects]);
 
+  // Calcular tiempo estimado (10-12 segundos por prospecto, usamos 11 como promedio)
+  const calculateEstimatedTime = () => {
+    const totalProspects = prospectsClassification.pendingResponses.length + prospectsClassification.newProspects.length;
+    const secondsPerProspect = 11; // Promedio entre 10-12 segundos
+    const totalSeconds = totalProspects * secondsPerProspect;
+    const minutes = Math.ceil(totalSeconds / 60); // Redondeamos hacia arriba
+    return { minutes, totalProspects };
+  };
+
   // Función para obtener prospectos según la sección de estadísticas
   const getStatsProspects = (statsType: string, period: string) => {
     switch (statsType) {
@@ -565,6 +574,18 @@ const TasksToDo: React.FC = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono">
                   👇 Lista de Tareas de Hoy
                 </h1>
+                
+                {/* Tag de tiempo estimado */}
+                <div className="mt-3">
+                  <div className="inline-block bg-gradient-to-r from-orange-100 to-yellow-100 border-2 border-dashed border-orange-300 px-4 py-2 rounded-lg">
+                    <span className="text-orange-800 font-mono text-sm font-bold">
+                      ⏱️ Tiempo estimado total: {calculateEstimatedTime().minutes} minutos 
+                      <span className="text-xs text-orange-600 ml-1">
+                        ({calculateEstimatedTime().totalProspects} prospectos × ~11seg cada uno)
+                      </span>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
