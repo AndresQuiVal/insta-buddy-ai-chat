@@ -223,7 +223,7 @@ const TasksToDo: React.FC = () => {
                     onClick={(e) => e.stopPropagation()}
                   />
                 )}
-                <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 hidden" />
                 <span className={`${sectionCompleted || allProspectsCompleted ? 'line-through' : ''} text-sm sm:text-base`}>{title}</span>
               </div>
               <div className="flex items-center space-x-2 flex-shrink-0">
@@ -324,7 +324,7 @@ const TasksToDo: React.FC = () => {
         <div className="space-y-3 sm:space-y-4">
           {/* 1. Responder prospectos pendientes */}
           <TaskSection
-            title="1. Responder prospectos pendientes"
+            title="1. Responder pendientes"
             count={prospectsClassification.pendingResponses.length}
             onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}
             isActive={activeSection === 'pending'}
@@ -353,9 +353,9 @@ const TasksToDo: React.FC = () => {
                       }}
                       onClick={(e) => e.stopPropagation()}
                     />
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0" />
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 hidden" />
                     <span className={`text-sm sm:text-base ${completedTasks['section-followup'] ? 'line-through' : ''}`}>
-                      2. Dar Seguimientos e Interactuar
+                      2. Dar seguimientos
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
@@ -373,7 +373,7 @@ const TasksToDo: React.FC = () => {
               <div className="ml-4 sm:ml-6 mt-4 space-y-3 sm:space-y-4">
                 {/* 2.1 No respondieron ayer */}
                 <TaskSection
-                  title="2.1 Prospectos que no respondieron ayer"
+                  title="2.1 No respondieron ayer"
                   count={prospectsClassification.noResponseYesterday.length}
                   onClick={() => setActiveSection(activeSection === 'yesterday' ? null : 'yesterday')}
                   isActive={activeSection === 'yesterday'}
@@ -385,7 +385,7 @@ const TasksToDo: React.FC = () => {
                 
                 {/* 2.2 No respondieron en 7 días */}
                 <TaskSection
-                  title="2.2 Prospectos que no respondieron en 7 días"
+                  title="2.2 No respondieron en 7 días"
                   count={prospectsClassification.noResponse7Days.length}
                   onClick={() => setActiveSection(activeSection === 'week' ? null : 'week')}
                   isActive={activeSection === 'week'}
@@ -400,7 +400,7 @@ const TasksToDo: React.FC = () => {
 
           {/* 3. Prospectar a nuevos */}
           <TaskSection
-            title="3. Prospectar a nuevos"
+            title="3. Nuevos prospectos"
             count={prospectsClassification.newProspects.length}
             onClick={() => setActiveSection(activeSection === 'new' ? null : 'new')}
             isActive={activeSection === 'new'}
