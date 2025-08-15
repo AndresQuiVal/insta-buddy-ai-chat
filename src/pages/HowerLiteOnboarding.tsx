@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Instagram, MessageCircle, Clock, ArrowRight, ArrowLeft, CheckCircle } f
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { initiateInstagramAuth } from "@/services/instagramService";
+import howerLogo from "@/assets/hower-logo.png";
 
 const HowerLiteOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -30,15 +31,30 @@ const HowerLiteOnboarding = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleInstagramConnect = () => {
-    const success = initiateInstagramAuth();
-    if (success) {
+  useEffect(() => {
+    // Escuchar cuando regrese del auth de Instagram
+    const handleInstagramAuthSuccess = () => {
       setInstagramConnected(true);
       toast({
         title: "✅ Instagram conectado",
         description: "Tu cuenta se ha vinculado correctamente"
       });
-    } else {
+      // Avanzar automáticamente al paso 2
+      setCurrentStep(2);
+    };
+
+    window.addEventListener('instagram-auth-success', handleInstagramAuthSuccess);
+    
+    return () => {
+      window.removeEventListener('instagram-auth-success', handleInstagramAuthSuccess);
+    };
+  }, [toast]);
+
+  const handleInstagramConnect = () => {
+    // Marcar que venimos del onboarding
+    localStorage.setItem('instagram_auth_source', 'onboarding');
+    const success = initiateInstagramAuth();
+    if (!success) {
       toast({
         title: "Error",
         description: "No se pudo conectar con Instagram",
@@ -275,7 +291,7 @@ const HowerLiteOnboarding = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <img
-              src="/src/assets/hower-logo.png"
+              src={howerLogo}
               alt="Hower"
               className="w-12 h-12 rounded-lg object-cover"
             />

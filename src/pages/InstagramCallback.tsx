@@ -84,8 +84,16 @@ const InstagramCallback: React.FC = () => {
         }));
         
         setTimeout(() => {
-          console.log('🏠 Navegando al dashboard...');
-          navigate('/', { replace: true });
+          // Verificar si venimos del onboarding
+          const authSource = localStorage.getItem('instagram_auth_source');
+          if (authSource === 'onboarding') {
+            localStorage.removeItem('instagram_auth_source');
+            console.log('🚀 Regresando al onboarding...');
+            navigate('/hower-lite-onboarding', { replace: true });
+          } else {
+            console.log('🏠 Navegando al dashboard...');
+            navigate('/', { replace: true });
+          }
         }, 500);
       } else {
         console.error('❌ Error procesando callback:', result.error);
