@@ -1493,56 +1493,6 @@ const TasksToDo: React.FC = () => {
         </div>
       )}
       
-      {/* Diálogo de contacto guiado */}
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enviar a @{dialogUser}</DialogTitle>
-            <DialogDescription>
-              Paso {dialogStep} de 2
-            </DialogDescription>
-          </DialogHeader>
-
-          {dialogStep === 1 && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">1) Copia el mensaje generado por IA:</p>
-              <div className="border rounded-md p-3 text-sm whitespace-pre-wrap bg-muted/30">
-                {dialogMessage || 'Generando sugerencia…'}
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={copyMessage}><Copy className="w-4 h-4 mr-2" /> Copiar mensaje</Button>
-              </div>
-            </div>
-          )}
-
-          {dialogStep === 2 && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">2) Ahora, envía el mensaje:</p>
-              <a className="inline-flex items-center gap-2 text-primary underline" href={instaUrl(dialogUser)} target="_blank" rel="noopener noreferrer">
-                Abrir conversación en Instagram <ArrowRight className="w-4 h-4" />
-              </a>
-              <p className="text-xs text-muted-foreground">Se abrirá en una nueva pestaña. Pega el mensaje y envíalo.</p>
-            </div>
-          )}
-
-          <DialogFooter>
-            {dialogStep === 1 ? (
-              <Button onClick={() => setDialogStep(2)}>Continuar</Button>
-            ) : (
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setOpenDialog(false);
-                  handleMessageSent(dialogUser);
-                }}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
-              >
-                Listo
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
 
           {/* 3. Prospectar a nuevos */}
