@@ -50,6 +50,8 @@ const TasksToDo: React.FC = () => {
     sunday: { enabled: false, time: '09:00' },
   });
   const [activeProspectTab, setActiveProspectTab] = useState('hower');
+  const [activeYesterdayTab, setActiveYesterdayTab] = useState('hower');
+  const [activeWeekTab, setActiveWeekTab] = useState('hower');
   const [expandedTips, setExpandedTips] = useState<{[key: string]: boolean}>({});
   
   // Estados para diálogo de contacto guiado
@@ -544,18 +546,118 @@ const TasksToDo: React.FC = () => {
                 </div>
               )}
               
-              <div className="space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
-                {prospects.length === 0 ? (
-                  <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                    <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                    <p className="text-sm sm:text-base">¡Excelente! No hay tareas pendientes en esta sección.</p>
-                  </div>
-                ) : (
-                  prospects.map((prospect) => (
-                    <ProspectCard key={prospect.id} prospect={prospect} taskType={taskType} />
-                  ))
-                )}
-              </div>
+               {/* Tabs para divisiones por tipo */}
+               <div className="bg-white rounded-xl p-4 border border-gray-100">
+                 <Tabs 
+                   value={taskType === 'yesterday' ? activeYesterdayTab : taskType === 'week' ? activeWeekTab : 'hower'} 
+                   onValueChange={(value) => {
+                     if (taskType === 'yesterday') setActiveYesterdayTab(value);
+                     else if (taskType === 'week') setActiveWeekTab(value);
+                   }} 
+                   className="w-full"
+                 >
+                   <div className="overflow-x-auto pb-2">
+                     <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
+                       <TabsTrigger value="hower" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-blue-500 data-[state=active]:text-white whitespace-nowrap">
+                         <span className="block sm:hidden">📱</span>
+                         <span className="hidden sm:block">📱 Hower</span>
+                       </TabsTrigger>
+                       <TabsTrigger value="dms" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white whitespace-nowrap">
+                         <span className="block sm:hidden">💬</span>
+                         <span className="hidden sm:block">💬 DM's</span>
+                       </TabsTrigger>
+                       <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
+                         <span className="block sm:hidden">💭</span>
+                         <span className="hidden sm:block">💭 Comentarios</span>
+                       </TabsTrigger>
+                       <TabsTrigger value="ads" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white whitespace-nowrap">
+                         <span className="block sm:hidden">📢</span>
+                         <span className="hidden sm:block">📢 Anuncios</span>
+                       </TabsTrigger>
+                     </TabsList>
+                   </div>
+                  
+                   <TabsContent value="hower" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                     {prospects.filter((_, i) => i % 4 === 0).length === 0 ? (
+                       <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                         <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                         <p className="text-sm sm:text-base">¡Excelente! No hay prospectos de Hower pendientes.</p>
+                       </div>
+                     ) : (
+                       prospects.filter((_, i) => i % 4 === 0).map((prospect) => (
+                         <div key={prospect.id} className="relative overflow-visible mb-5">
+                           <div className="absolute -top-2 -right-2 z-20">
+                             <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
+                               📱 Hower
+                             </Badge>
+                           </div>
+                           <ProspectCard prospect={prospect} taskType={taskType} />
+                         </div>
+                       ))
+                     )}
+                   </TabsContent>
+                   
+                   <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                     {prospects.filter((_, i) => i % 4 === 1).length === 0 ? (
+                       <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                         <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                         <p className="text-sm sm:text-base">¡Excelente! No hay DM's pendientes.</p>
+                       </div>
+                     ) : (
+                       prospects.filter((_, i) => i % 4 === 1).map((prospect) => (
+                         <div key={prospect.id} className="relative overflow-visible mb-5">
+                           <div className="absolute -top-2 -right-2 z-20">
+                             <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
+                               💬 DM's
+                             </Badge>
+                           </div>
+                           <ProspectCard prospect={prospect} taskType={taskType} />
+                         </div>
+                       ))
+                     )}
+                   </TabsContent>
+                   
+                   <TabsContent value="comments" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                     {prospects.filter((_, i) => i % 4 === 2).length === 0 ? (
+                       <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                         <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                         <p className="text-sm sm:text-base">¡Excelente! No hay comentarios pendientes.</p>
+                       </div>
+                     ) : (
+                       prospects.filter((_, i) => i % 4 === 2).map((prospect) => (
+                         <div key={prospect.id} className="relative overflow-visible mb-5">
+                           <div className="absolute -top-2 -right-2 z-20">
+                             <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
+                               💭 Comentarios
+                             </Badge>
+                           </div>
+                           <ProspectCard prospect={prospect} taskType={taskType} />
+                         </div>
+                       ))
+                     )}
+                   </TabsContent>
+                   
+                   <TabsContent value="ads" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                     {prospects.filter((_, i) => i % 4 === 3).length === 0 ? (
+                       <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                         <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                         <p className="text-sm sm:text-base">¡Excelente! No hay anuncios pendientes.</p>
+                       </div>
+                     ) : (
+                       prospects.filter((_, i) => i % 4 === 3).map((prospect) => (
+                         <div key={prospect.id} className="relative overflow-visible mb-5">
+                           <div className="absolute -top-2 -right-2 z-20">
+                             <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
+                               📢 Anuncios
+                             </Badge>
+                           </div>
+                           <ProspectCard prospect={prospect} taskType={taskType} />
+                         </div>
+                       ))
+                     )}
+                   </TabsContent>
+                 </Tabs>
+               </div>
             </CardContent>
           )}
         </Card>
