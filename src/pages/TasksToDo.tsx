@@ -65,6 +65,7 @@ const TasksToDo: React.FC = () => {
   const [selectedProspect, setSelectedProspect] = useState<ProspectData | null>(null);
   const [contactMessage, setContactMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [generatingMessage, setGeneratingMessage] = useState(false);
 
   // Estados para nombre de lista editable y frases motivacionales
   const [listName, setListName] = useState('Mi Lista de prospección');
@@ -277,6 +278,28 @@ const TasksToDo: React.FC = () => {
     }
   };
 
+  // Función para abrir popup de contacto con IA
+  const openContactPopup = async (prospect: ProspectData) => {
+    setSelectedProspect(prospect);
+    setContactMessage(''); // Limpiar mensaje anterior
+    
+    // Generar mensaje automáticamente con IA
+    try {
+      setGeneratingMessage(true);
+      const aiMessage = await generateMessage(prospect.username, 'outreach');
+      setContactMessage(aiMessage);
+    } catch (error) {
+      console.error('Error generando mensaje con IA:', error);
+      toast({
+        title: "Aviso",
+        description: "No se pudo generar mensaje con IA, puedes escribir uno manual",
+        variant: "default"
+      });
+    } finally {
+      setGeneratingMessage(false);
+    }
+  };
+
   // Función para manejar contacto con prospecto (nuevo popup)
   const handleContactProspect = async () => {
     if (!selectedProspect || !contactMessage.trim()) return;
@@ -477,7 +500,7 @@ const TasksToDo: React.FC = () => {
     return (
       <div 
         className={`bg-gradient-to-r from-white to-blue-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}
-        onClick={() => setSelectedProspect(prospect)}
+        onClick={() => openContactPopup(prospect)}
       >
         {/* Información principal del prospecto */}
         <div className="flex items-center justify-between p-6 bg-white rounded-xl border border-gray-100">
@@ -1653,7 +1676,10 @@ const TasksToDo: React.FC = () => {
               Contactar Prospecto
             </DialogTitle>
             <DialogDescription>
-              Envía un mensaje a @{selectedProspect?.username}
+              {generatingMessage 
+                ? "Generando mensaje con IA..." 
+                : `Envía un mensaje a @${selectedProspect?.username}`
+              }
             </DialogDescription>
           </DialogHeader>
           
@@ -1677,12 +1703,19 @@ const TasksToDo: React.FC = () => {
               <Label htmlFor="contact-message">Mensaje</Label>
               <Textarea
                 id="contact-message"
-                placeholder="Escribe tu mensaje aquí..."
+                placeholder={generatingMessage ? "Generando mensaje con IA..." : "Escribe tu mensaje aquí..."}
                 value={contactMessage}
                 onChange={(e) => setContactMessage(e.target.value)}
                 rows={4}
                 className="mt-1"
+                disabled={generatingMessage}
               />
+              {generatingMessage && (
+                <p className="text-sm text-blue-600 mt-2 flex items-center gap-2">
+                  <Clock className="w-4 h-4 animate-spin" />
+                  Generando mensaje personalizado con IA...
+                </p>
+              )}
             </div>
 
             <div className="flex justify-end gap-2">
