@@ -522,7 +522,7 @@ const TasksToDo: React.FC = () => {
     return (
       <div 
         className={`bg-gradient-to-r from-white to-blue-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}
-        onClick={() => openContactPopup(prospect)}
+        onClick={() => openOnboarding(prospect.username, 'outreach')}
       >
         {/* Información principal del prospecto */}
         <div className="flex items-center justify-between p-6 bg-white rounded-xl border border-gray-100">
