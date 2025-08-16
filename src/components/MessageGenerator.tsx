@@ -25,6 +25,7 @@ export const MessageGenerator: React.FC = () => {
       return;
     }
 
+    console.log('🎯 Iniciando generación de mensajes...');
     try {
       const result = await generateMessages({
         messageLimit,
@@ -34,10 +35,14 @@ export const MessageGenerator: React.FC = () => {
         followObservationText
       });
 
+      console.log('📝 Resultado obtenido:', result);
       setGeneratedMessages(result.messages);
       toast.success(`${result.messages.length} mensajes generados exitosamente`);
     } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
+      console.error('❌ Error en handleGenerate:', error);
+      const errorMessage = error?.message || error?.toString() || 'Error desconocido';
+      console.error('❌ Mensaje de error:', errorMessage);
+      toast.error(`Error generando mensaje: ${errorMessage}`);
     }
   };
 
