@@ -19,10 +19,11 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('Payload recibido:', JSON.stringify(requestBody, null, 2));
     
-    const { message, systemPrompt } = requestBody;
+    const { message, prompt, systemPrompt } = requestBody;
+    const finalMessage = message || prompt;
     
-    if (!message) {
-      console.error('❌ No se proporcionó mensaje');
+    if (!finalMessage) {
+      console.error('❌ No se proporcionó mensaje ni prompt');
       return new Response(
         JSON.stringify({ 
           error: 'Missing message',
@@ -89,7 +90,7 @@ Sé directo, estratégico y enfocado en la conversión.`
           },
           {
             role: 'user',
-            content: message
+            content: finalMessage
           }
         ],
         max_tokens: 150, // Incrementado para análisis más completo pero manteniendo concisión
