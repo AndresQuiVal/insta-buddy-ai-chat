@@ -56,7 +56,7 @@ const TasksToDo: React.FC = () => {
   
   // Estados para diálogo de contacto guiado
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogStep, setDialogStep] = useState<1 | 2>(1);
+  const [dialogStep, setDialogStep] = useState<1 | 2 | 3>(1);
   const [dialogUser, setDialogUser] = useState<string>('');
   const [dialogMessage, setDialogMessage] = useState<string>('');
 
@@ -268,41 +268,54 @@ const TasksToDo: React.FC = () => {
         messageToSend = msg;
       }
 
-      // Copiar mensaje automáticamente
-      await navigator.clipboard.writeText(messageToSend);
-      
-      // Mostrar popup de confirmación con temporizador
       setDialogUser(username);
       setDialogMessage(messageToSend);
-      setDialogStep(1);
-      setOpenDialog(true);
 
-      // Toast de confirmación
-      toast({
-        title: "Mensaje copiado",
-        description: "Listo para enviar",
-      });
-
-      // Abrir Instagram automáticamente después de 6 segundos
-      setTimeout(() => {
-        window.open(instaUrl(username), '_blank');
-        setOpenDialog(false);
+      // Intentar copiar mensaje automáticamente
+      try {
+        await navigator.clipboard.writeText(messageToSend);
         
-        // Marcar como completado automáticamente después de 5 segundos más
+        // Si la copia automática funciona, mostrar popup automático
+        setDialogStep(1); // Paso automático
+        setOpenDialog(true);
+
+        toast({
+          title: "Mensaje copiado",
+          description: "Listo para enviar",
+        });
+
+        // Abrir Instagram automáticamente después de 6 segundos
         setTimeout(() => {
-          handleMessageSent(username);
-          toast({
-            title: "¡Completado!",
-            description: `@${username} marcado como contactado`,
-          });
-        }, 5000);
-      }, 6000);
+          window.open(instaUrl(username), '_blank');
+          setOpenDialog(false);
+          
+          // Marcar como completado automáticamente después de 5 segundos más
+          setTimeout(() => {
+            handleMessageSent(username);
+            toast({
+              title: "¡Completado!",
+              description: `@${username} marcado como contactado`,
+            });
+          }, 5000);
+        }, 6000);
+
+      } catch (clipboardError) {
+        // Si falla la copia automática, usar flujo manual de 2 pasos
+        console.log('Clipboard automático falló, usando flujo manual');
+        setDialogStep(2); // Paso manual
+        setOpenDialog(true);
+        
+        toast({
+          title: "Flujo manual",
+          description: "Copia el mensaje manualmente",
+        });
+      }
       
     } catch (error) {
       console.error('Error en el flujo de contacto:', error);
       toast({
         title: "Error",
-        description: "No se pudo copiar el mensaje",
+        description: "No se pudo generar el mensaje",
         variant: "destructive"
       });
     }
@@ -1725,30 +1738,82 @@ const TasksToDo: React.FC = () => {
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-center">✅ Mensaje Copiado</DialogTitle>
+            <DialogTitle className="text-center">
+              {dialogStep === 1 ? "✅ Mensaje Copiado" : "Enviar a @" + dialogUser}
+            </DialogTitle>
             <DialogDescription className="text-center">
-              Te abriremos Instagram en unos segundos
+              {dialogStep === 1 
+                ? "Te abriremos Instagram en unos segundos" 
+                : "Paso " + (dialogStep === 2 ? "1" : dialogStep) + " de 2"
+              }
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 text-center">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="text-green-800 font-medium">
-                Para @{dialogUser}
+          {/* Popup automático (cuando clipboard funciona) */}
+          {dialogStep === 1 && (
+            <div className="space-y-4 text-center">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="text-green-800 font-medium">
+                  Para @{dialogUser}
+                </div>
+                <div className="text-sm text-green-600">
+                  Solo pega el mensaje y envía
+                </div>
               </div>
-              <div className="text-sm text-green-600">
-                Solo pega el mensaje y envía
+
+              <div className="border rounded-md p-3 text-sm bg-gray-50 text-left">
+                {dialogMessage}
+              </div>
+
+              <div className="text-sm text-gray-500">
+                ⏱️ Abriendo Instagram en 6 segundos...
               </div>
             </div>
+          )}
 
-            <div className="border rounded-md p-3 text-sm bg-gray-50 text-left">
-              {dialogMessage}
+          {/* Flujo manual paso 1 (cuando clipboard falla) */}
+          {dialogStep === 2 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">1) Copia este mensaje:</p>
+              <div className="border rounded-md p-3 text-sm whitespace-pre-wrap bg-muted/30">
+                {dialogMessage || 'Generando sugerencia…'}
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={copyMessage}><Copy className="w-4 h-4 mr-2" /> Copiar mensaje</Button>
+              </div>
             </div>
+          )}
 
-            <div className="text-sm text-gray-500">
-              ⏱️ Abriendo Instagram en 6 segundos...
+          {/* Flujo manual paso 2 */}
+          {dialogStep === 3 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">2) Ahora envía el mensaje:</p>
+              <a className="inline-flex items-center gap-2 text-primary underline" href={instaUrl(dialogUser)} target="_blank" rel="noopener noreferrer">
+                Abrir conversación en Instagram <ArrowRight className="w-4 h-4" />
+              </a>
+              <p className="text-xs text-muted-foreground">Se abrirá en una nueva pestaña. Pega el mensaje y envíalo.</p>
             </div>
-          </div>
+          )}
+
+          {/* Botones del flujo manual */}
+          {(dialogStep === 2 || dialogStep === 3) && (
+            <DialogFooter>
+              {dialogStep === 2 ? (
+                <Button onClick={() => setDialogStep(3)}>Continuar</Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setOpenDialog(false);
+                    handleMessageSent(dialogUser);
+                  }}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+                >
+                  Listo
+                </Button>
+              )}
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </div>
