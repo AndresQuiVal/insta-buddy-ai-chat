@@ -1708,6 +1708,16 @@ const TasksToDo: React.FC = () => {
           </div>
         </div>
 
+        {/* Logo de Hower al final */}
+        <div className="mt-8 mb-4 text-center">
+          <img
+            src="https://i.ibb.co/bMLhkc7G/Hower-logo.png"
+            alt="Hower"
+            className="w-12 h-12 rounded-2xl object-cover mx-auto opacity-70 hover:opacity-100 transition-opacity"
+          />
+          <p className="text-xs text-gray-400 mt-2 font-mono">Powered by Hower Assistant</p>
+        </div>
+
       </div>
       
       {/* Popup de contacto directo */}
