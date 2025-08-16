@@ -3,8 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X, LogOut } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -276,6 +275,28 @@ const TasksToDo: React.FC = () => {
     } else {
       const msg = await generateMessage(username, type);
       setDialogMessage(msg);
+    }
+  };
+
+  // Función para cerrar sesión
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error cerrando sesión:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo cerrar sesión",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Sesión cerrada",
+          description: "Has cerrado sesión correctamente"
+        });
+      }
+    } catch (error) {
+      console.error('Error cerrando sesión:', error);
     }
   };
 
@@ -686,17 +707,8 @@ const TasksToDo: React.FC = () => {
           <CardHeader className="pb-2 sm:pb-3" onClick={onClick}>
             <CardTitle className="flex items-center justify-between text-base sm:text-lg">
               <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
-                {showCheckbox && (
-                  <Checkbox 
-                    checked={sectionCompleted || allProspectsCompleted}
-                    onCheckedChange={(checked) => {
-                      setCompletedTasks(prev => ({ ...prev, [taskKey]: !!checked }));
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                )}
                 <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 hidden" />
-                <span className={`${sectionCompleted || allProspectsCompleted ? 'line-through' : ''} text-sm sm:text-base`}>{title}</span>
+                <span className={`${sectionCompleted || allProspectsCompleted ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>{title}</span>
               </div>
               <div className="flex items-center space-x-2 flex-shrink-0">
                 <Badge variant="secondary" className="text-xs">{count}</Badge>
@@ -1188,32 +1200,45 @@ const TasksToDo: React.FC = () => {
                   <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
                 </div>
                 <div className="text-center">
-                  {isEditingListName ? (
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={tempListName}
-                        onChange={(e) => setTempListName(e.target.value)}
-                        className="text-2xl sm:text-3xl font-bold bg-transparent border-b-2 border-primary focus:outline-none focus:border-primary-foreground text-gray-800 font-mono text-center"
-                        onKeyPress={(e) => e.key === 'Enter' && handleSaveListName()}
-                        autoFocus
-                      />
-                      <Button size="sm" variant="ghost" onClick={handleSaveListName}>
-                        <Check className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <h1 
-                      className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono cursor-pointer hover:text-primary inline-flex items-center gap-2"
-                      onClick={handleEditListName}
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    {isEditingListName ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <input
+                          type="text"
+                          value={tempListName}
+                          onChange={(e) => setTempListName(e.target.value)}
+                          className="text-2xl sm:text-3xl font-bold bg-transparent border-b-2 border-primary focus:outline-none focus:border-primary-foreground text-gray-800 font-mono text-center"
+                          onKeyPress={(e) => e.key === 'Enter' && handleSaveListName()}
+                          autoFocus
+                        />
+                        <Button size="sm" variant="ghost" onClick={handleSaveListName}>
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <h1 
+                        className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono cursor-pointer hover:text-primary inline-flex items-center gap-2"
+                        onClick={handleEditListName}
+                      >
+                        🚀 {listName}
+                        <Edit2 className="w-4 h-4 opacity-50" />
+                      </h1>
+                    )}
+                    
+                    {/* Botón de cerrar sesión */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLogout}
+                      className="ml-4 text-red-600 border-red-300 hover:bg-red-50"
                     >
-                      🚀 {listName}
-                      <Edit2 className="w-4 h-4 opacity-50" />
-                    </h1>
-                  )}
+                      <LogOut className="w-4 h-4 mr-1" />
+                      Salir
+                    </Button>
+                  </div>
                   <p className="text-sm text-gray-500 italic mb-4 font-mono">
                     {motivationalQuote}
                   </p>
@@ -1248,14 +1273,7 @@ const TasksToDo: React.FC = () => {
               <CardHeader className="pb-2 sm:pb-3" onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}>
                 <CardTitle className="flex items-center justify-between text-base sm:text-lg cursor-pointer">
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
-                    <Checkbox 
-                      checked={completedTasks['section-pending']}
-                      onCheckedChange={(checked) => {
-                        setCompletedTasks(prev => ({ ...prev, ['section-pending']: !!checked }));
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <span className={`${completedTasks['section-pending'] ? 'line-through' : ''} text-sm sm:text-base`}>Prospectos pendientes</span>
+                    <span className={`${(completedTasks['section-pending'] || prospectsClassification.pendingResponses.every(p => completedTasks[`pending-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>Prospectos pendientes</span>
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.length}</Badge>
@@ -1428,15 +1446,8 @@ const TasksToDo: React.FC = () => {
               <CardHeader className="pb-2 sm:pb-3" onClick={() => setShowFollowUpSections(!showFollowUpSections)}>
                 <CardTitle className="flex items-center justify-between text-base sm:text-lg">
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
-                    <Checkbox 
-                      checked={completedTasks['section-followup']}
-                      onCheckedChange={(checked) => {
-                        setCompletedTasks(prev => ({ ...prev, ['section-followup']: !!checked }));
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
                     <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 hidden" />
-                    <span className={`text-sm sm:text-base ${completedTasks['section-followup'] ? 'line-through' : ''}`}>
+                    <span className={`${(completedTasks['section-followup'] || (prospectsClassification.noResponseYesterday.length === 0 && prospectsClassification.noResponse7Days.length === 0) || [...prospectsClassification.noResponseYesterday, ...prospectsClassification.noResponse7Days].every(p => completedTasks[`yesterday-${p.id}`] || completedTasks[`week-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>
                       Prospectos en seguimiento
                     </span>
                   </div>
@@ -1636,14 +1647,16 @@ const TasksToDo: React.FC = () => {
                       <div key={day} className="bg-gray-50 p-3 rounded-lg border">
                         <div className="flex items-center justify-between mb-2">
                           <Label className="text-sm font-mono font-bold">{dayNames[day as keyof typeof dayNames]}</Label>
-                          <Checkbox
+                          <input
+                            type="checkbox"
                             checked={config.enabled}
-                            onCheckedChange={(checked) => {
+                            onChange={(e) => {
                               setWeekSchedule(prev => ({
                                 ...prev,
-                                [day]: { ...prev[day as keyof typeof prev], enabled: !!checked }
+                                [day]: { ...prev[day as keyof typeof prev], enabled: e.target.checked }
                               }));
                             }}
+                            className="rounded"
                           />
                         </div>
                         <Input
