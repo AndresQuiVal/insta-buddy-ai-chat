@@ -66,6 +66,7 @@ const TasksToDo: React.FC = () => {
   const [contactMessage, setContactMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [generatingMessage, setGeneratingMessage] = useState(false);
+  const [expandedDailyTip, setExpandedDailyTip] = useState(false);
 
   // Estados para nombre de lista editable y frases motivacionales
   const [listName, setListName] = useState('Mi Lista de prospección');
@@ -461,13 +462,13 @@ const TasksToDo: React.FC = () => {
     // Determinar equivalencia según el tiempo
     let equivalencia = '';
     if (minutes < 5) {
-      equivalencia = 'pts... Tiempo que tardas en servirte un café ☕';
+      equivalencia = 'Como servirse un café ☕';
     } else if (minutes >= 5 && minutes <= 10) {
-      equivalencia = 'pts... Tiempo que demoras en ducharte 🚿';
+      equivalencia = 'Como ducharse 🚿';
     } else if (minutes >= 15) {
-      equivalencia = 'pts... Tiempo que demoras en ir por el super 🛒';
+      equivalencia = 'Como ir al super 🛒';
     } else {
-      equivalencia = 'pts... Menos de lo que tardas en desayunar 🍳';
+      equivalencia = 'Como desayunar 🍳';
     }
     
     return { minutes, totalProspects, equivalencia };
@@ -911,7 +912,7 @@ const TasksToDo: React.FC = () => {
                     variant="outline"
                     className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600 font-mono text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
                   >
-                    {showStats ? '📊 Ocultar mis números' : '🚀 ¿Cómo lo hice ayer?'}
+                    {showStats ? '📊 Ocultar mis números' : '🚀 ¿Cómo lo hice?'}
                   </Button>
                 </div>
                 
@@ -938,11 +939,49 @@ const TasksToDo: React.FC = () => {
                         </h2>
                       </div>
 
-                      <Tabs defaultValue="ayer" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                      <Tabs defaultValue="hoy" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 mb-4">
+                          <TabsTrigger value="hoy" className="font-mono text-sm">Hoy</TabsTrigger>
                           <TabsTrigger value="ayer" className="font-mono text-sm">Ayer</TabsTrigger>
                           <TabsTrigger value="semana" className="font-mono text-sm">Esta Semana</TabsTrigger>
                         </TabsList>
+                        
+                        <TabsContent value="hoy" className="space-y-3">
+                          <div className="bg-gradient-to-r from-green-50 to-white p-3 rounded-lg border border-green-200">
+                            <h3 className="text-base font-bold text-green-800 mb-3 font-mono">📅 Hoy</h3>
+                            
+                            <div className="space-y-2">
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-nuevos' ? null : 'hoy-nuevos')}
+                              >
+                                <span className="font-mono text-sm">💬 Abiertas</span>
+                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  0
+                                </div>
+                              </div>
+                              
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-seguimientos' ? null : 'hoy-seguimientos')}
+                              >
+                                <span className="font-mono text-sm">🔄 Seguimientos</span>
+                                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  0
+                                </div>
+                              </div>
+                              
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400"
+                              >
+                                <span className="font-mono text-sm">📅 Agendados</span>
+                                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  0
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </TabsContent>
                         
                         <TabsContent value="ayer" className="space-y-3">
                           <div className="bg-gradient-to-r from-blue-50 to-white p-3 rounded-lg border border-blue-200">
@@ -953,7 +992,7 @@ const TasksToDo: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-nuevos' ? null : 'ayer-nuevos')}
                               >
-                                <span className="font-mono text-sm">💬 Conversaciones Abiertas</span>
+                                <span className="font-mono text-sm">💬 Abiertas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.nuevosProspectos}
                                 </div>
@@ -1024,7 +1063,7 @@ const TasksToDo: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
                               >
-                                <span className="font-mono text-sm">💬 Conversaciones Abiertas</span>
+                                <span className="font-mono text-sm">💬 Abiertas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.weekStats.nuevosProspectos}
                                 </div>
@@ -1184,11 +1223,8 @@ const TasksToDo: React.FC = () => {
                 <div className="mt-3">
                   <div className="inline-block bg-gradient-to-r from-orange-100 to-yellow-100 border-2 border-dashed border-orange-300 px-4 py-2 rounded-lg max-w-md">
                     <div className="text-center">
-                      <span className="text-orange-800 font-mono text-sm font-bold block">
-                        ⏱️ Te demorarás: {calculateEstimatedTime().minutes} minutos
-                      </span>
-                      <span className="text-orange-700 font-mono text-xs block mt-1">
-                        {calculateEstimatedTime().equivalencia}
+                      <span className="text-orange-800 font-mono text-sm font-bold">
+                        ⏱️ Te demorarás: {calculateEstimatedTime().minutes} minutos ({calculateEstimatedTime().equivalencia})
                       </span>
                     </div>
                   </div>
@@ -1401,7 +1437,7 @@ const TasksToDo: React.FC = () => {
                     />
                     <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 hidden" />
                     <span className={`text-sm sm:text-base ${completedTasks['section-followup'] ? 'line-through' : ''}`}>
-                      Prospectos que debes dar seguimiento
+                      Prospectos en seguimiento
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
@@ -1642,7 +1678,8 @@ const TasksToDo: React.FC = () => {
         {/* Tips generales - Notebook style */}
         <div className="mt-6 sm:mt-8">
           <div 
-            className="bg-white rounded-xl shadow-lg border-l-4 border-green-400 p-4 sm:p-6"
+            className="bg-white rounded-xl shadow-lg border-l-4 border-green-400 p-4 sm:p-6 cursor-pointer hover:shadow-xl transition-shadow"
+            onClick={() => setExpandedDailyTip(!expandedDailyTip)}
             style={{
               backgroundImage: `
                 linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
@@ -1652,16 +1689,22 @@ const TasksToDo: React.FC = () => {
               backgroundPosition: '0 20px, 0 0'
             }}
           >
-            <div className="flex items-start space-x-3">
-              <Heart className="h-5 w-5 text-green-600 mt-1 flex-shrink-0" />
-              <div>
-                <h3 className="font-bold text-green-800 mb-2">🚀 Tip Pro del Día</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Heart className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <h3 className="font-bold text-green-800">🚀 Tip Pro del Día</h3>
+              </div>
+              {expandedDailyTip ? <ChevronDown className="h-4 w-4 text-green-600" /> : <ChevronRight className="h-4 w-4 text-green-600" />}
+            </div>
+            
+            {expandedDailyTip && (
+              <div className="mt-3 pl-8">
                 <p className="text-sm sm:text-base text-green-700 font-mono leading-relaxed">
                   Para cada prospecto, dedica 30 segundos a interactuar con sus posts antes de enviar mensajes. 
                   Un like + comentario genuino puede triplicar tu tasa de respuesta. ¡La interacción es la clave del éxito!
                 </p>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
