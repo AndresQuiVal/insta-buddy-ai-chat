@@ -567,69 +567,6 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.error('❌ Error guardando mensaje en instagram_messages:', saveError)
   } else {
     console.log('✅ Mensaje guardado correctamente')
-    
-    // Verificar si es una nueva respuesta de prospecto (no consideramos respuestas de conversaciones anteriores)
-    try {
-      const { data: existingMessages } = await supabase
-        .from('instagram_messages')
-        .select('id')
-        .eq('sender_id', senderId)
-        .eq('message_type', 'received')
-        .limit(2); // Buscar 2 para incluir el mensaje que acabamos de insertar
-
-      // Si solo hay 1 mensaje (el que acabamos de insertar), es una nueva respuesta
-      if (existingMessages && existingMessages.length === 1) {
-        console.log(`📈 Nueva respuesta obtenida de prospecto: ${senderId}`);
-        
-        const { error: metricError } = await supabase.rpc('update_daily_metric', {
-          p_instagram_user_id: instagramUser.instagram_user_id,
-          p_metric_type: 'responses_obtained'
-        });
-
-        if (metricError) {
-          console.error('❌ Error actualizando métrica de respuestas:', metricError);
-        } else {
-          console.log('✅ Métrica de respuestas actualizada');
-        }
-      }
-    } catch (metricErr) {
-      console.error('💥 Error actualizando métrica de respuestas:', metricErr);
-    }
-    
-    // Actualizar estado del prospecto (nueva respuesta del prospecto)
-    try {
-      // Extraer username del mensaje
-      let username = senderId; // fallback
-      try {
-        if (messagingEvent.sender?.username) {
-          username = messagingEvent.sender.username;
-        } else if (messagingEvent.message?.from?.username) {
-          username = messagingEvent.message.from.username;
-        }
-      } catch (e) {
-        console.log(`⚠️ No se pudo extraer username, usando sender_id: ${senderId}`);
-      }
-
-      // Actualizar estado del prospecto (nueva respuesta del prospecto)
-      await supabase.rpc('update_prospect_state', {
-        p_instagram_user_id: instagramUser.instagram_user_id,
-        p_prospect_username: username,
-        p_prospect_sender_id: senderId,
-        p_state: 'responded',
-        p_last_prospect_message_at: timestamp
-      });
-
-      // Incrementar métrica de respuestas obtenidas
-      await supabase.rpc('update_daily_metric', {
-        p_instagram_user_id: instagramUser.instagram_user_id,
-        p_metric_type: 'responses_obtained',
-        p_increment: 1
-      });
-
-      console.log(`📊 Estado de prospecto actualizado: ${username} -> responded`);
-    } catch (stateError) {
-      console.error("❌ Error actualizando estado de prospecto:", stateError);
-    }
   }
 
   console.log('🔍 ===== OBTENIENDO AUTORESPONDERS DEL USUARIO ESPECÍFICO =====')
