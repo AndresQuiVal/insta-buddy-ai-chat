@@ -1227,17 +1227,6 @@ const TasksToDo: React.FC = () => {
                         <Edit2 className="w-4 h-4 opacity-50" />
                       </h1>
                     )}
-                    
-                    {/* Botón de cerrar sesión */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleLogout}
-                      className="ml-4 text-red-600 border-red-300 hover:bg-red-50"
-                    >
-                      <LogOut className="w-4 h-4 mr-1" />
-                      Salir
-                    </Button>
                   </div>
                   <p className="text-sm text-gray-500 italic mb-4 font-mono">
                     {motivationalQuote}
@@ -1729,6 +1718,17 @@ const TasksToDo: React.FC = () => {
             className="w-12 h-12 rounded-2xl object-cover mx-auto opacity-70 hover:opacity-100 transition-opacity"
           />
           <p className="text-xs text-gray-400 mt-2 font-mono">Hecho con 💜 por Hower</p>
+          
+          {/* Botón de cerrar sesión */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="mt-4 text-red-600 border-red-300 hover:bg-red-50"
+          >
+            <LogOut className="w-4 h-4 mr-1" />
+            Salir
+          </Button>
         </div>
 
       </div>
