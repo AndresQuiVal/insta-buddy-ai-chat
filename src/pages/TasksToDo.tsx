@@ -260,16 +260,51 @@ const TasksToDo: React.FC = () => {
   };
 
   const openOnboarding = async (username: string, type: 'followup' | 'outreach', predefinedMessage?: string) => {
-    setDialogUser(username);
-    setDialogStep(1);
-    setOpenDialog(true);
-    
-    // Si hay un mensaje predefinido, usarlo directamente, sino generar con IA
-    if (predefinedMessage) {
-      setDialogMessage(predefinedMessage);
-    } else {
-      const msg = await generateMessage(username, type);
-      setDialogMessage(msg);
+    try {
+      // Generar mensaje con IA si no hay uno predefinido
+      let messageToSend = predefinedMessage;
+      if (!messageToSend) {
+        const msg = await generateMessage(username, type);
+        messageToSend = msg;
+      }
+
+      // Copiar mensaje automáticamente
+      await navigator.clipboard.writeText(messageToSend);
+      
+      // Mostrar popup de confirmación con temporizador
+      setDialogUser(username);
+      setDialogMessage(messageToSend);
+      setDialogStep(1);
+      setOpenDialog(true);
+
+      // Toast de confirmación
+      toast({
+        title: "Mensaje copiado",
+        description: "El mensaje se copió automáticamente al portapapeles",
+      });
+
+      // Abrir Instagram automáticamente después de 3 segundos
+      setTimeout(() => {
+        window.open(instaUrl(username), '_blank');
+        setOpenDialog(false);
+        
+        // Marcar como completado automáticamente después de 5 segundos más
+        setTimeout(() => {
+          handleMessageSent(username);
+          toast({
+            title: "¡Prospecto contactado!",
+            description: `@${username} marcado como completado automáticamente`,
+          });
+        }, 5000);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error en el flujo de contacto:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo copiar el mensaje automáticamente",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1690,50 +1725,30 @@ const TasksToDo: React.FC = () => {
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Enviar a @{dialogUser}</DialogTitle>
-            <DialogDescription>
-              Paso {dialogStep} de 2
+            <DialogTitle className="text-center">¡Mensaje Copiado! 📋</DialogTitle>
+            <DialogDescription className="text-center">
+              El mensaje se copió automáticamente. Te redirigiremos a Instagram en unos segundos...
             </DialogDescription>
           </DialogHeader>
 
-          {dialogStep === 1 && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">1) Copia el mensaje generado por IA:</p>
-              <div className="border rounded-md p-3 text-sm whitespace-pre-wrap bg-muted/30">
-                {dialogMessage || 'Generando sugerencia…'}
+          <div className="space-y-4 text-center">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="text-green-800 font-medium mb-2">
+                ✅ Mensaje listo para @{dialogUser}
               </div>
-              <div className="flex justify-end">
-                <Button onClick={copyMessage}><Copy className="w-4 h-4 mr-2" /> Copiar mensaje</Button>
+              <div className="text-sm text-green-600">
+                Se abrirá Instagram automáticamente, solo pega el mensaje y envíalo
               </div>
             </div>
-          )}
 
-          {dialogStep === 2 && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">2) Ahora, envía el mensaje:</p>
-              <a className="inline-flex items-center gap-2 text-primary underline" href={instaUrl(dialogUser)} target="_blank" rel="noopener noreferrer">
-                Abrir conversación en Instagram <ArrowRight className="w-4 h-4" />
-              </a>
-              <p className="text-xs text-muted-foreground">Se abrirá en una nueva pestaña. Pega el mensaje y envíalo.</p>
+            <div className="border rounded-md p-3 text-sm bg-gray-50 text-left">
+              {dialogMessage}
             </div>
-          )}
 
-          <DialogFooter>
-            {dialogStep === 1 ? (
-              <Button onClick={() => setDialogStep(2)}>Continuar</Button>
-            ) : (
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setOpenDialog(false);
-                  handleMessageSent(dialogUser);
-                }}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
-              >
-                Listo
-              </Button>
-            )}
-          </DialogFooter>
+            <div className="text-sm text-gray-500">
+              🔄 Redirigiendo a Instagram en 3 segundos...
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
