@@ -1661,16 +1661,27 @@ const TasksToDo: React.FC = () => {
           />
           <p className="text-xs text-gray-400 mt-2 font-mono">Hecho con 💜 por Hower</p>
           
-          {/* Botón de cerrar sesión */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="mt-4 text-red-600 border-red-300 hover:bg-red-50"
-          >
-            <LogOut className="w-4 h-4 mr-1" />
-            Salir
-          </Button>
+          {/* Botones de opciones */}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/dashboard'}
+              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+            >
+              <Settings className="w-4 h-4 mr-1" />
+              Otras opciones
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="text-red-600 border-red-300 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4 mr-1" />
+              Salir
+            </Button>
+          </div>
         </div>
 
       </div>

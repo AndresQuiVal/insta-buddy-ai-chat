@@ -205,7 +205,7 @@ const Index = () => {
               <LogOut className="w-4 h-4 mr-2" />
               Cerrar Sesión
             </Button>
-            <Button onClick={() => navigate('/prospects')} variant="secondary" size="sm">
+            <Button onClick={() => navigate('/tasks-to-do')} variant="secondary" size="sm">
               Ir a Prospectos
             </Button>
             <div className="hidden">
