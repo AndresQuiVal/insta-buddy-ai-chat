@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -59,6 +60,11 @@ const TasksToDo: React.FC = () => {
   const [dialogStep, setDialogStep] = useState<1 | 2>(1);
   const [dialogUser, setDialogUser] = useState<string>('');
   const [dialogMessage, setDialogMessage] = useState<string>('');
+
+  // Estados para popup de contacto
+  const [selectedProspect, setSelectedProspect] = useState<ProspectData | null>(null);
+  const [contactMessage, setContactMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   // Estados para nombre de lista editable y frases motivacionales
   const [listName, setListName] = useState('Mi Lista de prospección');
@@ -271,6 +277,38 @@ const TasksToDo: React.FC = () => {
     }
   };
 
+  // Función para manejar contacto con prospecto (nuevo popup)
+  const handleContactProspect = async () => {
+    if (!selectedProspect || !contactMessage.trim()) return;
+
+    try {
+      setSendingMessage(true);
+      // TODO: Implementar envío de mensaje a través del API de Instagram
+      console.log('Enviando mensaje a:', selectedProspect.username);
+      console.log('Mensaje:', contactMessage);
+
+      toast({
+        title: "Mensaje enviado",
+        description: `Mensaje enviado a @${selectedProspect.username}`,
+      });
+
+      setSelectedProspect(null);
+      setContactMessage('');
+      
+      // Marcar como completado
+      handleMessageSent(selectedProspect.username);
+    } catch (error) {
+      console.error('Error enviando mensaje:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar el mensaje",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   // Función para manejar cuando se envía un mensaje (marcar como completado automáticamente)
   const handleMessageSent = (username: string) => {
     // Marcar este prospecto como completado automáticamente
@@ -437,7 +475,10 @@ const TasksToDo: React.FC = () => {
     console.log('Is interaction tip active?', isInteractionTipActive);
     
     return (
-      <div className={`bg-gradient-to-r from-white to-blue-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all duration-300 ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}>
+      <div 
+        className={`bg-gradient-to-r from-white to-blue-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}
+        onClick={() => setSelectedProspect(prospect)}
+      >
         {/* Información principal del prospecto */}
         <div className="flex items-center justify-between p-6 bg-white rounded-xl border border-gray-100">
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
@@ -449,11 +490,14 @@ const TasksToDo: React.FC = () => {
               <p className="font-semibold text-sm sm:text-base truncate">@{prospect.username}</p>
             </div>
           </div>
-          <div className="flex space-x-2 flex-shrink-0">
-            {/* Botón de interacción solo para prospectos de seguimiento */}
-            {isFollowUpProspect && (
+          {/* Botón de tips de interacción solo para seguimientos */}
+          {isFollowUpProspect && (
+            <div className="flex space-x-2 flex-shrink-0">
               <Button 
-                onClick={() => setActiveInteractionTip(isInteractionTipActive ? null : interactionTipKey)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveInteractionTip(isInteractionTipActive ? null : interactionTipKey);
+                }}
                 size="sm"
                 variant="outline"
                 className="text-xs sm:text-sm bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
@@ -463,18 +507,8 @@ const TasksToDo: React.FC = () => {
                 <span className="hidden sm:inline">¿Cómo aumento respuesta?</span>
                 <span className="sm:hidden">📈</span>
               </Button>
-            )}
-            <Button 
-              onClick={() => openOnboarding(prospect.username, 'outreach')}
-              size="sm"
-              className="bg-primary hover:bg-primary/90 text-xs sm:text-sm"
-              disabled={isCompleted}
-            >
-              <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 mr-1 hidden sm:inline-block" />
-              <span className="hidden sm:inline">Contactar</span>
-              <span className="sm:hidden">💬</span>
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Tip de interacción - SOLO aparece cuando se hace click */}
@@ -1609,6 +1643,70 @@ const TasksToDo: React.FC = () => {
         </div>
 
       </div>
+      
+      {/* Popup de contacto directo */}
+      <Dialog open={!!selectedProspect} onOpenChange={(open) => !open && setSelectedProspect(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Contactar Prospecto
+            </DialogTitle>
+            <DialogDescription>
+              Envía un mensaje a @{selectedProspect?.username}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={selectedProspect?.profile_picture_url || ''} />
+                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white">
+                  {selectedProspect?.username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h4 className="font-semibold">@{selectedProspect?.username}</h4>
+                <p className="text-sm text-gray-600">
+                  Último mensaje: {selectedProspect && new Date(selectedProspect.last_message_date).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="contact-message">Mensaje</Label>
+              <Textarea
+                id="contact-message"
+                placeholder="Escribe tu mensaje aquí..."
+                value={contactMessage}
+                onChange={(e) => setContactMessage(e.target.value)}
+                rows={4}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedProspect(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleContactProspect}
+                disabled={!contactMessage.trim() || sendingMessage}
+              >
+                {sendingMessage ? (
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                )}
+                Enviar Mensaje
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
