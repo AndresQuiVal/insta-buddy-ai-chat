@@ -1700,7 +1700,12 @@ const TasksToDo: React.FC = () => {
       </div>
       
       {/* Diálogo de contacto guiado */}
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+      <Dialog open={openDialog} onOpenChange={(open) => {
+        // Solo cerrar si es el flujo automático (step 1) o si el usuario realmente quiere cerrar
+        if (!open && dialogStep !== 2 && dialogStep !== 3) {
+          setOpenDialog(false);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-center">
