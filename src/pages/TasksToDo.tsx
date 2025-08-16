@@ -1235,7 +1235,7 @@ const TasksToDo: React.FC = () => {
         </div>
 
         {/* Tasks List - Notebook Style */}
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-3 sm:space-y-4 mt-12 sm:mt-16">
           {/* 1. Responder prospectos pendientes con tabs */}
           <div className="mb-4 sm:mb-6">
             <Card
@@ -1569,7 +1569,7 @@ const TasksToDo: React.FC = () => {
         </div>
 
         {/* Configuración WhatsApp */}
-        <div className="mt-6 sm:mt-8 text-center">
+        <div className="mt-8 sm:mt-12 text-center">
           <Button
             onClick={() => setShowWhatsAppConfig(!showWhatsAppConfig)}
             variant="outline"
@@ -1715,7 +1715,7 @@ const TasksToDo: React.FC = () => {
             alt="Hower"
             className="w-12 h-12 rounded-2xl object-cover mx-auto opacity-70 hover:opacity-100 transition-opacity"
           />
-          <p className="text-xs text-gray-400 mt-2 font-mono">Powered by Hower Assistant</p>
+          <p className="text-xs text-gray-400 mt-2 font-mono">Hecho con 💜 por Hower</p>
         </div>
 
       </div>
