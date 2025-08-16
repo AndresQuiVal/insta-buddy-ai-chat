@@ -16,7 +16,9 @@ import {
   User,
   Tag,
   Filter,
-  X
+  X,
+  Edit2,
+  Check
 } from 'lucide-react';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,10 +45,118 @@ const ProspectCRM = () => {
   const [selectedProspect, setSelectedProspect] = useState<ProspectData | null>(null);
   const [contactMessage, setContactMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [listName, setListName] = useState('Mi Lista de prospección');
+  const [isEditingListName, setIsEditingListName] = useState(false);
+  const [tempListName, setTempListName] = useState('');
+  const [motivationalQuote, setMotivationalQuote] = useState('');
   const { currentUser } = useInstagramUsers();
   const { toast } = useToast();
 
-  // Cargar prospectos
+  // Frases motivacionales
+  const motivationalQuotes = [
+    "Cada 'no' te acerca más a un 'sí'. ¡Sigue prospectando!",
+    "El éxito está en el otro lado de tu zona de confort.",
+    "Hoy es el día perfecto para conquistar nuevos clientes.",
+    "Tu próximo gran cliente está esperando tu mensaje.",
+    "La constancia en la prospección es la clave del éxito.",
+    "Cada contacto es una oportunidad de oro.",
+    "Los vendedores exitosos nunca dejan de prospectar.",
+    "Tu futuro se construye con cada prospecto contactado.",
+    "La fortuna favorece a quienes se atreven a contactar.",
+    "El mejor momento para prospectar es ahora."
+  ];
+
+  // Cargar nombre de lista y generar frase motivacional
+  useEffect(() => {
+    if (currentUser) {
+      loadListName();
+    }
+    // Generar frase motivacional aleatoria
+    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+    setMotivationalQuote(randomQuote);
+  }, [currentUser]);
+
+  // Cargar nombre de lista personalizado
+  const loadListName = async () => {
+    if (!currentUser) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('prospect_list_settings')
+        .select('list_name')
+        .eq('instagram_user_id', currentUser.instagram_user_id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error cargando nombre de lista:', error);
+        return;
+      }
+
+      if (data) {
+        setListName(data.list_name);
+      }
+    } catch (error) {
+      console.error('Error cargando configuración de lista:', error);
+    }
+  };
+
+  // Guardar nombre de lista
+  const saveListName = async (newName: string) => {
+    if (!currentUser || !newName.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('prospect_list_settings')
+        .upsert({
+          instagram_user_id: currentUser.instagram_user_id,
+          list_name: newName.trim(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error guardando nombre de lista:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo guardar el nombre de la lista",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setListName(newName.trim());
+      toast({
+        title: "Guardado",
+        description: "Nombre de lista actualizado correctamente",
+      });
+    } catch (error) {
+      console.error('Error guardando lista:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el nombre de la lista",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Manejar edición de nombre de lista
+  const handleEditListName = () => {
+    setTempListName(listName);
+    setIsEditingListName(true);
+  };
+
+  const handleSaveListName = () => {
+    if (tempListName.trim() && tempListName !== listName) {
+      saveListName(tempListName);
+    }
+    setIsEditingListName(false);
+  };
+
+  const handleCancelEdit = () => {
+    setTempListName('');
+    setIsEditingListName(false);
+  };
+
+  // Cargar prospectos (reducir cantidad)
   const loadProspects = async () => {
     if (!currentUser) return;
 
@@ -67,7 +177,8 @@ const ProspectCRM = () => {
           prospect_instagram_id
         `)
         .eq('instagram_user_id', currentUser.id)
-        .order('last_message_date', { ascending: false });
+        .order('last_message_date', { ascending: false })
+        .limit(9); // Limitar a 9 prospectos
 
       if (error) {
         console.error('❌ Error cargando prospectos:', error);
@@ -238,12 +349,40 @@ const ProspectCRM = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
             <User className="w-6 h-6" />
-            CRM de Prospectos
-          </h1>
+            {isEditingListName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={tempListName}
+                  onChange={(e) => setTempListName(e.target.value)}
+                  className="text-2xl font-bold bg-transparent border-b-2 border-primary focus:outline-none focus:border-primary-foreground"
+                  onKeyPress={(e) => e.key === 'Enter' && handleSaveListName()}
+                  autoFocus
+                />
+                <Button size="sm" variant="ghost" onClick={handleSaveListName}>
+                  <Check className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <h1 
+                className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-primary flex items-center gap-2"
+                onClick={handleEditListName}
+              >
+                {listName}
+                <Edit2 className="w-4 h-4 opacity-50" />
+              </h1>
+            )}
+          </div>
           <p className="text-gray-600">
             {prospects.length} prospectos totales • @{currentUser.username}
+          </p>
+          <p className="text-sm text-gray-500 italic mt-1">
+            {motivationalQuote}
           </p>
         </div>
         
