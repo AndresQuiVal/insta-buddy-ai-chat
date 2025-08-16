@@ -190,7 +190,7 @@ export default function TasksToDo() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => window.location.href = '/instagram-callback'} className="w-full">
+            <Button onClick={() => window.location.href = '/auth/instagram/callback'} className="w-full">
               Conectar Instagram
             </Button>
           </CardContent>
