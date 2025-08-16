@@ -280,10 +280,10 @@ const TasksToDo: React.FC = () => {
       // Toast de confirmación
       toast({
         title: "Mensaje copiado",
-        description: "El mensaje se copió automáticamente al portapapeles",
+        description: "Listo para enviar",
       });
 
-      // Abrir Instagram automáticamente después de 3 segundos
+      // Abrir Instagram automáticamente después de 6 segundos
       setTimeout(() => {
         window.open(instaUrl(username), '_blank');
         setOpenDialog(false);
@@ -292,17 +292,17 @@ const TasksToDo: React.FC = () => {
         setTimeout(() => {
           handleMessageSent(username);
           toast({
-            title: "¡Prospecto contactado!",
-            description: `@${username} marcado como completado automáticamente`,
+            title: "¡Completado!",
+            description: `@${username} marcado como contactado`,
           });
         }, 5000);
-      }, 3000);
+      }, 6000);
       
     } catch (error) {
       console.error('Error en el flujo de contacto:', error);
       toast({
         title: "Error",
-        description: "No se pudo copiar el mensaje automáticamente",
+        description: "No se pudo copiar el mensaje",
         variant: "destructive"
       });
     }
@@ -1725,19 +1725,19 @@ const TasksToDo: React.FC = () => {
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-center">¡Mensaje Copiado! 📋</DialogTitle>
+            <DialogTitle className="text-center">✅ Mensaje Copiado</DialogTitle>
             <DialogDescription className="text-center">
-              El mensaje se copió automáticamente. Te redirigiremos a Instagram en unos segundos...
+              Te abriremos Instagram en unos segundos
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 text-center">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="text-green-800 font-medium mb-2">
-                ✅ Mensaje listo para @{dialogUser}
+              <div className="text-green-800 font-medium">
+                Para @{dialogUser}
               </div>
               <div className="text-sm text-green-600">
-                Se abrirá Instagram automáticamente, solo pega el mensaje y envíalo
+                Solo pega el mensaje y envía
               </div>
             </div>
 
@@ -1746,7 +1746,7 @@ const TasksToDo: React.FC = () => {
             </div>
 
             <div className="text-sm text-gray-500">
-              🔄 Redirigiendo a Instagram en 3 segundos...
+              ⏱️ Abriendo Instagram en 6 segundos...
             </div>
           </div>
         </DialogContent>
