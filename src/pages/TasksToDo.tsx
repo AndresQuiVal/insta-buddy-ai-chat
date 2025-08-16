@@ -112,7 +112,7 @@ const TasksToDo: React.FC = () => {
         body: { prompt: base },
       });
       if (error) throw error;
-      const text = (data as any)?.generatedText || (data as any)?.message || JSON.stringify(data);
+      const text = (data as any)?.response || 'No se pudo generar mensaje';
       return String(text).trim();
     } catch (e) {
       console.error('AI error', e);
