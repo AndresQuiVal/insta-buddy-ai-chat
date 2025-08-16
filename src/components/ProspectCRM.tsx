@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { 
   Send, 
   MessageCircle, 
@@ -12,7 +15,8 @@ import {
   Clock,
   User,
   Tag,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +40,9 @@ const ProspectCRM = () => {
   const [prospects, setProspects] = useState<ProspectData[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'enviados' | 'respuestas' | 'agendados'>('all');
+  const [selectedProspect, setSelectedProspect] = useState<ProspectData | null>(null);
+  const [contactMessage, setContactMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
   const { currentUser } = useInstagramUsers();
   const { toast } = useToast();
 
@@ -112,9 +119,41 @@ const ProspectCRM = () => {
     return prospects.filter(prospect => prospect.status === status);
   };
 
+  // Función para manejar el contacto con prospecto
+  const handleContactProspect = async () => {
+    if (!selectedProspect || !contactMessage.trim()) return;
+
+    try {
+      setSendingMessage(true);
+      // TODO: Implementar envío de mensaje a través del API de Instagram
+      console.log('Enviando mensaje a:', selectedProspect.username);
+      console.log('Mensaje:', contactMessage);
+
+      toast({
+        title: "Mensaje enviado",
+        description: `Mensaje enviado a @${selectedProspect.username}`,
+      });
+
+      setSelectedProspect(null);
+      setContactMessage('');
+    } catch (error) {
+      console.error('Error enviando mensaje:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar el mensaje",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   // Componente de tarjeta de prospecto
   const ProspectCard = ({ prospect }: { prospect: ProspectData }) => (
-    <Card className="mb-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary/20">
+    <Card 
+      className="mb-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary/20"
+      onClick={() => setSelectedProspect(prospect)}
+    >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <Avatar className="w-10 h-10">
@@ -244,6 +283,70 @@ const ProspectCRM = () => {
           color="bg-gradient-to-r from-purple-600 to-purple-700"
         />
       </div>
+
+      {/* Popup de contacto */}
+      <Dialog open={!!selectedProspect} onOpenChange={(open) => !open && setSelectedProspect(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Contactar Prospecto
+            </DialogTitle>
+            <DialogDescription>
+              Envía un mensaje a @{selectedProspect?.username}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={selectedProspect?.profile_picture_url} />
+                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white">
+                  {selectedProspect?.username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h4 className="font-semibold">@{selectedProspect?.username}</h4>
+                <p className="text-sm text-gray-600">
+                  Último mensaje: {selectedProspect && format(new Date(selectedProspect.last_message_date), 'dd MMM, HH:mm', { locale: es })}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="message">Mensaje</Label>
+              <Textarea
+                id="message"
+                placeholder="Escribe tu mensaje aquí..."
+                value={contactMessage}
+                onChange={(e) => setContactMessage(e.target.value)}
+                rows={4}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedProspect(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleContactProspect}
+                disabled={!contactMessage.trim() || sendingMessage}
+              >
+                {sendingMessage ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                Enviar Mensaje
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
