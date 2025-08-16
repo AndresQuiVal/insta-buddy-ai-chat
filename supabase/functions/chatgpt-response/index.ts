@@ -73,11 +73,10 @@ INSTRUCCIONES ESPECÍFICAS:
 1. Analiza TODA la conversación completa, no solo los últimos mensajes
 2. Identifica el nivel de interés, objeciones, y momento de la conversación
 3. Considera el historial: ¿ya mostró interés? ¿hay resistencia? ¿está tibio/caliente?
-4. Tu sugerencia debe estar SIEMPRE orientada a conseguir el contacto (llamada o WhatsApp)
+4. Tu respuesta debe ser SOLO el mensaje que se puede copiar y enviar
 
-RESPONDE CON ESTA ESTRUCTURA EXACTA:
-**Contexto:** [Análisis breve del estado actual de la conversación y el prospecto en 1-2 oraciones]
-**Sugerencia:** [Mensaje específico orientado a conseguir llamada/WhatsApp o paso previo necesario]
+RESPONDE ÚNICAMENTE CON EL MENSAJE A ENVIAR, sin explicaciones, sin contexto, sin estructura.
+Solo el texto exacto que se debe enviar al prospecto.
 
 ESTRATEGIAS CLAVE:
 - Si el prospecto mostró interés: propón llamada directamente
@@ -85,8 +84,9 @@ ESTRATEGIAS CLAVE:
 - Si hay resistencia: maneja objeciones primero
 - Si es primera interacción: construye rapport antes del ask
 - Siempre sé natural, no agresivo
+- Mensaje en español, tono conversacional y humano
 
-Sé directo, estratégico y enfocado en la conversión.`
+Sé directo, estratégico y enfocado en la conversión. SOLO responde con el mensaje a enviar.`
           },
           {
             role: 'user',
