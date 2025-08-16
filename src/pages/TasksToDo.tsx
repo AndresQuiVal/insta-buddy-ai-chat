@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import { useNavigate } from 'react-router-dom';
 
 interface ProspectData {
   id: string;
@@ -29,6 +31,9 @@ interface CompletedTasks {
 
 const TasksToDo: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { currentUser, loading: userLoading } = useInstagramUsers();
+  
   const [prospects, setProspects] = useState<ProspectData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -67,7 +72,6 @@ const TasksToDo: React.FC = () => {
   const [isEditingListName, setIsEditingListName] = useState(false);
   const [tempListName, setTempListName] = useState('');
   const [motivationalQuote, setMotivationalQuote] = useState('');
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Frases motivacionales
   const motivationalQuotes = [
@@ -83,6 +87,18 @@ const TasksToDo: React.FC = () => {
     "El mejor momento para prospectar es ahora."
   ];
 
+  // Validación de Instagram y redirección
+  useEffect(() => {
+    if (!userLoading && !currentUser) {
+      toast({
+        title: 'Conexión requerida',
+        description: 'Necesitas conectar tu cuenta de Instagram para acceder a las tareas.',
+        variant: 'destructive'
+      });
+      navigate('/');
+    }
+  }, [userLoading, currentUser, navigate, toast]);
+
   // SEO
   useEffect(() => {
     document.title = 'Tareas de Hoy | Hower Assistant';
@@ -97,43 +113,17 @@ const TasksToDo: React.FC = () => {
     }
   }, []);
 
-  // Cargar usuario actual y configuración inicial
-  useEffect(() => {
-    loadCurrentUser();
-    loadProspects();
-    // Generar frase motivacional aleatoria
-    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-    setMotivationalQuote(randomQuote);
-  }, []);
-
-  // Cargar nombre de lista cuando hay usuario
+  // Cargar configuración inicial
   useEffect(() => {
     if (currentUser) {
+      loadProspects();
       loadListName();
+      // Generar frase motivacional aleatoria
+      const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+      setMotivationalQuote(randomQuote);
     }
   }, [currentUser]);
 
-  // Cargar usuario actual
-  const loadCurrentUser = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('instagram_users')
-        .select('*')
-        .eq('is_active', true)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading current user:', error);
-        return;
-      }
-
-      if (data) {
-        setCurrentUser(data);
-      }
-    } catch (error) {
-      console.error('Error loading user:', error);
-    }
-  };
 
   // Cargar nombre de lista personalizado
   const loadListName = async () => {
@@ -392,6 +382,25 @@ const TasksToDo: React.FC = () => {
   };
 
   const instaUrl = (username: string) => `https://www.instagram.com/m/${username}`;
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-purple-900 flex items-center justify-center">
+        <Card className="w-80">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
+            <p className="text-sm text-muted-foreground text-center">Verificando conexión de Instagram...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Si no hay usuario de Instagram, no renderizar nada (se redirige automáticamente)
+  if (!currentUser) {
+    return null;
+  }
 
   // Clasificar prospectos y calcular estadísticas
   const prospectsClassification = useMemo(() => {
