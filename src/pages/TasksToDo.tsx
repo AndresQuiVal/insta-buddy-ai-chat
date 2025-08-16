@@ -60,11 +60,6 @@ const TasksToDo: React.FC = () => {
   const [dialogUser, setDialogUser] = useState<string>('');
   const [dialogMessage, setDialogMessage] = useState<string>('');
 
-  // Estados para popup de contacto
-  const [selectedProspect, setSelectedProspect] = useState<ProspectData | null>(null);
-  const [contactMessage, setContactMessage] = useState('');
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [generatingMessage, setGeneratingMessage] = useState(false);
   const [expandedDailyTip, setExpandedDailyTip] = useState(false);
 
   // Estados para nombre de lista editable y frases motivacionales
@@ -300,59 +295,6 @@ const TasksToDo: React.FC = () => {
     }
   };
 
-  // Función para abrir popup de contacto con IA
-  const openContactPopup = async (prospect: ProspectData) => {
-    setSelectedProspect(prospect);
-    setContactMessage(''); // Limpiar mensaje anterior
-    
-    // Generar mensaje automáticamente con IA
-    try {
-      setGeneratingMessage(true);
-      const aiMessage = await generateMessage(prospect.username, 'outreach');
-      setContactMessage(aiMessage);
-    } catch (error) {
-      console.error('Error generando mensaje con IA:', error);
-      toast({
-        title: "Aviso",
-        description: "No se pudo generar mensaje con IA, puedes escribir uno manual",
-        variant: "default"
-      });
-    } finally {
-      setGeneratingMessage(false);
-    }
-  };
-
-  // Función para manejar contacto con prospecto (nuevo popup)
-  const handleContactProspect = async () => {
-    if (!selectedProspect || !contactMessage.trim()) return;
-
-    try {
-      setSendingMessage(true);
-      // TODO: Implementar envío de mensaje a través del API de Instagram
-      console.log('Enviando mensaje a:', selectedProspect.username);
-      console.log('Mensaje:', contactMessage);
-
-      toast({
-        title: "Mensaje enviado",
-        description: `Mensaje enviado a @${selectedProspect.username}`,
-      });
-
-      setSelectedProspect(null);
-      setContactMessage('');
-      
-      // Marcar como completado
-      handleMessageSent(selectedProspect.username);
-    } catch (error) {
-      console.error('Error enviando mensaje:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo enviar el mensaje",
-        variant: "destructive"
-      });
-    } finally {
-      setSendingMessage(false);
-    }
-  };
 
   // Función para manejar cuando se envía un mensaje (marcar como completado automáticamente)
   const handleMessageSent = (username: string) => {
@@ -1733,77 +1675,54 @@ const TasksToDo: React.FC = () => {
 
       </div>
       
-      {/* Popup de contacto directo */}
-      <Dialog open={!!selectedProspect} onOpenChange={(open) => !open && setSelectedProspect(null)}>
-        <DialogContent className="sm:max-w-md">
+      {/* Diálogo de contacto guiado */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5" />
-              Contactar Prospecto
-            </DialogTitle>
+            <DialogTitle>Enviar a @{dialogUser}</DialogTitle>
             <DialogDescription>
-              {generatingMessage 
-                ? "Generando mensaje con IA..." 
-                : `Envía un mensaje a @${selectedProspect?.username}`
-              }
+              Paso {dialogStep} de 2
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={selectedProspect?.profile_picture_url || ''} />
-                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white">
-                  {selectedProspect?.username.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h4 className="font-semibold">@{selectedProspect?.username}</h4>
-                <p className="text-sm text-gray-600">
-                  Último mensaje: {selectedProspect && new Date(selectedProspect.last_message_date).toLocaleDateString()}
-                </p>
+
+          {dialogStep === 1 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">1) Copia el mensaje generado por IA:</p>
+              <div className="border rounded-md p-3 text-sm whitespace-pre-wrap bg-muted/30">
+                {dialogMessage || 'Generando sugerencia…'}
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={copyMessage}><Copy className="w-4 h-4 mr-2" /> Copiar mensaje</Button>
               </div>
             </div>
+          )}
 
-            <div>
-              <Label htmlFor="contact-message">Mensaje</Label>
-              <Textarea
-                id="contact-message"
-                placeholder={generatingMessage ? "Generando mensaje con IA..." : "Escribe tu mensaje aquí..."}
-                value={contactMessage}
-                onChange={(e) => setContactMessage(e.target.value)}
-                rows={4}
-                className="mt-1"
-                disabled={generatingMessage}
-              />
-              {generatingMessage && (
-                <p className="text-sm text-blue-600 mt-2 flex items-center gap-2">
-                  <Clock className="w-4 h-4 animate-spin" />
-                  Generando mensaje personalizado con IA...
-                </p>
-              )}
+          {dialogStep === 2 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">2) Ahora, envía el mensaje:</p>
+              <a className="inline-flex items-center gap-2 text-primary underline" href={instaUrl(dialogUser)} target="_blank" rel="noopener noreferrer">
+                Abrir conversación en Instagram <ArrowRight className="w-4 h-4" />
+              </a>
+              <p className="text-xs text-muted-foreground">Se abrirá en una nueva pestaña. Pega el mensaje y envíalo.</p>
             </div>
+          )}
 
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setSelectedProspect(null)}
+          <DialogFooter>
+            {dialogStep === 1 ? (
+              <Button onClick={() => setDialogStep(2)}>Continuar</Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setOpenDialog(false);
+                  handleMessageSent(dialogUser);
+                }}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
               >
-                Cancelar
+                Listo
               </Button>
-              <Button
-                onClick={handleContactProspect}
-                disabled={!contactMessage.trim() || sendingMessage}
-              >
-                {sendingMessage ? (
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                )}
-                Enviar Mensaje
-              </Button>
-            </div>
-          </div>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
