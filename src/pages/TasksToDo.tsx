@@ -179,25 +179,6 @@ export default function TasksToDo() {
     );
   }
 
-  if (!instagramUser) {
-    return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Conecta tu Instagram</CardTitle>
-            <CardDescription>
-              Necesitas conectar tu cuenta de Instagram para ver tus tareas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => window.location.href = '/auth/instagram/callback'} className="w-full">
-              Conectar Instagram
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background p-6">
