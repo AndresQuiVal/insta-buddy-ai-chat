@@ -30,6 +30,8 @@ interface CompletedTasks {
 const TasksToDo: React.FC = () => {
   const { toast } = useToast();
   const [prospects, setProspects] = useState<ProspectData[]>([]);
+  const [prospectStates, setProspectStates] = useState<any[]>([]);
+  const [todayMetrics, setTodayMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [showFollowUpSections, setShowFollowUpSections] = useState(false);

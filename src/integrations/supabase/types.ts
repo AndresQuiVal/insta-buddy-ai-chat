@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -401,6 +401,42 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_prospect_metrics: {
+        Row: {
+          created_at: string
+          follow_ups_done: number
+          id: string
+          instagram_user_id: string
+          metric_date: string
+          new_prospects_contacted: number
+          pending_responses: number
+          responses_obtained: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          follow_ups_done?: number
+          id?: string
+          instagram_user_id: string
+          metric_date: string
+          new_prospects_contacted?: number
+          pending_responses?: number
+          responses_obtained?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          follow_ups_done?: number
+          id?: string
+          instagram_user_id?: string
+          metric_date?: string
+          new_prospects_contacted?: number
+          pending_responses?: number
+          responses_obtained?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       general_comment_autoresponders: {
         Row: {
           auto_assign_to_all_posts: boolean | null
@@ -464,6 +500,45 @@ export type Database = {
           use_button_message?: boolean | null
           use_buttons?: boolean | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      hower_lite_profiles: {
+        Row: {
+          country_code: string
+          created_at: string
+          email: string
+          id: string
+          instagram_user_id: string
+          name: string
+          niche: string
+          niche_detail: string | null
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          email: string
+          id?: string
+          instagram_user_id: string
+          name: string
+          niche: string
+          niche_detail?: string | null
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          email?: string
+          id?: string
+          instagram_user_id?: string
+          name?: string
+          niche?: string
+          niche_detail?: string | null
+          phone?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -868,6 +943,42 @@ export type Database = {
           },
         ]
       }
+      prospect_states: {
+        Row: {
+          created_at: string
+          id: string
+          instagram_user_id: string
+          last_client_message_at: string | null
+          last_prospect_message_at: string | null
+          prospect_sender_id: string
+          prospect_username: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instagram_user_id: string
+          last_client_message_at?: string | null
+          last_prospect_message_at?: string | null
+          prospect_sender_id: string
+          prospect_username: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instagram_user_id?: string
+          last_client_message_at?: string | null
+          last_prospect_message_at?: string | null
+          prospect_sender_id?: string
+          prospect_username?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prospects: {
         Row: {
           created_at: string
@@ -957,6 +1068,39 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_notification_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          instagram_user_id: string
+          notification_days: number[]
+          notification_time: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          instagram_user_id: string
+          notification_days?: number[]
+          notification_time?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          instagram_user_id?: string
+          notification_days?: number[]
+          notification_time?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -964,12 +1108,12 @@ export type Database = {
     Functions: {
       add_prospect_message: {
         Args: {
-          p_prospect_id: string
+          p_is_from_prospect: boolean
           p_message_instagram_id: string
           p_message_text: string
-          p_is_from_prospect: boolean
           p_message_timestamp: string
           p_message_type?: string
+          p_prospect_id: string
           p_raw_data?: Json
         }
         Returns: string
@@ -977,51 +1121,51 @@ export type Database = {
       calculate_advanced_metrics: {
         Args: Record<PropertyKey, never>
         Returns: {
-          total_sent: number
-          total_responses: number
-          total_invitations: number
-          total_presentations: number
-          total_inscriptions: number
-          messages_per_response: number
+          avg_response_time_seconds: number
+          invitations_per_inscription: number
+          invitations_per_presentation: number
+          last_message_date: string
+          messages_per_inscription: number
           messages_per_invitation: number
           messages_per_presentation: number
-          invitations_per_presentation: number
-          messages_per_inscription: number
-          invitations_per_inscription: number
+          messages_per_response: number
           presentations_per_inscription: number
-          today_messages: number
           response_rate_percentage: number
-          avg_response_time_seconds: number
-          last_message_date: string
+          today_messages: number
+          total_inscriptions: number
+          total_invitations: number
+          total_presentations: number
+          total_responses: number
+          total_sent: number
         }[]
       }
       calculate_advanced_metrics_by_instagram_user: {
         Args: { user_instagram_id: string }
         Returns: {
-          total_sent: number
-          total_responses: number
-          total_invitations: number
-          total_presentations: number
-          total_inscriptions: number
-          messages_per_response: number
+          avg_response_time_seconds: number
+          invitations_per_inscription: number
+          invitations_per_presentation: number
+          last_message_date: string
+          messages_per_inscription: number
           messages_per_invitation: number
           messages_per_presentation: number
-          invitations_per_presentation: number
-          messages_per_inscription: number
-          invitations_per_inscription: number
+          messages_per_response: number
           presentations_per_inscription: number
-          today_messages: number
           response_rate_percentage: number
-          avg_response_time_seconds: number
-          last_message_date: string
+          today_messages: number
+          total_inscriptions: number
+          total_invitations: number
+          total_presentations: number
+          total_responses: number
+          total_sent: number
         }[]
       }
       create_or_update_prospect: {
         Args: {
           p_instagram_user_id: string
+          p_profile_picture_url?: string
           p_prospect_instagram_id: string
           p_username: string
-          p_profile_picture_url?: string
         }
         Returns: string
       }
@@ -1030,14 +1174,14 @@ export type Database = {
         Returns: string
       }
       increment_nuevos_prospectos_by_instagram_id: {
-        Args: { user_instagram_id: string; increment_by?: number }
+        Args: { increment_by?: number; user_instagram_id: string }
         Returns: undefined
       }
       process_pending_followups: {
         Args: Record<PropertyKey, never>
         Returns: {
-          processed_count: number
           details: Json
+          processed_count: number
         }[]
       }
       reset_inactive_prospect_traits: {
@@ -1048,8 +1192,27 @@ export type Database = {
         Args: { user_instagram_id: string }
         Returns: undefined
       }
+      update_daily_metric: {
+        Args: {
+          p_increment?: number
+          p_instagram_user_id: string
+          p_metric_type: string
+        }
+        Returns: undefined
+      }
       update_prospect_activity: {
         Args: { p_prospect_id: string }
+        Returns: undefined
+      }
+      update_prospect_state: {
+        Args: {
+          p_instagram_user_id: string
+          p_last_client_message_at?: string
+          p_last_prospect_message_at?: string
+          p_prospect_sender_id: string
+          p_prospect_username: string
+          p_state: string
+        }
         Returns: undefined
       }
     }

@@ -567,6 +567,41 @@ async function processMessage(messagingEvent: any, supabase: any, source: string
     console.error('❌ Error guardando mensaje en instagram_messages:', saveError)
   } else {
     console.log('✅ Mensaje guardado correctamente')
+    
+    // Actualizar estado del prospecto (nueva respuesta del prospecto)
+    try {
+      // Extraer username del mensaje
+      let username = senderId; // fallback
+      try {
+        if (messagingEvent.sender?.username) {
+          username = messagingEvent.sender.username;
+        } else if (messagingEvent.message?.from?.username) {
+          username = messagingEvent.message.from.username;
+        }
+      } catch (e) {
+        console.log(`⚠️ No se pudo extraer username, usando sender_id: ${senderId}`);
+      }
+
+      // Actualizar estado del prospecto (nueva respuesta del prospecto)
+      await supabase.rpc('update_prospect_state', {
+        p_instagram_user_id: instagramUser.instagram_user_id,
+        p_prospect_username: username,
+        p_prospect_sender_id: senderId,
+        p_state: 'responded',
+        p_last_prospect_message_at: timestamp
+      });
+
+      // Incrementar métrica de respuestas obtenidas
+      await supabase.rpc('update_daily_metric', {
+        p_instagram_user_id: instagramUser.instagram_user_id,
+        p_metric_type: 'responses_obtained',
+        p_increment: 1
+      });
+
+      console.log(`📊 Estado de prospecto actualizado: ${username} -> responded`);
+    } catch (stateError) {
+      console.error("❌ Error actualizando estado de prospecto:", stateError);
+    }
   }
 
   console.log('🔍 ===== OBTENIENDO AUTORESPONDERS DEL USUARIO ESPECÍFICO =====')
