@@ -370,9 +370,24 @@ const TasksToDo: React.FC = () => {
   const copyMessage = async () => {
     try {
       await navigator.clipboard.writeText(dialogMessage);
-      toast({ title: 'Copiado', description: 'Mensaje copiado al portapapeles.' });
-    } catch {
-      toast({ title: 'No se pudo copiar', description: 'Copia manualmente el texto.' });
+      toast({ 
+        title: 'Copiado', 
+        description: 'Mensaje copiado correctamente.' 
+      });
+      
+      // Si estamos en el flujo manual (step 2), avanzar automáticamente al paso 3
+      if (dialogStep === 2) {
+        setTimeout(() => {
+          setDialogStep(3);
+        }, 500); // Pequeño delay para que el usuario vea el toast
+      }
+    } catch (error) {
+      console.error('Error copiando mensaje:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'No se pudo copiar. Copia manualmente el texto.',
+        variant: 'destructive'
+      });
     }
   };
 
