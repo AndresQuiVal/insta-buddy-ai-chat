@@ -1675,7 +1675,7 @@ const TasksToDo: React.FC = () => {
           <p className="text-xs text-gray-400 mt-2 font-mono">Hecho con 💜 por Hower</p>
           
           {/* Botones de opciones */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 justify-center">
             <Button
               variant="outline"
               size="sm"
