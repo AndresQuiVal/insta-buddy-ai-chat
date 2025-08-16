@@ -1091,36 +1091,37 @@ const TasksToDo: React.FC = () => {
                 <div className="inline-block p-2 sm:p-3 bg-red-100 rounded-full mb-3 sm:mb-4">
                   <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
                 </div>
-                {isEditingListName ? (
-                  <div className="flex items-center gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={tempListName}
-                      onChange={(e) => setTempListName(e.target.value)}
-                      className="text-2xl sm:text-3xl font-bold bg-transparent border-b-2 border-primary focus:outline-none focus:border-primary-foreground text-gray-800 font-mono"
-                      onKeyPress={(e) => e.key === 'Enter' && handleSaveListName()}
-                      autoFocus
-                    />
-                    <Button size="sm" variant="ghost" onClick={handleSaveListName}>
-                      <Check className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <h1 
-                    className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono cursor-pointer hover:text-primary flex items-center gap-2"
-                    onClick={handleEditListName}
-                  >
-                    🚀 {listName}
-                    <Edit2 className="w-4 h-4 opacity-50" />
-                  </h1>
-                )}
-                <p className="text-gray-600 text-lg font-mono mb-2">👇 Tu lista de tareas de prospección de hoy</p>
-                <p className="text-sm text-gray-500 italic mb-4 font-mono">
-                  {motivationalQuote}
-                </p>
+                <div className="text-center">
+                  {isEditingListName ? (
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={tempListName}
+                        onChange={(e) => setTempListName(e.target.value)}
+                        className="text-2xl sm:text-3xl font-bold bg-transparent border-b-2 border-primary focus:outline-none focus:border-primary-foreground text-gray-800 font-mono text-center"
+                        onKeyPress={(e) => e.key === 'Enter' && handleSaveListName()}
+                        autoFocus
+                      />
+                      <Button size="sm" variant="ghost" onClick={handleSaveListName}>
+                        <Check className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <h1 
+                      className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono cursor-pointer hover:text-primary inline-flex items-center gap-2"
+                      onClick={handleEditListName}
+                    >
+                      🚀 {listName}
+                      <Edit2 className="w-4 h-4 opacity-50" />
+                    </h1>
+                  )}
+                  <p className="text-sm text-gray-500 italic mb-4 font-mono">
+                    {motivationalQuote}
+                  </p>
+                </div>
                 
                 {/* Tag de tiempo estimado */}
                 <div className="mt-3">
