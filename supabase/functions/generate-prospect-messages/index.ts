@@ -11,22 +11,32 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  console.log('🚀 Función generate-prospect-messages iniciada')
+  console.log('📝 Método:', req.method)
+
   try {
+    console.log('📨 Procesando request...')
+    const requestBody = await req.json()
+    console.log('📋 Body recibido:', requestBody)
+    
     const { 
       messageLimit,
       username,
       tema,
       typeOfProspection,
       followObservationText 
-    } = await req.json()
+    } = requestBody
 
+    console.log('🔑 Verificando OpenAI API key...')
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
+      console.error('❌ OpenAI API key no configurada')
       return new Response(
         JSON.stringify({ error: 'OpenAI API key not configured' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    console.log('✅ OpenAI API key encontrada')
 
     // Crear el prompt específico con las variables
     const contextDataList = [username, tema]
