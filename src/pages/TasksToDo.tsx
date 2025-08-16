@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,6 +60,27 @@ const TasksToDo: React.FC = () => {
   const [dialogUser, setDialogUser] = useState<string>('');
   const [dialogMessage, setDialogMessage] = useState<string>('');
 
+  // Estados para nombre de lista editable y frases motivacionales
+  const [listName, setListName] = useState('Mi Lista de prospección');
+  const [isEditingListName, setIsEditingListName] = useState(false);
+  const [tempListName, setTempListName] = useState('');
+  const [motivationalQuote, setMotivationalQuote] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Frases motivacionales
+  const motivationalQuotes = [
+    "Cada 'no' te acerca más a un 'sí'. ¡Sigue prospectando!",
+    "El éxito está en el otro lado de tu zona de confort.",
+    "Hoy es el día perfecto para conquistar nuevos clientes.",
+    "Tu próximo gran cliente está esperando tu mensaje.",
+    "La constancia en la prospección es la clave del éxito.",
+    "Cada contacto es una oportunidad de oro.",
+    "Los vendedores exitosos nunca dejan de prospectar.",
+    "Tu futuro se construye con cada prospecto contactado.",
+    "La fortuna favorece a quienes se atreven a contactar.",
+    "El mejor momento para prospectar es ahora."
+  ];
+
   // SEO
   useEffect(() => {
     document.title = 'Tareas de Hoy | Hower Assistant';
@@ -74,9 +95,123 @@ const TasksToDo: React.FC = () => {
     }
   }, []);
 
+  // Cargar usuario actual y configuración inicial
   useEffect(() => {
+    loadCurrentUser();
     loadProspects();
+    // Generar frase motivacional aleatoria
+    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+    setMotivationalQuote(randomQuote);
   }, []);
+
+  // Cargar nombre de lista cuando hay usuario
+  useEffect(() => {
+    if (currentUser) {
+      loadListName();
+    }
+  }, [currentUser]);
+
+  // Cargar usuario actual
+  const loadCurrentUser = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('instagram_users')
+        .select('*')
+        .eq('is_active', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading current user:', error);
+        return;
+      }
+
+      if (data) {
+        setCurrentUser(data);
+      }
+    } catch (error) {
+      console.error('Error loading user:', error);
+    }
+  };
+
+  // Cargar nombre de lista personalizado
+  const loadListName = async () => {
+    if (!currentUser) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('prospect_list_settings')
+        .select('list_name')
+        .eq('instagram_user_id', currentUser.instagram_user_id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error cargando nombre de lista:', error);
+        return;
+      }
+
+      if (data) {
+        setListName(data.list_name);
+      }
+    } catch (error) {
+      console.error('Error cargando configuración de lista:', error);
+    }
+  };
+
+  // Guardar nombre de lista
+  const saveListName = async (newName: string) => {
+    if (!currentUser || !newName.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('prospect_list_settings')
+        .upsert({
+          instagram_user_id: currentUser.instagram_user_id,
+          list_name: newName.trim(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error guardando nombre de lista:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo guardar el nombre de la lista",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setListName(newName.trim());
+      toast({
+        title: "Guardado",
+        description: "Nombre de lista actualizado correctamente",
+      });
+    } catch (error) {
+      console.error('Error guardando lista:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el nombre de la lista",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Manejar edición de nombre de lista
+  const handleEditListName = () => {
+    setTempListName(listName);
+    setIsEditingListName(true);
+  };
+
+  const handleSaveListName = () => {
+    if (tempListName.trim() && tempListName !== listName) {
+      saveListName(tempListName);
+    }
+    setIsEditingListName(false);
+  };
+
+  const handleCancelEdit = () => {
+    setTempListName('');
+    setIsEditingListName(false);
+  };
 
 
   const loadProspects = async () => {
@@ -85,7 +220,8 @@ const TasksToDo: React.FC = () => {
       const { data, error } = await supabase
         .from('prospects')
         .select('*')
-        .order('last_message_date', { ascending: false });
+        .order('last_message_date', { ascending: false })
+        .limit(9); // Limitar a 9 prospectos
 
       if (error) throw error;
       setProspects(data || []);
@@ -955,10 +1091,36 @@ const TasksToDo: React.FC = () => {
                 <div className="inline-block p-2 sm:p-3 bg-red-100 rounded-full mb-3 sm:mb-4">
                   <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono">
-                  🚀 "Cada prospecto contactado te acerca más a tus metas"
-                </h1>
-                <p className="text-gray-600 text-lg font-mono mb-4">👇 Tu lista de tareas de prospección de hoy</p>
+                {isEditingListName ? (
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={tempListName}
+                      onChange={(e) => setTempListName(e.target.value)}
+                      className="text-2xl sm:text-3xl font-bold bg-transparent border-b-2 border-primary focus:outline-none focus:border-primary-foreground text-gray-800 font-mono"
+                      onKeyPress={(e) => e.key === 'Enter' && handleSaveListName()}
+                      autoFocus
+                    />
+                    <Button size="sm" variant="ghost" onClick={handleSaveListName}>
+                      <Check className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <h1 
+                    className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono cursor-pointer hover:text-primary flex items-center gap-2"
+                    onClick={handleEditListName}
+                  >
+                    🚀 {listName}
+                    <Edit2 className="w-4 h-4 opacity-50" />
+                  </h1>
+                )}
+                <p className="text-gray-600 text-lg font-mono mb-2">👇 Tu lista de tareas de prospección de hoy</p>
+                <p className="text-sm text-gray-500 italic mb-4 font-mono">
+                  {motivationalQuote}
+                </p>
                 
                 {/* Tag de tiempo estimado */}
                 <div className="mt-3">
