@@ -157,7 +157,22 @@ const TasksToDo: React.FC = () => {
           if (error) {
             console.error(`❌ [DB-SYNC] Error sincronizando ${prospect.username}:`, error);
           } else {
-            console.log(`✅ [DB-SYNC] ${prospect.username}: ${prospect.lastMessageType === 'sent' ? 'TACHADO' : 'DESTACHADO'}`);
+            const shouldBeTicked = prospect.lastMessageType === 'sent';
+            console.log(`✅ [DB-SYNC] ${prospect.username}: ${shouldBeTicked ? 'TACHADO' : 'DESTACHADO'}`);
+            
+            // ACTUALIZAR ESTADO LOCAL INMEDIATAMENTE
+            const taskKey = `pending-${prospect.senderId}`;
+            setCompletedTasks(prev => {
+              const updated = { ...prev };
+              if (shouldBeTicked) {
+                updated[taskKey] = true;
+                console.log(`🔄 [UI-SYNC] TACHANDO ${prospect.username} en UI`);
+              } else {
+                delete updated[taskKey];
+                console.log(`🔄 [UI-SYNC] DESTACHANDO ${prospect.username} en UI`);
+              }
+              return updated;
+            });
           }
         } catch (error) {
           console.error(`💥 [DB-SYNC] Error general para ${prospect.username}:`, error);
@@ -168,7 +183,7 @@ const TasksToDo: React.FC = () => {
     syncTaskStatusToDB();
   }, [realProspects, currentUser]);
 
-  // Cargar estados de tareas desde la base de datos
+  // Cargar estados de tareas desde la base de datos (mejorado)
   useEffect(() => {
     const loadTaskStatusFromDB = async () => {
       if (!currentUser) return;
@@ -178,7 +193,7 @@ const TasksToDo: React.FC = () => {
       try {
         const { data: taskStatuses, error } = await supabase
           .from('prospect_task_status')
-          .select('prospect_sender_id, task_type, is_completed')
+          .select('prospect_sender_id, task_type, is_completed, last_message_type')
           .eq('instagram_user_id', currentUser.instagram_user_id);
         
         if (error) {
@@ -186,15 +201,20 @@ const TasksToDo: React.FC = () => {
           return;
         }
         
+        console.log('📊 [DB-LOAD] Estados en BD:', taskStatuses);
+        
         // Convertir datos de BD al formato del estado local
         const dbTaskStates: {[key: string]: boolean} = {};
         taskStatuses?.forEach(task => {
           if (task.is_completed) {
             dbTaskStates[`${task.task_type}-${task.prospect_sender_id}`] = true;
+            console.log(`📋 [DB-LOAD] Cargando como tachado: ${task.prospect_sender_id} (${task.last_message_type})`);
+          } else {
+            console.log(`📋 [DB-LOAD] Cargando como destachado: ${task.prospect_sender_id} (${task.last_message_type})`);
           }
         });
         
-        console.log('✅ [DB-LOAD] Estados cargados desde BD:', Object.keys(dbTaskStates));
+        console.log('✅ [DB-LOAD] Estados finales para UI:', Object.keys(dbTaskStates));
         setCompletedTasks(dbTaskStates);
         
       } catch (error) {
