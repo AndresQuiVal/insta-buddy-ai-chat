@@ -123,6 +123,24 @@ serve(async (req) => {
       } else {
         console.log('✅ Mensaje enviado guardado correctamente en BD')
         
+        // 🔥 CRÍTICO: Sincronizar estado de tarea del prospecto
+        try {
+          console.log('🔄 Ejecutando sync_prospect_task_status para marcar como completado...')
+          const { error: syncError } = await supabase.rpc('sync_prospect_task_status', {
+            p_instagram_user_id: senderId, // El que ENVÍA es el usuario
+            p_prospect_sender_id: recipientId, // El que RECIBE es el prospecto
+            p_last_message_type: 'sent'
+          })
+          
+          if (syncError) {
+            console.error('❌ Error en sync_prospect_task_status:', syncError)
+          } else {
+            console.log('✅ Prospecto marcado como COMPLETADO exitosamente')
+          }
+        } catch (error) {
+          console.error('❌ Error ejecutando sync_prospect_task_status:', error)
+        }
+        
         // Actualizar actividad del prospecto
         try {
           const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
