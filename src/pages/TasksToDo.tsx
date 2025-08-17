@@ -13,16 +13,17 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import { useProspects } from '@/hooks/useProspects';
 import { useNavigate } from 'react-router-dom';
 
 interface ProspectData {
   id: string;
-  username: string;
-  profile_picture_url?: string | null;
+  userName: string;
   status: string;
-  first_contact_date: string;
-  last_message_date: string;
-  last_message_from_prospect: boolean;
+  firstContactDate: string;
+  lastContactDate: string;
+  unread: boolean;
+  avatar: string;
 }
 
 interface CompletedTasks {
@@ -33,6 +34,7 @@ const TasksToDo: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { currentUser, loading: userLoading } = useInstagramUsers();
+  const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects();
 
   // Verificar autenticación al cargar
   useEffect(() => {
@@ -41,7 +43,7 @@ const TasksToDo: React.FC = () => {
       navigate('/', { replace: true });
     }
   }, [currentUser, userLoading, navigate]);
-  const [prospects, setProspects] = useState<ProspectData[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [showFollowUpSections, setShowFollowUpSections] = useState(false);
@@ -120,11 +122,11 @@ const TasksToDo: React.FC = () => {
         navigate('/');
         return;
       }
-      
-      loadProspects();
-      // Generar frase motivacional aleatoria
+    } else {
+      // Usuario autenticado, generar frase motivacional
       const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
       setMotivationalQuote(randomQuote);
+      setLoading(false);
     }
   }, [currentUser, userLoading, navigate, toast]);
 
@@ -217,33 +219,18 @@ const TasksToDo: React.FC = () => {
   };
 
 
-  const loadProspects = async () => {
-    if (!currentUser) return;
-    
-    try {
-      setLoading(true);
-      
-      // Filtrar prospectos por el usuario específico de Instagram
-      const { data, error } = await supabase
-        .from('prospects')
-        .select('*')
-        .eq('instagram_user_id', currentUser.id) // Filtrar por el ID específico del usuario
-        .order('last_message_date', { ascending: false })
-        .limit(9); // Limitar a 9 prospectos
-
-      if (error) throw error;
-      setProspects(data || []);
-    } catch (error) {
-      console.error('Error loading prospects:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los prospectos.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Mapear los prospectos reales a la estructura que usa TasksToDo
+  const prospects: ProspectData[] = realProspects.map(prospect => ({
+    id: prospect.senderId,
+    userName: prospect.username || `@${prospect.senderId.slice(-8)}`,
+    status: prospect.state === 'no_response' ? 'esperando_respuesta' : 
+           prospect.state === 'invited' ? 'enviado' : 
+           prospect.state === 'follow_up' ? 'seguimiento' : 'esperando_respuesta',
+    firstContactDate: prospect.lastMessageTime,
+    lastContactDate: prospect.lastMessageTime,
+    unread: true,
+    avatar: `https://ui-avatars.com/api/?name=${prospect.username || 'U'}&background=6366f1&color=fff`
+  }));
 
   // AI message generation via Edge Function
   const generateMessage = async (username: string, type: 'followup' | 'outreach') => {
@@ -353,7 +340,7 @@ const TasksToDo: React.FC = () => {
   // Función para manejar cuando se envía un mensaje (marcar como completado automáticamente)
   const handleMessageSent = (username: string) => {
     // Marcar este prospecto como completado automáticamente
-    const prospect = prospects.find(p => p.username === username);
+    const prospect = prospects.find(p => p.userName === username);
     if (prospect) {
       // Marcar en todas las secciones donde puede aparecer este prospecto
       const taskTypes = ['pending', 'yesterday', 'week', 'new'];
@@ -405,25 +392,23 @@ const TasksToDo: React.FC = () => {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    // Prospectos pendientes: último mensaje es del prospecto, necesitan respuesta
+    // Prospectos pendientes: necesitan respuesta
     const pendingResponses = prospects.filter(p => 
-      p.last_message_from_prospect && (p.status === 'esperando_respuesta' || p.status !== 'new')
+      p.status === 'esperando_respuesta'
     );
 
     // Prospectos de seguimiento: último mensaje es nuestro, no han respondido
     const noResponseYesterday = prospects.filter(p => {
-      const lastMessageDate = new Date(p.last_message_date);
-      return !p.last_message_from_prospect && 
+      const lastMessageDate = new Date(p.lastContactDate);
+      return p.status === 'seguimiento' && 
              lastMessageDate >= yesterday && 
-             lastMessageDate < now &&
-             (p.status === 'contacted' || p.status === 'en_seguimiento');
+             lastMessageDate < now;
     });
 
     const noResponse7Days = prospects.filter(p => {
-      const lastMessageDate = new Date(p.last_message_date);
-      return !p.last_message_from_prospect && 
-             lastMessageDate <= sevenDaysAgo &&
-             (p.status === 'contacted' || p.status === 'en_seguimiento');
+      const lastMessageDate = new Date(p.lastContactDate);
+      return p.status === 'seguimiento' && 
+             lastMessageDate <= sevenDaysAgo;
     });
 
     // Prospectos nuevos: nunca contactados
@@ -431,29 +416,27 @@ const TasksToDo: React.FC = () => {
 
     // Prospectos específicos para estadísticas AYER
     const yesterdayNewProspects = prospects.filter(p => {
-      const contactDate = new Date(p.first_contact_date);
-      return contactDate >= yesterday && contactDate < now && p.status === 'new';
+      const contactDate = new Date(p.firstContactDate);
+      return contactDate >= yesterday && contactDate < now && p.status === 'esperando_respuesta';
     });
 
     const yesterdayFollowUps = prospects.filter(p => {
-      const lastMessage = new Date(p.last_message_date);
-      return !p.last_message_from_prospect && 
+      const lastMessage = new Date(p.lastContactDate);
+      return p.status === 'seguimiento' && 
              lastMessage >= yesterday && 
-             lastMessage < now &&
-             p.status === 'contacted';
+             lastMessage < now;
     });
 
     // Prospectos específicos para estadísticas SEMANA
     const weekNewProspects = prospects.filter(p => {
-      const contactDate = new Date(p.first_contact_date);
-      return contactDate >= sevenDaysAgo && p.status === 'new';
+      const contactDate = new Date(p.firstContactDate);
+      return contactDate >= sevenDaysAgo && p.status === 'esperando_respuesta';
     });
 
     const weekFollowUps = prospects.filter(p => {
-      const lastMessage = new Date(p.last_message_date);
-      return !p.last_message_from_prospect && 
-             lastMessage >= sevenDaysAgo &&
-             p.status === 'contacted';
+      const lastMessage = new Date(p.lastContactDate);
+      return p.status === 'seguimiento' && 
+             lastMessage >= sevenDaysAgo;
     });
 
     // Estadísticas para AYER
@@ -527,23 +510,23 @@ const TasksToDo: React.FC = () => {
     const interactionTipKey = `interaction-${prospect.id}`;
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
-    console.log('Rendering ProspectCard for:', prospect.username, 'Task type:', taskType);
+    console.log('Rendering ProspectCard for:', prospect.userName, 'Task type:', taskType);
     console.log('Is interaction tip active?', isInteractionTipActive);
     
     return (
       <div 
         className={`bg-gradient-to-r from-white to-blue-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}
-        onClick={() => openOnboarding(prospect.username, 'outreach')}
+        onClick={() => openOnboarding(prospect.userName, 'outreach')}
       >
         {/* Información principal del prospecto */}
         <div className="flex items-center justify-between p-6 bg-white rounded-xl border border-gray-100">
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
             <Avatar className="h-8 w-8 sm:h-12 sm:w-12 flex-shrink-0">
-              <AvatarImage src={prospect.profile_picture_url || ''} />
-              <AvatarFallback className="text-xs sm:text-sm">{prospect.username[0]?.toUpperCase()}</AvatarFallback>
+              <AvatarImage src={prospect.avatar || ''} />
+              <AvatarFallback className="text-xs sm:text-sm">{prospect.userName[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-sm sm:text-base truncate">@{prospect.username}</p>
+              <p className="font-semibold text-sm sm:text-base truncate">@{prospect.userName}</p>
             </div>
           </div>
           {/* Botón de tips de interacción solo para seguimientos */}
@@ -580,7 +563,7 @@ const TasksToDo: React.FC = () => {
                 }}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-blue-800 text-sm font-mono">💡 Cómo interactuar con @{prospect.username}:</h4>
+                  <h4 className="font-bold text-blue-800 text-sm font-mono">💡 Cómo interactuar con @{prospect.userName}:</h4>
                   <button 
                     onClick={() => setActiveInteractionTip(null)}
                     className="text-blue-600 hover:text-blue-800 transition-colors"
