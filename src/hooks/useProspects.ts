@@ -578,36 +578,37 @@ export const useProspects = (currentInstagramUserId?: string) => {
             
             const newMessage = payload.new as any;
             
-            // 🔥 FILTRAR EN EL CLIENTE: Solo procesar si es relacionado conmigo
-            const isMessageFromMe = newMessage.message_type === 'sent' && newMessage.instagram_user_id === userUUID;
-            const isMessageToMe = newMessage.message_type === 'received' && newMessage.instagram_user_id === userUUID;
+            // 🔥 LÓGICA CORREGIDA: Usar raw_data que tiene los IDs correctos
             
-            // Para mensajes enviados por mí, verificar tanto recipient como sender
-            // (Instagram puede marcar de diferentes formas según el webhook)
+            // Para mensajes enviados POR MÍ: verificar en raw_data.sender.id
             const isMessageSentByMe = newMessage.message_type === 'received' && 
-                                    (newMessage.raw_data?.recipient?.id === userData.instagram_user_id ||
-                                     newMessage.raw_data?.sender?.id === userData.instagram_user_id);
+                                    newMessage.raw_data?.sender?.id === userData.instagram_user_id;
             
-            console.log('🔍 [REALTIME] Verificando tipo de mensaje:', {
-              'mi UUID': userUUID,
-              'mi instagram_id': userData.instagram_user_id,
-              'mensaje UUID': newMessage.instagram_user_id,
-              'message_type': newMessage.message_type,
-              'recipient_id': newMessage.raw_data?.recipient?.id,
-              'sender_id': newMessage.raw_data?.sender?.id,
-              'isMessageFromMe': isMessageFromMe,
-              'isMessageToMe': isMessageToMe,
-              'isMessageSentByMe': isMessageSentByMe,
-              'COMPARANDO recipient_id con mi instagram_id': newMessage.raw_data?.recipient?.id === userData.instagram_user_id,
+            // Para mensajes recibidos POR MÍ: verificar en raw_data.recipient.id  
+            const isMessageReceivedByMe = newMessage.message_type === 'received' && 
+                                        newMessage.raw_data?.recipient?.id === userData.instagram_user_id;
+            
+            console.log('🔍 [REALTIME] LÓGICA CORREGIDA - Verificando mensaje:', {
+              'MI Instagram ID': userData.instagram_user_id,
+              'MI UUID': userUUID,
+              'raw_data.sender.id': newMessage.raw_data?.sender?.id,
+              'raw_data.recipient.id': newMessage.raw_data?.recipient?.id,
+              'Mensaje sender_id (BD)': newMessage.sender_id,
+              'Mensaje recipient_id (BD)': newMessage.recipient_id,
+              'Mensaje message_type': newMessage.message_type,
+              '🚀 ES MENSAJE ENVIADO POR MÍ': isMessageSentByMe,
+              '📨 ES MENSAJE RECIBIDO POR MÍ': isMessageReceivedByMe,
+              'COMPARACIÓN SEND': newMessage.raw_data?.sender?.id === userData.instagram_user_id,
+              'COMPARACIÓN RECEIVE': newMessage.raw_data?.recipient?.id === userData.instagram_user_id,
               'usuario': userData.username
             });
             
-            if (isMessageToMe) {
+            if (isMessageReceivedByMe) {
               console.log('✅ [REALTIME] ES MI MENSAJE RECIBIDO - actualizando prospectos...');
               setTimeout(() => {
                 fetchProspects();
               }, 500);
-            } else if (isMessageFromMe || isMessageSentByMe) {
+            } else if (isMessageSentByMe) {
               console.log('✅ [REALTIME] ES MI MENSAJE ENVIADO - actualizando prospecto específico...');
               
               // Identificar el prospecto específico que recibió el mensaje
