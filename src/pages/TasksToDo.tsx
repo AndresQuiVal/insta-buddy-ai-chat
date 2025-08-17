@@ -141,9 +141,6 @@ const TasksToDo: React.FC = () => {
   // Limpiar tareas completadas cuando los prospectos responden
   useEffect(() => {
     if (realProspects.length > 0) {
-      const prospectsToUntick: {[key: string]: boolean} = {};
-      let hasChanges = false;
-
       realProspects.forEach(prospect => {
         // Si el prospecto está en pending (acaba de responder), limpiar todas sus marcas de completado
         if (prospect.state === 'pending') {
@@ -165,7 +162,17 @@ const TasksToDo: React.FC = () => {
         }
       });
     }
-  }, [realProspects]); // Removí completedTasks de las dependencias para evitar bucle
+  }, [realProspects]);
+
+  // Función para refrescar manualmente los datos
+  const handleRefreshData = async () => {
+    console.log('🔄 Refrescando datos manualmente...');
+    await refetch();
+    toast({
+      title: "Datos actualizados",
+      description: "La lista de prospectos se ha actualizado"
+    });
+  };
 
 
   // Cargar nombre de lista personalizado
@@ -1101,7 +1108,17 @@ const TasksToDo: React.FC = () => {
                 </div>
                 
                 {/* Estadísticas - Aparece arriba del título cuando se hace click */}
-                {showStats && (
+          {/* Aviso sobre sincronización manual */}
+          {prospectsClassification.pendingResponses.hower.length + prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length + prospectsClassification.pendingResponses.ads.length > 0 && (
+            <Alert className="mb-6 border-blue-200 bg-blue-50">
+              <RefreshCw className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                💡 <strong>Importante:</strong> Si respondes a un prospecto desde Instagram directamente, haz clic en el botón <strong>"Sincronizar"</strong> para actualizar el estado aquí.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {showStats && (
                   <div className="mb-6">
                     <div 
                       className="bg-white rounded-xl shadow-lg border-l-4 border-blue-400 p-4 sm:p-6"
@@ -1445,18 +1462,27 @@ const TasksToDo: React.FC = () => {
                     
                     {/* 🔥 BOTÓN DE DEBUG PARA REFRESCAR MANUALMENTE */}
                     <Button 
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
                         console.log('🔄 [DEBUG] Refrescando manualmente...');
                         console.log('🔄 [DEBUG] Estado actual de prospectos:', realProspects.length);
-                        refetch();
+                        
+                        // Forzar refetch
+                        await refetch();
+                        
+                        // Mostrar toast con información
+                        toast({
+                          title: "📱 Datos sincronizados",
+                          description: `Actualizados ${realProspects.length} prospectos desde Instagram`,
+                        });
                       }}
                       variant="outline" 
                       size="sm"
                       className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                      title="Haz clic después de responder en Instagram para sincronizar"
                     >
                       <RefreshCw className="h-3 w-3 mr-1" />
-                      <span className="text-xs">🔄</span>
+                      <span className="text-xs">Sincronizar</span>
                     </Button>
                     
                     {(prospectsClassification.pendingResponses.hower.length + prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length + prospectsClassification.pendingResponses.ads.length) > 0 && (
