@@ -580,63 +580,17 @@ const TasksToDo: React.FC = () => {
     const isFollowUpProspect = taskType === 'yesterday' || taskType === 'week';
     const interactionTipKey = `interaction-${prospect.id}`;
 
-    // ✅ NUEVA FUNCIÓN: Marcar que ya respondiste manualmente
-    const markAsResponded = async () => {
-      if (!currentUser) return;
-      
-      try {
-        // Crear un mensaje "sent" ficticio para que aparezca como respondido
-        const { error } = await supabase
-          .from('instagram_messages')
-          .insert({
-            instagram_user_id: currentUser.id,
-            instagram_message_id: `manual_response_${Date.now()}_${prospect.id}`,
-            sender_id: currentUser.instagram_user_id,
-            recipient_id: prospect.id,
-            message_text: '[Respuesta manual enviada desde Instagram]',
-            message_type: 'sent',
-            timestamp: new Date().toISOString(),
-            raw_data: {
-              manual_response: true,
-              marked_at: new Date().toISOString(),
-              webhook_source: 'manual_mark'
-            }
-          });
-
-        if (error) {
-          console.error('Error marcando como respondido:', error);
-          toast({
-            title: "Error",
-            description: "No se pudo marcar como respondido",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        // Marcar como completado y actualizar datos
-        setCompletedTasks(prev => ({ ...prev, [taskKey]: true }));
-        
-        // 🔥 FORZAR ACTUALIZACIÓN INMEDIATA de los prospectos
-        setTimeout(() => {
-          refetch();
-        }, 1500); // Dar más tiempo para que se procese en la base de datos
-        
-        toast({
-          title: "✅ Marcado como respondido",
-          description: `${prospect.userName} se moverá a "En seguimiento"`,
-          duration: 3000,
-        });
-
-      } catch (error) {
-        console.error('Error marcando prospecto:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo procesar la acción",
-          variant: "destructive"
-        });
-      }
-    };
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
+
+    // 🔥 DETECCIÓN AUTOMÁTICA: Si el último mensaje lo envié YO, marcar como completado
+    const realProspectData = realProspects.find(rp => rp.senderId === prospect.id);
+    const shouldAutoComplete = realProspectData && realProspectData.lastMessageType === 'sent';
+    
+    // Auto-completar si detectamos que ya respondí
+    if (shouldAutoComplete && !completedTasks[taskKey] && taskType === 'pending') {
+      console.log(`✅ [AUTO-COMPLETE] Marcando como completado automáticamente: ${prospect.userName}`);
+      setCompletedTasks(prev => ({ ...prev, [taskKey]: true }));
+    }
 
     console.log('Rendering ProspectCard for:', prospect.userName, 'Task type:', taskType);
     console.log('Is interaction tip active?', isInteractionTipActive);
@@ -658,26 +612,8 @@ const TasksToDo: React.FC = () => {
             </div>
           </div>
           
-          {/* Botones de acción */}
+          {/* Solo botón de tips de interacción para seguimientos */}
           <div className="flex space-x-2 flex-shrink-0">
-            {/* Botón para marcar como respondido - SOLO en prospectos pendientes */}
-            {taskType === 'pending' && !isCompleted && (
-              <Button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  markAsResponded();
-                }}
-                size="sm"
-                variant="outline"
-                className="text-xs sm:text-sm bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
-              >
-                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                <span className="hidden sm:inline">Ya respondí</span>
-                <span className="sm:hidden">✅</span>
-              </Button>
-            )}
-            
-            {/* Botón de tips de interacción solo para seguimientos */}
             {isFollowUpProspect && (
               <Button 
                 onClick={(e) => {
