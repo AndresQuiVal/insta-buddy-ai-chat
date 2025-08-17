@@ -574,7 +574,9 @@ export const useProspects = (currentInstagramUserId?: string) => {
             // SIN filtro - todos los usuarios escuchan todos los mensajes
           },
           (payload) => {
-            console.log('📨 [REALTIME] Nuevo mensaje detectado globalmente:', payload.new);
+            console.log('📨 [REALTIME] ===== MENSAJE DETECTADO =====');
+            console.log('🔍 [REALTIME] Payload completo:', payload);
+            console.log('🔍 [REALTIME] Nuevo mensaje raw:', payload.new);
             
             const newMessage = payload.new as any;
             
