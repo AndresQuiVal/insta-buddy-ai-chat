@@ -147,13 +147,14 @@ export const useProspects = (currentInstagramUserId?: string) => {
       if (message.raw_data) {
         console.log(`🔍 Analizando raw_data:`, JSON.stringify(message.raw_data, null, 2));
         
-        // PRIORIDAD 1: Detectar comentarios (muy específico)
-        if (message.raw_data.post_id || 
+        // PRIORIDAD 1: Detectar comentarios (webhook_source = 'comments' O tiene post_id/comment_id)
+        if (message.raw_data.webhook_source === 'comments' ||
+            message.raw_data.post_id || 
             message.raw_data.comment_id ||
             message.raw_data.original_event?.comment_id ||
             message.raw_data.original_change?.comment_id ||
             message.raw_data.entry?.[0]?.changes?.[0]?.value?.comment_id) {
-          console.log(`✅ Fuente: COMMENT (detectado por post_id/comment_id en raw_data)`);
+          console.log(`✅ Fuente: COMMENT (detectado por webhook_source=comments o post_id/comment_id)`);
           return 'comment';
         }
 

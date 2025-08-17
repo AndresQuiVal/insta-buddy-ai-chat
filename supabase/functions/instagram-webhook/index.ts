@@ -914,6 +914,49 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
     return
   }
 
+  // ✅ NUEVO: GUARDAR COMENTARIO EN instagram_messages PARA QUE APAREZCA EN TASKS
+  console.log('💾 ===== GUARDANDO COMENTARIO EN instagram_messages =====')
+  
+  try {
+    // Buscar usuario de Instagram
+    const { data: instagramUser, error: userError } = await supabase
+      .from('instagram_users')
+      .select('*')
+      .eq('instagram_user_id', instagramAccountId)
+      .eq('is_active', true)
+      .single()
+
+    if (!userError && instagramUser) {
+      const { error: saveCommentError } = await supabase
+        .from('instagram_messages')
+        .insert({
+          instagram_user_id: instagramUser.id,
+          instagram_message_id: commentId,
+          sender_id: commenterId,
+          recipient_id: instagramAccountId,
+          message_text: commentText || '',
+          message_type: 'received',
+          timestamp: new Date().toISOString(),
+          raw_data: {
+            ...commentData,
+            webhook_source: 'comments',
+            post_id: mediaId,
+            comment_id: commentId,
+            commenter_username: commenterUsername,
+            processed_at: new Date().toISOString()
+          }
+        })
+
+      if (saveCommentError) {
+        console.error('❌ Error guardando comentario en instagram_messages:', saveCommentError)
+      } else {
+        console.log('✅ Comentario guardado en instagram_messages')
+      }
+    }
+  } catch (commentSaveError) {
+    console.error('💥 Error guardando comentario:', commentSaveError)
+  }
+
   console.log('🔍 ===== BUSCANDO AUTORESPONDER DE COMENTARIOS =====')
 
   // PASO 1: Buscar autoresponders específicos del post
