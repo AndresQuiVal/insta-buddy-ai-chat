@@ -628,6 +628,63 @@ const TasksToDo: React.FC = () => {
     const isCompleted = completedTasks[taskKey];
     const isFollowUpProspect = taskType === 'yesterday' || taskType === 'week';
     const interactionTipKey = `interaction-${prospect.id}`;
+
+    // ✅ NUEVA FUNCIÓN: Marcar que ya respondiste manualmente
+    const markAsResponded = async () => {
+      if (!currentUser) return;
+      
+      try {
+        // Crear un mensaje "sent" ficticio para que aparezca como respondido
+        const { error } = await supabase
+          .from('instagram_messages')
+          .insert({
+            instagram_user_id: currentUser.id,
+            instagram_message_id: `manual_response_${Date.now()}_${prospect.id}`,
+            sender_id: currentUser.instagram_user_id,
+            recipient_id: prospect.id,
+            message_text: '[Respuesta manual enviada desde Instagram]',
+            message_type: 'sent',
+            timestamp: new Date().toISOString(),
+            raw_data: {
+              manual_response: true,
+              marked_at: new Date().toISOString(),
+              webhook_source: 'manual_mark'
+            }
+          });
+
+        if (error) {
+          console.error('Error marcando como respondido:', error);
+          toast({
+            title: "Error",
+            description: "No se pudo marcar como respondido",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Marcar como completado y actualizar datos
+        setCompletedTasks(prev => ({ ...prev, [taskKey]: true }));
+        
+        // Refrescar datos
+        setTimeout(() => {
+          refetch();
+        }, 500);
+        
+        toast({
+          title: "✅ Marcado como respondido",
+          description: `${prospect.userName} se moverá a "En seguimiento"`,
+          duration: 3000,
+        });
+
+      } catch (error) {
+        console.error('Error marcando prospecto:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo procesar la acción",
+          variant: "destructive"
+        });
+      }
+    };
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
     console.log('Rendering ProspectCard for:', prospect.userName, 'Task type:', taskType);
@@ -649,9 +706,28 @@ const TasksToDo: React.FC = () => {
               <p className="font-semibold text-sm sm:text-base truncate">@{prospect.userName}</p>
             </div>
           </div>
-          {/* Botón de tips de interacción solo para seguimientos */}
-          {isFollowUpProspect && (
-            <div className="flex space-x-2 flex-shrink-0">
+          
+          {/* Botones de acción */}
+          <div className="flex space-x-2 flex-shrink-0">
+            {/* Botón para marcar como respondido - SOLO en prospectos pendientes */}
+            {taskType === 'pending' && !isCompleted && (
+              <Button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markAsResponded();
+                }}
+                size="sm"
+                variant="outline"
+                className="text-xs sm:text-sm bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+              >
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="hidden sm:inline">Ya respondí</span>
+                <span className="sm:hidden">✅</span>
+              </Button>
+            )}
+            
+            {/* Botón de tips de interacción solo para seguimientos */}
+            {isFollowUpProspect && (
               <Button 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -666,8 +742,8 @@ const TasksToDo: React.FC = () => {
                 <span className="hidden sm:inline">¿Cómo aumento respuesta?</span>
                 <span className="sm:hidden">📈</span>
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Tip de interacción - SOLO aparece cuando se hace click */}
