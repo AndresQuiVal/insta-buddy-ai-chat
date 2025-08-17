@@ -82,6 +82,36 @@ export const useInstagramUsers = () => {
           .select('instagram_user_id, username');
         console.log('📊 Usuarios en BD:', allUsers);
         
+        // 🔄 NUEVO: Verificar si hay un usuario con el mismo username pero diferente ID
+        if (userData.instagram?.username) {
+          const { data: userByUsername } = await supabase
+            .from('instagram_users')
+            .select('*')
+            .eq('username', userData.instagram.username)
+            .maybeSingle();
+          
+          if (userByUsername) {
+            console.log('🔄 [FIX] Usuario encontrado por username con ID diferente:', userByUsername);
+            console.log(`🔄 [FIX] Actualizando localStorage: ${instagramUserId} → ${userByUsername.instagram_user_id}`);
+            
+            // Actualizar los datos en localStorage con el ID correcto
+            const updatedUserData = {
+              ...userData,
+              instagram: {
+                ...userData.instagram,
+                id: userByUsername.instagram_user_id
+              }
+            };
+            
+            localStorage.setItem('hower-instagram-user', JSON.stringify(updatedUserData));
+            
+            console.log('✅ [FIX] LocalStorage actualizado con ID correcto');
+            setCurrentUser(userByUsername);
+            
+            return; // Salir temprano porque encontramos y actualizamos
+          }
+        }
+        
         setCurrentUser(null);
       }
 

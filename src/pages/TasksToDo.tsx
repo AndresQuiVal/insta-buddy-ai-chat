@@ -1172,8 +1172,40 @@ const TasksToDo: React.FC = () => {
                 </div>
                 
                 {/* Estadísticas - Aparece arriba del título cuando se hace click */}
+          {/* Aviso crítico sobre ID incorrecto */}
+          {currentUser && currentUser.instagram_user_id === '17841475990037083' && (
+            <Alert className="mb-6 border-red-200 bg-red-50">
+              <RefreshCw className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                <div className="space-y-2">
+                  <div><strong>🚨 PROBLEMA DETECTADO:</strong> Tu ID de Instagram está desactualizado</div>
+                  <div className="text-sm">Los mensajes de Instagram no se sincronizan porque el ID cambió. Necesitas re-autenticarte.</div>
+                  <button 
+                    onClick={() => {
+                      // Limpiar localStorage y redirigir
+                      localStorage.removeItem('hower-instagram-user');
+                      toast({
+                        title: "Cache limpiado",
+                        description: "Redirigiendo para re-autenticación...",
+                      });
+                      setTimeout(() => {
+                        window.location.href = '/';
+                      }, 1000);
+                    }}
+                    className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+                  >
+                    ✅ Arreglar - Re-autenticar ahora
+                  </button>
+                  <div className="text-xs text-red-600 mt-1">
+                    ID actual: {currentUser.instagram_user_id} → Debe ser: 739714722170459
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Aviso sobre múltiples cuentas y sincronización */}
-          {currentUser && (
+          {currentUser && currentUser.instagram_user_id !== '17841475990037083' && (
             <Alert className="mb-6 border-amber-200 bg-amber-50">
               <RefreshCw className="h-4 w-4 text-amber-600" />
               <AlertDescription className="text-amber-800">
