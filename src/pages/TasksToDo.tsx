@@ -138,47 +138,42 @@ const TasksToDo: React.FC = () => {
     }
   }, [currentUser]);
 
-  // Limpiar tareas completadas cuando los prospectos responden
+  // LÓGICA SIMPLE: Sincronizar estado de tachado/destachado basado en el último mensaje
   useEffect(() => {
-    console.log('🔍 [DESTACHAR] Revisando si hay que destachar prospectos...');
-    console.log('🔍 [DESTACHAR] Prospectos actuales:', realProspects.length);
+    console.log('🔄 [SYNC] Sincronizando estados de tachado/destachado...');
     
     if (realProspects.length > 0) {
       realProspects.forEach(prospect => {
-        console.log(`🔍 [DESTACHAR] Prospecto ${prospect.username}:`, {
-          state: prospect.state,
-          senderId: prospect.senderId,
+        const taskKey = `pending-${prospect.senderId}`;
+        const lastMessageWasSentByMe = prospect.lastMessageType === 'sent';
+        const lastMessageWasReceivedByMe = prospect.lastMessageType === 'received';
+        const currentlyCompleted = completedTasks[taskKey] || false;
+        
+        console.log(`🔍 [SYNC] ${prospect.username}:`, {
           lastMessageType: prospect.lastMessageType,
-          lastMessageTime: prospect.lastMessageTime
+          shouldBeTicked: lastMessageWasSentByMe,
+          currentlyTicked: currentlyCompleted,
+          state: prospect.state
         });
         
-        // Si el prospecto está en pending (acaba de responder), limpiar todas sus marcas de completado
-        if (prospect.state === 'pending') {
-          console.log(`🔄 [DESTACHAR] ${prospect.username} está en PENDING - revisando si estaba tachado...`);
-          
-          const taskTypes = ['pending', 'yesterday', 'week', 'new'];
-          
-          taskTypes.forEach(type => {
-            const taskKey = `${type}-${prospect.senderId}`;
-            
-            setCompletedTasks(prev => {
-              if (prev[taskKey]) {
-                console.log(`✅ [DESTACHAR] DESTACHANDO ${prospect.username} de ${type} (prospecto respondió o cambió de estado)`);
-                const updated = { ...prev };
-                delete updated[taskKey]; // Remover la marca de completado
-                return updated;
-              } else {
-                console.log(`ℹ️ [DESTACHAR] ${prospect.username} en ${type} no estaba tachado`);
-                return prev;
-              }
-            });
+        // REGLA 1: Si YO envié el último mensaje = DEBE ESTAR TACHADO
+        if (lastMessageWasSentByMe && !currentlyCompleted) {
+          console.log(`✅ [SYNC] TACHANDO ${prospect.username} (yo envié el último mensaje)`);
+          setCompletedTasks(prev => ({ ...prev, [taskKey]: true }));
+        }
+        
+        // REGLA 2: Si YO recibí el último mensaje = NO DEBE ESTAR TACHADO  
+        if (lastMessageWasReceivedByMe && currentlyCompleted) {
+          console.log(`🔄 [SYNC] DESTACHANDO ${prospect.username} (él envió el último mensaje)`);
+          setCompletedTasks(prev => {
+            const updated = { ...prev };
+            delete updated[taskKey];
+            return updated;
           });
-        } else {
-          console.log(`ℹ️ [DESTACHAR] ${prospect.username} NO está en pending (estado: ${prospect.state})`);
         }
       });
     }
-  }, [realProspects]);
+  }, [realProspects]); // Solo depende de realProspects
 
   // Función para refrescar manualmente los datos
   const handleRefreshData = async () => {
@@ -656,32 +651,10 @@ const TasksToDo: React.FC = () => {
 
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
-    // 🔥 LÓGICA MEJORADA: Auto-completar cuando corresponde
-    const realProspectData = realProspects.find(rp => rp.senderId === prospect.id);
+    // LÓGICA ELIMINADA: Ya no hacemos auto-complete aquí
+    // La sincronización se maneja en el useEffect principal
     
-    console.log(`🔍 [AUTO-COMPLETE] Analizando ${prospect.userName}:`, {
-      hasRealData: !!realProspectData,
-      lastMessageType: realProspectData?.lastMessageType,
-      prospectState: realProspectData?.state,
-      taskType: taskType,
-      alreadyCompleted: !!completedTasks[taskKey]
-    });
-    
-    // REGLA: Si el último mensaje lo envié YO ('sent'), debería estar tachado
-    const shouldAutoComplete = realProspectData && realProspectData.lastMessageType === 'sent';
-    
-    // Auto-completar si detectamos que ya respondí
-    if (shouldAutoComplete && !completedTasks[taskKey]) {
-      console.log(`✅ [AUTO-COMPLETE] Marcando como completado automáticamente: ${prospect.userName} (último mensaje enviado por mí)`);
-      setCompletedTasks(prev => ({ ...prev, [taskKey]: true }));
-    } else if (shouldAutoComplete && completedTasks[taskKey]) {
-      console.log(`ℹ️ [AUTO-COMPLETE] ${prospect.userName} ya estaba marcado como completado`);
-    } else if (!shouldAutoComplete && realProspectData) {
-      console.log(`ℹ️ [AUTO-COMPLETE] ${prospect.userName} NO debe estar completado (último mensaje: ${realProspectData.lastMessageType})`);
-    }
-
     console.log('Rendering ProspectCard for:', prospect.userName, 'Task type:', taskType);
-    console.log('Is interaction tip active?', isInteractionTipActive);
     
     return (
       <div 
