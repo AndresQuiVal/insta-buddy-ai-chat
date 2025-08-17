@@ -656,21 +656,28 @@ const TasksToDo: React.FC = () => {
 
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
-    // 🔥 LÓGICA CORREGIDA: No auto-completar prospectos en 'pending' 
-    // porque 'pending' significa que ELLOS me escribieron (necesito responder)
+    // 🔥 LÓGICA MEJORADA: Auto-completar cuando corresponde
     const realProspectData = realProspects.find(rp => rp.senderId === prospect.id);
     
-    // Solo auto-completar si:
-    // 1. El último mensaje lo envié YO ('sent')
-    // 2. Y el prospecto NO está en estado 'pending' (porque pending = ellos me escribieron)
-    const shouldAutoComplete = realProspectData && 
-      realProspectData.lastMessageType === 'sent' && 
-      realProspectData.state !== 'pending';
+    console.log(`🔍 [AUTO-COMPLETE] Analizando ${prospect.userName}:`, {
+      hasRealData: !!realProspectData,
+      lastMessageType: realProspectData?.lastMessageType,
+      prospectState: realProspectData?.state,
+      taskType: taskType,
+      alreadyCompleted: !!completedTasks[taskKey]
+    });
     
-    // Auto-completar solo en casos válidos (no pending)
-    if (shouldAutoComplete && !completedTasks[taskKey] && taskType !== 'pending') {
+    // REGLA: Si el último mensaje lo envié YO ('sent'), debería estar tachado
+    const shouldAutoComplete = realProspectData && realProspectData.lastMessageType === 'sent';
+    
+    // Auto-completar si detectamos que ya respondí
+    if (shouldAutoComplete && !completedTasks[taskKey]) {
       console.log(`✅ [AUTO-COMPLETE] Marcando como completado automáticamente: ${prospect.userName} (último mensaje enviado por mí)`);
       setCompletedTasks(prev => ({ ...prev, [taskKey]: true }));
+    } else if (shouldAutoComplete && completedTasks[taskKey]) {
+      console.log(`ℹ️ [AUTO-COMPLETE] ${prospect.userName} ya estaba marcado como completado`);
+    } else if (!shouldAutoComplete && realProspectData) {
+      console.log(`ℹ️ [AUTO-COMPLETE] ${prospect.userName} NO debe estar completado (último mensaje: ${realProspectData.lastMessageType})`);
     }
 
     console.log('Rendering ProspectCard for:', prospect.userName, 'Task type:', taskType);
