@@ -1116,38 +1116,6 @@ const TasksToDo: React.FC = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver a Prospectos
           </Button>
-          
-          {/* Usuario Instagram Info */}
-          <div className="mb-6 bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-400">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <Instagram className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Conectado como</p>
-                  <p className="font-semibold text-gray-800">@{currentUser?.username}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                  ✅ Activo
-                </Badge>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    console.log('🔄 Refrescando prospectos manualmente...');
-                    refetch();
-                  }}
-                  className="h-8 px-3 text-xs"
-                >
-                  🔄 Actualizar
-                </Button>
-              </div>
-            </div>
-          </div>
-          
           {/* Notebook Style Header */}
           <div className="relative">
             <div 
@@ -2068,6 +2036,15 @@ const TasksToDo: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Conectado como - Simplificado */}
+      {currentUser && (
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-500">
+            Conectado como @{currentUser.username}
+          </p>
+        </div>
+      )}
       
       {/* Botón de Debug */}
       <div className="fixed bottom-4 right-4 z-50">
