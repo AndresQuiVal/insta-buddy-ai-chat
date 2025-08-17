@@ -259,10 +259,48 @@ const ProspectCRM = () => {
     }
   };
 
+  // Función para eliminar prospecto
+  const handleDeleteProspect = async (prospectId: string, prospectUsername: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Evitar que se abra el dialog de contacto
+    
+    try {
+      const { error } = await supabase
+        .from('prospects')
+        .delete()
+        .eq('id', prospectId);
+      
+      if (error) {
+        console.error('Error eliminando prospecto:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar el prospecto",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Actualizar el estado local
+      setProspects(prospects.filter(p => p.id !== prospectId));
+      
+      toast({
+        title: "Prospecto eliminado",
+        description: `@${prospectUsername} ha sido eliminado de la lista`,
+      });
+      
+    } catch (error) {
+      console.error('Error eliminando prospecto:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el prospecto",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Componente de tarjeta de prospecto
   const ProspectCard = ({ prospect }: { prospect: ProspectData }) => (
     <Card 
-      className="mb-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary/20"
+      className="mb-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary/20 group"
       onClick={() => setSelectedProspect(prospect)}
     >
       <CardContent className="p-4">
@@ -277,6 +315,14 @@ const ProspectCRM = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-semibold text-sm truncate">@{prospect.username}</h4>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                onClick={(e) => handleDeleteProspect(prospect.id, prospect.username, e)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
             </div>
             
             {prospect.autoresponder_name && (
