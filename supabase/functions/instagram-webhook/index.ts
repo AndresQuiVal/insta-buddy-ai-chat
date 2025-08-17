@@ -155,6 +155,23 @@ serve(async (req) => {
         } catch (error) {
           console.error('❌ Error en RPC update_prospect_activity:', error)
         }
+
+        // 🔥 NUEVO: Actualizar timestamp del último mensaje del dueño
+        try {
+          const { error: timestampError } = await supabase.rpc('update_prospect_owner_message_timestamp', {
+            p_instagram_user_id: instagramUser.id,
+            p_prospect_instagram_id: recipientId,
+            p_is_from_owner: true
+          })
+          
+          if (timestampError) {
+            console.error('❌ Error actualizando timestamp del dueño:', timestampError)
+          } else {
+            console.log('✅ Timestamp del último mensaje del dueño actualizado')
+          }
+        } catch (error) {
+          console.error('❌ Error en RPC update_prospect_owner_message_timestamp:', error)
+        }
       }
     }
 
@@ -401,6 +418,23 @@ serve(async (req) => {
               }
             } catch (error) {
               console.error('❌ Error en RPC update_prospect_activity:', error)
+            }
+
+            // 🔥 NUEVO: Limpiar timestamp del último mensaje del dueño (el prospecto respondió)
+            try {
+              const { error: timestampError } = await supabase.rpc('update_prospect_owner_message_timestamp', {
+                p_instagram_user_id: instagramUser.id,
+                p_prospect_instagram_id: senderId,
+                p_is_from_owner: false // El prospecto respondió, limpiar timestamp del dueño
+              })
+              
+              if (timestampError) {
+                console.error('❌ Error limpiando timestamp del dueño:', timestampError)
+              } else {
+                console.log('✅ Timestamp del último mensaje del dueño limpiado (prospecto respondió)')
+              }
+            } catch (error) {
+              console.error('❌ Error en RPC update_prospect_owner_message_timestamp (limpiar):', error)
             }
 
             // 🎯 SINCRONIZAR ESTADO DE TAREA - MENSAJE RECIBIDO = DESTACHADO

@@ -32,95 +32,84 @@ export const useProspects = (currentInstagramUserId?: string) => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const determineProspectState = (messages: InstagramMessage[], senderId: string, currentUserId: string): { state: 'pending' | 'yesterday' | 'week' | 'invited', daysSinceLastSent?: number, lastSentMessageTime?: string } => {
-    console.log(`🔍 [${senderId.slice(-8)}] Determinando estado con ${messages.length} mensajes`);
+  const determineProspectState = (prospect: any): { state: 'pending' | 'yesterday' | 'week' | 'invited', daysSinceLastSent?: number, lastSentMessageTime?: string } => {
+    const senderId = prospect.prospect_instagram_id;
     
-    if (messages.length === 0) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (sin mensajes)`);
-      return { state: 'pending' };
-    }
-
-    // Filtrar y validar mensajes solo de este prospecto
-    const validMessages = messages.filter(msg => msg.sender_id === senderId || msg.recipient_id === senderId);
-    console.log(`📊 [${senderId.slice(-8)}] Mensajes válidos: ${validMessages.length}/${messages.length}`);
-
-    // Ordenar mensajes por timestamp para este prospecto específico
-    const sortedMessages = validMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    
-    if (sortedMessages.length === 0) {
-      return { state: 'pending' };
-    }
-    
-    const lastMessage = sortedMessages[sortedMessages.length - 1];
-
-    console.log(`🔍 [${senderId.slice(-8)}] Último mensaje:`, {
-      type: lastMessage.message_type,
-      time: lastMessage.timestamp,
-      text: lastMessage.message_text?.substring(0, 30) + '...'
+    console.log(`🔍 [${senderId.slice(-8)}] Analizando prospecto:`, {
+      last_owner_message_at: prospect.last_owner_message_at,
+      last_message_from_prospect: prospect.last_message_from_prospect,
+      messages_count: prospect.messages?.length || 0
     });
 
-    // Verificar si hay invitaciones enviadas
-    const hasInvitation = validMessages.some(msg => msg.is_invitation === true && msg.message_type === 'sent');
-    if (hasInvitation) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: INVITED (hay invitación enviada)`);
-      return { state: 'invited' };
-    }
-
-    // 🔥 NUEVA LÓGICA: Si el último mensaje lo recibí (el prospecto me escribió) = SIEMPRE PENDING
-    if (lastMessage.message_type === 'received') {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (último mensaje es recibido - prospecto escribió)`);
-      return { state: 'pending' };
-    }
-
-    // 🔥 NUEVA LÓGICA: Si el último mensaje lo envié yo, verificar tiempo transcurrido
-    if (lastMessage.message_type === 'sent') {
-      const lastSentTime = new Date(lastMessage.timestamp).getTime();
-      const now = new Date().getTime();
-      const hoursSinceLastSent = (now - lastSentTime) / (1000 * 60 * 60);
-      const daysSinceLastSent = hoursSinceLastSent / 24;
-
-      console.log(`📊 [${senderId.slice(-8)}] Último mensaje enviado hace ${daysSinceLastSent.toFixed(1)} días (${hoursSinceLastSent.toFixed(1)} horas)`);
-
-      // Verificar si ya había una conversación previa (el prospecto había respondido antes)
-      const receivedMessages = validMessages.filter(msg => msg.message_type === 'received');
-      
-      console.log(`💬 [${senderId.slice(-8)}] Respuestas del prospecto: ${receivedMessages.length}`);
-
-      // Solo aplicar timer si ya había conversación previa (el prospecto me había respondido alguna vez)
-      if (receivedMessages.length > 0) {
-        // YA HABÍA CONVERSACIÓN - aplicar sistema de timer
-        if (daysSinceLastSent >= 7) {
-          console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (${daysSinceLastSent.toFixed(1)} días sin respuesta)`);
-          return { 
-            state: 'week', 
-            daysSinceLastSent: Math.floor(daysSinceLastSent),
-            lastSentMessageTime: lastMessage.timestamp 
-          };
-        } else if (daysSinceLastSent >= 1) {
-          console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (${daysSinceLastSent.toFixed(1)} días sin respuesta)`);
-          return { 
-            state: 'yesterday', 
-            daysSinceLastSent: Math.floor(daysSinceLastSent),
-            lastSentMessageTime: lastMessage.timestamp 
-          };
-        } else {
-          // Menos de 1 día desde mi último mensaje - temporalmente en PENDING
-          console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (esperando respuesta, < 1 día)`);
-          return { 
-            state: 'pending',
-            daysSinceLastSent: Math.floor(daysSinceLastSent),
-            lastSentMessageTime: lastMessage.timestamp 
-          };
-        }
-      } else {
-        // NO HABÍA CONVERSACIÓN PREVIA - el prospecto nunca ha respondido, siempre PENDING
-        console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (primera vez, nunca ha respondido)`);
-        return { state: 'pending' };
+    // Verificar si hay invitaciones enviadas (mantenemos esta lógica)
+    const messages = prospect.prospect_messages || prospect.messages || [];
+    if (messages.length > 0) {
+      const hasInvitation = messages.some((msg: any) => 
+        msg.is_invitation === true && msg.is_from_prospect === false
+      );
+      if (hasInvitation) {
+        console.log(`✅ [${senderId.slice(-8)}] Estado: INVITED (hay invitación enviada)`);
+        return { state: 'invited' };
       }
     }
 
-    console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (fallback)`);
-    return { state: 'pending' };
+    // 🔥 NUEVA LÓGICA: Si no tengo timestamp de último mensaje mío = PENDING
+    if (!prospect.last_owner_message_at) {
+      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (no hay timestamp de último mensaje del dueño)`);
+      return { state: 'pending' };
+    }
+
+    // 🔥 NUEVA LÓGICA: Si tengo timestamp pero el último mensaje es del prospecto = PENDING  
+    if (prospect.last_message_from_prospect) {
+      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (último mensaje es del prospecto)`);
+      return { state: 'pending' };
+    }
+
+    // 🔥 NUEVA LÓGICA: Si yo fui el último en escribir, verificar tiempo desde mi último mensaje
+    const lastOwnerMessageTime = new Date(prospect.last_owner_message_at).getTime();
+    const now = new Date().getTime();
+    const hoursSinceLastOwnerMessage = (now - lastOwnerMessageTime) / (1000 * 60 * 60);
+    const daysSinceLastOwnerMessage = hoursSinceLastOwnerMessage / 24;
+
+    console.log(`📊 [${senderId.slice(-8)}] Mi último mensaje hace ${daysSinceLastOwnerMessage.toFixed(1)} días`);
+
+    // Verificar si ya había conversación previa (el prospecto había respondido alguna vez)
+    const hadPreviousConversation = messages.length > 0 && 
+      messages.some((msg: any) => msg.is_from_prospect === true);
+      
+    console.log(`💬 [${senderId.slice(-8)}] ¿Había conversación previa? ${hadPreviousConversation}`);
+
+    // Solo aplicar timer si ya había conversación previa
+    if (hadPreviousConversation) {
+      // YA HABÍA CONVERSACIÓN - aplicar sistema de timer
+      if (daysSinceLastOwnerMessage >= 7) {
+        console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
+        return { 
+          state: 'week', 
+          daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
+          lastSentMessageTime: prospect.last_owner_message_at 
+        };
+      } else if (daysSinceLastOwnerMessage >= 1) {
+        console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
+        return { 
+          state: 'yesterday', 
+          daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
+          lastSentMessageTime: prospect.last_owner_message_at 
+        };
+      } else {
+        // Menos de 1 día desde mi último mensaje - temporalmente en PENDING
+        console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (esperando respuesta, < 1 día)`);
+        return { 
+          state: 'pending',
+          daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
+          lastSentMessageTime: prospect.last_owner_message_at 
+        };
+      }
+    } else {
+      // NO HABÍA CONVERSACIÓN PREVIA - el prospecto nunca ha respondido, siempre PENDING
+      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (primera vez, nunca ha respondido)`);
+      return { state: 'pending' };
+    }
   };
 
   const extractUsernameFromRawData = (messages: InstagramMessage[]): string | null => {
@@ -369,8 +358,24 @@ export const useProspects = (currentInstagramUserId?: string) => {
     
     const lastMessage = sortedMessages[0];
     
-    // Determinar estado basado SOLO en los mensajes de ESTE prospecto
-    const stateResult = determineProspectState(messagesForThisSender, senderId, currentInstagramUserId || '');
+    // Determinar estado basado en los mensajes - lógica simplificada temporal
+    let state: 'pending' | 'yesterday' | 'week' | 'invited' = 'pending';
+    let daysSinceLastSent: number | undefined = undefined;
+    let lastSentMessageTime: string | undefined = undefined;
+    
+    if (lastMessage.message_type === 'sent') {
+      const daysSince = (Date.now() - new Date(lastMessage.timestamp).getTime()) / (1000 * 60 * 60 * 24);
+      daysSinceLastSent = Math.floor(daysSince);
+      lastSentMessageTime = lastMessage.timestamp;
+      
+      if (daysSince >= 7) {
+        state = 'week';
+      } else if (daysSince >= 1) {
+        state = 'yesterday';
+      }
+    }
+    
+    const stateResult = { state, daysSinceLastSent, lastSentMessageTime };
     
     console.log(`🔍 [${senderId.slice(-8)}] Iniciando extracción de username...`);
     const username = await extractUsernameFromMessage(messagesForThisSender, senderId);
@@ -450,29 +455,11 @@ export const useProspects = (currentInstagramUserId?: string) => {
 
           const lastMessage = sortedMessages[0];
           
-          // Determinar estado basado en el estado de la BD y último mensaje
-          let state: 'pending' | 'yesterday' | 'week' | 'invited' = 'pending';
-          let daysSinceLastSent: number | undefined = undefined;
-          let lastSentMessageTime: string | undefined = undefined;
-
-          // Si el último mensaje es del prospecto -> PENDING
-          if (lastMessage.is_from_prospect) {
-            state = 'pending';
-          } else {
-            // El último mensaje es nuestro -> verificar tiempo
-            const lastSentTime = new Date(lastMessage.message_timestamp).getTime();
-            const now = new Date().getTime();
-            const daysSince = (now - lastSentTime) / (1000 * 60 * 60 * 24);
-            
-            daysSinceLastSent = Math.floor(daysSince);
-            lastSentMessageTime = lastMessage.message_timestamp;
-            
-            if (daysSince >= 7) {
-              state = 'week';
-            } else if (daysSince >= 1) {
-              state = 'yesterday';
-            }
-          }
+          // 🔥 NUEVA LÓGICA: Usar determineProspectState con los datos del prospecto
+          const stateResult = determineProspectState(prospectData);
+          const state = stateResult.state;
+          const daysSinceLastSent = stateResult.daysSinceLastSent;
+          const lastSentMessageTime = stateResult.lastSentMessageTime;
 
           // Determinar el tipo del último mensaje
           const lastMessageType = lastMessage.is_from_prospect ? 'received' : 'sent';

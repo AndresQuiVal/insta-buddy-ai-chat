@@ -1083,6 +1083,7 @@ export type Database = {
           instagram_user_id: string | null
           last_message_date: string
           last_message_from_prospect: boolean
+          last_owner_message_at: string | null
           media_count: number | null
           profile_picture_url: string | null
           prospect_instagram_id: string
@@ -1100,6 +1101,7 @@ export type Database = {
           instagram_user_id?: string | null
           last_message_date?: string
           last_message_from_prospect?: boolean
+          last_owner_message_at?: string | null
           media_count?: number | null
           profile_picture_url?: string | null
           prospect_instagram_id: string
@@ -1117,6 +1119,7 @@ export type Database = {
           instagram_user_id?: string | null
           last_message_date?: string
           last_message_from_prospect?: boolean
+          last_owner_message_at?: string | null
           media_count?: number | null
           profile_picture_url?: string | null
           prospect_instagram_id?: string
@@ -1319,6 +1322,14 @@ export type Database = {
       }
       update_prospect_activity: {
         Args: { p_prospect_id: string }
+        Returns: undefined
+      }
+      update_prospect_owner_message_timestamp: {
+        Args: {
+          p_instagram_user_id: string
+          p_is_from_owner: boolean
+          p_prospect_instagram_id: string
+        }
         Returns: undefined
       }
       update_prospect_state: {
