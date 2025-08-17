@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { prospectService } from '@/services/prospectService';
 
 export interface Prospect {
   id: string;
@@ -407,8 +408,9 @@ export const useProspects = (currentInstagramUserId?: string) => {
   const fetchProspects = async () => {
     try {
       setLoading(true);
-      console.log('🔄 [FETCH] Iniciando fetchProspects para usuario:', currentInstagramUserId);
+      console.log('🔄 [FETCH] Iniciando fetchProspects desde TABLAS ESPECÍFICAS DE PROSPECTOS');
       console.log('🕐 [FETCH] Timestamp:', new Date().toISOString());
+      console.log('👤 [FETCH] Usuario:', currentInstagramUserId);
 
       if (!currentInstagramUserId) {
         console.log('❌ [FETCH] No hay usuario de Instagram especificado');
@@ -416,83 +418,98 @@ export const useProspects = (currentInstagramUserId?: string) => {
         return;
       }
 
-      console.log('📊 [FETCH] Consultando TODOS los mensajes del usuario:', currentInstagramUserId);
+      // 🏗️ USAR EL NUEVO SERVICIO DE PROSPECTOS
+      console.log('📋 [FETCH] Obteniendo prospectos desde servicio...');
+      const prospectsData = await prospectService.getProspectsByUser(currentInstagramUserId);
+      
+      console.log(`📊 [FETCH] ${prospectsData.length} prospectos obtenidos desde BD específica`);
 
-      // Obtener TODOS los mensajes (enviados y recibidos) donde el usuario actual participa
-      const { data: messages, error } = await supabase
-        .from('instagram_messages')
-        .select('*')
-        .or(`recipient_id.eq.${currentInstagramUserId},sender_id.eq.${currentInstagramUserId}`)
-        .order('timestamp', { ascending: true });
-
-      if (error) {
-        console.error('❌ Error fetching messages:', error);
-        return;
-      }
-
-      console.log(`📊 Total mensajes obtenidos para ${currentInstagramUserId}: ${messages?.length || 0}`);
-
-      if (!messages || messages.length === 0) {
-        console.log('ℹ️ No hay mensajes en la base de datos');
+      if (prospectsData.length === 0) {
+        console.log('ℹ️ [FETCH] No hay prospectos en las tablas específicas');
         setProspects([]);
         return;
       }
 
-      // Agrupar mensajes por conversación (prospecto)
-      const messagesByProspect = messages.reduce((acc: Record<string, InstagramMessage[]>, message: any) => {
-        // Cast the database message to our InstagramMessage interface
-        const instagramMessage: InstagramMessage = {
-          ...message,
-          message_type: message.message_type as 'sent' | 'received'
-        };
-        
-        // Determinar el ID del prospecto (el otro participante en la conversación)
-        const prospectId = instagramMessage.sender_id === currentInstagramUserId 
-          ? instagramMessage.recipient_id 
-          : instagramMessage.sender_id;
-        
-        // Solo procesar si el otro participante NO es el usuario actual
-        if (prospectId !== currentInstagramUserId) {
-          if (!acc[prospectId]) {
-            acc[prospectId] = [];
-          }
-          acc[prospectId].push(instagramMessage);
-        }
-        
-        return acc;
-      }, {});
-
-      console.log(`👥 Prospectos únicos encontrados: ${Object.keys(messagesByProspect).length}`);
-
-      // Crear prospectos a partir de los mensajes agrupados
-      const prospectsData: Prospect[] = [];
+      // 🔄 CONVERTIR datos de BD a formato de Prospect
+      const convertedProspects: Prospect[] = [];
       
-      for (const [prospectId, prospectMessages] of Object.entries(messagesByProspect)) {
+      for (const prospectData of prospectsData) {
         try {
-          const prospect = await createProspectFromMessages(prospectId, prospectMessages);
-          prospectsData.push(prospect);
-        } catch (error) {
-          console.error(`❌ Error creando prospecto para ${prospectId}:`, error);
+          console.log(`🔄 [FETCH] Procesando prospecto: ${prospectData.username} (${prospectData.prospect_instagram_id})`);
+          
+          // Obtener mensajes del prospecto
+          const messages = prospectData.prospect_messages || [];
+          const sortedMessages = messages.sort((a: any, b: any) => 
+            new Date(b.message_timestamp).getTime() - new Date(a.message_timestamp).getTime()
+          );
+          
+          if (sortedMessages.length === 0) {
+            console.log(`⚠️ [FETCH] Saltando prospecto sin mensajes: ${prospectData.username}`);
+            continue;
+          }
+
+          const lastMessage = sortedMessages[0];
+          
+          // Determinar estado basado en el estado de la BD y último mensaje
+          let state: 'pending' | 'yesterday' | 'week' | 'invited' = 'pending';
+          let daysSinceLastSent: number | undefined = undefined;
+          let lastSentMessageTime: string | undefined = undefined;
+
+          // Si el último mensaje es del prospecto -> PENDING
+          if (lastMessage.is_from_prospect) {
+            state = 'pending';
+          } else {
+            // El último mensaje es nuestro -> verificar tiempo
+            const lastSentTime = new Date(lastMessage.message_timestamp).getTime();
+            const now = new Date().getTime();
+            const daysSince = (now - lastSentTime) / (1000 * 60 * 60 * 24);
+            
+            daysSinceLastSent = Math.floor(daysSince);
+            lastSentMessageTime = lastMessage.message_timestamp;
+            
+            if (daysSince >= 7) {
+              state = 'week';
+            } else if (daysSince >= 1) {
+              state = 'yesterday';
+            }
+          }
+
+          // Determinar el tipo del último mensaje
+          const lastMessageType = lastMessage.is_from_prospect ? 'received' : 'sent';
+          
+          // Convertir mensajes al formato esperado
+          const conversationMessages = sortedMessages.map((msg: any) => ({
+            ...msg,
+            sender_id: msg.is_from_prospect ? prospectData.prospect_instagram_id : currentInstagramUserId,
+            recipient_id: msg.is_from_prospect ? currentInstagramUserId : prospectData.prospect_instagram_id,
+            message_type: msg.is_from_prospect ? 'received' : 'sent',
+            timestamp: msg.message_timestamp
+          }));
+
+          const prospect: Prospect = {
+            id: prospectData.prospect_instagram_id,
+            senderId: prospectData.prospect_instagram_id,
+            username: prospectData.username,
+            state,
+            source: 'dm', // Por defecto, puede mejorarse más tarde
+            lastMessageTime: lastMessage.message_timestamp,
+            lastMessageType,
+            conversationMessages,
+            daysSinceLastSent,
+            lastSentMessageTime
+          };
+
+          convertedProspects.push(prospect);
+          
+          console.log(`✅ [FETCH] Prospecto procesado: ${prospect.username} - Estado: ${prospect.state}`);
+
+        } catch (prospectError) {
+          console.error(`❌ [FETCH] Error procesando prospecto ${prospectData.username}:`, prospectError);
         }
       }
 
-      // Ordenar por tiempo del último mensaje (más reciente primero)
-      prospectsData.sort((a, b) => 
-        new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
-      );
-
-      console.log('✅ [FETCH] Prospectos procesados exitosamente:', prospectsData.length);
-      console.log('🕐 [FETCH] Timestamp final:', new Date().toISOString());
-      
-      // Log detallado de estados finales
-      const stateStats = prospectsData.reduce((acc, p) => {
-        acc[p.state] = (acc[p.state] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      console.log('📊 [FETCH] Estados finales:', stateStats);
-
-      setProspects(prospectsData);
+      console.log(`✅ [FETCH] ${convertedProspects.length} prospectos convertidos exitosamente`);
+      setProspects(convertedProspects);
     } catch (error) {
       console.error('💥 Error in fetchProspects:', error);
     } finally {

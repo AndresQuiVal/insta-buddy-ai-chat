@@ -96,55 +96,40 @@ export const analyzeAndUpdateProspect = async (
   
   const matchPoints = Math.min(metTraits.length, enabledTraits.length);
   
-  // Actualizar en localStorage para que se refleje en Mis Prospectos
+  // 💾 GUARDAR EN BASE DE DATOS (ya no localStorage)
   try {
-    const savedConversationsStr = localStorage.getItem('hower-conversations');
-    let conversations: ProspectData[] = [];
-    
-    if (savedConversationsStr) {
-      conversations = JSON.parse(savedConversationsStr);
-    }
-    
-    // Buscar conversación existente
-    const existingIndex = conversations.findIndex(conv => conv.id === conversationId);
-    
-    if (existingIndex !== -1) {
-      // Actualizar conversación existente
-      conversations[existingIndex] = {
-        ...conversations[existingIndex],
-        matchPoints,
-        metTraits,
-        lastMessage: messageText.substring(0, 100),
-        timestamp: '1m'
-      };
+    // Actualizar análisis del prospecto en la base de datos
+    const { error: analysisError } = await supabase
+      .from('prospect_analysis')
+      .upsert({
+        sender_id: conversationId,
+        match_points: matchPoints,
+        met_traits: metTraits,
+        last_analyzed_at: new Date().toISOString(),
+        message_count: 1,
+        analysis_data: {
+          keywords_detected: metTraits,
+          analysis_timestamp: new Date().toISOString(),
+          message_analyzed: messageText.substring(0, 100)
+        }
+      }, {
+        onConflict: 'sender_id'
+      });
+
+    if (analysisError) {
+      console.error('❌ Error actualizando análisis del prospecto:', analysisError);
     } else {
-      // Crear nueva conversación
-      conversations.push({
-        id: conversationId,
-        userName: userName || `Usuario ${conversationId}`,
+      console.log("💾 ANÁLISIS DEL PROSPECTO GUARDADO EN BD:", {
+        sender_id: conversationId,
+        userName,
         matchPoints,
-        metTraits,
-        lastMessage: messageText.substring(0, 100),
-        timestamp: '1m',
-        unread: true
+        metTraits: metTraits.length,
+        total: enabledTraits.length
       });
     }
     
-    // Guardar en localStorage
-    localStorage.setItem('hower-conversations', JSON.stringify(conversations));
-    
-    // Disparar evento para actualizar la UI
-    window.dispatchEvent(new Event('storage'));
-    
-    console.log("💾 PROSPECTO ACTUALIZADO:", {
-      userName,
-      matchPoints,
-      metTraits: metTraits.length,
-      total: enabledTraits.length
-    });
-    
   } catch (error) {
-    console.error("Error al actualizar prospecto:", error);
+    console.error("Error al guardar análisis del prospecto en BD:", error);
   }
   
   return { matchPoints, metTraits };

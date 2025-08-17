@@ -258,7 +258,76 @@ serve(async (req) => {
 
           console.log(`✅ Usuario encontrado: ${instagramUser.username}`)
 
-          // Guardar mensaje en la base de datos
+          // 🏗️ PASO 1: CREAR/ACTUALIZAR PROSPECTO EN TABLA ESPECÍFICA
+          let prospectId: string | null = null;
+          let prospectUsername = `user_${senderId.slice(-8)}`; // Username por defecto
+          
+          try {
+            // Intentar obtener username del sender desde Instagram API (opcional)
+            try {
+              const instagramApiUrl = `https://graph.instagram.com/${senderId}?fields=username,name&access_token=${instagramUser.access_token}`;
+              const apiResponse = await fetch(instagramApiUrl);
+              if (apiResponse.ok) {
+                const userData = await apiResponse.json();
+                if (userData.username) {
+                  prospectUsername = userData.username;
+                  console.log(`📝 Username obtenido de Instagram API: ${prospectUsername}`);
+                }
+              }
+            } catch (apiError) {
+              console.log('⚠️ No se pudo obtener username de Instagram API, usando fallback');
+            }
+
+            // Crear/actualizar prospecto usando la función de BD
+            const { data: createdProspectId, error: prospectError } = await supabase
+              .rpc('create_or_update_prospect', {
+                p_instagram_user_id: instagramUser.id,
+                p_prospect_instagram_id: senderId,
+                p_username: prospectUsername,
+                p_profile_picture_url: null
+              });
+
+            if (prospectError) {
+              console.error('❌ Error creando/actualizando prospecto:', prospectError);
+            } else {
+              prospectId = createdProspectId;
+              console.log(`✅ Prospecto creado/actualizado con ID: ${prospectId}`);
+            }
+
+          } catch (prospectError) {
+            console.error('❌ Error en proceso de prospecto:', prospectError);
+          }
+
+          // 💬 PASO 2: AGREGAR MENSAJE DEL PROSPECTO (si se pudo crear el prospecto)
+          if (prospectId) {
+            try {
+              const { error: messageError } = await supabase
+                .rpc('add_prospect_message', {
+                  p_prospect_id: prospectId,
+                  p_message_instagram_id: messagingEvent.message?.mid || `received_${Date.now()}_${senderId}`,
+                  p_message_text: messageText,
+                  p_is_from_prospect: true,
+                  p_message_timestamp: timestamp,
+                  p_message_type: 'text',
+                  p_raw_data: {
+                    ...messagingEvent,
+                    webhook_source: 'messaging',
+                    processed_at: new Date().toISOString()
+                  }
+                });
+
+              if (messageError) {
+                console.error('❌ Error agregando mensaje del prospecto:', messageError);
+              } else {
+                console.log('✅ Mensaje del prospecto agregado correctamente');
+              }
+
+            } catch (messageError) {
+              console.error('❌ Error en add_prospect_message:', messageError);
+            }
+          }
+
+          // 📊 PASO 3: MANTENER COMPATIBILIDAD - Guardar en instagram_messages
           const messageData = {
             instagram_user_id: instagramUser.id,
             instagram_message_id: messagingEvent.message?.mid || `received_${Date.now()}_${senderId}`,
@@ -274,16 +343,16 @@ serve(async (req) => {
             }
           }
 
-          console.log('💾 Guardando mensaje recibido:', messageData)
+          console.log('💾 Guardando mensaje en instagram_messages (compatibilidad):', messageData)
 
           const { error: insertError } = await supabase
             .from('instagram_messages')
             .insert(messageData)
 
           if (insertError) {
-            console.error('❌ Error guardando mensaje:', insertError)
+            console.error('❌ Error guardando mensaje en instagram_messages:', insertError)
           } else {
-            console.log('✅ Mensaje guardado correctamente en BD')
+            console.log('✅ Mensaje guardado correctamente en instagram_messages')
             
             // Actualizar actividad del prospecto
             try {
