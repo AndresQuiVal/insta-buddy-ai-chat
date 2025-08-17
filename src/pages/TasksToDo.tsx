@@ -157,7 +157,7 @@ const TasksToDo: React.FC = () => {
           if (error) {
             console.error(`❌ [DB-SYNC] Error sincronizando ${prospect.username}:`, error);
           } else {
-            const shouldBeTicked = prospect.lastMessageType === 'sent';
+            const shouldBeTicked = false; // NUNCA auto-tachar - solo cuando el usuario marque manualmente
             console.log(`✅ [DB-SYNC] ${prospect.username}: ${shouldBeTicked ? 'TACHADO' : 'DESTACHADO'}`);
             
             // ACTUALIZAR ESTADO LOCAL INMEDIATAMENTE

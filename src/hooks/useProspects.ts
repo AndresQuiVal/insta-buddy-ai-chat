@@ -299,22 +299,25 @@ export const useProspects = (currentInstagramUserId?: string) => {
   };
 
   const extractUsernameFromMessage = async (messages: InstagramMessage[], senderId: string): Promise<string> => {
+    console.log(`🔍 [${senderId.slice(-8)}] ==> extractUsernameFromMessage iniciado con ${messages.length} mensajes`);
+    
     // PRIORIDAD 1: Intentar extraer del raw_data del webhook
     const usernameFromRawData = extractUsernameFromRawData(messages);
     if (usernameFromRawData) {
-      console.log(`✅ Username extraído del webhook: ${usernameFromRawData}`);
+      console.log(`✅ [${senderId.slice(-8)}] Username extraído del webhook: ${usernameFromRawData}`);
       return usernameFromRawData;
     }
 
+    console.log(`🔄 [${senderId.slice(-8)}] No se encontró username en raw_data, intentando API de Instagram...`);
     // PRIORIDAD 2: Intentar obtener el username real de Instagram API
     const realUsername = await fetchInstagramUsername(senderId);
     if (realUsername && !realUsername.includes('user_')) {
-      console.log(`✅ Username obtenido de Instagram API: ${realUsername}`);
+      console.log(`✅ [${senderId.slice(-8)}] Username obtenido de Instagram API: ${realUsername}`);
       return realUsername;
     }
 
     // FALLBACK: Usar el sender_id acortado
-    console.log(`⚠️ Usando fallback para sender_id: ${senderId}`);
+    console.log(`⚠️ [${senderId.slice(-8)}] Usando fallback para sender_id: ${senderId} -> ${realUsername}`);
     return realUsername;
   };
 
@@ -342,7 +345,11 @@ export const useProspects = (currentInstagramUserId?: string) => {
     
     // Determinar estado basado SOLO en los mensajes de ESTE prospecto
     const stateResult = determineProspectState(messagesForThisSender, senderId, currentInstagramUserId || '');
+    
+    console.log(`🔍 [${senderId.slice(-8)}] Iniciando extracción de username...`);
     const username = await extractUsernameFromMessage(messagesForThisSender, senderId);
+    console.log(`🔍 [${senderId.slice(-8)}] Username final obtenido: ${username}`);
+    
     const source = determineProspectSource(messagesForThisSender);
 
     const receivedCount = messagesForThisSender.filter((msg: InstagramMessage) => msg.message_type === 'received').length;
