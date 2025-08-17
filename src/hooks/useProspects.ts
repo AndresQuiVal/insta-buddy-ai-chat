@@ -125,27 +125,56 @@ export const useProspects = (currentInstagramUserId?: string) => {
   const extractUsernameFromRawData = (messages: InstagramMessage[]): string | null => {
     console.log(`🔍 Buscando username en raw_data de ${messages.length} mensajes...`);
     
-    for (const message of messages) {
+    for (const message of [...messages].reverse()) { // Empezar por el más reciente (sin modificar array original)
       if (message.raw_data) {
         console.log(`📝 Analizando raw_data:`, message.raw_data);
         
-        // Buscar username en diferentes ubicaciones del raw_data
+        // PRIORIDAD 1: Ubicaciones más comunes para comentarios
+        if (message.raw_data.commenter_username) {
+          console.log(`✅ Username encontrado (commenter_username): ${message.raw_data.commenter_username}`);
+          return message.raw_data.commenter_username;
+        }
+        
+        if (message.raw_data.from?.username) {
+          console.log(`✅ Username encontrado (from.username): ${message.raw_data.from.username}`);
+          return message.raw_data.from.username;
+        }
+        
+        // PRIORIDAD 2: Buscar en ubicaciones alternativas
         const locations = [
-          message.raw_data.username,
-          message.raw_data.user?.username,
-          message.raw_data.profile?.username,
-          message.raw_data.from?.username,
-          message.raw_data.sender?.username,
+          message.raw_data.sender?.username,   // Para mensajes
+          message.raw_data.username,           // Directo
+          message.raw_data.user?.username,     // Usuario alternativo
+          message.raw_data.profile?.username,  // Perfil
           message.raw_data.original_event?.sender?.username,
           message.raw_data.original_change?.sender?.username,
           message.raw_data.original_event?.from?.username,
           message.raw_data.original_change?.from?.username,
+          message.raw_data.original_change?.commenter_username, // Comentarista en cambios
           // Buscar en estructuras más profundas
           message.raw_data.messaging?.[0]?.sender?.username,
           message.raw_data.messaging?.[0]?.from?.username,
           message.raw_data.entry?.[0]?.messaging?.[0]?.sender?.username,
           message.raw_data.entry?.[0]?.messaging?.[0]?.from?.username
         ];
+        
+        // PRIORIDAD 3: Buscar en entry/changes para webhooks complejos
+        if (message.raw_data.entry) {
+          for (const entry of message.raw_data.entry) {
+            if (entry.changes) {
+              for (const change of entry.changes) {
+                if (change.value) {
+                  // Agregar más ubicaciones desde entry/changes
+                  locations.push(
+                    change.value.commenter_username,
+                    change.value.from?.username,
+                    change.value.sender?.username
+                  );
+                }
+              }
+            }
+          }
+        }
         
         for (const username of locations) {
           if (username && typeof username === 'string' && username.trim()) {
@@ -156,7 +185,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
       }
     }
     
-    console.log(`❌ No se encontró username en raw_data`);
+    console.log(`❌ No se encontró username en raw_data de ${messages.length} mensajes`);
     return null;
   };
 
@@ -214,8 +243,32 @@ export const useProspects = (currentInstagramUserId?: string) => {
     try {
       console.log(`🔍 Obteniendo username real para sender_id: ${senderId}`);
       
-      // Intentar obtener el token de Instagram desde localStorage
-      const instagramToken = localStorage.getItem('hower-instagram-token');
+      // Intentar obtener el token de Instagram desde localStorage primero
+      const instagramToken = localStorage.getItem('hower-instagram-token') || 
+                           localStorage.getItem('instagram-access-token');
+      
+      // Si no hay token, intentar obtenerlo desde el usuario actual
+      if (!instagramToken) {
+        const savedUserData = localStorage.getItem('hower-instagram-user');
+        if (savedUserData) {
+          const userData = JSON.parse(savedUserData);
+          if (userData.access_token) {
+            console.log('✅ Token encontrado en datos de usuario');
+            const response = await fetch(
+              `https://graph.instagram.com/${senderId}?fields=username,name&access_token=${userData.access_token}`
+            );
+            
+            if (response.ok) {
+              const userDataResponse = await response.json();
+              console.log(`✅ Username obtenido de Instagram:`, userDataResponse);
+              
+              if (userDataResponse.username) {
+                return userDataResponse.username;
+              }
+            }
+          }
+        }
+      }
       
       if (!instagramToken) {
         console.log('❌ No hay token de Instagram disponible');
