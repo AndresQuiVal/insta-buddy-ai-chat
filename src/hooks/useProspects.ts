@@ -621,38 +621,41 @@ export const useProspects = (currentInstagramUserId?: string) => {
                 'USANDO recipient_id como prospecto': recipientId
               });
               
-              // Actualizar estado del prospecto específico
-              if (recipientId || senderIdFromMessage) {
-                const prospectId = recipientId || senderIdFromMessage;
-                console.log(`🔄 [REALTIME] Marcando prospecto ${prospectId} como completado...`);
-                
-                // Llamar función para sincronizar estado específico
-                supabase.rpc('sync_prospect_task_status', {
-                  p_instagram_user_id: userData.instagram_user_id, // USAR instagram_user_id (text) no UUID
-                  p_prospect_sender_id: prospectId,
-                  p_last_message_type: 'sent'
-                }).then((result) => {
-                  console.log('✅ [REALTIME] Estado sincronizado:', result);
-                  console.log('🔧 [REALTIME] Parámetros usados para sync:', {
-                    'user_instagram_id': userData.instagram_user_id,
-                    'user_uuid': userUUID,
-                    'prospect_id': prospectId,
-                    'message_type': 'sent'
-                  });
-                  if (result.error) {
-                    console.error('❌ [REALTIME] Error en sync:', result.error);
-                  }
-                });
-                
-                setTimeout(() => {
-                  fetchProspects();
-                }, 500);
-              } else {
-                console.warn('⚠️ [REALTIME] No se pudo identificar el prospecto receptor');
-                setTimeout(() => {
-                  fetchProspects();
-                }, 500);
+              // DEBUGGEAR: Verificar si tenemos un prospectId válido
+              if (!recipientId && !senderIdFromMessage) {
+                console.error('❌ [REALTIME] NO SE ENCONTRÓ ID DE PROSPECTO');
+                console.log('🔍 [REALTIME] Datos disponibles:', newMessage);
+                return;
               }
+              
+              const prospectId = recipientId || senderIdFromMessage;
+              console.log(`🔄 [REALTIME] Marcando prospecto ${prospectId} como completado...`);
+              
+              // LLAMAR DIRECTAMENTE A LA FUNCIÓN DE SYNC
+              console.log('📞 [REALTIME] Llamando sync_prospect_task_status...');
+              supabase.rpc('sync_prospect_task_status', {
+                p_instagram_user_id: userData.instagram_user_id,
+                p_prospect_sender_id: prospectId,
+                p_last_message_type: 'sent'
+              }).then((result) => {
+                console.log('✅ [REALTIME] Respuesta de sync_prospect_task_status:', result);
+                
+                if (result.error) {
+                  console.error('❌ [REALTIME] ERROR en sync_prospect_task_status:', result.error);
+                } else {
+                  console.log('✅ [REALTIME] SYNC EXITOSO - refrescando lista...');
+                }
+                
+                // Actualizar lista después de confirmar sync
+                setTimeout(() => {
+                  console.log('🔄 [REALTIME] Ejecutando fetchProspects...');
+                  fetchProspects();
+                }, 300);
+              });
+              
+              // TAMBIÉN intentar actualizar el estado local inmediatamente  
+              console.log('🔄 [REALTIME] Actualizando estado local inmediatamente...');
+              // NO NECESITAMOS ESTO - el fetchProspects se encargará de actualizar
             } else {
               console.log(`⚠️ [REALTIME] No es mi mensaje (usuario: ${newMessage.instagram_user_id}, recipient: ${newMessage.raw_data?.recipient?.id})`);
             }
