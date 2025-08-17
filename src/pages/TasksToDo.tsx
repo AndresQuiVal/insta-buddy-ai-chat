@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import { useNavigate } from 'react-router-dom';
 
 interface ProspectData {
   id: string;
@@ -29,6 +31,8 @@ interface CompletedTasks {
 
 const TasksToDo: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { currentUser, loading: userLoading } = useInstagramUsers();
   const [prospects, setProspects] = useState<ProspectData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -67,7 +71,6 @@ const TasksToDo: React.FC = () => {
   const [isEditingListName, setIsEditingListName] = useState(false);
   const [tempListName, setTempListName] = useState('');
   const [motivationalQuote, setMotivationalQuote] = useState('');
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Frases motivacionales
   const motivationalQuotes = [
@@ -97,14 +100,25 @@ const TasksToDo: React.FC = () => {
     }
   }, []);
 
-  // Cargar usuario actual y configuración inicial
+  // Validar acceso y configuración inicial
   useEffect(() => {
-    loadCurrentUser();
-    loadProspects();
-    // Generar frase motivacional aleatoria
-    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-    setMotivationalQuote(randomQuote);
-  }, []);
+    if (!userLoading) {
+      if (!currentUser) {
+        toast({
+          title: "Acceso restringido",
+          description: "Necesitas conectar tu cuenta de Instagram primero",
+          variant: "destructive"
+        });
+        navigate('/');
+        return;
+      }
+      
+      loadProspects();
+      // Generar frase motivacional aleatoria
+      const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+      setMotivationalQuote(randomQuote);
+    }
+  }, [currentUser, userLoading, navigate, toast]);
 
   // Cargar nombre de lista cuando hay usuario
   useEffect(() => {
@@ -113,27 +127,6 @@ const TasksToDo: React.FC = () => {
     }
   }, [currentUser]);
 
-  // Cargar usuario actual
-  const loadCurrentUser = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('instagram_users')
-        .select('*')
-        .eq('is_active', true)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading current user:', error);
-        return;
-      }
-
-      if (data) {
-        setCurrentUser(data);
-      }
-    } catch (error) {
-      console.error('Error loading user:', error);
-    }
-  };
 
   // Cargar nombre de lista personalizado
   const loadListName = async () => {
@@ -217,11 +210,16 @@ const TasksToDo: React.FC = () => {
 
 
   const loadProspects = async () => {
+    if (!currentUser) return;
+    
     try {
       setLoading(true);
+      
+      // Filtrar prospectos por el usuario específico de Instagram
       const { data, error } = await supabase
         .from('prospects')
         .select('*')
+        .eq('instagram_user_id', currentUser.id) // Filtrar por el ID específico del usuario
         .order('last_message_date', { ascending: false })
         .limit(9); // Limitar a 9 prospectos
 
@@ -876,6 +874,19 @@ const TasksToDo: React.FC = () => {
     );
   };
 
+  // Pantalla de carga mientras se valida el usuario
+  if (userLoading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Validando acceso...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Pantalla de carga para datos
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
