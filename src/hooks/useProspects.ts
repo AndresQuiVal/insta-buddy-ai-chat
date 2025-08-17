@@ -581,22 +581,25 @@ export const useProspects = (currentInstagramUserId?: string) => {
             // 🔥 FILTRAR EN EL CLIENTE: Solo procesar si es MI mensaje
             const isMyMessage = newMessage.instagram_user_id === userUUID;
             const isReceivedMessage = newMessage.message_type === 'received';
+            const isSentMessage = newMessage.message_type === 'sent';
             
             console.log('🔍 [REALTIME] Verificando si es mi mensaje:', {
               'mi UUID': userUUID,
               'mensaje UUID': newMessage.instagram_user_id,
               'es mi mensaje': isMyMessage,
               'es recibido': isReceivedMessage,
+              'es enviado': isSentMessage,
               'usuario': userData.username
             });
             
-            if (isMyMessage && isReceivedMessage) {
-              console.log('✅ [REALTIME] ES MI MENSAJE RECIBIDO - actualizando prospectos...');
+            // 💡 NUEVA LÓGICA: Procesar tanto mensajes enviados como recibidos MÍOS
+            if (isMyMessage && (isReceivedMessage || isSentMessage)) {
+              console.log(`✅ [REALTIME] ES MI MENSAJE ${isSentMessage ? 'ENVIADO' : 'RECIBIDO'} - actualizando prospectos...`);
               setTimeout(() => {
                 fetchProspects();
               }, 500);
             } else {
-              console.log(`⚠️ [REALTIME] No es mi mensaje (es del usuario: ${newMessage.instagram_user_id})`);
+              console.log(`⚠️ [REALTIME] No procesar - es del usuario: ${newMessage.instagram_user_id}, tipo: ${newMessage.message_type}`);
             }
           }
         )
