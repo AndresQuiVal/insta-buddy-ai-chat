@@ -320,25 +320,25 @@ const TasksToDo: React.FC = () => {
   };
 
   // Función para cerrar sesión
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error cerrando sesión:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo cerrar sesión",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Sesión cerrada",
-          description: "Has cerrado sesión correctamente"
-        });
-      }
-    } catch (error) {
-      console.error('Error cerrando sesión:', error);
-    }
+  const handleLogout = () => {
+    console.log('🚪 Cerrando sesión...');
+    
+    // Limpiar todos los datos de Instagram del localStorage
+    localStorage.removeItem("instagram_access_token");
+    localStorage.removeItem("hower-instagram-user");
+    localStorage.removeItem("hower-instagram-token");
+    localStorage.removeItem("hower-auth-redirect");
+    
+    toast({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión correctamente"
+    });
+    
+    // Redirigir a la página principal después de cerrar sesión
+    setTimeout(() => {
+      navigate('/', { replace: true });
+      window.location.reload(); // Recargar para resetear completamente el estado
+    }, 1000);
   };
 
 
