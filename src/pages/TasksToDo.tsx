@@ -239,14 +239,14 @@ const TasksToDo: React.FC = () => {
       return;
     }
     
-    console.log('🗑️ Iniciando eliminación CORRECTA...');
+    console.log('🗑️ Eliminando prospectos de la lista pendientes...');
     
     try {
       const pendingProspectIds = realProspects
         .filter(p => p.state === 'pending')
         .map(p => p.senderId);
       
-      console.log('📋 IDs de prospectos a eliminar:', pendingProspectIds);
+      console.log('📋 IDs de prospectos pendientes a eliminar:', pendingProspectIds);
       
       if (pendingProspectIds.length === 0) {
         toast({
@@ -256,28 +256,34 @@ const TasksToDo: React.FC = () => {
         return;
       }
 
-      // CORRECCIÓN: Los mensajes tienen sender_id = usuario actual y recipient_id = prospecto
-      console.log('🗑️ Eliminando conversaciones donde recipient_id está en prospectos...');
-      const { data: deletedMessages, error: messagesError } = await supabase
-        .from('instagram_messages')
-        .delete()
-        .eq('instagram_user_id', currentUser.id)
-        .in('recipient_id', pendingProspectIds);
+      // Cambiar el estado de los prospectos a 'deleted' para que no aparezcan más
+      console.log('🔄 Cambiando estado de prospectos a "deleted"...');
+      const { data: updatedStates, error: statesError } = await supabase
+        .from('prospect_states')
+        .upsert(
+          pendingProspectIds.map(prospectId => ({
+            instagram_user_id: currentUser.instagram_user_id,
+            prospect_sender_id: prospectId,
+            prospect_username: realProspects.find(p => p.senderId === prospectId)?.username || '',
+            state: 'deleted',
+            last_client_message_at: new Date().toISOString()
+          }))
+        );
 
-      console.log('📊 Mensajes eliminados:', deletedMessages);
-      console.log('❌ Error (si existe):', messagesError);
+      console.log('📊 Estados actualizados:', updatedStates);
+      console.log('❌ Error (si existe):', statesError);
 
-      if (messagesError) {
-        throw messagesError;
+      if (statesError) {
+        throw statesError;
       }
 
       console.log('🔄 Refrescando datos...');
       await refetch();
       
-      console.log('✅ Eliminación completada correctamente!');
+      console.log('✅ Prospectos eliminados de la lista pendientes!');
       toast({
         title: "Prospectos eliminados",
-        description: `Se eliminaron las conversaciones con ${pendingProspectIds.length} prospectos`,
+        description: `Se eliminaron ${pendingProspectIds.length} prospectos de pendientes`,
       });
       
     } catch (error) {
