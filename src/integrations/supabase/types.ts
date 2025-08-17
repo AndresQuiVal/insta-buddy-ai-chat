@@ -1254,12 +1254,23 @@ export type Database = {
         }[]
       }
       create_or_update_prospect: {
-        Args: {
-          p_instagram_user_id: string
-          p_profile_picture_url?: string
-          p_prospect_instagram_id: string
-          p_username: string
-        }
+        Args:
+          | {
+              p_biography?: string
+              p_followers_count?: number
+              p_follows_count?: number
+              p_instagram_user_id: string
+              p_media_count?: number
+              p_profile_picture_url?: string
+              p_prospect_instagram_id: string
+              p_username: string
+            }
+          | {
+              p_instagram_user_id: string
+              p_profile_picture_url?: string
+              p_prospect_instagram_id: string
+              p_username: string
+            }
         Returns: string
       }
       get_instagram_token_by_user_id: {
