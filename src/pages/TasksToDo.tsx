@@ -34,7 +34,7 @@ const TasksToDo: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { currentUser, loading: userLoading } = useInstagramUsers();
-  const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects();
+  const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
 
   // Verificar autenticación al cargar
   useEffect(() => {

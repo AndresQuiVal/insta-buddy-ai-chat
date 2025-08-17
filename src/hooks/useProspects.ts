@@ -24,7 +24,7 @@ interface InstagramMessage {
   [key: string]: any;
 }
 
-export const useProspects = () => {
+export const useProspects = (currentInstagramUserId?: string) => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -246,12 +246,20 @@ export const useProspects = () => {
   const fetchProspects = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Obteniendo prospectos...');
+      console.log('🔄 Obteniendo prospectos para usuario:', currentInstagramUserId);
 
-      // Obtener todos los mensajes agrupados por sender_id
+      if (!currentInstagramUserId) {
+        console.log('❌ No hay usuario de Instagram especificado');
+        setProspects([]);
+        return;
+      }
+
+      // Obtener SOLO los mensajes del usuario actual (que recibió)
       const { data: messages, error } = await supabase
         .from('instagram_messages')
         .select('*')
+        .eq('recipient_id', currentInstagramUserId) // Solo mensajes recibidos por este usuario
+        .eq('message_type', 'received') // Solo mensajes que llegaron de prospectos
         .order('timestamp', { ascending: true });
 
       if (error) {
