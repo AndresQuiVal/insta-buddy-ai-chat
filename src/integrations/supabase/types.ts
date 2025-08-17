@@ -1003,6 +1003,42 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_task_status: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          instagram_user_id: string
+          is_completed: boolean
+          last_message_type: string | null
+          prospect_sender_id: string
+          task_type: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          instagram_user_id: string
+          is_completed?: boolean
+          last_message_type?: string | null
+          prospect_sender_id: string
+          task_type: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          instagram_user_id?: string
+          is_completed?: boolean
+          last_message_type?: string | null
+          prospect_sender_id?: string
+          task_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prospects: {
         Row: {
           created_at: string
@@ -1214,6 +1250,14 @@ export type Database = {
       }
       reset_nuevos_prospectos_by_instagram_id: {
         Args: { user_instagram_id: string }
+        Returns: undefined
+      }
+      sync_prospect_task_status: {
+        Args: {
+          p_instagram_user_id: string
+          p_last_message_type: string
+          p_prospect_sender_id: string
+        }
         Returns: undefined
       }
       update_daily_metric: {

@@ -138,42 +138,72 @@ const TasksToDo: React.FC = () => {
     }
   }, [currentUser]);
 
-  // LÓGICA SIMPLE: Sincronizar estado de tachado/destachado basado en el último mensaje
+  // NUEVA LÓGICA: Sincronizar estados con la BASE DE DATOS
   useEffect(() => {
-    console.log('🔄 [SYNC] Sincronizando estados de tachado/destachado...');
-    
-    if (realProspects.length > 0) {
-      realProspects.forEach(prospect => {
-        const taskKey = `pending-${prospect.senderId}`;
-        const lastMessageWasSentByMe = prospect.lastMessageType === 'sent';
-        const lastMessageWasReceivedByMe = prospect.lastMessageType === 'received';
-        const currentlyCompleted = completedTasks[taskKey] || false;
+    const syncTaskStatusToDB = async () => {
+      if (!currentUser || realProspects.length === 0) return;
+      
+      console.log('💾 [DB-SYNC] Sincronizando estados de tareas a la BD...');
+      
+      for (const prospect of realProspects) {
+        try {
+          // Llamar a la función de Supabase para sincronizar el estado
+          const { error } = await supabase.rpc('sync_prospect_task_status', {
+            p_instagram_user_id: currentUser.instagram_user_id,
+            p_prospect_sender_id: prospect.senderId,
+            p_last_message_type: prospect.lastMessageType
+          });
+          
+          if (error) {
+            console.error(`❌ [DB-SYNC] Error sincronizando ${prospect.username}:`, error);
+          } else {
+            console.log(`✅ [DB-SYNC] ${prospect.username}: ${prospect.lastMessageType === 'sent' ? 'TACHADO' : 'DESTACHADO'}`);
+          }
+        } catch (error) {
+          console.error(`💥 [DB-SYNC] Error general para ${prospect.username}:`, error);
+        }
+      }
+    };
+
+    syncTaskStatusToDB();
+  }, [realProspects, currentUser]);
+
+  // Cargar estados de tareas desde la base de datos
+  useEffect(() => {
+    const loadTaskStatusFromDB = async () => {
+      if (!currentUser) return;
+      
+      console.log('📖 [DB-LOAD] Cargando estados desde la BD...');
+      
+      try {
+        const { data: taskStatuses, error } = await supabase
+          .from('prospect_task_status')
+          .select('prospect_sender_id, task_type, is_completed')
+          .eq('instagram_user_id', currentUser.instagram_user_id);
         
-        console.log(`🔍 [SYNC] ${prospect.username}:`, {
-          lastMessageType: prospect.lastMessageType,
-          shouldBeTicked: lastMessageWasSentByMe,
-          currentlyTicked: currentlyCompleted,
-          state: prospect.state
+        if (error) {
+          console.error('❌ [DB-LOAD] Error cargando estados:', error);
+          return;
+        }
+        
+        // Convertir datos de BD al formato del estado local
+        const dbTaskStates: {[key: string]: boolean} = {};
+        taskStatuses?.forEach(task => {
+          if (task.is_completed) {
+            dbTaskStates[`${task.task_type}-${task.prospect_sender_id}`] = true;
+          }
         });
         
-        // REGLA 1: Si YO envié el último mensaje = DEBE ESTAR TACHADO
-        if (lastMessageWasSentByMe && !currentlyCompleted) {
-          console.log(`✅ [SYNC] TACHANDO ${prospect.username} (yo envié el último mensaje)`);
-          setCompletedTasks(prev => ({ ...prev, [taskKey]: true }));
-        }
+        console.log('✅ [DB-LOAD] Estados cargados desde BD:', Object.keys(dbTaskStates));
+        setCompletedTasks(dbTaskStates);
         
-        // REGLA 2: Si YO recibí el último mensaje = NO DEBE ESTAR TACHADO  
-        if (lastMessageWasReceivedByMe && currentlyCompleted) {
-          console.log(`🔄 [SYNC] DESTACHANDO ${prospect.username} (él envió el último mensaje)`);
-          setCompletedTasks(prev => {
-            const updated = { ...prev };
-            delete updated[taskKey];
-            return updated;
-          });
-        }
-      });
-    }
-  }, [realProspects]); // Solo depende de realProspects
+      } catch (error) {
+        console.error('💥 [DB-LOAD] Error general:', error);
+      }
+    };
+
+    loadTaskStatusFromDB();
+  }, [currentUser]);
 
   // Función para refrescar manualmente los datos
   const handleRefreshData = async () => {
@@ -455,26 +485,37 @@ const TasksToDo: React.FC = () => {
   };
 
 
-  // Función para manejar cuando se envía un mensaje (marcar como completado automáticamente)
-  const handleMessageSent = (username: string) => {
-    // Marcar este prospecto como completado automáticamente
+  // Función mejorada para manejar cuando se envía un mensaje (guardar en BD)
+  const handleMessageSent = async (username: string) => {
     const prospect = prospects.find(p => p.userName === username);
-    if (prospect) {
-      // Marcar en todas las secciones donde puede aparecer este prospecto
-      const taskTypes = ['pending', 'yesterday', 'week', 'new'];
-      const updates: {[key: string]: boolean} = {};
-      
-      taskTypes.forEach(type => {
-        updates[`${type}-${prospect.id}`] = true;
+    if (!prospect || !currentUser) return;
+
+    console.log(`💾 [TASK-UPDATE] Marcando ${username} como completado en BD...`);
+    
+    try {
+      // Actualizar en la base de datos
+      const { error } = await supabase.rpc('sync_prospect_task_status', {
+        p_instagram_user_id: currentUser.instagram_user_id,
+        p_prospect_sender_id: prospect.id,
+        p_last_message_type: 'sent' // Porque YO envié el mensaje
       });
       
-      setCompletedTasks(prev => ({ ...prev, ...updates }));
-      
-      toast({
-        title: "¡Prospecto contactado!",
-        description: `@${username} marcado como completado.`,
-        duration: 3000,
-      });
+      if (error) {
+        console.error('❌ [TASK-UPDATE] Error actualizando BD:', error);
+      } else {
+        console.log('✅ [TASK-UPDATE] Estado actualizado en BD');
+        
+        // Actualizar estado local también
+        setCompletedTasks(prev => ({ ...prev, [`pending-${prospect.id}`]: true }));
+        
+        toast({
+          title: "¡Prospecto contactado!",
+          description: `@${username} marcado como completado.`,
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('💥 [TASK-UPDATE] Error general:', error);
     }
   };
 
