@@ -227,6 +227,54 @@ const TasksToDo: React.FC = () => {
     loadTaskStatusFromDB();
   }, [currentUser]);
 
+  // 🔥 Suscripción en tiempo real para actualizaciones de prospect_task_status
+  useEffect(() => {
+    if (!currentUser) return;
+
+    console.log('🔴 [REALTIME] Configurando suscripción a prospect_task_status...');
+    
+    const channel = supabase
+      .channel('prospect-task-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escuchar INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'prospect_task_status',
+          filter: `instagram_user_id=eq.${currentUser.instagram_user_id}`
+        },
+        (payload) => {
+          console.log('🔴 [REALTIME] Cambio detectado en prospect_task_status:', payload);
+          
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const newData = payload.new;
+            if (newData && newData.is_completed) {
+              console.log(`🔴 [REALTIME] Marcando como completado: ${newData.prospect_sender_id}`);
+              setCompletedTasks(prev => ({
+                ...prev,
+                [`${newData.task_type}-${newData.prospect_sender_id}`]: true
+              }));
+            } else if (newData && !newData.is_completed) {
+              console.log(`🔴 [REALTIME] Marcando como no completado: ${newData.prospect_sender_id}`);
+              setCompletedTasks(prev => {
+                const updated = { ...prev };
+                delete updated[`${newData.task_type}-${newData.prospect_sender_id}`];
+                return updated;
+              });
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔴 [REALTIME] Estado de suscripción:', status);
+      });
+
+    return () => {
+      console.log('🔴 [REALTIME] Cerrando suscripción...');
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser]);
+
   // Función para refrescar manualmente los datos
   const handleRefreshData = async () => {
     console.log('🔄 Refrescando datos manualmente...');
