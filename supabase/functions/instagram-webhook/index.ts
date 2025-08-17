@@ -1780,3 +1780,12 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('💡 === AUTORESPONDERS DE COMENTARIOS FUNCIONAN SIN RESTRICCIONES ===')
   console.log('🏷️ === TIPO PROCESADO:', autoresponderType, '===')
 }
+
+  } catch (error) {
+    console.error('💥 Error en webhook:', error)
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+})
