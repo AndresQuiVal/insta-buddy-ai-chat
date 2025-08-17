@@ -140,37 +140,9 @@ const TasksToDo: React.FC = () => {
     }
   }, [currentUser]);
 
-  // NUEVA LÓGICA: Sincronizar estados con la BASE DE DATOS
-  useEffect(() => {
-    const syncTaskStatusToDB = async () => {
-      if (!currentUser || realProspects.length === 0) return;
-      
-      console.log('💾 [DB-SYNC] Sincronizando estados de tareas a la BD...');
-      
-      for (const prospect of realProspects) {
-        try {
-          // Llamar a la función de Supabase para sincronizar el estado
-          const { error } = await supabase.rpc('sync_prospect_task_status', {
-            p_instagram_user_id: currentUser.instagram_user_id,
-            p_prospect_sender_id: prospect.senderId,
-            p_last_message_type: prospect.lastMessageType
-          });
-          
-          if (error) {
-            console.error(`❌ [DB-SYNC] Error sincronizando ${prospect.username}:`, error);
-          } else {
-            // ✅ NO CAMBIAR EL ESTADO LOCAL - la base de datos ya está actualizada por el webhook
-            // El webhook maneja correctamente el estado: sent = tachado, received = destachado
-            console.log(`✅ [DB-SYNC] ${prospect.username}: BD actualizada correctamente por webhook`);
-          }
-        } catch (error) {
-          console.error(`💥 [DB-SYNC] Error general para ${prospect.username}:`, error);
-        }
-      }
-    };
-
-    syncTaskStatusToDB();
-  }, [realProspects, currentUser]);
+  // ✅ DESHABILITADO - El webhook ya maneja perfectamente el estado de las tareas
+  // No necesitamos sincronizar manualmente porque el webhook de Instagram
+  // actualiza automáticamente prospect_task_status cuando se envían/reciben mensajes
 
   // Cargar estados de tareas desde la base de datos (mejorado)
   useEffect(() => {
