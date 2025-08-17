@@ -64,10 +64,11 @@ const ConversationList: React.FC<ConversationListProps> = ({
         });
       }
 
-      // Obtener TODOS los prospectos (no filtrar por instagram_user_id aquí)
+      // Obtener prospectos del usuario actual
       const { data: prospects, error: prospectError } = await supabase
         .from('prospects')
-        .select('prospect_instagram_id, username');
+        .select('prospect_instagram_id, username')
+        .eq('instagram_user_id', currentUser.id);
 
       const prospectMap = new Map();
       if (prospects) {
@@ -76,7 +77,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
         });
       }
 
-      console.log('👥 Total prospectos cargados:', prospects?.length);
+      console.log('👥 Total prospectos cargados para usuario actual:', prospects?.length);
       console.log('🗂️ Prospect Map:', prospectMap);
 
       // Agrupar mensajes por sender_id
