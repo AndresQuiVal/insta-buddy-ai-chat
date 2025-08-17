@@ -1074,16 +1074,12 @@ export type Database = {
       }
       prospects: {
         Row: {
-          biography: string | null
           created_at: string
           first_contact_date: string
-          followers_count: number | null
-          follows_count: number | null
           id: string
           instagram_user_id: string | null
           last_message_date: string
           last_message_from_prospect: boolean
-          media_count: number | null
           profile_picture_url: string | null
           prospect_instagram_id: string
           status: string
@@ -1091,16 +1087,12 @@ export type Database = {
           username: string
         }
         Insert: {
-          biography?: string | null
           created_at?: string
           first_contact_date?: string
-          followers_count?: number | null
-          follows_count?: number | null
           id?: string
           instagram_user_id?: string | null
           last_message_date?: string
           last_message_from_prospect?: boolean
-          media_count?: number | null
           profile_picture_url?: string | null
           prospect_instagram_id: string
           status?: string
@@ -1108,16 +1100,12 @@ export type Database = {
           username: string
         }
         Update: {
-          biography?: string | null
           created_at?: string
           first_contact_date?: string
-          followers_count?: number | null
-          follows_count?: number | null
           id?: string
           instagram_user_id?: string | null
           last_message_date?: string
           last_message_from_prospect?: boolean
-          media_count?: number | null
           profile_picture_url?: string | null
           prospect_instagram_id?: string
           status?: string
@@ -1266,23 +1254,12 @@ export type Database = {
         }[]
       }
       create_or_update_prospect: {
-        Args:
-          | {
-              p_biography?: string
-              p_followers_count?: number
-              p_follows_count?: number
-              p_instagram_user_id: string
-              p_media_count?: number
-              p_profile_picture_url?: string
-              p_prospect_instagram_id: string
-              p_username: string
-            }
-          | {
-              p_instagram_user_id: string
-              p_profile_picture_url?: string
-              p_prospect_instagram_id: string
-              p_username: string
-            }
+        Args: {
+          p_instagram_user_id: string
+          p_profile_picture_url?: string
+          p_prospect_instagram_id: string
+          p_username: string
+        }
         Returns: string
       }
       get_instagram_token_by_user_id: {

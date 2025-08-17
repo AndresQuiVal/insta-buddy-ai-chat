@@ -31,10 +31,6 @@ interface ProspectData {
   id: string;
   username: string;
   profile_picture_url?: string;
-  biography?: string;
-  followers_count?: number;
-  follows_count?: number;
-  media_count?: number;
   status: 'enviados' | 'respuestas' | 'agendados';
   last_message_date: string;
   first_contact_date: string;
@@ -176,10 +172,6 @@ const ProspectCRM = () => {
           id,
           username,
           profile_picture_url,
-          biography,
-          followers_count,
-          follows_count,
-          media_count,
           status,
           last_message_date,
           first_contact_date,
@@ -342,29 +334,10 @@ const ProspectCRM = () => {
               </Badge>
             )}
             
-            {prospect.biography && (
-              <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-                {prospect.biography}
-              </p>
-            )}
-            
-            <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+            <div className="flex items-center gap-1 text-xs text-gray-500">
               <Clock className="w-3 h-3" />
               {format(new Date(prospect.last_message_date), 'dd MMM, HH:mm', { locale: es })}
             </div>
-
-            {prospect.followers_count !== undefined && (
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  👥 {prospect.followers_count.toLocaleString()}
-                </span>
-                {prospect.media_count !== undefined && (
-                  <span className="flex items-center gap-1">
-                    📱 {prospect.media_count}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </CardContent>
