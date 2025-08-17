@@ -183,7 +183,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
             };
           } else {
             // Crear nueva conversación - intentar obtener username real
-            let realUsername = `user_${activeConversation}`;
+            let realUsername = `user_${activeConversation.slice(-4)}`;
             
             try {
               // Intentar obtener el username real desde los prospectos
@@ -191,13 +191,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
                 .from('prospects')
                 .select('username')
                 .eq('prospect_instagram_id', activeConversation)
-                .single();
+                .maybeSingle();
               
               if (prospect?.username) {
                 realUsername = prospect.username;
+                console.log(`✅ Username encontrado para nueva conversación: ${realUsername}`);
+              } else {
+                console.log(`⚠️ No username encontrado para ${activeConversation}, usando fallback: ${realUsername}`);
               }
             } catch (error) {
-              console.log('No se pudo obtener username real, usando genérico');
+              console.log('Error obteniendo username:', error);
             }
             
             conversations.push({

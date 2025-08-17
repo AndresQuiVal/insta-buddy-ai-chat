@@ -50,6 +50,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
         return;
       }
 
+      console.log('📧 Total mensajes cargados:', messages?.length);
+
       // Obtener análisis de prospectos
       const { data: analyses, error: analysisError } = await supabase
         .from('prospect_analysis')
@@ -62,11 +64,10 @@ const ConversationList: React.FC<ConversationListProps> = ({
         });
       }
 
-      // Obtener datos de prospectos para usernames reales
+      // Obtener TODOS los prospectos (no filtrar por instagram_user_id aquí)
       const { data: prospects, error: prospectError } = await supabase
         .from('prospects')
-        .select('prospect_instagram_id, username')
-        .eq('instagram_user_id', currentUser.id);
+        .select('prospect_instagram_id, username');
 
       const prospectMap = new Map();
       if (prospects) {
@@ -75,13 +76,26 @@ const ConversationList: React.FC<ConversationListProps> = ({
         });
       }
 
+      console.log('👥 Total prospectos cargados:', prospects?.length);
+      console.log('🗂️ Prospect Map:', prospectMap);
+
       // Agrupar mensajes por sender_id
       const conversationMap = new Map<string, Conversation>();
       
       messages?.forEach(message => {
         if (!conversationMap.has(message.sender_id)) {
           const analysis = analysisMap.get(message.sender_id);
-          const realUsername = prospectMap.get(message.sender_id) || `user_${message.sender_id.slice(-4)}`;
+          
+          // Buscar username real
+          let realUsername = prospectMap.get(message.sender_id);
+          
+          // Si no se encuentra, usar fallback
+          if (!realUsername) {
+            realUsername = `user_${message.sender_id.slice(-4)}`;
+            console.log(`⚠️ No username encontrado para sender_id: ${message.sender_id}, usando fallback: ${realUsername}`);
+          } else {
+            console.log(`✅ Username encontrado para ${message.sender_id}: ${realUsername}`);
+          }
           
           conversationMap.set(message.sender_id, {
             id: message.sender_id,
@@ -96,6 +110,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
       });
 
       const realConversations = Array.from(conversationMap.values());
+      console.log('💬 Conversaciones finales:', realConversations);
       setConversations(realConversations);
       
     } catch (error) {
