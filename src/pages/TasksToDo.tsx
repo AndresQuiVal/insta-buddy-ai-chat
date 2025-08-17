@@ -616,10 +616,10 @@ const TasksToDo: React.FC = () => {
         // Marcar como completado y actualizar datos
         setCompletedTasks(prev => ({ ...prev, [taskKey]: true }));
         
-        // Refrescar datos
+        // 🔥 FORZAR ACTUALIZACIÓN INMEDIATA de los prospectos
         setTimeout(() => {
           refetch();
-        }, 500);
+        }, 1500); // Dar más tiempo para que se procese en la base de datos
         
         toast({
           title: "✅ Marcado como respondido",

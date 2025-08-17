@@ -434,15 +434,35 @@ export const useProspects = (currentInstagramUserId?: string) => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'instagram_messages',
-          filter: `recipient_id=eq.${currentInstagramUserId}`
+          table: 'instagram_messages'
         },
         (payload) => {
           console.log('📨 Nuevo mensaje detectado:', payload);
           
-          // Solo refetch si es un mensaje recibido (de un prospecto)
-          if (payload.new?.message_type === 'received') {
-            console.log('🔄 Recargando prospectos después del nuevo mensaje...');
+          // 🔥 REFRESCAR SIEMPRE que haya un mensaje nuevo relacionado con nuestro usuario
+          const newMessage = payload.new;
+          if (newMessage && (newMessage.recipient_id === currentInstagramUserId || newMessage.sender_id === currentInstagramUserId)) {
+            console.log('🔄 Mensaje relacionado con nuestro usuario - Recargando prospectos...');
+            setTimeout(() => {
+              fetchProspects();
+            }, 1000); // Dar un poco más de tiempo para asegurar que el mensaje se procesó completamente
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'instagram_messages'
+        },
+        (payload) => {
+          console.log('📝 Mensaje actualizado detectado:', payload);
+          
+          // También refrescar en actualizaciones
+          const updatedMessage = payload.new;
+          if (updatedMessage && (updatedMessage.recipient_id === currentInstagramUserId || updatedMessage.sender_id === currentInstagramUserId)) {
+            console.log('🔄 Actualización relacionada con nuestro usuario - Recargando prospectos...');
             setTimeout(() => {
               fetchProspects();
             }, 500);
