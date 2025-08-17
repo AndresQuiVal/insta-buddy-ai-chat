@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X, LogOut, Instagram } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X, LogOut, Instagram, RefreshCw, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -1455,8 +1455,25 @@ const TasksToDo: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.hower.length + prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length + prospectsClassification.pendingResponses.ads.length}</Badge>
+                    
+                    {/* 🔥 BOTÓN DE DEBUG PARA REFRESCAR MANUALMENTE */}
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('🔄 [DEBUG] Refrescando manualmente...');
+                        console.log('🔄 [DEBUG] Estado actual de prospectos:', realProspects.length);
+                        refetch();
+                      }}
+                      variant="outline" 
+                      size="sm"
+                      className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      <span className="text-xs">🔄</span>
+                    </Button>
+                    
                     {(prospectsClassification.pendingResponses.hower.length + prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length + prospectsClassification.pendingResponses.ads.length) > 0 && (
-                      <Button
+                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={(e) => {

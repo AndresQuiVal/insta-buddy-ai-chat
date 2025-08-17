@@ -322,15 +322,16 @@ export const useProspects = (currentInstagramUserId?: string) => {
   const fetchProspects = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Obteniendo prospectos para usuario:', currentInstagramUserId);
+      console.log('🔄 [FETCH] Iniciando fetchProspects para usuario:', currentInstagramUserId);
+      console.log('🕐 [FETCH] Timestamp:', new Date().toISOString());
 
       if (!currentInstagramUserId) {
-        console.log('❌ No hay usuario de Instagram especificado');
+        console.log('❌ [FETCH] No hay usuario de Instagram especificado');
         setProspects([]);
         return;
       }
 
-      console.log('📊 Consultando TODOS los mensajes del usuario:', currentInstagramUserId);
+      console.log('📊 [FETCH] Consultando TODOS los mensajes del usuario:', currentInstagramUserId);
 
       // Obtener TODOS los mensajes (enviados y recibidos) donde el usuario actual participa
       const { data: messages, error } = await supabase
@@ -395,7 +396,8 @@ export const useProspects = (currentInstagramUserId?: string) => {
         new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
       );
 
-      console.log(`✅ Prospectos procesados: ${prospectsData.length}`);
+      console.log('✅ [FETCH] Prospectos procesados exitosamente:', prospectsData.length);
+      console.log('🕐 [FETCH] Timestamp final:', new Date().toISOString());
       
       // Log detallado de estados finales
       const stateStats = prospectsData.reduce((acc, p) => {
@@ -403,7 +405,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
         return acc;
       }, {} as Record<string, number>);
       
-      console.log('📊 Estados finales:', stateStats);
+      console.log('📊 [FETCH] Estados finales:', stateStats);
 
       setProspects(prospectsData);
     } catch (error) {
@@ -415,18 +417,20 @@ export const useProspects = (currentInstagramUserId?: string) => {
 
   useEffect(() => {
     if (currentInstagramUserId) {
-      console.log('🔄 Cargando prospectos para usuario:', currentInstagramUserId);
+      console.log('🔄 [PROSPECTS] Cargando prospectos para usuario:', currentInstagramUserId);
       fetchProspects();
+    } else {
+      console.log('❌ [PROSPECTS] No hay currentInstagramUserId definido');
     }
   }, [currentInstagramUserId]); // Refetch cuando cambie el usuario
 
   useEffect(() => {
     if (!currentInstagramUserId) {
-      console.log('❌ No hay usuario especificado, no configurando suscripción');
+      console.log('❌ [REALTIME] No hay usuario especificado, no configurando suscripción');
       return;
     }
 
-    console.log('🔄 Configurando suscripción en tiempo real para usuario:', currentInstagramUserId);
+    console.log('🔄 [REALTIME] Configurando suscripción para usuario:', currentInstagramUserId);
     const channel = supabase
       .channel(`prospect-updates-${currentInstagramUserId}`)
       .on(
@@ -437,15 +441,31 @@ export const useProspects = (currentInstagramUserId?: string) => {
           table: 'instagram_messages'
         },
         (payload) => {
-          console.log('📨 Nuevo mensaje detectado:', payload);
+          console.log('📨 [REALTIME] Nuevo mensaje detectado:', payload);
+          console.log('📨 [REALTIME] Datos del mensaje:', JSON.stringify(payload.new, null, 2));
           
           // 🔥 REFRESCAR SIEMPRE que haya un mensaje nuevo relacionado con nuestro usuario
           const newMessage = payload.new;
           if (newMessage && (newMessage.recipient_id === currentInstagramUserId || newMessage.sender_id === currentInstagramUserId)) {
-            console.log('🔄 Mensaje relacionado con nuestro usuario - Recargando prospectos...');
+            console.log('✅ [REALTIME] Mensaje relacionado con nuestro usuario - Recargando prospectos...');
+            console.log('📊 [REALTIME] Detalles:', {
+              sender: newMessage.sender_id,
+              recipient: newMessage.recipient_id,
+              type: newMessage.message_type,
+              currentUser: currentInstagramUserId
+            });
+            
             setTimeout(() => {
+              console.log('🔄 [REALTIME] Ejecutando refetch de prospectos...');
               fetchProspects();
-            }, 1000); // Dar un poco más de tiempo para asegurar que el mensaje se procesó completamente
+            }, 1000);
+          } else {
+            console.log('⚠️ [REALTIME] Mensaje NO relacionado con nuestro usuario');
+            console.log('📊 [REALTIME] Detalles del mensaje ignorado:', {
+              sender: newMessage?.sender_id,
+              recipient: newMessage?.recipient_id,
+              currentUser: currentInstagramUserId
+            });
           }
         }
       )
@@ -457,24 +477,29 @@ export const useProspects = (currentInstagramUserId?: string) => {
           table: 'instagram_messages'
         },
         (payload) => {
-          console.log('📝 Mensaje actualizado detectado:', payload);
+          console.log('📝 [REALTIME] Mensaje actualizado detectado:', payload);
           
-          // También refrescar en actualizaciones
           const updatedMessage = payload.new;
           if (updatedMessage && (updatedMessage.recipient_id === currentInstagramUserId || updatedMessage.sender_id === currentInstagramUserId)) {
-            console.log('🔄 Actualización relacionada con nuestro usuario - Recargando prospectos...');
+            console.log('✅ [REALTIME] Actualización relacionada con nuestro usuario - Recargando prospectos...');
             setTimeout(() => {
+              console.log('🔄 [REALTIME] Ejecutando refetch por actualización...');
               fetchProspects();
             }, 500);
           }
         }
       )
       .subscribe((status) => {
-        console.log('📡 Estado de suscripción en tiempo real:', status);
+        console.log('📡 [REALTIME] Estado de suscripción:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ [REALTIME] Suscripción activa correctamente');
+        } else if (status === 'CLOSED') {
+          console.log('❌ [REALTIME] Suscripción cerrada');
+        }
       });
 
     return () => {
-      console.log('🔌 Desconectando suscripción en tiempo real');
+      console.log('🔌 [REALTIME] Desconectando suscripción');
       supabase.removeChannel(channel);
     };
   }, [currentInstagramUserId]);
