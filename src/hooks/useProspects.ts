@@ -10,6 +10,7 @@ export interface Prospect {
   lastMessageTime: string;
   lastMessageType: 'sent' | 'received';
   conversationMessages: any[];
+  source: 'dm' | 'comment' | 'hower' | 'ads'; // Nueva propiedad para la fuente
 }
 
 interface InstagramMessage {
@@ -139,6 +140,54 @@ export const useProspects = (currentInstagramUserId?: string) => {
     return null;
   };
 
+  const determineProspectSource = (messages: InstagramMessage[]): 'dm' | 'comment' | 'hower' | 'ads' => {
+    console.log(`📍 Determinando fuente del prospecto con ${messages.length} mensajes...`);
+    
+    for (const message of messages) {
+      if (message.raw_data) {
+        // Si hay información de un comentario en un post
+        if (message.raw_data.post_id || 
+            message.raw_data.comment_id ||
+            message.raw_data.original_event?.comment_id ||
+            message.raw_data.original_change?.comment_id ||
+            message.raw_data.entry?.[0]?.changes?.[0]?.value?.comment_id ||
+            message.raw_data.entry?.[0]?.messaging?.[0]?.postback?.payload?.includes('comment')) {
+          console.log(`✅ Fuente: COMMENT (detectado por post_id/comment_id en raw_data)`);
+          return 'comment';
+        }
+
+        // Si hay información de ads/anuncios
+        if (message.raw_data.ad_id || 
+            message.raw_data.ad_campaign_id ||
+            message.raw_data.original_event?.ad_id ||
+            message.raw_data.ref?.includes('ad') ||
+            message.raw_data.entry?.[0]?.messaging?.[0]?.postback?.payload?.includes('ad')) {
+          console.log(`✅ Fuente: ADS (detectado por ad_id en raw_data)`);
+          return 'ads';
+        }
+
+        // Si hay información que indique que viene del sistema Hower
+        if (message.raw_data.source === 'hower' ||
+            message.raw_data.campaign_type === 'hower' ||
+            message.raw_data.original_event?.source === 'hower' ||
+            (message.is_invitation === true)) {
+          console.log(`✅ Fuente: HOWER (detectado por marcadores del sistema)`);
+          return 'hower';
+        }
+      }
+
+      // Si el mensaje tiene marcador de invitación, es del sistema Hower
+      if (message.is_invitation === true) {
+        console.log(`✅ Fuente: HOWER (detectado por is_invitation=true)`);
+        return 'hower';
+      }
+    }
+
+    // Por defecto, si no hay indicadores específicos, asumir que es DM directo
+    console.log(`✅ Fuente: DM (por defecto)`);
+    return 'dm';
+  };
+
   const fetchInstagramUsername = async (senderId: string): Promise<string> => {
     try {
       console.log(`🔍 Obteniendo username real para sender_id: ${senderId}`);
@@ -219,6 +268,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
     // Determinar estado basado SOLO en los mensajes de ESTE prospecto
     const state = determineProspectState(messagesForThisSender, senderId);
     const username = await extractUsernameFromMessage(messagesForThisSender, senderId);
+    const source = determineProspectSource(messagesForThisSender);
 
     const receivedCount = messagesForThisSender.filter((msg: InstagramMessage) => msg.message_type === 'received').length;
     const sentCount = messagesForThisSender.filter((msg: InstagramMessage) => msg.message_type === 'sent').length;
@@ -229,6 +279,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
       received: receivedCount,
       lastMessageType: lastMessage.message_type,
       state: state,
+      source: source,
       lastMessageTime: lastMessage.timestamp
     });
 
@@ -237,6 +288,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
       senderId,
       username,
       state,
+      source,
       lastMessageTime: lastMessage.timestamp,
       lastMessageType: lastMessage.message_type,
       conversationMessages: messagesForThisSender
@@ -254,14 +306,13 @@ export const useProspects = (currentInstagramUserId?: string) => {
         return;
       }
 
-      console.log('📊 Consultando base de datos con filtro:', { recipient_id: currentInstagramUserId, message_type: 'received' });
+      console.log('📊 Consultando TODOS los mensajes del usuario:', currentInstagramUserId);
 
-      // Obtener SOLO los mensajes del usuario actual (que recibió)
+      // Obtener TODOS los mensajes (enviados y recibidos) donde el usuario actual participa
       const { data: messages, error } = await supabase
         .from('instagram_messages')
         .select('*')
-        .eq('recipient_id', currentInstagramUserId) // Solo mensajes recibidos por este usuario
-        .eq('message_type', 'received') // Solo mensajes que llegaron de prospectos
+        .or(`recipient_id.eq.${currentInstagramUserId},sender_id.eq.${currentInstagramUserId}`)
         .order('timestamp', { ascending: true });
 
       if (error) {
@@ -277,35 +328,41 @@ export const useProspects = (currentInstagramUserId?: string) => {
         return;
       }
 
-      // Agrupar mensajes por sender_id con validación estricta
-      const messagesBySender = messages.reduce((acc: Record<string, InstagramMessage[]>, message: any) => {
+      // Agrupar mensajes por conversación (prospecto)
+      const messagesByProspect = messages.reduce((acc: Record<string, InstagramMessage[]>, message: any) => {
         // Cast the database message to our InstagramMessage interface
         const instagramMessage: InstagramMessage = {
           ...message,
           message_type: message.message_type as 'sent' | 'received'
         };
         
-        // Determinar el sender_id real (puede ser sender o recipient)
-        const actualSenderId = instagramMessage.message_type === 'sent' ? instagramMessage.recipient_id : instagramMessage.sender_id;
+        // Determinar el ID del prospecto (el otro participante en la conversación)
+        const prospectId = instagramMessage.sender_id === currentInstagramUserId 
+          ? instagramMessage.recipient_id 
+          : instagramMessage.sender_id;
         
-        if (!acc[actualSenderId]) {
-          acc[actualSenderId] = [];
+        // Solo procesar si el otro participante NO es el usuario actual
+        if (prospectId !== currentInstagramUserId) {
+          if (!acc[prospectId]) {
+            acc[prospectId] = [];
+          }
+          acc[prospectId].push(instagramMessage);
         }
-        acc[actualSenderId].push(instagramMessage);
+        
         return acc;
       }, {});
 
-      console.log(`👥 Prospectos únicos encontrados: ${Object.keys(messagesBySender).length}`);
+      console.log(`👥 Prospectos únicos encontrados: ${Object.keys(messagesByProspect).length}`);
 
       // Crear prospectos a partir de los mensajes agrupados
       const prospectsData: Prospect[] = [];
       
-      for (const [senderId, senderMessages] of Object.entries(messagesBySender)) {
+      for (const [prospectId, prospectMessages] of Object.entries(messagesByProspect)) {
         try {
-          const prospect = await createProspectFromMessages(senderId, senderMessages);
+          const prospect = await createProspectFromMessages(prospectId, prospectMessages);
           prospectsData.push(prospect);
         } catch (error) {
-          console.error(`❌ Error creando prospecto para ${senderId}:`, error);
+          console.error(`❌ Error creando prospecto para ${prospectId}:`, error);
         }
       }
 
