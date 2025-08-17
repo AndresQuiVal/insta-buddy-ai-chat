@@ -595,6 +595,11 @@ export const useProspects = (currentInstagramUserId?: string) => {
               setTimeout(() => {
                 fetchProspects();
               }, 500);
+            } else if (isMyMessage && !isReceivedMessage) {
+              console.log('✅ [REALTIME] ES MI MENSAJE ENVIADO - actualizando prospectos...');
+              setTimeout(() => {
+                fetchProspects();
+              }, 500);
             } else {
               console.log(`⚠️ [REALTIME] No es mi mensaje (es del usuario: ${newMessage.instagram_user_id})`);
             }
