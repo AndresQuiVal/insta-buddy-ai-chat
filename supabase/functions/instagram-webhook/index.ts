@@ -208,7 +208,98 @@ serve(async (req) => {
           }
 
           console.log('🚀 === PROCESANDO MENSAJE ===')
-          // ... resto de la lógica de procesamiento de mensajes normales
+          
+          // Procesar mensaje recibido (no echo)
+          const senderId = messagingEvent.sender?.id
+          const recipientId = messagingEvent.recipient?.id
+          
+          if (!senderId || !recipientId) {
+            console.log('❌ Missing sender or recipient ID')
+            continue
+          }
+
+          // Extraer texto del mensaje (con soporte para attachments)
+          let messageText = messagingEvent.message?.text || ''
+          
+          // 🔥 MANEJO DE ATTACHMENTS: Si no hay texto pero hay attachments
+          if (!messageText && messagingEvent.message?.attachments?.length > 0) {
+            const attachments = messagingEvent.message.attachments
+            console.log(`🔗 Mensaje con attachments (${attachments.length}):`, attachments)
+            
+            const attachmentTypes = attachments.map((att: any) => att.type).join(', ')
+            messageText = `[${attachmentTypes}]` // Placeholder para attachments
+            
+            // Log específico para cada tipo de attachment
+            for (const attachment of attachments) {
+              if (attachment.type === 'ig_reel') {
+                console.log(`🎬 Instagram Reel recibido:`, attachment.payload)
+              } else if (attachment.type === 'image') {
+                console.log(`🖼️ Imagen recibida:`, attachment.payload)
+              } else {
+                console.log(`📎 Attachment tipo '${attachment.type}':`, attachment.payload)
+              }
+            }
+          }
+          
+          console.log(`💬 TEXTO FINAL DEL MENSAJE: "${messageText}"`)
+          
+          // Buscar usuario de Instagram en nuestra base de datos
+          const { data: instagramUser, error: userError } = await supabase
+            .from('instagram_users')
+            .select('*')
+            .eq('instagram_user_id', recipientId)
+            .eq('is_active', true)
+            .single()
+
+          if (userError || !instagramUser) {
+            console.log(`❌ Usuario no encontrado para recipient_id: ${recipientId}`)
+            continue
+          }
+
+          console.log(`✅ Usuario encontrado: ${instagramUser.username}`)
+
+          // Guardar mensaje en la base de datos
+          const messageData = {
+            instagram_user_id: instagramUser.id,
+            instagram_message_id: messagingEvent.message?.mid || `received_${Date.now()}_${senderId}`,
+            sender_id: senderId,
+            recipient_id: recipientId,
+            message_text: messageText,
+            message_type: 'received',
+            timestamp: timestamp,
+            raw_data: {
+              ...messagingEvent,
+              webhook_source: 'messaging',
+              processed_at: new Date().toISOString()
+            }
+          }
+
+          console.log('💾 Guardando mensaje recibido:', messageData)
+
+          const { error: insertError } = await supabase
+            .from('instagram_messages')
+            .insert(messageData)
+
+          if (insertError) {
+            console.error('❌ Error guardando mensaje:', insertError)
+          } else {
+            console.log('✅ Mensaje guardado correctamente en BD')
+            
+            // Actualizar actividad del prospecto
+            try {
+              const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
+                p_prospect_id: senderId // El prospecto es quien ENVÍA el mensaje
+              })
+              
+              if (activityError) {
+                console.error('❌ Error actualizando actividad del prospecto:', activityError)
+              } else {
+                console.log('✅ Actividad del prospecto actualizada')
+              }
+            } catch (error) {
+              console.error('❌ Error en RPC update_prospect_activity:', error)
+            }
+          }
         }
       }
     }

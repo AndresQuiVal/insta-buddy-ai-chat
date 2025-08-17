@@ -553,50 +553,23 @@ export const useProspects = (currentInstagramUserId?: string) => {
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'instagram_messages'
+            table: 'instagram_messages',
+            // FILTRAR SOLO por el UUID de este usuario específico
+            filter: `instagram_user_id=eq.${userUUID}`
           },
           (payload) => {
-            console.log('📨 [REALTIME] Nuevo mensaje detectado:', payload);
-            console.log('📨 [REALTIME] Datos del mensaje:', JSON.stringify(payload.new, null, 2));
+            console.log('📨 [REALTIME] Nuevo mensaje recibido (ya filtrado por UUID):', payload.new);
             
-            // 🔥 LÓGICA CORREGIDA: Verificar si el mensaje está relacionado con nuestro usuario
-            const newMessage = payload.new;
+            const newMessage = payload.new as any;
             
-            const isRelatedToUser = newMessage && (
-              // Es un mensaje que YO envié (sender_id == mi Instagram ID)
-              newMessage.sender_id === currentInstagramUserId || 
-              // Es un mensaje que YO recibí (recipient_id == mi Instagram ID)
-              newMessage.recipient_id === currentInstagramUserId ||
-              // Es un mensaje en mi cuenta (instagram_user_id == mi UUID en BD)
-              newMessage.instagram_user_id === userUUID ||
-              // FALLBACK: Si el mensaje tiene mi UUID, es mío aunque los IDs de Instagram no coincidan
-              (newMessage.instagram_user_id && newMessage.instagram_user_id === userUUID)
-            );
-          
-            console.log('🔍 [REALTIME] Verificando relación del mensaje:', {
-              'mi Instagram ID': currentInstagramUserId,
-              'mi UUID en BD': userUUID,
-              'sender del mensaje': newMessage?.sender_id,
-              'recipient del mensaje': newMessage?.recipient_id,
-              'UUID del mensaje': newMessage?.instagram_user_id,
-              'está relacionado': isRelatedToUser,
-              'razón': newMessage?.instagram_user_id === userUUID ? 'UUID coincide' :
-                      newMessage?.sender_id === currentInstagramUserId ? 'Soy sender' :
-                      newMessage?.recipient_id === currentInstagramUserId ? 'Soy recipient' : 'No relacionado'
-            });
-          
-            if (isRelatedToUser) {
-              console.log('✅ [REALTIME] Mensaje relacionado con nuestro usuario - Recargando prospectos...');
+            // Solo procesar si es un mensaje RECIBIDO (no enviado)
+            if (newMessage.message_type === 'received') {
+              console.log('✅ [REALTIME] Mensaje RECIBIDO - actualizando prospectos...');
               setTimeout(() => {
-                console.log('🔄 [REALTIME] Ejecutando refetch de prospectos...');
                 fetchProspects();
-              }, 1000);
+              }, 500); // Pequeño delay para asegurar que la BD esté actualizada
             } else {
-              console.log('⚠️ [REALTIME] Mensaje NO relacionado con nuestro usuario');
-              console.log('🔍 [DEBUG] ¿Este mensaje es de otra cuenta tuya?', {
-                mensajeDe: newMessage?.instagram_user_id,
-                allUsers: 'Ver logs arriba para comparar'
-              });
+              console.log('📤 [REALTIME] Es mensaje enviado - ignorando');
             }
           }
         )
