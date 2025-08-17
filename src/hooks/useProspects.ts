@@ -331,28 +331,39 @@ export const useProspects = (currentInstagramUserId?: string) => {
   };
 
   useEffect(() => {
-    // Cargar prospectos inicial
-    fetchProspects();
+    if (currentInstagramUserId) {
+      console.log('🔄 Cargando prospectos para usuario:', currentInstagramUserId);
+      fetchProspects();
+    }
+  }, [currentInstagramUserId]); // Refetch cuando cambie el usuario
 
-    // Suscribirse a cambios en tiempo real
-    console.log('🔄 Configurando suscripción en tiempo real...');
+  useEffect(() => {
+    if (!currentInstagramUserId) {
+      console.log('❌ No hay usuario especificado, no configurando suscripción');
+      return;
+    }
+
+    console.log('🔄 Configurando suscripción en tiempo real para usuario:', currentInstagramUserId);
     const channel = supabase
-      .channel('prospect-updates')
+      .channel(`prospect-updates-${currentInstagramUserId}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
-          table: 'instagram_messages'
+          table: 'instagram_messages',
+          filter: `recipient_id=eq.${currentInstagramUserId}`
         },
         (payload) => {
-          console.log('📨 Cambio detectado en instagram_messages:', payload);
+          console.log('📨 Nuevo mensaje detectado:', payload);
           
-          // Recargar todos los prospectos cuando hay cambios
-          setTimeout(() => {
-            console.log('🔄 Recargando prospectos después del cambio...');
-            fetchProspects();
-          }, 1000); // Delay de 1 segundo para asegurar que la base de datos esté actualizada
+          // Solo refetch si es un mensaje recibido (de un prospecto)
+          if (payload.new?.message_type === 'received') {
+            console.log('🔄 Recargando prospectos después del nuevo mensaje...');
+            setTimeout(() => {
+              fetchProspects();
+            }, 500);
+          }
         }
       )
       .subscribe((status) => {
@@ -363,7 +374,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
       console.log('🔌 Desconectando suscripción en tiempo real');
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [currentInstagramUserId]);
 
   return {
     prospects,
