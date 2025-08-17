@@ -240,62 +240,87 @@ export const useProspects = (currentInstagramUserId?: string) => {
   };
 
   const fetchInstagramUsername = async (senderId: string): Promise<string> => {
+    const shortId = senderId.slice(-8);
+    
     try {
-      console.log(`🔍 Obteniendo username real para sender_id: ${senderId}`);
+      console.log(`🔍 [${shortId}] Obteniendo username real para sender_id: ${senderId}`);
       
       // Intentar obtener el token de Instagram desde localStorage primero
       const instagramToken = localStorage.getItem('hower-instagram-token') || 
                            localStorage.getItem('instagram-access-token');
       
+      console.log(`🔍 [${shortId}] Token desde localStorage: ${instagramToken ? 'ENCONTRADO' : 'NO ENCONTRADO'}`);
+      
       // Si no hay token, intentar obtenerlo desde el usuario actual
       if (!instagramToken) {
+        console.log(`🔍 [${shortId}] Buscando token en hower-instagram-user...`);
         const savedUserData = localStorage.getItem('hower-instagram-user');
+        
         if (savedUserData) {
           const userData = JSON.parse(savedUserData);
+          console.log(`🔍 [${shortId}] Datos de usuario encontrados:`, { 
+            hasToken: !!userData.access_token,
+            userId: userData.instagram_user_id 
+          });
+          
           if (userData.access_token) {
-            console.log('✅ Token encontrado en datos de usuario');
-            const response = await fetch(
-              `https://graph.instagram.com/${senderId}?fields=username,name&access_token=${userData.access_token}`
-            );
+            console.log(`✅ [${shortId}] Token encontrado en datos de usuario, haciendo llamada API...`);
+            const apiUrl = `https://graph.instagram.com/${senderId}?fields=username,name&access_token=${userData.access_token}`;
+            console.log(`🔍 [${shortId}] URL API: ${apiUrl}`);
+            
+            const response = await fetch(apiUrl);
+            console.log(`🔍 [${shortId}] Status de respuesta API: ${response.status}`);
             
             if (response.ok) {
               const userDataResponse = await response.json();
-              console.log(`✅ Username obtenido de Instagram:`, userDataResponse);
+              console.log(`✅ [${shortId}] Username obtenido de Instagram API:`, userDataResponse);
               
               if (userDataResponse.username) {
                 return userDataResponse.username;
+              } else {
+                console.log(`⚠️ [${shortId}] Respuesta API no contiene username`);
               }
+            } else {
+              const errorText = await response.text();
+              console.log(`❌ [${shortId}] Error en API Instagram:`, response.status, errorText);
             }
+          } else {
+            console.log(`❌ [${shortId}] No hay access_token en userData`);
           }
+        } else {
+          console.log(`❌ [${shortId}] No hay savedUserData en localStorage`);
         }
       }
       
       if (!instagramToken) {
-        console.log('❌ No hay token de Instagram disponible');
-        return `user_${senderId.slice(-8)}`;
+        console.log(`❌ [${shortId}] No hay token de Instagram disponible - retornando fallback`);
+        return `user_${shortId}`;
       }
 
       // Llamar a la API de Instagram para obtener información del usuario
+      console.log(`✅ [${shortId}] Usando token principal, haciendo llamada API...`);
       const response = await fetch(
         `https://graph.instagram.com/${senderId}?fields=username,name&access_token=${instagramToken}`
       );
 
       if (response.ok) {
         const userData = await response.json();
-        console.log(`✅ Username obtenido de Instagram:`, userData);
+        console.log(`✅ [${shortId}] Username obtenido de Instagram con token principal:`, userData);
         
         if (userData.username) {
           return userData.username;
         }
       } else {
-        console.log(`❌ Error al obtener username de Instagram:`, response.status);
+        const errorText = await response.text();
+        console.log(`❌ [${shortId}] Error al obtener username de Instagram:`, response.status, errorText);
       }
     } catch (error) {
-      console.error('Error fetching Instagram username:', error);
+      console.error(`❌ [${shortId}] Error fetching Instagram username:`, error);
     }
 
     // Fallback: usar el sender_id acortado
-    return `user_${senderId.slice(-8)}`;
+    console.log(`⚠️ [${shortId}] Usando fallback username: user_${shortId}`);
+    return `user_${shortId}`;
   };
 
   const extractUsernameFromMessage = async (messages: InstagramMessage[], senderId: string): Promise<string> => {
