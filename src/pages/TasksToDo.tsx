@@ -249,21 +249,29 @@ const TasksToDo: React.FC = () => {
         return;
       }
 
+      // Eliminar registros de prospectos primero
+      const { error: prospectsError } = await supabase
+        .from('prospects')
+        .delete()
+        .eq('instagram_user_id', currentUser.id)
+        .in('prospect_instagram_id', pendingProspectIds);
+
       // Eliminar mensajes de estos prospectos
       const { error: messagesError } = await supabase
         .from('instagram_messages')
         .delete()
         .in('sender_id', pendingProspectIds);
 
-      if (messagesError) throw messagesError;
-
-      // Eliminar registros de prospectos si existen
-      const { error: prospectsError } = await supabase
-        .from('prospects')
+      // Eliminar estados de prospectos
+      const { error: statesError } = await supabase
+        .from('prospect_states')
         .delete()
-        .in('prospect_instagram_id', pendingProspectIds);
+        .eq('instagram_user_id', currentUser.instagram_user_id)
+        .in('prospect_sender_id', pendingProspectIds);
 
-      // No lanzar error si no existen prospectos (tabla podría estar vacía)
+      if (messagesError || prospectsError || statesError) {
+        throw messagesError || prospectsError || statesError;
+      }
 
       // Actualizar datos
       refetch();
