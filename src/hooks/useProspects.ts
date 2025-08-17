@@ -578,28 +578,25 @@ export const useProspects = (currentInstagramUserId?: string) => {
             
             const newMessage = payload.new as any;
             
-            // 🔥 LÓGICA CORREGIDA: Usar raw_data que tiene los IDs correctos
+            // 🔥 LÓGICA FINAL CORREGIDA: Basada en los datos reales de la BD
             
-            // Para mensajes enviados POR MÍ: verificar en raw_data.sender.id
-            const isMessageSentByMe = newMessage.message_type === 'received' && 
-                                    newMessage.raw_data?.sender?.id === userData.instagram_user_id;
+            // MENSAJES ENVIADOS POR MÍ: message_type = 'sent' + mi UUID
+            const isMessageSentByMe = newMessage.message_type === 'sent' && 
+                                    newMessage.instagram_user_id === userUUID;
             
-            // Para mensajes recibidos POR MÍ: verificar en raw_data.recipient.id  
+            // MENSAJES RECIBIDOS POR MÍ: message_type = 'received' + mi UUID
             const isMessageReceivedByMe = newMessage.message_type === 'received' && 
-                                        newMessage.raw_data?.recipient?.id === userData.instagram_user_id;
+                                        newMessage.instagram_user_id === userUUID;
             
-            console.log('🔍 [REALTIME] LÓGICA CORREGIDA - Verificando mensaje:', {
+            console.log('🔍 [REALTIME] LÓGICA FINAL - Verificando mensaje:', {
               'MI Instagram ID': userData.instagram_user_id,
               'MI UUID': userUUID,
-              'raw_data.sender.id': newMessage.raw_data?.sender?.id,
-              'raw_data.recipient.id': newMessage.raw_data?.recipient?.id,
-              'Mensaje sender_id (BD)': newMessage.sender_id,
-              'Mensaje recipient_id (BD)': newMessage.recipient_id,
               'Mensaje message_type': newMessage.message_type,
-              '🚀 ES MENSAJE ENVIADO POR MÍ': isMessageSentByMe,
-              '📨 ES MENSAJE RECIBIDO POR MÍ': isMessageReceivedByMe,
-              'COMPARACIÓN SEND': newMessage.raw_data?.sender?.id === userData.instagram_user_id,
-              'COMPARACIÓN RECEIVE': newMessage.raw_data?.recipient?.id === userData.instagram_user_id,
+              'Mensaje instagram_user_id': newMessage.instagram_user_id,
+              'Mensaje sender_id': newMessage.sender_id,
+              'Mensaje recipient_id': newMessage.recipient_id,
+              '🚀 ES MENSAJE ENVIADO POR MÍ (sent + mi UUID)': isMessageSentByMe,
+              '📨 ES MENSAJE RECIBIDO POR MÍ (received + mi UUID)': isMessageReceivedByMe,
               'usuario': userData.username
             });
             
