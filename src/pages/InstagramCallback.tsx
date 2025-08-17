@@ -83,25 +83,21 @@ const InstagramCallback: React.FC = () => {
         if (authSource === 'onboarding') {
           localStorage.setItem('instagram_auth_success', 'true');
           console.log('🚀 Marcando auth exitoso para onboarding...');
-        }
-        
-        // Disparar evento inmediatamente
-        window.dispatchEvent(new CustomEvent('instagram-auth-success', { 
-          detail: { user: result.user } 
-        }));
-        
-        setTimeout(() => {
-          // Verificar si venimos del onboarding
-          if (authSource === 'onboarding') {
+          
+          setTimeout(() => {
             localStorage.removeItem('instagram_auth_source');
             console.log('🚀 Regresando al onboarding...');
             navigate('/hower-lite-onboarding', { replace: true });
-          } else {
-            // Login normal - ir directo a tasks-to-do
-            console.log('🎯 Login exitoso, navegando a tasks-to-do...');
+          }, 500);
+        } else {
+          // Login normal - marcar flag y ir directo a tasks-to-do
+          console.log('🎯 Login exitoso, navegando a tasks-to-do...');
+          localStorage.setItem('just-logged-in', 'true');
+          
+          setTimeout(() => {
             navigate('/tasks-to-do', { replace: true });
-          }
-        }, 500);
+          }, 500);
+        }
       } else {
         console.error('❌ Error procesando callback:', result.error);
         setStatus('error');

@@ -86,19 +86,17 @@ const Index = () => {
     if (!userLoading && currentUser) {
       console.log('🎯 Usuario detectado, verificando si debe redirigir...');
       
-      // Verificar si viene de una autenticación reciente
-      const justAuthenticated = localStorage.getItem('hower-auth-redirect') || 
-                               sessionStorage.getItem('just-authenticated');
+      // Verificar si viene de login reciente
+      const justLoggedIn = localStorage.getItem('just-logged-in');
       
-      if (justAuthenticated) {
-        console.log('🚀 Usuario recién autenticado, redirigiendo a tasks-to-do');
-        localStorage.removeItem('hower-auth-redirect');
-        sessionStorage.removeItem('just-authenticated');
-        navigate('/tasks-to-do');
+      if (justLoggedIn) {
+        console.log('🚀 Usuario recién logueado, redirigiendo a tasks-to-do');
+        localStorage.removeItem('just-logged-in');
+        navigate('/tasks-to-do', { replace: true });
         return;
       }
       
-      // Si no es recién autenticado, verificar autoresponders
+      // Si no es recién logueado, verificar autoresponders
       checkAutoresponderOnboardingStatus();
     }
   }, [currentUser, userLoading, navigate]);

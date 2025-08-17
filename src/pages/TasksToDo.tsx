@@ -33,6 +33,14 @@ const TasksToDo: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { currentUser, loading: userLoading } = useInstagramUsers();
+
+  // Verificar autenticación al cargar
+  useEffect(() => {
+    if (!userLoading && !currentUser) {
+      console.log('❌ No hay usuario autenticado, redirigiendo a home');
+      navigate('/', { replace: true });
+    }
+  }, [currentUser, userLoading, navigate]);
   const [prospects, setProspects] = useState<ProspectData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
