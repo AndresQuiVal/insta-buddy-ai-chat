@@ -563,67 +563,85 @@ export const useProspects = (currentInstagramUserId?: string) => {
       const userUUID = userData.id;
       console.log('✅ [REALTIME] Usuario actual encontrado:', userData);
       
+      // 🏗️ Función para verificar si un mensaje de prospecto pertenece a nuestro usuario
+      const fetchProspectOwner = async (prospectId: string) => {
+        try {
+          const { data: prospect, error } = await supabase
+            .from('prospects')
+            .select('instagram_user_id')
+            .eq('id', prospectId)
+            .single();
+
+          if (error || !prospect) {
+            console.log('❌ [REALTIME] Error obteniendo prospecto:', error);
+            return;
+          }
+
+          console.log('🔍 [REALTIME] Verificando prospecto:', {
+            'prospectId': prospectId,
+            'mi UUID': userUUID,
+            'prospecto UUID': prospect.instagram_user_id,
+            'es mío': prospect.instagram_user_id === userUUID
+          });
+
+          if (prospect.instagram_user_id === userUUID) {
+            console.log('✅ [REALTIME] ES MI PROSPECTO - actualizando lista...');
+            setTimeout(() => {
+              fetchProspects();
+            }, 500);
+          } else {
+            console.log('⚠️ [REALTIME] No es mi prospecto');
+          }
+
+        } catch (error) {
+          console.error('❌ [REALTIME] Error en fetchProspectOwner:', error);
+        }
+      };
+
+      // 🏗️ Función para verificar si un prospecto actualizado es nuestro
+      const checkIfMyProspect = async (prospectUserUUID: string) => {
+        console.log('🔍 [REALTIME] Verificando si prospecto es mío:', {
+          'mi UUID': userUUID,
+          'prospecto UUID': prospectUserUUID,
+          'es mío': prospectUserUUID === userUUID
+        });
+
+        if (prospectUserUUID === userUUID) {
+          console.log('✅ [REALTIME] ES MI PROSPECTO ACTUALIZADO - refrescando lista...');
+          setTimeout(() => {
+            fetchProspects();
+          }, 500);
+        } else {
+          console.log('⚠️ [REALTIME] No es mi prospecto actualizado');
+        }
+      };
+
       channel = supabase
-        .channel(`prospect-updates-global`) // Canal global para todos los usuarios
+        .channel(`prospect-updates-global`)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'instagram_messages'
-            // SIN filtro - todos los usuarios escuchan todos los mensajes
+            table: 'prospect_messages'
           },
           (payload) => {
-            console.log('📨 [REALTIME] Nuevo mensaje detectado globalmente:', payload.new);
-            
+            console.log('📨 [REALTIME] Nuevo mensaje de prospecto detectado globalmente:', payload.new);
             const newMessage = payload.new as any;
-            
-            // 🔥 FILTRAR EN EL CLIENTE: Solo procesar si es MI mensaje
-            const isMyMessage = newMessage.instagram_user_id === userUUID;
-            const isReceivedMessage = newMessage.message_type === 'received';
-            const isSentMessage = newMessage.message_type === 'sent';
-            
-            console.log('🔍 [REALTIME] Verificando si es mi mensaje:', {
-              'mi UUID': userUUID,
-              'mensaje UUID': newMessage.instagram_user_id,
-              'es mi mensaje': isMyMessage,
-              'es recibido': isReceivedMessage,
-              'es enviado': isSentMessage,
-              'usuario': userData.username
-            });
-            
-            // 💡 NUEVA LÓGICA: Procesar tanto mensajes enviados como recibidos MÍOS
-            if (isMyMessage && (isReceivedMessage || isSentMessage)) {
-              console.log(`✅ [REALTIME] ES MI MENSAJE ${isSentMessage ? 'ENVIADO' : 'RECIBIDO'} - actualizando prospectos...`);
-              setTimeout(() => {
-                fetchProspects();
-              }, 500);
-            } else {
-              console.log(`⚠️ [REALTIME] No procesar - es del usuario: ${newMessage.instagram_user_id}, tipo: ${newMessage.message_type}`);
-            }
+            fetchProspectOwner(newMessage.prospect_id);
           }
         )
         .on(
           'postgres_changes',
           {
-            event: 'UPDATE',
+            event: 'UPDATE', 
             schema: 'public',
-            table: 'instagram_messages'
+            table: 'prospects'
           },
           (payload) => {
-            console.log('📝 [REALTIME] Mensaje actualizado detectado:', payload);
-            
-            const updatedMessage = payload.new;
-            if (updatedMessage && (
-              updatedMessage.recipient_id === currentInstagramUserId || 
-              updatedMessage.sender_id === currentInstagramUserId ||
-              updatedMessage.instagram_user_id === userUUID
-            )) {
-              console.log('✅ [REALTIME] Actualización relacionada con nuestro usuario - Recargando prospectos...');
-              setTimeout(() => {
-                fetchProspects();
-              }, 500);
-            }
+            console.log('📝 [REALTIME] Prospecto actualizado:', payload.new);
+            const updatedProspect = payload.new as any;
+            checkIfMyProspect(updatedProspect.instagram_user_id);
           }
         )
         .subscribe((status) => {
