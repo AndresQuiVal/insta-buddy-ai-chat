@@ -1074,12 +1074,16 @@ export type Database = {
       }
       prospects: {
         Row: {
+          biography: string | null
           created_at: string
           first_contact_date: string
+          followers_count: number | null
+          follows_count: number | null
           id: string
           instagram_user_id: string | null
           last_message_date: string
           last_message_from_prospect: boolean
+          media_count: number | null
           profile_picture_url: string | null
           prospect_instagram_id: string
           status: string
@@ -1087,12 +1091,16 @@ export type Database = {
           username: string
         }
         Insert: {
+          biography?: string | null
           created_at?: string
           first_contact_date?: string
+          followers_count?: number | null
+          follows_count?: number | null
           id?: string
           instagram_user_id?: string | null
           last_message_date?: string
           last_message_from_prospect?: boolean
+          media_count?: number | null
           profile_picture_url?: string | null
           prospect_instagram_id: string
           status?: string
@@ -1100,12 +1108,16 @@ export type Database = {
           username: string
         }
         Update: {
+          biography?: string | null
           created_at?: string
           first_contact_date?: string
+          followers_count?: number | null
+          follows_count?: number | null
           id?: string
           instagram_user_id?: string | null
           last_message_date?: string
           last_message_from_prospect?: boolean
+          media_count?: number | null
           profile_picture_url?: string | null
           prospect_instagram_id?: string
           status?: string
