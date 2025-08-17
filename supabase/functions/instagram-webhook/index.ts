@@ -386,6 +386,23 @@ serve(async (req) => {
             } catch (error) {
               console.error('❌ Error en RPC update_prospect_activity:', error)
             }
+
+            // 🎯 SINCRONIZAR ESTADO DE TAREA - MENSAJE RECIBIDO = DESTACHADO
+            try {
+              const { error: syncError } = await supabase.rpc('sync_prospect_task_status', {
+                p_instagram_user_id: recipientId, // El usuario que recibe (tu cuenta)
+                p_prospect_sender_id: senderId,   // El prospecto que envía
+                p_last_message_type: 'received'   // Mensaje recibido = destachado
+              })
+              
+              if (syncError) {
+                console.error('❌ Error sincronizando estado de tarea (recibido):', syncError)
+              } else {
+                console.log('✅ Estado de tarea sincronizado (recibido) - prospecto DESTACHADO')
+              }
+            } catch (error) {
+              console.error('❌ Error en RPC sync_prospect_task_status (recibido):', error)
+            }
           }
         }
       }
