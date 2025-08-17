@@ -256,8 +256,8 @@ const TasksToDo: React.FC = () => {
         return;
       }
 
-      // Cambiar el estado de los prospectos a 'deleted' para que no aparezcan más
-      console.log('🔄 Cambiando estado de prospectos a "deleted"...');
+      // Cambiar el estado de los prospectos a 'responded' para que no aparezcan como pendientes
+      console.log('🔄 Cambiando estado de prospectos a "responded"...');
       const { data: updatedStates, error: statesError } = await supabase
         .from('prospect_states')
         .upsert(
@@ -265,8 +265,8 @@ const TasksToDo: React.FC = () => {
             instagram_user_id: currentUser.instagram_user_id,
             prospect_sender_id: prospectId,
             prospect_username: realProspects.find(p => p.senderId === prospectId)?.username || '',
-            state: 'deleted',
-            last_client_message_at: new Date().toISOString()
+            state: 'responded', // Usar un estado válido
+            last_prospect_message_at: new Date().toISOString() // Simular que respondieron
           }))
         );
 
