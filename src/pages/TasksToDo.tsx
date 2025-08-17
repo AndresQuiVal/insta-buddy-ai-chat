@@ -1108,14 +1108,6 @@ const TasksToDo: React.FC = () => {
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => window.location.href = '/prospects'}
-            className="mb-4 text-sm sm:text-base"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Prospectos
-          </Button>
           {/* Notebook Style Header */}
           <div className="relative">
             <div 
@@ -2043,36 +2035,6 @@ const TasksToDo: React.FC = () => {
           <p className="text-sm text-gray-500">
             Conectado como @{currentUser.username}
           </p>
-        </div>
-      )}
-      
-      {/* Botón de Debug */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setShowDebugPanel(!showDebugPanel)}
-          className="bg-red-500 text-white hover:bg-red-600"
-        >
-          <Bug className="w-4 h-4 mr-2" />
-          Debug
-        </Button>
-      </div>
-
-      {/* Panel de Debug */}
-      {showDebugPanel && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-lg font-semibold">Panel de Debug - Instagram</h2>
-              <Button variant="ghost" size="sm" onClick={() => setShowDebugPanel(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="p-4">
-              <InstagramDebugPanel />
-            </div>
-          </div>
         </div>
       )}
 
