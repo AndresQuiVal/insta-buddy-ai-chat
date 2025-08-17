@@ -145,46 +145,47 @@ export const useProspects = (currentInstagramUserId?: string) => {
     
     for (const message of messages) {
       if (message.raw_data) {
-        // Si hay información de un comentario en un post
+        console.log(`🔍 Analizando raw_data:`, JSON.stringify(message.raw_data, null, 2));
+        
+        // PRIORIDAD 1: Detectar comentarios (muy específico)
         if (message.raw_data.post_id || 
             message.raw_data.comment_id ||
             message.raw_data.original_event?.comment_id ||
             message.raw_data.original_change?.comment_id ||
-            message.raw_data.entry?.[0]?.changes?.[0]?.value?.comment_id ||
-            message.raw_data.entry?.[0]?.messaging?.[0]?.postback?.payload?.includes('comment')) {
+            message.raw_data.entry?.[0]?.changes?.[0]?.value?.comment_id) {
           console.log(`✅ Fuente: COMMENT (detectado por post_id/comment_id en raw_data)`);
           return 'comment';
         }
 
-        // Si hay información de ads/anuncios
+        // PRIORIDAD 2: Detectar ads/anuncios (muy específico)
         if (message.raw_data.ad_id || 
             message.raw_data.ad_campaign_id ||
             message.raw_data.original_event?.ad_id ||
-            message.raw_data.ref?.includes('ad') ||
-            message.raw_data.entry?.[0]?.messaging?.[0]?.postback?.payload?.includes('ad')) {
+            (message.raw_data.ref && message.raw_data.ref.includes('ad'))) {
           console.log(`✅ Fuente: ADS (detectado por ad_id en raw_data)`);
           return 'ads';
         }
 
-        // Si hay información que indique que viene del sistema Hower
-        if (message.raw_data.source === 'hower' ||
-            message.raw_data.campaign_type === 'hower' ||
-            message.raw_data.original_event?.source === 'hower' ||
-            (message.is_invitation === true)) {
-          console.log(`✅ Fuente: HOWER (detectado por marcadores del sistema)`);
+        // PRIORIDAD 3: Detectar Hower (MUY ESTRICTO - solo si hay evidencia clara del sistema)
+        if ((message.raw_data.source === 'hower') ||
+            (message.raw_data.campaign_type === 'hower') ||
+            (message.raw_data.original_event?.source === 'hower') ||
+            (message.raw_data.hower_system === true) ||
+            (message.raw_data.automated === true && message.raw_data.system === 'hower')) {
+          console.log(`✅ Fuente: HOWER (detectado por marcadores específicos del sistema)`);
           return 'hower';
         }
       }
 
-      // Si el mensaje tiene marcador de invitación, es del sistema Hower
-      if (message.is_invitation === true) {
-        console.log(`✅ Fuente: HOWER (detectado por is_invitation=true)`);
+      // CRITERIO ADICIONAL PARA HOWER: Solo si el mensaje tiene is_invitation=true Y es un mensaje enviado por nosotros
+      if (message.is_invitation === true && message.message_type === 'sent') {
+        console.log(`✅ Fuente: HOWER (detectado por is_invitation=true en mensaje enviado)`);
         return 'hower';
       }
     }
 
-    // Por defecto, si no hay indicadores específicos, asumir que es DM directo
-    console.log(`✅ Fuente: DM (por defecto)`);
+    // POR DEFECTO: Si no hay indicadores específicos claros, es un DM directo
+    console.log(`✅ Fuente: DM (por defecto - no hay indicadores de otras fuentes)`);
     return 'dm';
   };
 
