@@ -547,29 +547,39 @@ export const useProspects = (currentInstagramUserId?: string) => {
       console.log('✅ [REALTIME] Usuario actual encontrado:', userData);
       
       channel = supabase
-        .channel(`prospect-updates-${currentInstagramUserId}`)
+        .channel(`prospect-updates-global`) // Canal global para todos los usuarios
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'instagram_messages',
-            // FILTRAR SOLO por el UUID de este usuario específico
-            filter: `instagram_user_id=eq.${userUUID}`
+            table: 'instagram_messages'
+            // SIN filtro - todos los usuarios escuchan todos los mensajes
           },
           (payload) => {
-            console.log('📨 [REALTIME] Nuevo mensaje recibido (ya filtrado por UUID):', payload.new);
+            console.log('📨 [REALTIME] Nuevo mensaje detectado globalmente:', payload.new);
             
             const newMessage = payload.new as any;
             
-            // Solo procesar si es un mensaje RECIBIDO (no enviado)
-            if (newMessage.message_type === 'received') {
-              console.log('✅ [REALTIME] Mensaje RECIBIDO - actualizando prospectos...');
+            // 🔥 FILTRAR EN EL CLIENTE: Solo procesar si es MI mensaje
+            const isMyMessage = newMessage.instagram_user_id === userUUID;
+            const isReceivedMessage = newMessage.message_type === 'received';
+            
+            console.log('🔍 [REALTIME] Verificando si es mi mensaje:', {
+              'mi UUID': userUUID,
+              'mensaje UUID': newMessage.instagram_user_id,
+              'es mi mensaje': isMyMessage,
+              'es recibido': isReceivedMessage,
+              'usuario': userData.username
+            });
+            
+            if (isMyMessage && isReceivedMessage) {
+              console.log('✅ [REALTIME] ES MI MENSAJE RECIBIDO - actualizando prospectos...');
               setTimeout(() => {
                 fetchProspects();
-              }, 500); // Pequeño delay para asegurar que la BD esté actualizada
+              }, 500);
             } else {
-              console.log('📤 [REALTIME] Es mensaje enviado - ignorando');
+              console.log(`⚠️ [REALTIME] No es mi mensaje (es del usuario: ${newMessage.instagram_user_id})`);
             }
           }
         )
