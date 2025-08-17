@@ -152,29 +152,20 @@ const TasksToDo: React.FC = () => {
           taskTypes.forEach(type => {
             const taskKey = `${type}-${prospect.senderId}`;
             // Solo limpiar si estaba marcado como completado
-            if (completedTasks[taskKey]) {
-              prospectsToUntick[taskKey] = false;
-              hasChanges = true;
-              console.log(`🔄 Destachando ${prospect.username} de ${type} (prospecto respondió)`);
-            }
+            setCompletedTasks(prev => {
+              if (prev[taskKey]) {
+                console.log(`🔄 Destachando ${prospect.username} de ${type} (prospecto respondió)`);
+                const updated = { ...prev };
+                delete updated[taskKey]; // Remover la marca de completado
+                return updated;
+              }
+              return prev;
+            });
           });
         }
       });
-
-      // Aplicar los cambios si hay alguno
-      if (hasChanges) {
-        setCompletedTasks(prev => {
-          const updated = { ...prev };
-          Object.keys(prospectsToUntick).forEach(key => {
-            delete updated[key]; // Remover la marca de completado
-          });
-          return updated;
-        });
-        
-        console.log('✅ Prospectos destachados por nuevas respuestas');
-      }
     }
-  }, [realProspects, completedTasks]);
+  }, [realProspects]); // Removí completedTasks de las dependencias para evitar bucle
 
 
   // Cargar nombre de lista personalizado
