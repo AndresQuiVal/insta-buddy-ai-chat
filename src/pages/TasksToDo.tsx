@@ -306,19 +306,10 @@ const TasksToDo: React.FC = () => {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    // SOLO DMs reales - prospectos que escribieron mensajes directos
-    const dmProspects = prospects.filter(p => 
-      p.status === 'esperando_respuesta' // Solo prospectos de DMs directos
+    // Prospectos pendientes: necesitan respuesta
+    const pendingResponses = prospects.filter(p => 
+      p.status === 'esperando_respuesta'
     );
-
-    // Comentarios en posts (por implementar)
-    const commentProspects: ProspectData[] = [];
-
-    // Prospectos de Hower (por implementar) 
-    const howerProspects: ProspectData[] = [];
-
-    // Prospectos de anuncios (por implementar)
-    const adsProspects: ProspectData[] = [];
 
     // Prospectos de seguimiento: último mensaje es nuestro, no han respondido
     const noResponseYesterday = prospects.filter(p => {
@@ -377,12 +368,7 @@ const TasksToDo: React.FC = () => {
     };
 
     return {
-      // Categorización por tipo
-      dmProspects,
-      commentProspects, 
-      howerProspects,
-      adsProspects,
-      // Seguimientos
+      pendingResponses,
       noResponseYesterday,
       noResponse7Days,
       newProspects,
@@ -515,8 +501,8 @@ const TasksToDo: React.FC = () => {
                   <span>Prospectos pendientes</span>
                 </div>
                 <div className="flex items-center space-x-2 flex-shrink-0">
-                  <Badge variant="secondary" className="text-xs">{prospectsClassification.dmProspects.length + prospectsClassification.commentProspects.length + prospectsClassification.howerProspects.length + prospectsClassification.adsProspects.length}</Badge>
-                  {(prospectsClassification.dmProspects.length + prospectsClassification.commentProspects.length + prospectsClassification.howerProspects.length + prospectsClassification.adsProspects.length) > 0 && (
+                  <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.length}</Badge>
+                  {prospectsClassification.pendingResponses.length > 0 && (
                     <Button
                       size="sm"
                       variant="destructive"
@@ -557,35 +543,24 @@ const TasksToDo: React.FC = () => {
                   </div>
                  
                   <TabsContent value="hower" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                    {prospectsClassification.howerProspects.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
-                        <p className="text-base">¡Excelente! No hay prospectos de Hower pendientes.</p>
-                      </div>
-                    ) : (
-                      prospectsClassification.howerProspects.map((prospect) => (
-                        <ProspectCard 
-                          key={prospect.id}
-                          prospect={prospect} 
-                          taskType="hower" 
-                          showCheckbox={true}
-                        />
-                      ))
-                    )}
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                      <p className="text-base">¡Excelente! No hay prospectos de Hower pendientes.</p>
+                    </div>
                   </TabsContent>
                   
                   <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                    {prospectsClassification.dmProspects.length === 0 ? (
+                    {prospectsClassification.pendingResponses.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
                         <p className="text-base">¡Excelente! No hay DM's pendientes.</p>
                       </div>
                     ) : (
-                      prospectsClassification.dmProspects.map((prospect) => (
+                      prospectsClassification.pendingResponses.map((prospect) => (
                         <ProspectCard 
                           key={prospect.id}
                           prospect={prospect} 
-                          taskType="dms" 
+                          taskType="pending" 
                           showCheckbox={true}
                         />
                       ))
@@ -593,39 +568,17 @@ const TasksToDo: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="comments" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                    {prospectsClassification.commentProspects.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
-                        <p className="text-base">¡Excelente! No hay comentarios pendientes.</p>
-                      </div>
-                    ) : (
-                      prospectsClassification.commentProspects.map((prospect) => (
-                        <ProspectCard 
-                          key={prospect.id}
-                          prospect={prospect} 
-                          taskType="comments" 
-                          showCheckbox={true}
-                        />
-                      ))
-                    )}
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                      <p className="text-base">¡Excelente! No hay comentarios pendientes.</p>
+                    </div>
                   </TabsContent>
                   
                   <TabsContent value="ads" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                    {prospectsClassification.adsProspects.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
-                        <p className="text-base">¡Excelente! No hay anuncios pendientes.</p>
-                      </div>
-                    ) : (
-                      prospectsClassification.adsProspects.map((prospect) => (
-                        <ProspectCard 
-                          key={prospect.id}
-                          prospect={prospect} 
-                          taskType="ads" 
-                          showCheckbox={true}
-                        />
-                      ))
-                    )}
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                      <p className="text-base">¡Excelente! No hay anuncios pendientes.</p>
+                    </div>
                   </TabsContent>
                 </Tabs>
               </CardContent>
