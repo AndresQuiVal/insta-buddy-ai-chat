@@ -256,25 +256,19 @@ const TasksToDo: React.FC = () => {
         return;
       }
 
-      // Cambiar el estado de los prospectos a 'responded' para que no aparezcan como pendientes
-      console.log('🔄 Cambiando estado de prospectos a "responded"...');
-      const { data: updatedStates, error: statesError } = await supabase
+      // En lugar de cambiar estados, simplemente eliminar los registros existentes
+      console.log('🗑️ Eliminando registros de prospect_states...');
+      const { data: deletedStates, error: deleteError } = await supabase
         .from('prospect_states')
-        .upsert(
-          pendingProspectIds.map(prospectId => ({
-            instagram_user_id: currentUser.instagram_user_id,
-            prospect_sender_id: prospectId,
-            prospect_username: realProspects.find(p => p.senderId === prospectId)?.username || '',
-            state: 'responded', // Usar un estado válido
-            last_prospect_message_at: new Date().toISOString() // Simular que respondieron
-          }))
-        );
+        .delete()
+        .eq('instagram_user_id', currentUser.instagram_user_id)
+        .in('prospect_sender_id', pendingProspectIds);
 
-      console.log('📊 Estados actualizados:', updatedStates);
-      console.log('❌ Error (si existe):', statesError);
+      console.log('📊 Estados eliminados:', deletedStates);
+      console.log('❌ Error (si existe):', deleteError);
 
-      if (statesError) {
-        throw statesError;
+      if (deleteError) {
+        throw deleteError;
       }
 
       console.log('🔄 Refrescando datos...');
