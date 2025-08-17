@@ -436,21 +436,30 @@ export const useProspects = (currentInstagramUserId?: string) => {
     
     // Función async para configurar la suscripción
     const setupSubscription = async () => {
-      // Obtener el UUID del usuario en nuestra base de datos
+      // VERIFICAR: ¿Cuántas cuentas hay registradas?
+      const { data: allUsers, error: allUsersError } = await supabase
+        .from('instagram_users')
+        .select('id, instagram_user_id, username, is_active')
+        .eq('is_active', true);
+      
+      console.log('🔍 [DEBUG] TODAS las cuentas registradas:', allUsers);
+      
+      // Obtener el UUID del usuario actual
       const { data: userData, error } = await supabase
         .from('instagram_users')
-        .select('id, instagram_user_id')
+        .select('id, instagram_user_id, username')
         .eq('instagram_user_id', currentInstagramUserId)
         .eq('is_active', true)
         .single();
       
       if (error || !userData) {
         console.log('❌ [REALTIME] No se pudo obtener UUID del usuario:', error);
+        console.log('🔍 [DEBUG] Usuario buscado:', currentInstagramUserId);
         return;
       }
       
       const userUUID = userData.id;
-      console.log('✅ [REALTIME] UUID del usuario obtenido:', userUUID);
+      console.log('✅ [REALTIME] Usuario actual encontrado:', userData);
       
       channel = supabase
         .channel(`prospect-updates-${currentInstagramUserId}`)
@@ -474,7 +483,9 @@ export const useProspects = (currentInstagramUserId?: string) => {
               // Es un mensaje que YO recibí (recipient_id == mi Instagram ID)
               newMessage.recipient_id === currentInstagramUserId ||
               // Es un mensaje en mi cuenta (instagram_user_id == mi UUID en BD)
-              newMessage.instagram_user_id === userUUID
+              newMessage.instagram_user_id === userUUID ||
+              // FALLBACK: Si el mensaje tiene mi UUID, es mío aunque los IDs de Instagram no coincidan
+              (newMessage.instagram_user_id && newMessage.instagram_user_id === userUUID)
             );
           
             console.log('🔍 [REALTIME] Verificando relación del mensaje:', {
@@ -483,7 +494,10 @@ export const useProspects = (currentInstagramUserId?: string) => {
               'sender del mensaje': newMessage?.sender_id,
               'recipient del mensaje': newMessage?.recipient_id,
               'UUID del mensaje': newMessage?.instagram_user_id,
-              'está relacionado': isRelatedToUser
+              'está relacionado': isRelatedToUser,
+              'razón': newMessage?.instagram_user_id === userUUID ? 'UUID coincide' :
+                      newMessage?.sender_id === currentInstagramUserId ? 'Soy sender' :
+                      newMessage?.recipient_id === currentInstagramUserId ? 'Soy recipient' : 'No relacionado'
             });
           
             if (isRelatedToUser) {
@@ -494,6 +508,10 @@ export const useProspects = (currentInstagramUserId?: string) => {
               }, 1000);
             } else {
               console.log('⚠️ [REALTIME] Mensaje NO relacionado con nuestro usuario');
+              console.log('🔍 [DEBUG] ¿Este mensaje es de otra cuenta tuya?', {
+                mensajeDe: newMessage?.instagram_user_id,
+                allUsers: 'Ver logs arriba para comparar'
+              });
             }
           }
         )
