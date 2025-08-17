@@ -1579,6 +1579,7 @@ const TasksToDo: React.FC = () => {
                       size="sm"
                       className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
                       title="Haz clic después de responder en Instagram para sincronizar"
+                      style={{ display: 'none' }}
                     >
                       <RefreshCw className="h-3 w-3 mr-1" />
                       <span className="text-xs">Sincronizar</span>
