@@ -44,6 +44,7 @@ const TasksToDo: React.FC = () => {
     }
   }, [currentUser, userLoading, navigate]);
 
+
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [showFollowUpSections, setShowFollowUpSections] = useState(false);
@@ -136,6 +137,44 @@ const TasksToDo: React.FC = () => {
       loadListName();
     }
   }, [currentUser]);
+
+  // Limpiar tareas completadas cuando los prospectos responden
+  useEffect(() => {
+    if (realProspects.length > 0) {
+      const prospectsToUntick: {[key: string]: boolean} = {};
+      let hasChanges = false;
+
+      realProspects.forEach(prospect => {
+        // Si el prospecto está en pending (acaba de responder), limpiar todas sus marcas de completado
+        if (prospect.state === 'pending') {
+          const taskTypes = ['pending', 'yesterday', 'week', 'new'];
+          
+          taskTypes.forEach(type => {
+            const taskKey = `${type}-${prospect.senderId}`;
+            // Solo limpiar si estaba marcado como completado
+            if (completedTasks[taskKey]) {
+              prospectsToUntick[taskKey] = false;
+              hasChanges = true;
+              console.log(`🔄 Destachando ${prospect.username} de ${type} (prospecto respondió)`);
+            }
+          });
+        }
+      });
+
+      // Aplicar los cambios si hay alguno
+      if (hasChanges) {
+        setCompletedTasks(prev => {
+          const updated = { ...prev };
+          Object.keys(prospectsToUntick).forEach(key => {
+            delete updated[key]; // Remover la marca de completado
+          });
+          return updated;
+        });
+        
+        console.log('✅ Prospectos destachados por nuevas respuestas');
+      }
+    }
+  }, [realProspects, completedTasks]);
 
 
   // Cargar nombre de lista personalizado
