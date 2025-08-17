@@ -234,8 +234,12 @@ const TasksToDo: React.FC = () => {
 
   // Función para eliminar prospectos pendientes
   const deletePendingProspects = async () => {
+    // Alert temporal para confirmar que la función se ejecuta
+    alert('🗑️ Función deletePendingProspects ejecutada!');
+    
     if (!currentUser) {
       console.log('❌ No hay usuario autenticado');
+      alert('❌ No hay usuario autenticado');
       return;
     }
     
@@ -253,6 +257,7 @@ const TasksToDo: React.FC = () => {
       
       if (pendingProspectIds.length === 0) {
         console.log('⚠️ No hay prospectos pendientes para eliminar');
+        alert('⚠️ No hay prospectos pendientes para eliminar');
         toast({
           title: "Sin prospectos",
           description: "No hay prospectos pendientes para eliminar",
@@ -305,6 +310,7 @@ const TasksToDo: React.FC = () => {
       refetch();
       
       console.log('✅ Eliminación completada exitosamente!');
+      alert('✅ Eliminación completada exitosamente!');
       toast({
         title: "Prospectos eliminados",
         description: `Se eliminaron ${pendingProspectIds.length} prospectos pendientes`,
@@ -312,6 +318,7 @@ const TasksToDo: React.FC = () => {
       
     } catch (error) {
       console.error('💥 Error eliminando prospectos pendientes:', error);
+      alert('💥 Error: ' + error.message);
       toast({
         title: "Error",
         description: "No se pudieron eliminar los prospectos pendientes",
