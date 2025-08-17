@@ -256,19 +256,33 @@ const TasksToDo: React.FC = () => {
         return;
       }
 
-      // En lugar de cambiar estados, simplemente eliminar los registros existentes
-      console.log('🗑️ Eliminando registros de prospect_states...');
-      const { data: deletedStates, error: deleteError } = await supabase
-        .from('prospect_states')
+      // Eliminar mensajes donde el usuario envió a estos prospectos (recipient_id)
+      console.log('🗑️ Eliminando mensajes enviados a estos prospectos...');
+      const { data: sentMessages, error: sentError } = await supabase
+        .from('instagram_messages')
         .delete()
-        .eq('instagram_user_id', currentUser.instagram_user_id)
-        .in('prospect_sender_id', pendingProspectIds);
+        .eq('sender_id', currentUser.instagram_user_id)
+        .in('recipient_id', pendingProspectIds);
 
-      console.log('📊 Estados eliminados:', deletedStates);
-      console.log('❌ Error (si existe):', deleteError);
+      // Eliminar mensajes recibidos de estos prospectos (sender_id)  
+      console.log('🗑️ Eliminando mensajes recibidos de estos prospectos...');
+      const { data: receivedMessages, error: receivedError } = await supabase
+        .from('instagram_messages')
+        .delete()
+        .eq('instagram_user_id', currentUser.id)
+        .in('sender_id', pendingProspectIds);
 
-      if (deleteError) {
-        throw deleteError;
+      console.log('📊 Mensajes enviados eliminados:', sentMessages);
+      console.log('📊 Mensajes recibidos eliminados:', receivedMessages);
+
+      if (sentError) {
+        console.log('❌ Error eliminando mensajes enviados:', sentError);
+        throw sentError;
+      }
+
+      if (receivedError) {
+        console.log('❌ Error eliminando mensajes recibidos:', receivedError);
+        throw receivedError;
       }
 
       console.log('🔄 Refrescando datos...');
