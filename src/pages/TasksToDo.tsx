@@ -964,9 +964,22 @@ const TasksToDo: React.FC = () => {
                   <p className="font-semibold text-gray-800">@{currentUser?.username}</p>
                 </div>
               </div>
-              <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                ✅ Activo
-              </Badge>
+              <div className="flex items-center space-x-2">
+                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                  ✅ Activo
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    console.log('🔄 Refrescando prospectos manualmente...');
+                    refetch();
+                  }}
+                  className="h-8 px-3 text-xs"
+                >
+                  🔄 Actualizar
+                </Button>
+              </div>
             </div>
           </div>
           

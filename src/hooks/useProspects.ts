@@ -254,6 +254,8 @@ export const useProspects = (currentInstagramUserId?: string) => {
         return;
       }
 
+      console.log('📊 Consultando base de datos con filtro:', { recipient_id: currentInstagramUserId, message_type: 'received' });
+
       // Obtener SOLO los mensajes del usuario actual (que recibió)
       const { data: messages, error } = await supabase
         .from('instagram_messages')
@@ -267,7 +269,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
         return;
       }
 
-      console.log(`📊 Total mensajes obtenidos: ${messages?.length || 0}`);
+      console.log(`📊 Total mensajes obtenidos para ${currentInstagramUserId}: ${messages?.length || 0}`);
 
       if (!messages || messages.length === 0) {
         console.log('ℹ️ No hay mensajes en la base de datos');
