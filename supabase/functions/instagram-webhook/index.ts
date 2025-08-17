@@ -372,6 +372,22 @@ serve(async (req) => {
           } else {
             console.log('✅ Mensaje guardado correctamente en instagram_messages')
             
+            // 📊 REGISTRAR RESPUESTA DIARIA ÚNICA DEL PROSPECTO
+            try {
+              const { error: responseError } = await supabase.rpc('register_daily_prospect_response', {
+                p_instagram_user_id: recipientId, // Usuario que recibe (tu cuenta)
+                p_prospect_sender_id: senderId    // El prospecto que envía la respuesta
+              })
+              
+              if (responseError) {
+                console.error('❌ Error registrando respuesta diaria del prospecto:', responseError)
+              } else {
+                console.log('✅ Respuesta diaria del prospecto registrada correctamente')
+              }
+            } catch (error) {
+              console.error('❌ Error en RPC register_daily_prospect_response:', error)
+            }
+            
             // Actualizar actividad del prospecto
             try {
               const { error: activityError } = await supabase.rpc('update_prospect_activity', { 

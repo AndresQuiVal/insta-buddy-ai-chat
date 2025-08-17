@@ -21,6 +21,7 @@ import {
   Check
 } from 'lucide-react';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import { useDailyResponses } from '@/hooks/useDailyResponses';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -50,6 +51,7 @@ const ProspectCRM = () => {
   const [tempListName, setTempListName] = useState('');
   const [motivationalQuote, setMotivationalQuote] = useState('');
   const { currentUser } = useInstagramUsers();
+  const { data: dailyResponses } = useDailyResponses();
   const { toast } = useToast();
 
   // Frases motivacionales
@@ -347,12 +349,14 @@ const ProspectCRM = () => {
     title, 
     icon: Icon, 
     prospects, 
-    color 
+    color,
+    subtitle 
   }: { 
     title: string;
     icon: React.ElementType;
     prospects: ProspectData[];
     color: string;
+    subtitle?: string;
   }) => (
     <Card className="h-full rounded-xl">
       <CardHeader className={`pb-3 ${color} rounded-t-xl`}>
@@ -363,6 +367,11 @@ const ProspectCRM = () => {
             {prospects.length}
           </Badge>
         </CardTitle>
+        {subtitle && (
+          <div className="mt-2 text-white/80 text-xs">
+            {subtitle}
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-4 h-[calc(100vh-250px)] overflow-y-auto">
         {prospects.length === 0 ? (
@@ -459,6 +468,7 @@ const ProspectCRM = () => {
           icon={MessageCircle}
           prospects={getProspectsByStatus('respuestas')}
           color="bg-gradient-to-r from-purple-500 to-purple-600"
+          subtitle={`Hoy: ${dailyResponses.today} | Ayer: ${dailyResponses.yesterday} | Semana: ${dailyResponses.week}`}
         />
         
         <CRMColumn

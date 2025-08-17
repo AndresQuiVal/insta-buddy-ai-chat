@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import { useDailyResponses } from '@/hooks/useDailyResponses';
 
 interface DashboardStats {
   totalMessages: number;
@@ -96,6 +97,7 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
 
   const { isAnalyzing, analyzeAll, loadIdealTraits } = useAITraitAnalysis();
   const { currentUser } = useInstagramUsers();
+  const { data: dailyResponses } = useDailyResponses();
 
   useEffect(() => {
     if (currentUser?.instagram_user_id) {
@@ -517,21 +519,35 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           }}
         />
 
-        <StatCard
-          title="Respuestas Recibidas"
-          value={stats.messagesReceived}
-          icon={<Inbox className="w-6 h-6 text-white" />}
-          color="bg-gradient-to-r from-green-500 to-teal-500"
-          tooltip={{
-            title: "Respuestas recibidas únicas",
-            description: "Número de prospectos que han respondido a tus mensajes. Solo cuenta la primera respuesta de cada persona o respuestas después de 5+ horas de silencio.",
-            examples: [
-              "Prospecto responde por primera vez = +1",
-              "Prospecto responde después de 5+ horas = +1", 
-              "Respuestas inmediatas en conversación = no cuenta"
-            ]
-          }}
-        />
+        <div className="bg-white/90 backdrop-blur-lg rounded-2xl border border-purple-100 shadow-lg p-6 hover:shadow-xl transition-all duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Inbox className="w-5 h-5 text-green-500" />
+              <h3 className="font-semibold text-gray-800">Respuestas Recibidas</h3>
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-green-600">{dailyResponses.today}</div>
+              <div className="text-xs text-gray-500">Hoy</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-500">{dailyResponses.yesterday}</div>
+              <div className="text-xs text-gray-500">Ayer</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-400">{dailyResponses.week}</div>
+              <div className="text-xs text-gray-500">Semana</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-gray-700">{dailyResponses.total}</div>
+              <div className="text-xs text-gray-500">Total</div>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-gray-400 text-center">
+            Solo 1 respuesta por prospecto por día
+          </div>
+        </div>
 
         <StatCard
           title="Invitaciones"

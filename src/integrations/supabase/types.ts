@@ -437,6 +437,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_prospect_responses: {
+        Row: {
+          created_at: string
+          first_response_at: string
+          id: string
+          instagram_user_id: string
+          message_count: number
+          prospect_sender_id: string
+          response_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_response_at?: string
+          id?: string
+          instagram_user_id: string
+          message_count?: number
+          prospect_sender_id: string
+          response_date?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_response_at?: string
+          id?: string
+          instagram_user_id?: string
+          message_count?: number
+          prospect_sender_id?: string
+          response_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       general_comment_autoresponders: {
         Row: {
           auto_assign_to_all_posts: boolean | null
@@ -1243,6 +1276,10 @@ export type Database = {
           details: Json
           processed_count: number
         }[]
+      }
+      register_daily_prospect_response: {
+        Args: { p_instagram_user_id: string; p_prospect_sender_id: string }
+        Returns: undefined
       }
       reset_inactive_prospect_traits: {
         Args: Record<PropertyKey, never>

@@ -22,6 +22,7 @@ import {
   User
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { useDailyResponses } from '@/hooks/useDailyResponses';
 
 interface RecentAutoresponder {
   id: string;
@@ -69,6 +70,7 @@ const AppAnalytics: React.FC = () => {
   const [analytics, setAnalytics] = useState<AppAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'all'>('all');
+  const { data: dailyResponses } = useDailyResponses();
 
   useEffect(() => {
     loadAnalytics();
@@ -427,9 +429,10 @@ const AppAnalytics: React.FC = () => {
           />
           <MetricCard
             title="Respuestas Recibidas"
-            value={analytics.totalMessagesReceived.toLocaleString()}
+            value={dailyResponses.total.toLocaleString()}
             icon={<Inbox className="w-5 h-5 text-white" />}
             color="bg-green-500"
+            subtitle={`Hoy: ${dailyResponses.today} | Ayer: ${dailyResponses.yesterday} | Semana: ${dailyResponses.week}`}
           />
           <MetricCard
             title="Tasa de Respuesta Global"
