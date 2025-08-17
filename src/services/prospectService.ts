@@ -152,11 +152,6 @@ export class ProspectService implements ProspectServiceInterface {
           *,
           prospect_messages (
             *
-          ),
-          prospect_analysis!left (
-            match_points,
-            met_traits,
-            last_analyzed_at
           )
         `)
         .eq('instagram_user_id', userUUID)
@@ -167,8 +162,24 @@ export class ProspectService implements ProspectServiceInterface {
         throw prospectsError;
       }
 
-      console.log(`✅ [PROSPECT-SERVICE] ${prospects?.length || 0} prospectos obtenidos`);
-      return prospects || [];
+      // Obtener análisis de prospectos por separado
+      const prospectsWithAnalysis = await Promise.all(
+        (prospects || []).map(async (prospect) => {
+          const { data: analysis } = await supabase
+            .from('prospect_analysis')
+            .select('match_points, met_traits, last_analyzed_at')
+            .eq('sender_id', prospect.prospect_instagram_id)
+            .maybeSingle();
+
+          return {
+            ...prospect,
+            prospect_analysis: analysis ? [analysis] : []
+          };
+        })
+      );
+
+      console.log(`✅ [PROSPECT-SERVICE] ${prospectsWithAnalysis?.length || 0} prospectos obtenidos`);
+      return prospectsWithAnalysis || [];
 
     } catch (error) {
       console.error('❌ [PROSPECT-SERVICE] Error en getProspectsByUser:', error);
