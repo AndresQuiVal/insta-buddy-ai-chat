@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X, LogOut, Instagram, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X, LogOut, Instagram, RefreshCw, Trash2, Bug } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { useProspects } from '@/hooks/useProspects';
 import { useNavigate } from 'react-router-dom';
+import { InstagramDebugPanel } from '@/components/InstagramDebugPanel';
 
 interface ProspectData {
   id: string;
@@ -35,6 +36,7 @@ const TasksToDo: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, loading: userLoading } = useInstagramUsers();
   const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Verificar autenticación al cargar
   useEffect(() => {
@@ -2098,6 +2100,36 @@ const TasksToDo: React.FC = () => {
 
       </div>
       
+      {/* Botón de Debug */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setShowDebugPanel(!showDebugPanel)}
+          className="bg-red-500 text-white hover:bg-red-600"
+        >
+          <Bug className="w-4 h-4 mr-2" />
+          Debug
+        </Button>
+      </div>
+
+      {/* Panel de Debug */}
+      {showDebugPanel && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Panel de Debug - Instagram</h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowDebugPanel(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-4">
+              <InstagramDebugPanel />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Diálogo de contacto guiado */}
       <Dialog open={openDialog} onOpenChange={(open) => {
         // Solo cerrar si es el flujo automático (step 1) o si el usuario realmente quiere cerrar
