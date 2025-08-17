@@ -281,9 +281,15 @@ serve(async (req) => {
           let prospectUsername = `user_${senderId.slice(-8)}`; // Username por defecto
           
           try {
-            // Intentar obtener username del sender desde Instagram API (opcional)
+            // Intentar obtener datos del perfil del sender desde Instagram API
+            let profilePictureUrl: string | null = null;
+            let biography: string | null = null;
+            let followersCount: number = 0;
+            let followsCount: number = 0;
+            let mediaCount: number = 0;
+            
             try {
-              const instagramApiUrl = `https://graph.instagram.com/${senderId}?fields=username,name&access_token=${instagramUser.access_token}`;
+              const instagramApiUrl = `https://graph.instagram.com/${senderId}?fields=username,name,profile_picture_url,biography,followers_count,follows_count,media_count&access_token=${instagramUser.access_token}`;
               const apiResponse = await fetch(instagramApiUrl);
               if (apiResponse.ok) {
                 const userData = await apiResponse.json();
@@ -291,9 +297,29 @@ serve(async (req) => {
                   prospectUsername = userData.username;
                   console.log(`📝 Username obtenido de Instagram API: ${prospectUsername}`);
                 }
+                if (userData.profile_picture_url) {
+                  profilePictureUrl = userData.profile_picture_url;
+                  console.log(`🖼️ Foto de perfil obtenida`);
+                }
+                if (userData.biography) {
+                  biography = userData.biography;
+                  console.log(`📝 Biografía obtenida: ${biography.substring(0, 50)}...`);
+                }
+                if (userData.followers_count !== undefined) {
+                  followersCount = userData.followers_count;
+                  console.log(`👥 Seguidores: ${followersCount}`);
+                }
+                if (userData.follows_count !== undefined) {
+                  followsCount = userData.follows_count;
+                  console.log(`🔗 Siguiendo: ${followsCount}`);
+                }
+                if (userData.media_count !== undefined) {
+                  mediaCount = userData.media_count;
+                  console.log(`📱 Posts: ${mediaCount}`);
+                }
               }
             } catch (apiError) {
-              console.log('⚠️ No se pudo obtener username de Instagram API, usando fallback');
+              console.log('⚠️ No se pudo obtener datos del perfil de Instagram API, usando fallback');
             }
 
             // Crear/actualizar prospecto usando la función de BD
@@ -302,7 +328,11 @@ serve(async (req) => {
                 p_instagram_user_id: instagramUser.id,
                 p_prospect_instagram_id: senderId,
                 p_username: prospectUsername,
-                p_profile_picture_url: null
+                p_profile_picture_url: profilePictureUrl,
+                p_biography: biography,
+                p_followers_count: followersCount,
+                p_follows_count: followsCount,
+                p_media_count: mediaCount
               });
 
             if (prospectError) {
