@@ -563,8 +563,15 @@ export const useProspects = (currentInstagramUserId?: string) => {
       const userUUID = userData.id;
       console.log('✅ [REALTIME] Usuario actual encontrado:', userData);
       
+      console.log('🔄 [REALTIME] Iniciando suscripción al canal...');
+      console.log('📋 [REALTIME] Parámetros de usuario:', { 
+        userUUID, 
+        instagramUserId: userData.instagram_user_id, 
+        username: userData.username 
+      });
+      
       channel = supabase
-        .channel(`prospect-updates-global`) // Canal global para todos los usuarios
+        .channel(`prospect-updates-global-${Date.now()}`) // Canal único con timestamp
         .on(
           'postgres_changes',
           {
@@ -687,12 +694,18 @@ export const useProspects = (currentInstagramUserId?: string) => {
             }
           }
         )
-        .subscribe((status) => {
+        .subscribe((status, err) => {
           console.log('📡 [REALTIME] Estado de suscripción:', status);
+          if (err) {
+            console.error('❌ [REALTIME] Error en suscripción:', err);
+          }
           if (status === 'SUBSCRIBED') {
-            console.log('✅ [REALTIME] Suscripción activa correctamente');
+            console.log('✅ [REALTIME] ¡SUSCRIPCIÓN ACTIVA CORRECTAMENTE!');
+            console.log('🎯 [REALTIME] Esperando mensajes de instagram_messages...');
           } else if (status === 'CLOSED') {
             console.log('❌ [REALTIME] Suscripción cerrada');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('💥 [REALTIME] Error en canal:', err);
           }
         });
     };
