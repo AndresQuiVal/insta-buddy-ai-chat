@@ -209,22 +209,14 @@ const TasksToDo: React.FC = () => {
             const newData = payload.new;
             if (newData && newData.is_completed) {
               console.log(`🔴 [REALTIME] Marcando como completado: ${newData.prospect_sender_id}`);
-              // 🎯 USAR TODAS LAS CLAVES POSIBLES para asegurar compatibilidad
               setCompletedTasks(prev => ({
                 ...prev,
-                [`pending-${newData.prospect_sender_id}`]: true,
-                [`yesterday-${newData.prospect_sender_id}`]: true,
-                [`week-${newData.prospect_sender_id}`]: true,
                 [`${newData.task_type}-${newData.prospect_sender_id}`]: true
               }));
             } else if (newData && !newData.is_completed) {
               console.log(`🔴 [REALTIME] Marcando como no completado: ${newData.prospect_sender_id}`);
               setCompletedTasks(prev => {
                 const updated = { ...prev };
-                // 🎯 ELIMINAR TODAS LAS CLAVES POSIBLES
-                delete updated[`pending-${newData.prospect_sender_id}`];
-                delete updated[`yesterday-${newData.prospect_sender_id}`];
-                delete updated[`week-${newData.prospect_sender_id}`];
                 delete updated[`${newData.task_type}-${newData.prospect_sender_id}`];
                 return updated;
               });
