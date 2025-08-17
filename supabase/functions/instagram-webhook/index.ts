@@ -290,9 +290,15 @@ serve(async (req) => {
             
             try {
               const instagramApiUrl = `https://graph.instagram.com/${senderId}?fields=username,name,profile_picture_url,biography,followers_count,follows_count,media_count&access_token=${instagramUser.access_token}`;
+              console.log(`🌐 Llamando Instagram API para ${senderId}...`);
               const apiResponse = await fetch(instagramApiUrl);
+              
+              console.log(`📊 Instagram API Response Status: ${apiResponse.status}`);
+              
               if (apiResponse.ok) {
                 const userData = await apiResponse.json();
+                console.log(`📋 Datos obtenidos de Instagram API:`, JSON.stringify(userData, null, 2));
+                
                 if (userData.username) {
                   prospectUsername = userData.username;
                   console.log(`📝 Username obtenido de Instagram API: ${prospectUsername}`);
@@ -304,6 +310,8 @@ serve(async (req) => {
                 if (userData.biography) {
                   biography = userData.biography;
                   console.log(`📝 Biografía obtenida: ${biography.substring(0, 50)}...`);
+                } else {
+                  console.log(`⚠️ No se encontró biografía en los datos`);
                 }
                 if (userData.followers_count !== undefined) {
                   followersCount = userData.followers_count;
@@ -317,12 +325,23 @@ serve(async (req) => {
                   mediaCount = userData.media_count;
                   console.log(`📱 Posts: ${mediaCount}`);
                 }
+              } else {
+                const errorText = await apiResponse.text();
+                console.error(`❌ Instagram API Error ${apiResponse.status}: ${errorText}`);
               }
             } catch (apiError) {
+              console.error('❌ Error completo llamando Instagram API:', apiError);
               console.log('⚠️ No se pudo obtener datos del perfil de Instagram API, usando fallback');
             }
 
             // Crear/actualizar prospecto usando la función de BD
+            console.log(`💾 Guardando prospecto con datos:`, {
+              username: prospectUsername,
+              biography: biography,
+              followers_count: followersCount,
+              profile_picture_url: profilePictureUrl ? 'SÍ' : 'NO'
+            });
+            
             const { data: createdProspectId, error: prospectError } = await supabase
               .rpc('create_or_update_prospect', {
                 p_instagram_user_id: instagramUser.id,
