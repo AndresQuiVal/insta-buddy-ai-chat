@@ -608,10 +608,51 @@ export const useProspects = (currentInstagramUserId?: string) => {
                 fetchProspects();
               }, 500);
             } else if (isMessageFromMe || isMessageSentByMe) {
-              console.log('✅ [REALTIME] ES MI MENSAJE ENVIADO - actualizando prospectos...');
-              setTimeout(() => {
-                fetchProspects();
-              }, 500);
+              console.log('✅ [REALTIME] ES MI MENSAJE ENVIADO - actualizando prospecto específico...');
+              
+              // Identificar el prospecto específico que recibió el mensaje
+              const recipientId = newMessage.raw_data?.recipient?.id; // El recipient del mensaje es el prospecto
+              const senderIdFromMessage = newMessage.sender_id; // También intentar con sender_id directo
+              
+              console.log('🎯 [REALTIME] Identificando prospecto receptor:', {
+                'recipient_id_from_raw': recipientId,
+                'sender_id_from_message': senderIdFromMessage,
+                'raw_data': newMessage.raw_data,
+                'USANDO recipient_id como prospecto': recipientId
+              });
+              
+              // Actualizar estado del prospecto específico
+              if (recipientId || senderIdFromMessage) {
+                const prospectId = recipientId || senderIdFromMessage;
+                console.log(`🔄 [REALTIME] Marcando prospecto ${prospectId} como completado...`);
+                
+                // Llamar función para sincronizar estado específico
+                supabase.rpc('sync_prospect_task_status', {
+                  p_instagram_user_id: userData.instagram_user_id, // USAR instagram_user_id (text) no UUID
+                  p_prospect_sender_id: prospectId,
+                  p_last_message_type: 'sent'
+                }).then((result) => {
+                  console.log('✅ [REALTIME] Estado sincronizado:', result);
+                  console.log('🔧 [REALTIME] Parámetros usados para sync:', {
+                    'user_instagram_id': userData.instagram_user_id,
+                    'user_uuid': userUUID,
+                    'prospect_id': prospectId,
+                    'message_type': 'sent'
+                  });
+                  if (result.error) {
+                    console.error('❌ [REALTIME] Error en sync:', result.error);
+                  }
+                });
+                
+                setTimeout(() => {
+                  fetchProspects();
+                }, 500);
+              } else {
+                console.warn('⚠️ [REALTIME] No se pudo identificar el prospecto receptor');
+                setTimeout(() => {
+                  fetchProspects();
+                }, 500);
+              }
             } else {
               console.log(`⚠️ [REALTIME] No es mi mensaje (usuario: ${newMessage.instagram_user_id}, recipient: ${newMessage.raw_data?.recipient?.id})`);
             }
