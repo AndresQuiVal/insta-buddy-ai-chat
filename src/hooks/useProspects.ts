@@ -578,30 +578,42 @@ export const useProspects = (currentInstagramUserId?: string) => {
             
             const newMessage = payload.new as any;
             
-            // 🔥 FILTRAR EN EL CLIENTE: Solo procesar si es MI mensaje
-            const isMyMessage = newMessage.instagram_user_id === userUUID;
-            const isReceivedMessage = newMessage.message_type === 'received';
+            // 🔥 FILTRAR EN EL CLIENTE: Solo procesar si es relacionado conmigo
+            const isMessageFromMe = newMessage.message_type === 'sent' && newMessage.instagram_user_id === userUUID;
+            const isMessageToMe = newMessage.message_type === 'received' && newMessage.instagram_user_id === userUUID;
             
-            console.log('🔍 [REALTIME] Verificando si es mi mensaje:', {
+            // Para mensajes enviados por mí, verificar tanto recipient como sender
+            // (Instagram puede marcar de diferentes formas según el webhook)
+            const isMessageSentByMe = newMessage.message_type === 'received' && 
+                                    (newMessage.raw_data?.recipient?.id === userData.instagram_user_id ||
+                                     newMessage.raw_data?.sender?.id === userData.instagram_user_id);
+            
+            console.log('🔍 [REALTIME] Verificando tipo de mensaje:', {
               'mi UUID': userUUID,
+              'mi instagram_id': userData.instagram_user_id,
               'mensaje UUID': newMessage.instagram_user_id,
-              'es mi mensaje': isMyMessage,
-              'es recibido': isReceivedMessage,
+              'message_type': newMessage.message_type,
+              'recipient_id': newMessage.raw_data?.recipient?.id,
+              'sender_id': newMessage.raw_data?.sender?.id,
+              'isMessageFromMe': isMessageFromMe,
+              'isMessageToMe': isMessageToMe,
+              'isMessageSentByMe': isMessageSentByMe,
+              'COMPARANDO recipient_id con mi instagram_id': newMessage.raw_data?.recipient?.id === userData.instagram_user_id,
               'usuario': userData.username
             });
             
-            if (isMyMessage && isReceivedMessage) {
+            if (isMessageToMe) {
               console.log('✅ [REALTIME] ES MI MENSAJE RECIBIDO - actualizando prospectos...');
               setTimeout(() => {
                 fetchProspects();
               }, 500);
-            } else if (isMyMessage && !isReceivedMessage) {
+            } else if (isMessageFromMe || isMessageSentByMe) {
               console.log('✅ [REALTIME] ES MI MENSAJE ENVIADO - actualizando prospectos...');
               setTimeout(() => {
                 fetchProspects();
               }, 500);
             } else {
-              console.log(`⚠️ [REALTIME] No es mi mensaje (es del usuario: ${newMessage.instagram_user_id})`);
+              console.log(`⚠️ [REALTIME] No es mi mensaje (usuario: ${newMessage.instagram_user_id}, recipient: ${newMessage.raw_data?.recipient?.id})`);
             }
           }
         )
