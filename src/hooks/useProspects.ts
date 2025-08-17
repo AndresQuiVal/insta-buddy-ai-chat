@@ -6,11 +6,13 @@ export interface Prospect {
   id: string;
   senderId: string;
   username: string;
-  state: 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up';
+  state: 'pending' | 'yesterday' | 'week' | 'invited';
   lastMessageTime: string;
   lastMessageType: 'sent' | 'received';
   conversationMessages: any[];
-  source: 'dm' | 'comment' | 'hower' | 'ads'; // Nueva propiedad para la fuente
+  source: 'dm' | 'comment' | 'hower' | 'ads';
+  daysSinceLastSent?: number; // Días desde que yo envié el último mensaje
+  lastSentMessageTime?: string; // Hora del último mensaje que YO envié
 }
 
 interface InstagramMessage {
@@ -29,12 +31,12 @@ export const useProspects = (currentInstagramUserId?: string) => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const determineProspectState = (messages: InstagramMessage[], senderId: string): 'reactivation_sent' | 'no_response' | 'invited' | 'follow_up' => {
+  const determineProspectState = (messages: InstagramMessage[], senderId: string, currentUserId: string): { state: 'pending' | 'yesterday' | 'week' | 'invited', daysSinceLastSent?: number, lastSentMessageTime?: string } => {
     console.log(`🔍 [${senderId.slice(-8)}] Determinando estado con ${messages.length} mensajes`);
     
     if (messages.length === 0) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: NO_RESPONSE (sin mensajes)`);
-      return 'no_response';
+      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (sin mensajes)`);
+      return { state: 'pending' };
     }
 
     // Filtrar y validar mensajes solo de este prospecto
@@ -45,7 +47,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
     const sortedMessages = validMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     
     if (sortedMessages.length === 0) {
-      return 'no_response';
+      return { state: 'pending' };
     }
     
     const lastMessage = sortedMessages[sortedMessages.length - 1];
@@ -60,46 +62,64 @@ export const useProspects = (currentInstagramUserId?: string) => {
     const hasInvitation = validMessages.some(msg => msg.is_invitation === true && msg.message_type === 'sent');
     if (hasInvitation) {
       console.log(`✅ [${senderId.slice(-8)}] Estado: INVITED (hay invitación enviada)`);
-      return 'invited';
+      return { state: 'invited' };
     }
 
-    // Si el último mensaje lo recibí (el prospecto me escribió) = necesita respuesta
+    // 🔥 NUEVA LÓGICA: Si el último mensaje lo recibí (el prospecto me escribió) = SIEMPRE PENDING
     if (lastMessage.message_type === 'received') {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: NO_RESPONSE (último mensaje es recibido)`);
-      return 'no_response';
+      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (último mensaje es recibido - prospecto escribió)`);
+      return { state: 'pending' };
     }
 
-    // Si el último mensaje lo envié yo
+    // 🔥 NUEVA LÓGICA: Si el último mensaje lo envié yo, verificar tiempo transcurrido
     if (lastMessage.message_type === 'sent') {
       const lastSentTime = new Date(lastMessage.timestamp).getTime();
       const now = new Date().getTime();
       const hoursSinceLastSent = (now - lastSentTime) / (1000 * 60 * 60);
+      const daysSinceLastSent = hoursSinceLastSent / 24;
 
-      console.log(`📊 [${senderId.slice(-8)}] Último mensaje enviado hace ${hoursSinceLastSent.toFixed(1)} horas`);
+      console.log(`📊 [${senderId.slice(-8)}] Último mensaje enviado hace ${daysSinceLastSent.toFixed(1)} días (${hoursSinceLastSent.toFixed(1)} horas)`);
 
-      // Verificar si ya había una conversación previa (si el prospecto había respondido antes)
+      // Verificar si ya había una conversación previa (el prospecto había respondido antes)
       const receivedMessages = validMessages.filter(msg => msg.message_type === 'received');
       
       console.log(`💬 [${senderId.slice(-8)}] Respuestas del prospecto: ${receivedMessages.length}`);
-      
+
+      // Solo aplicar timer si ya había conversación previa (el prospecto me había respondido alguna vez)
       if (receivedMessages.length > 0) {
-        // Ya había conversación previa - siempre debe estar en "follow_up" (En seguimiento)
-        console.log(`✅ [${senderId.slice(-8)}] Estado: FOLLOW_UP (había conversación previa, ${receivedMessages.length} respuestas del prospecto)`);
-        return 'follow_up';
-      } else {
-        // No había conversación previa (el usuario nunca ha respondido)
-        if (hoursSinceLastSent > 24) {
-          console.log(`✅ [${senderId.slice(-8)}] Estado: NO_RESPONSE (${hoursSinceLastSent.toFixed(1)}h sin respuesta, primera vez)`);
-          return 'no_response';
+        // YA HABÍA CONVERSACIÓN - aplicar sistema de timer
+        if (daysSinceLastSent >= 7) {
+          console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (${daysSinceLastSent.toFixed(1)} días sin respuesta)`);
+          return { 
+            state: 'week', 
+            daysSinceLastSent: Math.floor(daysSinceLastSent),
+            lastSentMessageTime: lastMessage.timestamp 
+          };
+        } else if (daysSinceLastSent >= 1) {
+          console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (${daysSinceLastSent.toFixed(1)} días sin respuesta)`);
+          return { 
+            state: 'yesterday', 
+            daysSinceLastSent: Math.floor(daysSinceLastSent),
+            lastSentMessageTime: lastMessage.timestamp 
+          };
         } else {
-          console.log(`✅ [${senderId.slice(-8)}] Estado: FOLLOW_UP (mensaje reciente, considerado seguimiento: ${hoursSinceLastSent.toFixed(1)}h)`);
-          return 'follow_up';
+          // Menos de 1 día desde mi último mensaje - temporalmente en PENDING
+          console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (esperando respuesta, < 1 día)`);
+          return { 
+            state: 'pending',
+            daysSinceLastSent: Math.floor(daysSinceLastSent),
+            lastSentMessageTime: lastMessage.timestamp 
+          };
         }
+      } else {
+        // NO HABÍA CONVERSACIÓN PREVIA - el prospecto nunca ha respondido, siempre PENDING
+        console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (primera vez, nunca ha respondido)`);
+        return { state: 'pending' };
       }
     }
 
-    console.log(`✅ [${senderId.slice(-8)}] Estado: NO_RESPONSE (fallback)`);
-    return 'no_response';
+    console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (fallback)`);
+    return { state: 'pending' };
   };
 
   const extractUsernameFromRawData = (messages: InstagramMessage[]): string | null => {
@@ -268,7 +288,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
     const lastMessage = sortedMessages[0];
     
     // Determinar estado basado SOLO en los mensajes de ESTE prospecto
-    const state = determineProspectState(messagesForThisSender, senderId);
+    const stateResult = determineProspectState(messagesForThisSender, senderId, currentInstagramUserId || '');
     const username = await extractUsernameFromMessage(messagesForThisSender, senderId);
     const source = determineProspectSource(messagesForThisSender);
 
@@ -280,7 +300,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
       sent: sentCount,
       received: receivedCount,
       lastMessageType: lastMessage.message_type,
-      state: state,
+      state: stateResult.state,
       source: source,
       lastMessageTime: lastMessage.timestamp
     });
@@ -289,11 +309,13 @@ export const useProspects = (currentInstagramUserId?: string) => {
       id: senderId,
       senderId,
       username,
-      state,
+      state: stateResult.state,
       source,
       lastMessageTime: lastMessage.timestamp,
       lastMessageType: lastMessage.message_type,
-      conversationMessages: messagesForThisSender
+      conversationMessages: messagesForThisSender,
+      daysSinceLastSent: stateResult.daysSinceLastSent,
+      lastSentMessageTime: stateResult.lastSentMessageTime
     };
   };
 

@@ -223,9 +223,9 @@ const TasksToDo: React.FC = () => {
   const prospects: ProspectData[] = realProspects.map(prospect => ({
     id: prospect.senderId,
     userName: prospect.username || `@${prospect.senderId.slice(-8)}`,
-    status: prospect.state === 'no_response' ? 'esperando_respuesta' : 
+    status: prospect.state === 'pending' ? 'esperando_respuesta' : 
            prospect.state === 'invited' ? 'enviado' : 
-           prospect.state === 'follow_up' ? 'seguimiento' : 'esperando_respuesta',
+           (prospect.state === 'yesterday' || prospect.state === 'week') ? 'seguimiento' : 'esperando_respuesta',
     firstContactDate: prospect.lastMessageTime,
     lastContactDate: prospect.lastMessageTime,
     unread: true,
@@ -238,7 +238,7 @@ const TasksToDo: React.FC = () => {
     
     try {
       const pendingProspectIds = realProspects
-        .filter(p => p.state === 'no_response')
+        .filter(p => p.state === 'pending')
         .map(p => p.senderId);
       
       if (pendingProspectIds.length === 0) {
@@ -441,79 +441,30 @@ const TasksToDo: React.FC = () => {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    // Prospectos pendientes: necesitan respuesta (separados por fuente)
+    // 🔥 NUEVA LÓGICA: Usar los estados del hook useProspects
+    
+    // Prospectos pendientes: state === 'pending' (separados por fuente)
     const pendingResponses = {
-      hower: prospects.filter(p => p.status === 'esperando_respuesta' && realProspects.find(r => r.senderId === p.id)?.source === 'hower'),
-      dm: prospects.filter(p => p.status === 'esperando_respuesta' && realProspects.find(r => r.senderId === p.id)?.source === 'dm'),
-      comment: prospects.filter(p => p.status === 'esperando_respuesta' && realProspects.find(r => r.senderId === p.id)?.source === 'comment'),
-      ads: prospects.filter(p => p.status === 'esperando_respuesta' && realProspects.find(r => r.senderId === p.id)?.source === 'ads')
+      hower: realProspects.filter(p => p.state === 'pending' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      dm: realProspects.filter(p => p.state === 'pending' && p.source === 'dm').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: realProspects.filter(p => p.state === 'pending' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      ads: realProspects.filter(p => p.state === 'pending' && p.source === 'ads').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
-    // Prospectos de seguimiento: último mensaje es nuestro, no han respondido (separados por fuente)
+    // Prospectos que no respondieron ayer: state === 'yesterday' (separados por fuente)
     const noResponseYesterday = {
-      hower: prospects.filter(p => {
-        const lastMessageDate = new Date(p.lastContactDate);
-        const realProspect = realProspects.find(r => r.senderId === p.id);
-        return p.status === 'seguimiento' && 
-               realProspect?.source === 'hower' &&
-               lastMessageDate >= yesterday && 
-               lastMessageDate < now;
-      }),
-      dm: prospects.filter(p => {
-        const lastMessageDate = new Date(p.lastContactDate);
-        const realProspect = realProspects.find(r => r.senderId === p.id);
-        return p.status === 'seguimiento' && 
-               realProspect?.source === 'dm' &&
-               lastMessageDate >= yesterday && 
-               lastMessageDate < now;
-      }),
-      comment: prospects.filter(p => {
-        const lastMessageDate = new Date(p.lastContactDate);
-        const realProspect = realProspects.find(r => r.senderId === p.id);
-        return p.status === 'seguimiento' && 
-               realProspect?.source === 'comment' &&
-               lastMessageDate >= yesterday && 
-               lastMessageDate < now;
-      }),
-      ads: prospects.filter(p => {
-        const lastMessageDate = new Date(p.lastContactDate);
-        const realProspect = realProspects.find(r => r.senderId === p.id);
-        return p.status === 'seguimiento' && 
-               realProspect?.source === 'ads' &&
-               lastMessageDate >= yesterday && 
-               lastMessageDate < now;
-      })
+      hower: realProspects.filter(p => p.state === 'yesterday' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      dm: realProspects.filter(p => p.state === 'yesterday' && p.source === 'dm').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: realProspects.filter(p => p.state === 'yesterday' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      ads: realProspects.filter(p => p.state === 'yesterday' && p.source === 'ads').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
+    // Prospectos que no respondieron en 7 días: state === 'week' (separados por fuente)
     const noResponse7Days = {
-      hower: prospects.filter(p => {
-        const lastMessageDate = new Date(p.lastContactDate);
-        const realProspect = realProspects.find(r => r.senderId === p.id);
-        return p.status === 'seguimiento' && 
-               realProspect?.source === 'hower' &&
-               lastMessageDate <= sevenDaysAgo;
-      }),
-      dm: prospects.filter(p => {
-        const lastMessageDate = new Date(p.lastContactDate);
-        const realProspect = realProspects.find(r => r.senderId === p.id);
-        return p.status === 'seguimiento' && 
-               realProspect?.source === 'dm' &&
-               lastMessageDate <= sevenDaysAgo;
-      }),
-      comment: prospects.filter(p => {
-        const lastMessageDate = new Date(p.lastContactDate);
-        const realProspect = realProspects.find(r => r.senderId === p.id);
-        return p.status === 'seguimiento' && 
-               realProspect?.source === 'comment' &&
-               lastMessageDate <= sevenDaysAgo;
-      }),
-      ads: prospects.filter(p => {
-        const lastMessageDate = new Date(p.lastContactDate);
-        const realProspect = realProspects.find(r => r.senderId === p.id);
-        return p.status === 'seguimiento' && 
-               realProspect?.source === 'ads' &&
-               lastMessageDate <= sevenDaysAgo;
-      })
+      hower: realProspects.filter(p => p.state === 'week' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      dm: realProspects.filter(p => p.state === 'week' && p.source === 'dm').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: realProspects.filter(p => p.state === 'week' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      ads: realProspects.filter(p => p.state === 'week' && p.source === 'ads').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
     // Prospectos nuevos: nunca contactados (separados por fuente)
