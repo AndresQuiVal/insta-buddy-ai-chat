@@ -208,7 +208,6 @@ async function processSentMessage(messagingEvent: any, supabase: any, source: st
     }
   }
 }
-})
 
 // Función para manejar eventos de postback
 async function handlePostbackEvent(message: any, supabase: any) {
@@ -973,111 +972,6 @@ async function createCommentFollowUps(autoresponderID: string, commenterId: stri
 }
 
 // ✅ FUNCIÓN DE COMENTARIOS
-
-// ✅ NUEVA FUNCIÓN: Procesar mensajes enviados manualmente por el usuario
-async function processSentMessage(messagingEvent: any, supabase: any, source: string, instagramAccountId: string) {
-  console.log('📤 ===== PROCESANDO MENSAJE ENVIADO MANUALMENTE =====')
-  console.log(`📝 Mensaje desde ${source}:`, JSON.stringify(messagingEvent, null, 2))
-  
-  const senderId = messagingEvent.sender?.id
-  const recipientId = messagingEvent.recipient?.id
-  const messageText = messagingEvent.message?.text
-  
-  // Procesar timestamp
-  let timestamp: string
-  if (messagingEvent.timestamp) {
-    const timestampNumber = parseInt(messagingEvent.timestamp)
-    const date = new Date(timestampNumber)
-    const year = date.getFullYear()
-    if (year >= 1970 && year <= 2100) {
-      timestamp = date.toISOString()
-    } else {
-      timestamp = new Date().toISOString()
-    }
-  } else {
-    timestamp = new Date().toISOString()
-  }
-  
-  const messageId = messagingEvent.message?.mid || `sent_msg_${Date.now()}_${Math.random()}`
-  
-  console.log('📤 DATOS DEL MENSAJE ENVIADO:')
-  console.log('👤 ENVIADO POR (tú):', senderId)
-  console.log('🎯 ENVIADO HACIA (prospecto):', recipientId)  
-  console.log('💬 MENSAJE:', messageText)
-  console.log('⏰ TIMESTAMP:', timestamp)
-  console.log('🆔 MESSAGE ID:', messageId)
-  
-  // Buscar usuario de Instagram (el que envió el mensaje)
-  console.log('🔍 BUSCANDO USUARIO DE INSTAGRAM POR SENDER ID:', senderId)
-  
-  const { data: instagramUser, error: userError } = await supabase
-    .from('instagram_users')
-    .select('*')
-    .eq('instagram_user_id', senderId)
-    .eq('is_active', true)
-    .single()
-
-  if (userError || !instagramUser) {
-    console.error('❌ No se encontró usuario de Instagram con ID:', senderId, userError)
-    return
-  }
-
-  console.log('✅ Usuario de Instagram encontrado:', JSON.stringify(instagramUser, null, 2))
-
-  // Guardar mensaje enviado en instagram_messages
-  console.log('💾 GUARDANDO MENSAJE ENVIADO EN BD...')
-  
-  const { error: saveError } = await supabase
-    .from('instagram_messages')
-    .insert({
-      instagram_user_id: instagramUser.id,
-      instagram_message_id: messageId,
-      sender_id: senderId,
-      recipient_id: recipientId,
-      message_text: messageText || '',
-      message_type: 'sent', // ✅ MENSAJE ENVIADO POR EL USUARIO
-      timestamp: timestamp,
-      is_invitation: false,
-      is_presentation: false,
-      is_inscription: false,
-      raw_data: {
-        ...messagingEvent,
-        webhook_source: source,
-        processed_at: new Date().toISOString(),
-        manual_message: true, // ✅ MARCAR COMO MENSAJE MANUAL
-        is_echo: true
-      }
-    })
-
-  if (saveError) {
-    console.error('❌ Error guardando mensaje enviado:', saveError)
-  } else {
-    console.log('✅ MENSAJE ENVIADO GUARDADO CORRECTAMENTE')
-    console.log('🎯 El prospecto', recipientId, 'ahora debería aparecer en "En seguimiento"')
-    console.log('📊 Estado actualizado: El último mensaje lo enviaste tú')
-  }
-  
-  console.log('✅ === MENSAJE ENVIADO PROCESADO COMPLETAMENTE ===')
-}
-
-    if (followupsToCreate.length > 0) {
-      const { error: insertError } = await supabase
-        .from('autoresponder_followups')
-        .insert(followupsToCreate)
-
-      if (insertError) {
-        console.error('❌ Error insertando follow-ups:', insertError)
-      } else {
-        console.log('✅ Follow-ups de comentarios creados exitosamente:', followupsToCreate.length)
-      }
-    } else {
-      console.log('ℹ️ No hay follow-ups válidos para crear')
-    }
-
-  } catch (error) {
-    console.error('💥 Error creando follow-ups de comentarios:', error)
-  }
-}
 
 async function processComment(commentData: any, supabase: any, instagramAccountId: string) {
   console.log('💬 ===== PROCESANDO COMENTARIO =====')
