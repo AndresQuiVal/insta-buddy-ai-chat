@@ -431,76 +431,114 @@ export const useProspects = (currentInstagramUserId?: string) => {
     }
 
     console.log('🔄 [REALTIME] Configurando suscripción para usuario:', currentInstagramUserId);
-    const channel = supabase
-      .channel(`prospect-updates-${currentInstagramUserId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'instagram_messages'
-        },
-        (payload) => {
-          console.log('📨 [REALTIME] Nuevo mensaje detectado:', payload);
-          console.log('📨 [REALTIME] Datos del mensaje:', JSON.stringify(payload.new, null, 2));
-          
-          // 🔥 REFRESCAR SIEMPRE que haya un mensaje nuevo relacionado con nuestro usuario
-          const newMessage = payload.new;
-          if (newMessage && (newMessage.recipient_id === currentInstagramUserId || newMessage.sender_id === currentInstagramUserId)) {
-            console.log('✅ [REALTIME] Mensaje relacionado con nuestro usuario - Recargando prospectos...');
-            console.log('📊 [REALTIME] Detalles:', {
-              sender: newMessage.sender_id,
-              recipient: newMessage.recipient_id,
-              type: newMessage.message_type,
-              currentUser: currentInstagramUserId
-            });
+    
+    let channel: any = null;
+    
+    // Función async para configurar la suscripción
+    const setupSubscription = async () => {
+      // Obtener el UUID del usuario en nuestra base de datos
+      const { data: userData, error } = await supabase
+        .from('instagram_users')
+        .select('id, instagram_user_id')
+        .eq('instagram_user_id', currentInstagramUserId)
+        .eq('is_active', true)
+        .single();
+      
+      if (error || !userData) {
+        console.log('❌ [REALTIME] No se pudo obtener UUID del usuario:', error);
+        return;
+      }
+      
+      const userUUID = userData.id;
+      console.log('✅ [REALTIME] UUID del usuario obtenido:', userUUID);
+      
+      channel = supabase
+        .channel(`prospect-updates-${currentInstagramUserId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'instagram_messages'
+          },
+          (payload) => {
+            console.log('📨 [REALTIME] Nuevo mensaje detectado:', payload);
+            console.log('📨 [REALTIME] Datos del mensaje:', JSON.stringify(payload.new, null, 2));
             
-            setTimeout(() => {
-              console.log('🔄 [REALTIME] Ejecutando refetch de prospectos...');
-              fetchProspects();
-            }, 1000);
-          } else {
-            console.log('⚠️ [REALTIME] Mensaje NO relacionado con nuestro usuario');
-            console.log('📊 [REALTIME] Detalles del mensaje ignorado:', {
-              sender: newMessage?.sender_id,
-              recipient: newMessage?.recipient_id,
-              currentUser: currentInstagramUserId
-            });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'instagram_messages'
-        },
-        (payload) => {
-          console.log('📝 [REALTIME] Mensaje actualizado detectado:', payload);
+            // 🔥 LÓGICA CORREGIDA: Verificar si el mensaje está relacionado con nuestro usuario
+            const newMessage = payload.new;
+            
+            const isRelatedToUser = newMessage && (
+              // Es un mensaje que YO envié (sender_id == mi Instagram ID)
+              newMessage.sender_id === currentInstagramUserId || 
+              // Es un mensaje que YO recibí (recipient_id == mi Instagram ID)
+              newMessage.recipient_id === currentInstagramUserId ||
+              // Es un mensaje en mi cuenta (instagram_user_id == mi UUID en BD)
+              newMessage.instagram_user_id === userUUID
+            );
           
-          const updatedMessage = payload.new;
-          if (updatedMessage && (updatedMessage.recipient_id === currentInstagramUserId || updatedMessage.sender_id === currentInstagramUserId)) {
-            console.log('✅ [REALTIME] Actualización relacionada con nuestro usuario - Recargando prospectos...');
-            setTimeout(() => {
-              console.log('🔄 [REALTIME] Ejecutando refetch por actualización...');
-              fetchProspects();
-            }, 500);
+            console.log('🔍 [REALTIME] Verificando relación del mensaje:', {
+              'mi Instagram ID': currentInstagramUserId,
+              'mi UUID en BD': userUUID,
+              'sender del mensaje': newMessage?.sender_id,
+              'recipient del mensaje': newMessage?.recipient_id,
+              'UUID del mensaje': newMessage?.instagram_user_id,
+              'está relacionado': isRelatedToUser
+            });
+          
+            if (isRelatedToUser) {
+              console.log('✅ [REALTIME] Mensaje relacionado con nuestro usuario - Recargando prospectos...');
+              setTimeout(() => {
+                console.log('🔄 [REALTIME] Ejecutando refetch de prospectos...');
+                fetchProspects();
+              }, 1000);
+            } else {
+              console.log('⚠️ [REALTIME] Mensaje NO relacionado con nuestro usuario');
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 [REALTIME] Estado de suscripción:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ [REALTIME] Suscripción activa correctamente');
-        } else if (status === 'CLOSED') {
-          console.log('❌ [REALTIME] Suscripción cerrada');
-        }
-      });
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'instagram_messages'
+          },
+          (payload) => {
+            console.log('📝 [REALTIME] Mensaje actualizado detectado:', payload);
+            
+            const updatedMessage = payload.new;
+            if (updatedMessage && (
+              updatedMessage.recipient_id === currentInstagramUserId || 
+              updatedMessage.sender_id === currentInstagramUserId ||
+              updatedMessage.instagram_user_id === userUUID
+            )) {
+              console.log('✅ [REALTIME] Actualización relacionada con nuestro usuario - Recargando prospectos...');
+              setTimeout(() => {
+                fetchProspects();
+              }, 500);
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log('📡 [REALTIME] Estado de suscripción:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ [REALTIME] Suscripción activa correctamente');
+          } else if (status === 'CLOSED') {
+            console.log('❌ [REALTIME] Suscripción cerrada');
+          }
+        });
+    };
 
+    // Ejecutar la configuración de suscripción
+    setupSubscription();
+
+    // Cleanup function
     return () => {
       console.log('🔌 [REALTIME] Desconectando suscripción');
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [currentInstagramUserId]);
 
