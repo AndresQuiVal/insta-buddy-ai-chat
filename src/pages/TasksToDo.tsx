@@ -656,13 +656,20 @@ const TasksToDo: React.FC = () => {
 
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
-    // 🔥 DETECCIÓN AUTOMÁTICA: Si el último mensaje lo envié YO, marcar como completado
+    // 🔥 LÓGICA CORREGIDA: No auto-completar prospectos en 'pending' 
+    // porque 'pending' significa que ELLOS me escribieron (necesito responder)
     const realProspectData = realProspects.find(rp => rp.senderId === prospect.id);
-    const shouldAutoComplete = realProspectData && realProspectData.lastMessageType === 'sent';
     
-    // Auto-completar si detectamos que ya respondí
-    if (shouldAutoComplete && !completedTasks[taskKey] && taskType === 'pending') {
-      console.log(`✅ [AUTO-COMPLETE] Marcando como completado automáticamente: ${prospect.userName}`);
+    // Solo auto-completar si:
+    // 1. El último mensaje lo envié YO ('sent')
+    // 2. Y el prospecto NO está en estado 'pending' (porque pending = ellos me escribieron)
+    const shouldAutoComplete = realProspectData && 
+      realProspectData.lastMessageType === 'sent' && 
+      realProspectData.state !== 'pending';
+    
+    // Auto-completar solo en casos válidos (no pending)
+    if (shouldAutoComplete && !completedTasks[taskKey] && taskType !== 'pending') {
+      console.log(`✅ [AUTO-COMPLETE] Marcando como completado automáticamente: ${prospect.userName} (último mensaje enviado por mí)`);
       setCompletedTasks(prev => ({ ...prev, [taskKey]: true }));
     }
 
