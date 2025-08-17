@@ -239,14 +239,14 @@ const TasksToDo: React.FC = () => {
       return;
     }
     
-    console.log('🗑️ Iniciando eliminación simplificada...');
+    console.log('🗑️ Iniciando eliminación CORRECTA...');
     
     try {
       const pendingProspectIds = realProspects
         .filter(p => p.state === 'pending')
         .map(p => p.senderId);
       
-      console.log('📋 IDs a eliminar:', pendingProspectIds);
+      console.log('📋 IDs de prospectos a eliminar:', pendingProspectIds);
       
       if (pendingProspectIds.length === 0) {
         toast({
@@ -256,13 +256,13 @@ const TasksToDo: React.FC = () => {
         return;
       }
 
-      // Solo eliminar los mensajes principales - esto debería ser suficiente
-      console.log('🗑️ Eliminando mensajes de Instagram...');
+      // CORRECCIÓN: Los mensajes tienen sender_id = usuario actual y recipient_id = prospecto
+      console.log('🗑️ Eliminando conversaciones donde recipient_id está en prospectos...');
       const { data: deletedMessages, error: messagesError } = await supabase
         .from('instagram_messages')
         .delete()
-        .in('sender_id', pendingProspectIds)
-        .eq('instagram_user_id', currentUser.id);
+        .eq('instagram_user_id', currentUser.id)
+        .in('recipient_id', pendingProspectIds);
 
       console.log('📊 Mensajes eliminados:', deletedMessages);
       console.log('❌ Error (si existe):', messagesError);
@@ -274,10 +274,10 @@ const TasksToDo: React.FC = () => {
       console.log('🔄 Refrescando datos...');
       await refetch();
       
-      console.log('✅ Eliminación completada!');
+      console.log('✅ Eliminación completada correctamente!');
       toast({
         title: "Prospectos eliminados",
-        description: `Se eliminaron ${pendingProspectIds.length} prospectos pendientes`,
+        description: `Se eliminaron las conversaciones con ${pendingProspectIds.length} prospectos`,
       });
       
     } catch (error) {
