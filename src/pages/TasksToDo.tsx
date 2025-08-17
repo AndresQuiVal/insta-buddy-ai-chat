@@ -232,7 +232,56 @@ const TasksToDo: React.FC = () => {
     avatar: `https://ui-avatars.com/api/?name=${prospect.username || 'U'}&background=6366f1&color=fff`
   }));
 
-  // AI message generation via Edge Function
+  // Función para eliminar prospectos pendientes
+  const deletePendingProspects = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const pendingProspectIds = realProspects
+        .filter(p => p.state === 'no_response')
+        .map(p => p.senderId);
+      
+      if (pendingProspectIds.length === 0) {
+        toast({
+          title: "Sin prospectos",
+          description: "No hay prospectos pendientes para eliminar",
+        });
+        return;
+      }
+
+      // Eliminar mensajes de estos prospectos
+      const { error: messagesError } = await supabase
+        .from('instagram_messages')
+        .delete()
+        .in('sender_id', pendingProspectIds);
+
+      if (messagesError) throw messagesError;
+
+      // Eliminar registros de prospectos si existen
+      const { error: prospectsError } = await supabase
+        .from('prospects')
+        .delete()
+        .in('prospect_instagram_id', pendingProspectIds);
+
+      // No lanzar error si no existen prospectos (tabla podría estar vacía)
+
+      // Actualizar datos
+      refetch();
+      
+      toast({
+        title: "Prospectos eliminados",
+        description: `Se eliminaron ${pendingProspectIds.length} prospectos pendientes`,
+      });
+      
+    } catch (error) {
+      console.error('Error eliminando prospectos pendientes:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar los prospectos pendientes",
+        variant: "destructive"
+      });
+    }
+  };
   const generateMessage = async (username: string, type: 'followup' | 'outreach') => {
     const base = type === 'followup'
       ? `Genera un mensaje breve y cordial de seguimiento para Instagram en español para @${username}. Tono humano, 1-2 líneas, con CTA amable para continuar la conversación.`
@@ -1284,14 +1333,29 @@ const TasksToDo: React.FC = () => {
                 boxShadow: activeSection === 'pending' ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
               }}
             >
-              <CardHeader className="pb-2 sm:pb-3" onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}>
-                <CardTitle className="flex items-center justify-between text-base sm:text-lg cursor-pointer">
-                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
+              <CardHeader className="pb-2 sm:pb-3">
+                <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 cursor-pointer" onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}>
                     <span className={`${(completedTasks['section-pending'] || prospectsClassification.pendingResponses.every(p => completedTasks[`pending-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>Prospectos pendientes</span>
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.length}</Badge>
-                    {activeSection === 'pending' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    {prospectsClassification.pendingResponses.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePendingProspects();
+                        }}
+                        className="h-6 px-2 text-xs"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                    <div className="cursor-pointer" onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}>
+                      {activeSection === 'pending' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </div>
                   </div>
                 </CardTitle>
               </CardHeader>
