@@ -126,7 +126,88 @@ serve(async (req) => {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
+}
+
+// ✅ FUNCIÓN: Procesar mensajes enviados manualmente por el usuario (MOVIDA AQUÍ PARA EVITAR ERRORES)
+async function processSentMessage(messagingEvent: any, supabase: any, source: string, instagramAccountId: string) {
+  console.log('📤 ===== PROCESANDO MENSAJE ENVIADO MANUALMENTE =====')
+  console.log(`📝 Mensaje desde ${source}:`, JSON.stringify(messagingEvent, null, 2))
+  
+  const senderId = messagingEvent.sender?.id
+  const recipientId = messagingEvent.recipient?.id
+  const messageText = messagingEvent.message?.text
+  
+  // Procesar timestamp
+  let timestamp: string
+  if (messagingEvent.timestamp) {
+    timestamp = new Date(messagingEvent.timestamp).toISOString()
+  } else {
+    timestamp = new Date().toISOString()
   }
+  
+  console.log(`📤 MENSAJE ENVIADO MANUALMENTE POR USUARIO:`)
+  console.log(`👤 De: ${senderId} → Para: ${recipientId}`)
+  console.log(`💬 Texto: "${messageText}"`)
+  console.log(`🕐 Timestamp: ${timestamp}`)
+  
+  // Buscar el registro del usuario de Instagram
+  const { data: instagramUser, error: userError } = await supabase
+    .from('instagram_users')
+    .select('*')
+    .eq('instagram_user_id', senderId)
+    .eq('is_active', true)
+    .single()
+
+  if (userError || !instagramUser) {
+    console.log('❌ No se encontró usuario activo para sender_id:', senderId)
+    return
+  }
+
+  console.log('✅ Usuario encontrado:', instagramUser.username)
+
+  // Guardar mensaje enviado manualmente en la base de datos
+  const messageData = {
+    instagram_user_id: instagramUser.id,
+    instagram_message_id: messagingEvent.message?.mid || `sent_${Date.now()}_${recipientId}`,
+    sender_id: senderId,
+    recipient_id: recipientId,
+    message_text: messageText || '',
+    message_type: 'sent', // 🔥 IMPORTANTE: Es un mensaje ENVIADO
+    timestamp: timestamp,
+    raw_data: {
+      ...messagingEvent,
+      webhook_source: 'manual_sent',
+      processed_at: new Date().toISOString()
+    }
+  }
+
+  console.log('💾 Guardando mensaje enviado manualmente:', messageData)
+
+  const { error: insertError } = await supabase
+    .from('instagram_messages')
+    .insert(messageData)
+
+  if (insertError) {
+    console.error('❌ Error guardando mensaje enviado:', insertError)
+  } else {
+    console.log('✅ Mensaje enviado guardado correctamente en BD')
+    
+    // Actualizar actividad del prospecto
+    try {
+      const { error: activityError } = await supabase.rpc('update_prospect_activity', { 
+        p_prospect_id: recipientId // El prospecto es quien RECIBE el mensaje
+      })
+      
+      if (activityError) {
+        console.error('❌ Error actualizando actividad del prospecto:', activityError)
+      } else {
+        console.log('✅ Actividad del prospecto actualizada')
+      }
+    } catch (error) {
+      console.error('❌ Error en RPC update_prospect_activity:', error)
+    }
+  }
+}
 })
 
 // Función para manejar eventos de postback
@@ -890,6 +971,8 @@ async function createCommentFollowUps(autoresponderID: string, commenterId: stri
 
       console.log(`📅 Follow-up ${config.sequence_order} programado para: ${followupTime.toISOString()} (+${accumulatedHours}h total)`)
 }
+
+// ✅ FUNCIÓN DE COMENTARIOS
 
 // ✅ NUEVA FUNCIÓN: Procesar mensajes enviados manualmente por el usuario
 async function processSentMessage(messagingEvent: any, supabase: any, source: string, instagramAccountId: string) {
