@@ -234,30 +234,21 @@ const TasksToDo: React.FC = () => {
 
   // Función para eliminar prospectos pendientes
   const deletePendingProspects = async () => {
-    // Alert temporal para confirmar que la función se ejecuta
-    alert('🗑️ Función deletePendingProspects ejecutada!');
-    
     if (!currentUser) {
       console.log('❌ No hay usuario autenticado');
-      alert('❌ No hay usuario autenticado');
       return;
     }
     
-    console.log('🗑️ Iniciando eliminación de prospectos pendientes...');
-    console.log('👤 Usuario actual:', currentUser);
-    console.log('📊 Total de prospectos:', realProspects.length);
+    console.log('🗑️ Iniciando eliminación simplificada...');
     
     try {
       const pendingProspectIds = realProspects
         .filter(p => p.state === 'pending')
         .map(p => p.senderId);
       
-      console.log('🔍 Prospectos pendientes encontrados:', pendingProspectIds.length);
-      console.log('📋 IDs de prospectos pendientes:', pendingProspectIds);
+      console.log('📋 IDs a eliminar:', pendingProspectIds);
       
       if (pendingProspectIds.length === 0) {
-        console.log('⚠️ No hay prospectos pendientes para eliminar');
-        alert('⚠️ No hay prospectos pendientes para eliminar');
         toast({
           title: "Sin prospectos",
           description: "No hay prospectos pendientes para eliminar",
@@ -265,63 +256,35 @@ const TasksToDo: React.FC = () => {
         return;
       }
 
-      console.log('🗑️ Comenzando eliminación de', pendingProspectIds.length, 'prospectos...');
-
-      // Eliminar en orden correcto para evitar errores de FK
-      
-      console.log('1️⃣ Eliminando prospect_analysis...');
-      const analysisResult = await supabase
-        .from('prospect_analysis')
-        .delete()
-        .in('sender_id', pendingProspectIds);
-      console.log('✅ Result prospect_analysis:', analysisResult);
-
-      console.log('2️⃣ Eliminando prospect_last_activity...');
-      const activityResult = await supabase
-        .from('prospect_last_activity')
-        .delete()
-        .in('prospect_id', pendingProspectIds);
-      console.log('✅ Result prospect_last_activity:', activityResult);
-
-      console.log('3️⃣ Eliminando prospect_states...');
-      const statesResult = await supabase
-        .from('prospect_states')
-        .delete()
-        .eq('instagram_user_id', currentUser.instagram_user_id)
-        .in('prospect_sender_id', pendingProspectIds);
-      console.log('✅ Result prospect_states:', statesResult);
-
-      console.log('4️⃣ Eliminando instagram_messages...');
-      const messagesResult = await supabase
+      // Solo eliminar los mensajes principales - esto debería ser suficiente
+      console.log('🗑️ Eliminando mensajes de Instagram...');
+      const { data: deletedMessages, error: messagesError } = await supabase
         .from('instagram_messages')
         .delete()
-        .in('sender_id', pendingProspectIds);
-      console.log('✅ Result instagram_messages:', messagesResult);
+        .in('sender_id', pendingProspectIds)
+        .eq('instagram_user_id', currentUser.id);
 
-      console.log('5️⃣ Eliminando prospects...');
-      const prospectsResult = await supabase
-        .from('prospects')
-        .delete()
-        .eq('instagram_user_id', currentUser.id)
-        .in('prospect_instagram_id', pendingProspectIds);
-      console.log('✅ Result prospects:', prospectsResult);
+      console.log('📊 Mensajes eliminados:', deletedMessages);
+      console.log('❌ Error (si existe):', messagesError);
+
+      if (messagesError) {
+        throw messagesError;
+      }
 
       console.log('🔄 Refrescando datos...');
-      refetch();
+      await refetch();
       
-      console.log('✅ Eliminación completada exitosamente!');
-      alert('✅ Eliminación completada exitosamente!');
+      console.log('✅ Eliminación completada!');
       toast({
         title: "Prospectos eliminados",
         description: `Se eliminaron ${pendingProspectIds.length} prospectos pendientes`,
       });
       
     } catch (error) {
-      console.error('💥 Error eliminando prospectos pendientes:', error);
-      alert('💥 Error: ' + error.message);
+      console.error('💥 Error:', error);
       toast({
         title: "Error",
-        description: "No se pudieron eliminar los prospectos pendientes",
+        description: "No se pudieron eliminar los prospectos: " + error.message,
         variant: "destructive"
       });
     }
