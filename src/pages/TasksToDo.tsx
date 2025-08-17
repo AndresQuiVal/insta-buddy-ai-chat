@@ -140,25 +140,41 @@ const TasksToDo: React.FC = () => {
 
   // Limpiar tareas completadas cuando los prospectos responden
   useEffect(() => {
+    console.log('🔍 [DESTACHAR] Revisando si hay que destachar prospectos...');
+    console.log('🔍 [DESTACHAR] Prospectos actuales:', realProspects.length);
+    
     if (realProspects.length > 0) {
       realProspects.forEach(prospect => {
+        console.log(`🔍 [DESTACHAR] Prospecto ${prospect.username}:`, {
+          state: prospect.state,
+          senderId: prospect.senderId,
+          lastMessageType: prospect.lastMessageType,
+          lastMessageTime: prospect.lastMessageTime
+        });
+        
         // Si el prospecto está en pending (acaba de responder), limpiar todas sus marcas de completado
         if (prospect.state === 'pending') {
+          console.log(`🔄 [DESTACHAR] ${prospect.username} está en PENDING - revisando si estaba tachado...`);
+          
           const taskTypes = ['pending', 'yesterday', 'week', 'new'];
           
           taskTypes.forEach(type => {
             const taskKey = `${type}-${prospect.senderId}`;
-            // Solo limpiar si estaba marcado como completado
+            
             setCompletedTasks(prev => {
               if (prev[taskKey]) {
-                console.log(`🔄 Destachando ${prospect.username} de ${type} (prospecto respondió)`);
+                console.log(`✅ [DESTACHAR] DESTACHANDO ${prospect.username} de ${type} (prospecto respondió o cambió de estado)`);
                 const updated = { ...prev };
                 delete updated[taskKey]; // Remover la marca de completado
                 return updated;
+              } else {
+                console.log(`ℹ️ [DESTACHAR] ${prospect.username} en ${type} no estaba tachado`);
+                return prev;
               }
-              return prev;
             });
           });
+        } else {
+          console.log(`ℹ️ [DESTACHAR] ${prospect.username} NO está en pending (estado: ${prospect.state})`);
         }
       });
     }
@@ -1466,9 +1482,12 @@ const TasksToDo: React.FC = () => {
                         e.stopPropagation();
                         console.log('🔄 [DEBUG] Refrescando manualmente...');
                         console.log('🔄 [DEBUG] Estado actual de prospectos:', realProspects.length);
+                        console.log('🔄 [DEBUG] Tareas completadas actuales:', Object.keys(completedTasks));
                         
                         // Forzar refetch
                         await refetch();
+                        
+                        console.log('🔄 [DEBUG] Después del refetch, prospectos:', realProspects.length);
                         
                         // Mostrar toast con información
                         toast({
