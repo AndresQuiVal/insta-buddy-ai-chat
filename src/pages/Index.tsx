@@ -52,6 +52,10 @@ const Index = () => {
   useEffect(() => {
     const handleAuthSuccess = (event: CustomEvent) => {
       console.log("🎉 Evento de autenticación recibido:", event.detail);
+      
+      // Marcar que acabamos de autenticar
+      sessionStorage.setItem('just-authenticated', 'true');
+      
       // Dar un pequeño delay para que se guarde en localStorage
       setTimeout(() => {
         console.log("🔄 Recargando usuario después de autenticación...");
@@ -77,43 +81,61 @@ const Index = () => {
     });
   }, [userLoading, currentUser]);
 
-  // Verificar si debe mostrar autoresponder onboarding
+  // Redirección automática después del login
   useEffect(() => {
-    const checkAutoresponderOnboardingStatus = async () => {
-      if (currentUser && !userLoading) {
-        // Verificar si el usuario tiene autorespondedores configurados
-        const { data: autoresponders, error } = await supabase
-          .from('autoresponder_messages')
-          .select('id')
-          .eq('instagram_user_id_ref', currentUser.instagram_user_id)
-          .limit(1);
-
-        const { data: generalAutoresponders, error: generalError } = await supabase
-          .from('general_comment_autoresponders')
-          .select('id')
-          .eq('user_id', currentUser.instagram_user_id)
-          .limit(1);
-
-        const { data: commentAutoresponders, error: commentError } = await supabase
-          .from('comment_autoresponders')
-          .select('id')
-          .eq('user_id', currentUser.instagram_user_id)
-          .limit(1);
-
-        // Si no tiene ningún autorespondedor configurado, mostrar onboarding
-        const hasAutoresponders = (autoresponders && autoresponders.length > 0) ||
-                                 (generalAutoresponders && generalAutoresponders.length > 0) ||
-                                 (commentAutoresponders && commentAutoresponders.length > 0);
-
-        if (!hasAutoresponders) {
-          console.log('🔍 DEBUG Index - No autoresponders found, navigating to /autoresponder-onboarding');
-          navigate('/autoresponder-onboarding');
-        }
+    if (!userLoading && currentUser) {
+      console.log('🎯 Usuario detectado, verificando si debe redirigir...');
+      
+      // Verificar si viene de una autenticación reciente
+      const justAuthenticated = localStorage.getItem('hower-auth-redirect') || 
+                               sessionStorage.getItem('just-authenticated');
+      
+      if (justAuthenticated) {
+        console.log('🚀 Usuario recién autenticado, redirigiendo a tasks-to-do');
+        localStorage.removeItem('hower-auth-redirect');
+        sessionStorage.removeItem('just-authenticated');
+        navigate('/tasks-to-do');
+        return;
       }
-    };
-
-    checkAutoresponderOnboardingStatus();
+      
+      // Si no es recién autenticado, verificar autoresponders
+      checkAutoresponderOnboardingStatus();
+    }
   }, [currentUser, userLoading, navigate]);
+
+  // Verificar si debe mostrar autoresponder onboarding
+  const checkAutoresponderOnboardingStatus = async () => {
+    if (currentUser && !userLoading) {
+      // Verificar si el usuario tiene autorespondedores configurados
+      const { data: autoresponders, error } = await supabase
+        .from('autoresponder_messages')
+        .select('id')
+        .eq('instagram_user_id_ref', currentUser.instagram_user_id)
+        .limit(1);
+
+      const { data: generalAutoresponders, error: generalError } = await supabase
+        .from('general_comment_autoresponders')
+        .select('id')
+        .eq('user_id', currentUser.instagram_user_id)
+        .limit(1);
+
+      const { data: commentAutoresponders, error: commentError } = await supabase
+        .from('comment_autoresponders')
+        .select('id')
+        .eq('user_id', currentUser.instagram_user_id)
+        .limit(1);
+
+      // Si no tiene ningún autorespondedor configurado, mostrar onboarding
+      const hasAutoresponders = (autoresponders && autoresponders.length > 0) ||
+                               (generalAutoresponders && generalAutoresponders.length > 0) ||
+                               (commentAutoresponders && commentAutoresponders.length > 0);
+
+      if (!hasAutoresponders) {
+        console.log('🔍 DEBUG Index - No autoresponders found, navigating to /autoresponder-onboarding');
+        navigate('/autoresponder-onboarding');
+      }
+    }
+  };
 
   // Si está cargando, mostrar loading
   if (userLoading) {
@@ -205,8 +227,8 @@ const Index = () => {
               <LogOut className="w-4 h-4 mr-2" />
               Cerrar Sesión
             </Button>
-            <Button onClick={() => navigate('/tasks-to-do')} variant="secondary" size="sm">
-              Ir a Prospectos
+            <Button onClick={() => navigate('/tasks-to-do')} variant="default" size="sm" className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium">
+              📋 Mis Tareas
             </Button>
             <div className="hidden">
               <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
