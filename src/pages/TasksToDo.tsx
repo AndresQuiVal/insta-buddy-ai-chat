@@ -159,22 +159,9 @@ const TasksToDo: React.FC = () => {
           if (error) {
             console.error(`❌ [DB-SYNC] Error sincronizando ${prospect.username}:`, error);
           } else {
-            const shouldBeTicked = false; // NUNCA auto-tachar - solo cuando el usuario marque manualmente
-            console.log(`✅ [DB-SYNC] ${prospect.username}: ${shouldBeTicked ? 'TACHADO' : 'DESTACHADO'}`);
-            
-            // ACTUALIZAR ESTADO LOCAL INMEDIATAMENTE
-            const taskKey = `pending-${prospect.senderId}`;
-            setCompletedTasks(prev => {
-              const updated = { ...prev };
-              if (shouldBeTicked) {
-                updated[taskKey] = true;
-                console.log(`🔄 [UI-SYNC] TACHANDO ${prospect.username} en UI`);
-              } else {
-                delete updated[taskKey];
-                console.log(`🔄 [UI-SYNC] DESTACHANDO ${prospect.username} en UI`);
-              }
-              return updated;
-            });
+            // ✅ NO CAMBIAR EL ESTADO LOCAL - la base de datos ya está actualizada por el webhook
+            // El webhook maneja correctamente el estado: sent = tachado, received = destachado
+            console.log(`✅ [DB-SYNC] ${prospect.username}: BD actualizada correctamente por webhook`);
           }
         } catch (error) {
           console.error(`💥 [DB-SYNC] Error general para ${prospect.username}:`, error);
