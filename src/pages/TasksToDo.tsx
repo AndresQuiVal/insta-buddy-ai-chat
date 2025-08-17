@@ -249,29 +249,41 @@ const TasksToDo: React.FC = () => {
         return;
       }
 
-      // Eliminar registros de prospectos primero
-      const { error: prospectsError } = await supabase
-        .from('prospects')
-        .delete()
-        .eq('instagram_user_id', currentUser.id)
-        .in('prospect_instagram_id', pendingProspectIds);
+      console.log('🗑️ Eliminando prospectos:', pendingProspectIds);
 
-      // Eliminar mensajes de estos prospectos
-      const { error: messagesError } = await supabase
-        .from('instagram_messages')
+      // Eliminar en orden correcto para evitar errores de FK
+      
+      // 1. Eliminar prospect_analysis
+      await supabase
+        .from('prospect_analysis')
         .delete()
         .in('sender_id', pendingProspectIds);
 
-      // Eliminar estados de prospectos
-      const { error: statesError } = await supabase
+      // 2. Eliminar prospect_last_activity
+      await supabase
+        .from('prospect_last_activity')
+        .delete()
+        .in('prospect_id', pendingProspectIds);
+
+      // 3. Eliminar prospect_states
+      await supabase
         .from('prospect_states')
         .delete()
         .eq('instagram_user_id', currentUser.instagram_user_id)
         .in('prospect_sender_id', pendingProspectIds);
 
-      if (messagesError || prospectsError || statesError) {
-        throw messagesError || prospectsError || statesError;
-      }
+      // 4. Eliminar messages
+      await supabase
+        .from('instagram_messages')
+        .delete()
+        .in('sender_id', pendingProspectIds);
+
+      // 5. Eliminar prospects si existen
+      await supabase
+        .from('prospects')
+        .delete()
+        .eq('instagram_user_id', currentUser.id)
+        .in('prospect_instagram_id', pendingProspectIds);
 
       // Actualizar datos
       refetch();
