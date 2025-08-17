@@ -1172,7 +1172,37 @@ const TasksToDo: React.FC = () => {
                 </div>
                 
                 {/* Estadísticas - Aparece arriba del título cuando se hace click */}
-          {/* Aviso sobre sincronización manual */}
+          {/* Aviso sobre múltiples cuentas y sincronización */}
+          {currentUser && (
+            <Alert className="mb-6 border-amber-200 bg-amber-50">
+              <RefreshCw className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <div className="space-y-2">
+                  <div><strong>Cuenta activa:</strong> {currentUser.username} (ID: {currentUser.instagram_user_id})</div>
+                  <div className="text-sm">💡 Si respondes desde Instagram con <strong>otra cuenta</strong>, no se sincronizará aquí. Asegúrate de usar la cuenta correcta.</div>
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const { data: allUsers } = await supabase
+                          .from('instagram_users')
+                          .select('username, instagram_user_id, is_active')
+                          .eq('is_active', true);
+                        
+                        console.log('🔍 [CUENTAS] Todas las cuentas registradas:', allUsers);
+                        alert('Ver consola del navegador (F12) para ver todas las cuentas registradas');
+                      } catch (error) {
+                        console.error('Error:', error);
+                      }
+                    }}
+                    className="text-xs underline text-amber-700 hover:text-amber-900"
+                  >
+                    Ver todas mis cuentas registradas
+                  </button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {prospectsClassification.pendingResponses.hower.length + prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length + prospectsClassification.pendingResponses.ads.length > 0 && (
             <Alert className="mb-6 border-blue-200 bg-blue-50">
               <RefreshCw className="h-4 w-4 text-blue-600" />
