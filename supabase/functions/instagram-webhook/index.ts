@@ -126,7 +126,8 @@ serve(async (req) => {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
-}
+  }
+})
 
 // ✅ FUNCIÓN: Procesar mensajes enviados manualmente por el usuario (MOVIDA AQUÍ PARA EVITAR ERRORES)
 async function processSentMessage(messagingEvent: any, supabase: any, source: string, instagramAccountId: string) {
@@ -1781,11 +1782,3 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('🏷️ === TIPO PROCESADO:', autoresponderType, '===')
 }
 
-  } catch (error) {
-    console.error('💥 Error en webhook:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-  }
-})
