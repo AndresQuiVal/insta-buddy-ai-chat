@@ -127,7 +127,6 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
-})
 
 // ✅ FUNCIÓN: Procesar mensajes enviados manualmente por el usuario (MOVIDA AQUÍ PARA EVITAR ERRORES)
 async function processSentMessage(messagingEvent: any, supabase: any, source: string, instagramAccountId: string) {
@@ -1781,4 +1780,6 @@ async function processComment(commentData: any, supabase: any, instagramAccountI
   console.log('💡 === AUTORESPONDERS DE COMENTARIOS FUNCIONAN SIN RESTRICCIONES ===')
   console.log('🏷️ === TIPO PROCESADO:', autoresponderType, '===')
 }
+
+})
 
