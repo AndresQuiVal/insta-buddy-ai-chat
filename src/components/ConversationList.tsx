@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, Circle, Star } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 
 interface Conversation {
   id: string;
@@ -22,55 +24,103 @@ const ConversationList: React.FC<ConversationListProps> = ({
   activeConversation,
   onSelectConversation
 }) => {
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: '1',
-      userName: 'maria_gonzalez',
-      lastMessage: '¡Hola! Me interesa tu producto',
-      timestamp: '2 min',
-      unread: true,
-      matchPoints: 4,
-      metTraits: ['Interesado en nuestros productos o servicios', 'Tiene presupuesto adecuado para adquirir nuestras soluciones', 'Está listo para tomar una decisión de compra', 'Se encuentra en nuestra zona de servicio']
-    },
-    {
-      id: '2',
-      userName: 'carlos_tech',
-      lastMessage: '¿Cuáles son los precios?',
-      timestamp: '15 min',
-      unread: false,
-      matchPoints: 3,
-      metTraits: ['Interesado en nuestros productos o servicios', 'Tiene presupuesto adecuado para adquirir nuestras soluciones', 'Está listo para tomar una decisión de compra']
-    },
-    {
-      id: '3',
-      userName: 'ana_designer',
-      lastMessage: 'Perfecto, muchas gracias',
-      timestamp: '1 h',
-      unread: false,
-      matchPoints: 2,
-      metTraits: ['Interesado en nuestros productos o servicios', 'Tiene presupuesto adecuado para adquirir nuestras soluciones']
-    },
-    {
-      id: '4',
-      userName: 'luis_startup',
-      lastMessage: '¿Tienen descuentos?',
-      timestamp: '3 h',
-      unread: true,
-      matchPoints: 1,
-      metTraits: ['Interesado en nuestros productos o servicios']
-    },
-    {
-      id: '5',
-      userName: 'nuevo_usuario',
-      lastMessage: 'Acabo de conocer tu marca',
-      timestamp: '5 h',
-      unread: false,
-      matchPoints: 0,
-      metTraits: []
-    }
-  ]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { currentUser } = useInstagramUsers();
 
-  // Escuchar actualizaciones de matchPoints desde localStorage
+  // Cargar conversaciones reales desde la base de datos
+  useEffect(() => {
+    loadRealConversations();
+  }, [currentUser]);
+
+  const loadRealConversations = async () => {
+    if (!currentUser) return;
+    
+    setLoading(true);
+    try {
+      // Obtener mensajes de Instagram agrupados por sender_id
+      const { data: messages, error } = await supabase
+        .from('instagram_messages')
+        .select('*')
+        .eq('instagram_user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error cargando mensajes:', error);
+        return;
+      }
+
+      // Obtener análisis de prospectos
+      const { data: analyses, error: analysisError } = await supabase
+        .from('prospect_analysis')
+        .select('*');
+
+      const analysisMap = new Map();
+      if (analyses) {
+        analyses.forEach(analysis => {
+          analysisMap.set(analysis.sender_id, analysis);
+        });
+      }
+
+      // Obtener datos de prospectos para usernames reales
+      const { data: prospects, error: prospectError } = await supabase
+        .from('prospects')
+        .select('prospect_instagram_id, username')
+        .eq('instagram_user_id', currentUser.id);
+
+      const prospectMap = new Map();
+      if (prospects) {
+        prospects.forEach(prospect => {
+          prospectMap.set(prospect.prospect_instagram_id, prospect.username);
+        });
+      }
+
+      // Agrupar mensajes por sender_id
+      const conversationMap = new Map<string, Conversation>();
+      
+      messages?.forEach(message => {
+        if (!conversationMap.has(message.sender_id)) {
+          const analysis = analysisMap.get(message.sender_id);
+          const realUsername = prospectMap.get(message.sender_id) || `user_${message.sender_id.slice(-4)}`;
+          
+          conversationMap.set(message.sender_id, {
+            id: message.sender_id,
+            userName: realUsername,
+            lastMessage: message.message_text,
+            timestamp: getTimeAgo(message.created_at),
+            unread: message.message_type === 'received' && !message.is_read,
+            matchPoints: analysis?.match_points || 0,
+            metTraits: analysis?.met_traits || []
+          });
+        }
+      });
+
+      const realConversations = Array.from(conversationMap.values());
+      setConversations(realConversations);
+      
+    } catch (error) {
+      console.error('Error cargando conversaciones:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const messageDate = new Date(dateString);
+    const diffInMs = now.getTime() - messageDate.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'ahora';
+    if (diffInMinutes < 60) return `${diffInMinutes} min`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} h`;
+    return `${Math.floor(diffInMinutes / 1440)} d`;
+  };
+
+  // Ordenar conversaciones por puntos de compatibilidad
+  const sortedConversations = [...conversations].sort((a, b) => b.matchPoints - a.matchPoints);
+
+  // Escuchar actualizaciones desde localStorage para sincronizar
   useEffect(() => {
     const handleStorageChange = () => {
       const savedConversations = localStorage.getItem('hower-conversations');
@@ -78,21 +128,16 @@ const ConversationList: React.FC<ConversationListProps> = ({
         try {
           const parsedConversations = JSON.parse(savedConversations);
           setConversations(prevConversations => {
-            // Fusionar las conversaciones guardadas con las existentes
             const updatedConversations = [...prevConversations];
             
             parsedConversations.forEach((savedConv: Conversation) => {
               const existingIndex = updatedConversations.findIndex(conv => conv.id === savedConv.id);
               if (existingIndex !== -1) {
-                // Actualizar conversación existente
                 updatedConversations[existingIndex] = {
                   ...updatedConversations[existingIndex],
                   matchPoints: savedConv.matchPoints,
                   metTraits: savedConv.metTraits
                 };
-              } else {
-                // Añadir nueva conversación
-                updatedConversations.push(savedConv);
               }
             });
             
@@ -105,45 +150,13 @@ const ConversationList: React.FC<ConversationListProps> = ({
     };
 
     window.addEventListener('storage', handleStorageChange);
-    // Cargar conversaciones guardadas al iniciar
-    handleStorageChange();
+    window.addEventListener('conversations-updated', loadRealConversations);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('conversations-updated', loadRealConversations);
     };
-  }, []);
-
-  // Ordenar conversaciones por puntos de compatibilidad
-  const sortedConversations = [...conversations].sort((a, b) => b.matchPoints - a.matchPoints);
-
-  // Simular nuevas conversaciones
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newUsers = ['sofia_marketing', 'david_dev', 'laura_design', 'pedro_sales'];
-      const messages = [
-        '¡Hola! ¿Están disponibles?',
-        'Me interesa colaborar',
-        '¿Pueden ayudarme?',
-        'Excelente trabajo'
-      ];
-      
-      if (Math.random() > 0.7) {
-        const newConversation: Conversation = {
-          id: Date.now().toString(),
-          userName: newUsers[Math.floor(Math.random() * newUsers.length)],
-          lastMessage: messages[Math.floor(Math.random() * messages.length)],
-          timestamp: 'ahora',
-          unread: true,
-          matchPoints: Math.floor(Math.random() * 5), // 0-4 puntos aleatorios
-          metTraits: []
-        };
-        
-        setConversations(prev => [newConversation, ...prev].slice(0, 10));
-      }
-    }, 20000);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [currentUser]);
 
   // Función para renderizar los indicadores de puntos de compatibilidad
   const renderMatchPoints = (points: number, metTraits?: string[]) => {

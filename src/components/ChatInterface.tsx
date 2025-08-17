@@ -4,6 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import { ChatMessage, handleAutomaticResponse, isOpenAIConfigured } from '@/services/openaiService';
 import { useAITraitAnalysis } from '@/hooks/useAITraitAnalysis';
 import { handleStrategicAutomaticResponse } from '@/services/openaiService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -156,55 +157,76 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ activeConversation, aiCon
 
   // Guardar conversación actual con puntos de compatibilidad
   useEffect(() => {
-    if (activeConversation && messages.length > 0) {
-      try {
-        const savedConversationsStr = localStorage.getItem('hower-conversations');
-        let conversations: Conversation[] = [];
-        
-        if (savedConversationsStr) {
-          conversations = JSON.parse(savedConversationsStr);
+    const saveConversation = async () => {
+      if (activeConversation && messages.length > 0) {
+        try {
+          const savedConversationsStr = localStorage.getItem('hower-conversations');
+          let conversations: Conversation[] = [];
+          
+          if (savedConversationsStr) {
+            conversations = JSON.parse(savedConversationsStr);
+          }
+          
+          // Buscar si esta conversación ya existe
+          const existingIndex = conversations.findIndex(conv => conv.id === activeConversation);
+          const lastMessage = messages[messages.length - 1];
+          
+          if (existingIndex !== -1) {
+            // Actualizar conversación existente
+            conversations[existingIndex] = {
+              ...conversations[existingIndex],
+              lastMessage: lastMessage.text,
+              timestamp: '1m',
+              matchPoints: currentMatchPoints,
+              metTraits: metTraits,
+              messages: messages
+            };
+          } else {
+            // Crear nueva conversación - intentar obtener username real
+            let realUsername = `user_${activeConversation}`;
+            
+            try {
+              // Intentar obtener el username real desde los prospectos
+              const { data: prospect } = await supabase
+                .from('prospects')
+                .select('username')
+                .eq('prospect_instagram_id', activeConversation)
+                .single();
+              
+              if (prospect?.username) {
+                realUsername = prospect.username;
+              }
+            } catch (error) {
+              console.log('No se pudo obtener username real, usando genérico');
+            }
+            
+            conversations.push({
+              id: activeConversation,
+              userName: realUsername,
+              lastMessage: lastMessage.text,
+              timestamp: '1m',
+              unread: false,
+              matchPoints: currentMatchPoints,
+              metTraits: metTraits,
+              messages: messages
+            });
+          }
+          
+          // Guardar en localStorage
+          localStorage.setItem('hower-conversations', JSON.stringify(conversations));
+          
+          // Disparar evento para que otros componentes (ConversationList) se actualicen
+          window.dispatchEvent(new Event('storage'));
+          window.dispatchEvent(new CustomEvent('conversations-updated'));
+          
+          console.log("💾 DEBUG: Conversación guardada con puntos:", currentMatchPoints, "características:", metTraits);
+        } catch (e) {
+          console.error("❌ DEBUG: Error al guardar conversación:", e);
         }
-        
-        // Buscar si esta conversación ya existe
-        const existingIndex = conversations.findIndex(conv => conv.id === activeConversation);
-        const lastMessage = messages[messages.length - 1];
-        
-        if (existingIndex !== -1) {
-          // Actualizar conversación existente
-          conversations[existingIndex] = {
-            ...conversations[existingIndex],
-            lastMessage: lastMessage.text,
-            timestamp: '1m',
-            matchPoints: currentMatchPoints,
-            metTraits: metTraits,
-            messages: messages
-          };
-        } else {
-          // Crear nueva conversación
-          conversations.push({
-            id: activeConversation,
-            userName: `user_${activeConversation}`,
-            lastMessage: lastMessage.text,
-            timestamp: '1m',
-            unread: false,
-            matchPoints: currentMatchPoints,
-            metTraits: metTraits,
-            messages: messages
-          });
-        }
-        
-        // Guardar en localStorage
-        localStorage.setItem('hower-conversations', JSON.stringify(conversations));
-        
-        // Disparar evento para que otros componentes (ConversationList) se actualicen
-        window.dispatchEvent(new Event('storage'));
-        window.dispatchEvent(new CustomEvent('conversations-updated'));
-        
-        console.log("💾 DEBUG: Conversación guardada con puntos:", currentMatchPoints, "características:", metTraits);
-      } catch (e) {
-        console.error("❌ DEBUG: Error al guardar conversación:", e);
       }
-    }
+    };
+
+    saveConversation();
   }, [activeConversation, currentMatchPoints, metTraits, messages]);
 
   // 🔥 NUEVO: Analizar automáticamente cuando cambian los mensajes
