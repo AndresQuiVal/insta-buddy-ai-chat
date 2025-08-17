@@ -492,16 +492,131 @@ const TasksToDo: React.FC = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Tasks List - Solo Prospectos pendientes */}
+        {/* Editable List Name */}
+        <div className="mb-8 text-center">
+          {isEditingListName ? (
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <Input
+                value={tempListName}
+                onChange={(e) => setTempListName(e.target.value)}
+                className="max-w-xs text-center text-2xl font-bold"
+                placeholder="Nombre de tu lista"
+                autoFocus
+              />
+              <Button
+                size="sm"
+                onClick={() => {
+                  saveListName(tempListName);
+                  setIsEditingListName(false);
+                }}
+                className="text-green-600 hover:text-green-700"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setTempListName(listName);
+                  setIsEditingListName(false);
+                }}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                {listName}
+              </h1>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setTempListName(listName);
+                  setIsEditingListName(true);
+                }}
+                className="text-purple-600 hover:text-purple-700"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          
+          {/* Motivational Quote */}
+          <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 mb-6 border border-purple-200">
+            <p className="text-purple-700 font-medium italic">{motivationalQuote}</p>
+          </div>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Yesterday Stats */}
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-blue-800 flex items-center space-x-2">
+                <Calendar className="h-5 w-5" />
+                <span>Ayer</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-700">Nuevos prospectos contactados:</span>
+                  <Badge className="bg-blue-600 text-white">{prospectsClassification.yesterdayStats.nuevosProspectos}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-700">Seguimientos hechos:</span>
+                  <Badge className="bg-green-600 text-white">{prospectsClassification.yesterdayStats.seguimientosHechos}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-700">Agendados:</span>
+                  <Badge className="bg-orange-600 text-white">{prospectsClassification.yesterdayStats.agendados}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Week Stats */}
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-green-800 flex items-center space-x-2">
+                <BarChart3 className="h-5 w-5" />
+                <span>Esta Semana</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-green-700">Nuevos prospectos contactados:</span>
+                  <Badge className="bg-green-600 text-white">{prospectsClassification.weekStats.nuevosProspectos}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-green-700">Seguimientos hechos:</span>
+                  <Badge className="bg-blue-600 text-white">{prospectsClassification.weekStats.seguimientosHechos}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-green-700">Agendados:</span>
+                  <Badge className="bg-orange-600 text-white">{prospectsClassification.weekStats.agendados}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tasks List */}
         <div className="space-y-4">
-          <Card className="transition-all hover:shadow-md border-l-4 border-l-primary">
+          {/* Prospectos pendientes */}
+          <Card className="transition-all hover:shadow-md border-l-4 border-l-red-400">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between text-lg">
                 <div className="flex items-center space-x-3 flex-1 cursor-pointer" onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}>
+                  <MessageCircle className="h-5 w-5 text-red-500" />
                   <span>Prospectos pendientes</span>
                 </div>
                 <div className="flex items-center space-x-2 flex-shrink-0">
-                  <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.length}</Badge>
+                  <Badge variant="secondary" className="text-xs bg-red-100 text-red-800">{prospectsClassification.pendingResponses.length}</Badge>
                   {prospectsClassification.pendingResponses.length > 0 && (
                     <Button
                       size="sm"
@@ -581,6 +696,120 @@ const TasksToDo: React.FC = () => {
                     </div>
                   </TabsContent>
                 </Tabs>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Seguimiento de ayer */}
+          <Card className="transition-all hover:shadow-md border-l-4 border-l-yellow-400">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center space-x-3 flex-1 cursor-pointer" onClick={() => setActiveSection(activeSection === 'yesterday' ? null : 'yesterday')}>
+                  <Clock className="h-5 w-5 text-yellow-500" />
+                  <span>Seguimiento de ayer (sin respuesta)</span>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">{prospectsClassification.noResponseYesterday.length}</Badge>
+                  <div className="cursor-pointer" onClick={() => setActiveSection(activeSection === 'yesterday' ? null : 'yesterday')}>
+                    {activeSection === 'yesterday' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            
+            {activeSection === 'yesterday' && (
+              <CardContent className="pt-0 space-y-4 max-h-96 overflow-y-auto">
+                {prospectsClassification.noResponseYesterday.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                    <p className="text-base">¡Excelente! Todos respondieron.</p>
+                  </div>
+                ) : (
+                  prospectsClassification.noResponseYesterday.map((prospect) => (
+                    <ProspectCard 
+                      key={prospect.id}
+                      prospect={prospect} 
+                      taskType="yesterday" 
+                      showCheckbox={true}
+                    />
+                  ))
+                )}
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Seguimiento de la semana */}
+          <Card className="transition-all hover:shadow-md border-l-4 border-l-blue-400">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center space-x-3 flex-1 cursor-pointer" onClick={() => setActiveSection(activeSection === 'week' ? null : 'week')}>
+                  <Calendar className="h-5 w-5 text-blue-500" />
+                  <span>Seguimiento de la semana (7+ días)</span>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">{prospectsClassification.noResponse7Days.length}</Badge>
+                  <div className="cursor-pointer" onClick={() => setActiveSection(activeSection === 'week' ? null : 'week')}>
+                    {activeSection === 'week' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            
+            {activeSection === 'week' && (
+              <CardContent className="pt-0 space-y-4 max-h-96 overflow-y-auto">
+                {prospectsClassification.noResponse7Days.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                    <p className="text-base">¡Excelente! Todos están al día.</p>
+                  </div>
+                ) : (
+                  prospectsClassification.noResponse7Days.map((prospect) => (
+                    <ProspectCard 
+                      key={prospect.id}
+                      prospect={prospect} 
+                      taskType="week" 
+                      showCheckbox={true}
+                    />
+                  ))
+                )}
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Nuevos prospectos */}
+          <Card className="transition-all hover:shadow-md border-l-4 border-l-green-400">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center space-x-3 flex-1 cursor-pointer" onClick={() => setActiveSection(activeSection === 'new' ? null : 'new')}>
+                  <ArrowRight className="h-5 w-5 text-green-500" />
+                  <span>Nuevos prospectos por contactar</span>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">{prospectsClassification.newProspects.length}</Badge>
+                  <div className="cursor-pointer" onClick={() => setActiveSection(activeSection === 'new' ? null : 'new')}>
+                    {activeSection === 'new' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            
+            {activeSection === 'new' && (
+              <CardContent className="pt-0 space-y-4 max-h-96 overflow-y-auto">
+                {prospectsClassification.newProspects.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                    <p className="text-base">No hay nuevos prospectos por contactar.</p>
+                  </div>
+                ) : (
+                  prospectsClassification.newProspects.map((prospect) => (
+                    <ProspectCard 
+                      key={prospect.id}
+                      prospect={prospect} 
+                      taskType="new" 
+                      showCheckbox={true}
+                    />
+                  ))
+                )}
               </CardContent>
             )}
           </Card>
