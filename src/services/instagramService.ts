@@ -60,8 +60,14 @@ export const initiateInstagramAuth = (
       // Removida la alerta molesta que aparecía en producción
     }
 
-    // Redirigir al usuario a Facebook para autorización
-    window.location.href = authUrl.toString();
+    // Redirigir al usuario a Instagram vía navegador web (evitar app móvil)
+    // En dispositivos móviles, esto previene que se abra la app de Instagram
+    const newWindow = window.open(authUrl.toString(), '_self');
+    
+    // Fallback si el popup es bloqueado
+    if (!newWindow) {
+      window.location.href = authUrl.toString();
+    }
 
     return true;
   } catch (error) {
