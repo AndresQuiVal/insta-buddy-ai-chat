@@ -22,14 +22,6 @@ const isMobileDevice = (): boolean => {
 };
 
 /**
- * Detecta si estamos dentro de un navegador in-app (Instagram, Facebook, etc.)
- */
-const isInAppBrowser = (): boolean => {
-  const ua = navigator.userAgent.toLowerCase();
-  return ua.includes('instagram') || ua.includes('fban') || ua.includes('fbav');
-};
-
-/**
  * Inicia el flujo de autenticación con Instagram Graph API
  */
 export const initiateInstagramAuth = (
@@ -40,13 +32,11 @@ export const initiateInstagramAuth = (
   }
 ) => {
   try {
-    console.log("Iniciando autenticación con Instagram Graph API...");
+    console.log("=== INICIANDO AUTENTICACIÓN INSTAGRAM ===");
     console.log("Instagram App ID:", config.clientId);
     console.log("Redirect URI:", config.redirectUri);
-    console.log("Scope:", config.scope);
-    console.log("Current domain:", window.location.origin);
-    console.log("Is mobile device:", isMobileDevice());
-    console.log("Is in-app browser:", isInAppBrowser());
+    console.log("User Agent:", navigator.userAgent);
+    console.log("Es móvil:", isMobileDevice());
 
     // Guardar la ruta actual para redirigir después de la autenticación
     localStorage.setItem("hower-auth-redirect", window.location.pathname);
@@ -57,95 +47,40 @@ export const initiateInstagramAuth = (
     authUrl.searchParams.append("redirect_uri", config.redirectUri);
     authUrl.searchParams.append("scope", config.scope);
     authUrl.searchParams.append("response_type", "code");
-    authUrl.searchParams.append("state", "hower-state-" + Date.now()); // Seguridad
-    
-    // Agregar parámetros para evitar deep links en móviles
-    if (isMobileDevice()) {
-      authUrl.searchParams.append("force_classic_login", "1");
-      authUrl.searchParams.append("display", "popup");
-    }
+    authUrl.searchParams.append("state", "hower-state-" + Date.now());
 
-    console.log("URL de autorización construida:", authUrl.toString());
+    console.log("URL construida:", authUrl.toString());
 
-    // Verificar que estamos en un dominio válido
+    // Verificar dominio
     const currentDomain = window.location.hostname;
-    if (
-      currentDomain === "localhost" ||
-      currentDomain.includes("lovableproject.com") ||
-      currentDomain.includes("lovable.app")
-    ) {
-      console.log("Dominio válido para desarrollo/producción:", currentDomain);
-    } else {
-      console.warn(
-        "Dominio no configurado en Facebook Developers:",
-        currentDomain
-      );
-    }
-
-    // Estrategia específica según el contexto
-    if (isInAppBrowser()) {
-      console.log("Detectado navegador in-app, abriendo en navegador externo...");
-      // Si estamos en un navegador in-app, mostrar instrucciones al usuario
-      toast({
-        title: "Abrir en navegador",
-        description: "Para conectar Instagram, copia este enlace y ábrelo en tu navegador predeterminado",
-        variant: "default",
-      });
-      
-      // Copiar URL al clipboard si es posible
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(authUrl.toString());
-        toast({
-          title: "Enlace copiado",
-          description: "El enlace se ha copiado al portapapeles",
-          variant: "default",
-        });
-      }
-      return true;
-    }
+    console.log("Dominio actual:", currentDomain);
 
     if (isMobileDevice()) {
-      console.log("Dispositivo móvil detectado, usando estrategia específica...");
+      console.log("📱 DISPOSITIVO MÓVIL: Intentando evitar app nativa...");
       
-      // En móviles, usar una ventana nueva con características específicas
-      const mobileWindow = window.open(
-        authUrl.toString(),
-        "_blank",
-        "location=yes,height=600,width=400,scrollbars=yes,status=yes,resizable=yes,fullscreen=no"
-      );
+      // Estrategia 1: Crear un elemento link temporal y hacer click
+      const link = document.createElement('a');
+      link.href = authUrl.toString();
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
       
-      if (!mobileWindow) {
-        console.log("Popup bloqueado, usando redirección directa...");
-        // Si el popup es bloqueado, usar location con delay para evitar deep link
-        setTimeout(() => {
-          window.location.href = authUrl.toString();
-        }, 100);
-      } else {
-        // Verificar si la ventana se cerró (usuario completó auth)
-        const checkClosed = setInterval(() => {
-          if (mobileWindow.closed) {
-            clearInterval(checkClosed);
-            console.log("Ventana de auth cerrada, refrescando página...");
-            // Opcional: verificar si auth fue exitosa
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          }
-        }, 1000);
-      }
+      // Agregar al DOM temporalmente
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log("✅ Link temporal creado y ejecutado");
     } else {
-      console.log("Dispositivo desktop, usando redirección estándar...");
-      // En desktop, usar redirección normal
+      console.log("💻 DISPOSITIVO DESKTOP: Redirección normal");
       window.location.href = authUrl.toString();
     }
 
     return true;
   } catch (error) {
-    console.error("Error iniciando autenticación de Instagram:", error);
+    console.error("❌ ERROR en initiateInstagramAuth:", error);
     toast({
       title: "Error de conexión",
-      description:
-        "No se pudo iniciar la conexión con Instagram. Verifica la configuración de la app.",
+      description: "No se pudo iniciar la conexión con Instagram. Verifica la configuración de la app.",
       variant: "destructive",
     });
     return false;
