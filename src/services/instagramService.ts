@@ -15,6 +15,21 @@ export interface InstagramAuthConfig {
 }
 
 /**
+ * Detecta si el usuario está en un dispositivo móvil
+ */
+const isMobileDevice = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+/**
+ * Detecta si estamos dentro de un navegador in-app (Instagram, Facebook, etc.)
+ */
+const isInAppBrowser = (): boolean => {
+  const ua = navigator.userAgent.toLowerCase();
+  return ua.includes('instagram') || ua.includes('fban') || ua.includes('fbav');
+};
+
+/**
  * Inicia el flujo de autenticación con Instagram Graph API
  */
 export const initiateInstagramAuth = (
@@ -30,6 +45,8 @@ export const initiateInstagramAuth = (
     console.log("Redirect URI:", config.redirectUri);
     console.log("Scope:", config.scope);
     console.log("Current domain:", window.location.origin);
+    console.log("Is mobile device:", isMobileDevice());
+    console.log("Is in-app browser:", isInAppBrowser());
 
     // Guardar la ruta actual para redirigir después de la autenticación
     localStorage.setItem("hower-auth-redirect", window.location.pathname);
@@ -41,6 +58,12 @@ export const initiateInstagramAuth = (
     authUrl.searchParams.append("scope", config.scope);
     authUrl.searchParams.append("response_type", "code");
     authUrl.searchParams.append("state", "hower-state-" + Date.now()); // Seguridad
+    
+    // Agregar parámetros para evitar deep links en móviles
+    if (isMobileDevice()) {
+      authUrl.searchParams.append("force_classic_login", "1");
+      authUrl.searchParams.append("display", "popup");
+    }
 
     console.log("URL de autorización construida:", authUrl.toString());
 
@@ -57,15 +80,62 @@ export const initiateInstagramAuth = (
         "Dominio no configurado en Facebook Developers:",
         currentDomain
       );
-      // Removida la alerta molesta que aparecía en producción
     }
 
-    // Redirigir al usuario a Instagram vía navegador web (evitar app móvil)
-    // En dispositivos móviles, esto previene que se abra la app de Instagram
-    const newWindow = window.open(authUrl.toString(), '_self');
-    
-    // Fallback si el popup es bloqueado
-    if (!newWindow) {
+    // Estrategia específica según el contexto
+    if (isInAppBrowser()) {
+      console.log("Detectado navegador in-app, abriendo en navegador externo...");
+      // Si estamos en un navegador in-app, mostrar instrucciones al usuario
+      toast({
+        title: "Abrir en navegador",
+        description: "Para conectar Instagram, copia este enlace y ábrelo en tu navegador predeterminado",
+        variant: "default",
+      });
+      
+      // Copiar URL al clipboard si es posible
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(authUrl.toString());
+        toast({
+          title: "Enlace copiado",
+          description: "El enlace se ha copiado al portapapeles",
+          variant: "default",
+        });
+      }
+      return true;
+    }
+
+    if (isMobileDevice()) {
+      console.log("Dispositivo móvil detectado, usando estrategia específica...");
+      
+      // En móviles, usar una ventana nueva con características específicas
+      const mobileWindow = window.open(
+        authUrl.toString(),
+        "_blank",
+        "location=yes,height=600,width=400,scrollbars=yes,status=yes,resizable=yes,fullscreen=no"
+      );
+      
+      if (!mobileWindow) {
+        console.log("Popup bloqueado, usando redirección directa...");
+        // Si el popup es bloqueado, usar location con delay para evitar deep link
+        setTimeout(() => {
+          window.location.href = authUrl.toString();
+        }, 100);
+      } else {
+        // Verificar si la ventana se cerró (usuario completó auth)
+        const checkClosed = setInterval(() => {
+          if (mobileWindow.closed) {
+            clearInterval(checkClosed);
+            console.log("Ventana de auth cerrada, refrescando página...");
+            // Opcional: verificar si auth fue exitosa
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+        }, 1000);
+      }
+    } else {
+      console.log("Dispositivo desktop, usando redirección estándar...");
+      // En desktop, usar redirección normal
       window.location.href = authUrl.toString();
     }
 
