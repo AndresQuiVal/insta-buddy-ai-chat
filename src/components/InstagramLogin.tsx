@@ -9,13 +9,43 @@ const InstagramLogin = () => {
   const { toast } = useToast();
 
   const handleInstagramLogin = () => {
-    const success = initiateInstagramAuth();
-    if (!success) {
+    console.log("🔥 BOTÓN CLICKEADO - Iniciando proceso de login");
+    
+    // Detectar si es móvil
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log("📱 Es dispositivo móvil:", isMobile);
+    
+    if (isMobile) {
+      // Para móviles, mostrar instrucciones específicas
       toast({
-        title: "Error de conexión",
-        description: "No se pudo conectar con Instagram.",
-        variant: "destructive"
+        title: "📱 Conexión en móvil",
+        description: "Te redirigiremos a Instagram. Si se abre la app, usa el menú (⋯) para 'Abrir en navegador'",
+        variant: "default"
       });
+      
+      // Delay pequeño para que el usuario lea el toast
+      setTimeout(() => {
+        console.log("⏰ Ejecutando redirección después de delay...");
+        const success = initiateInstagramAuth();
+        if (!success) {
+          toast({
+            title: "Error de conexión",
+            description: "No se pudo conectar con Instagram.",
+            variant: "destructive"
+          });
+        }
+      }, 2000);
+    } else {
+      // Para desktop, proceso normal
+      console.log("💻 Dispositivo desktop, proceso normal");
+      const success = initiateInstagramAuth();
+      if (!success) {
+        toast({
+          title: "Error de conexión",
+          description: "No se pudo conectar con Instagram.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -45,8 +75,14 @@ const InstagramLogin = () => {
             Conectar Instagram
           </Button>
 
+          {/* Instrucciones para móviles */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
+            <p className="mb-2 font-medium">📱 ¿Usando móvil?</p>
+            <p>Si se abre la app de Instagram, busca el menú (⋯) y selecciona "Abrir en navegador" para completar la conexión.</p>
+          </div>
+
           {/* Texto mínimo */}
-          <p className="text-gray-400 text-sm mt-6 font-light">
+          <p className="text-gray-400 text-sm mt-4 font-light">
             Conecta tu cuenta para comenzar
           </p>
         </div>
