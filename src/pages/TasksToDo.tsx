@@ -174,165 +174,242 @@ const TasksToDo: React.FC = () => {
     );
   }
 
-  // Vista normal de tareas (simplificada)
+  // Vista normal de tareas
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
-        
-        {/* Hamburger Menu - Fixed position on top */}
-        <div className="fixed top-4 right-4 z-50">
-          <TasksHamburgerMenu onMenuClick={handleMenuClick} />
-        </div>
-
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          {/* Notebook Style Header */}
-          <div className="relative">
-            <div 
-              className="bg-white rounded-2xl shadow-xl border-t-8 border-red-400 p-6 sm:p-8"
-              style={{
-                backgroundImage: `
-                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
-                  linear-gradient(#fef2f2 0%, #ffffff 100%)
-                `,
-                backgroundSize: '20px 1px, 100% 100%',
-                backgroundPosition: '0 20px, 0 0'
-              }}
-            >
-              <div className="text-center">
-                <div className="inline-block p-2 sm:p-3 bg-red-100 rounded-full mb-3 sm:mb-4">
-                  <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
-                </div>
-                <div className="text-center">
-                  <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono">
-                    🚀 {listName}
-                  </h1>
-                  <p className="text-sm text-gray-500 italic mb-4 font-mono">
-                    {motivationalQuote}
-                  </p>
-                </div>
-                
-                {/* Tag de tiempo estimado */}
-                <div className="mt-3">
-                  <div className="inline-block bg-gradient-to-r from-orange-100 to-yellow-100 border-2 border-dashed border-orange-300 px-4 py-2 rounded-lg max-w-md">
-                    <div className="text-center">
-                      <span className="text-orange-800 font-mono text-sm font-bold">
-                        ⏱️ Te demorarás: {Math.ceil(prospects.length * 11 / 60)} minutos
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tasks List - Simplified */}
-        <div className="space-y-3 sm:space-y-4 mt-12 sm:mt-16">
-          
-          {/* Responder prospectos pendientes */}
-          <Card className="cursor-pointer transition-all hover:shadow-md border-l-4 border-l-blue-500">
-            <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <MessageCircle className="h-5 w-5 text-blue-600" />
-                  <span className="text-lg font-mono font-bold text-gray-800">
-                    Responder pendientes
-                  </span>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 font-mono">
-                    {realProspects.filter(p => p.state === 'pending').length}
-                  </Badge>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 text-sm mb-4">
-                Responde a estos prospectos que te escribieron
-              </p>
-              <div className="space-y-2">
-                {realProspects.filter(p => p.state === 'pending').slice(0, 5).map((prospect) => (
-                  <div key={prospect.senderId} className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>{(prospect.username || 'U').charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="flex-1 text-sm font-mono">{prospect.username || prospect.senderId}</span>
-                    <Button size="sm" variant="outline">
-                      Responder
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Seguimientos */}
-          <Card className="cursor-pointer transition-all hover:shadow-md border-l-4 border-l-yellow-500">
-            <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <Clock className="h-5 w-5 text-yellow-600" />
-                  <span className="text-lg font-mono font-bold text-gray-800">
-                    Hacer seguimientos
-                  </span>
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 font-mono">
-                    {realProspects.filter(p => p.state === 'yesterday' || p.state === 'week').length}
-                  </Badge>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 text-sm mb-4">
-                Envía seguimientos a estos prospectos
-              </p>
-              <div className="space-y-2">
-                {realProspects.filter(p => p.state === 'yesterday' || p.state === 'week').slice(0, 3).map((prospect) => (
-                  <div key={prospect.senderId} className="flex items-center gap-3 p-2 bg-yellow-50 rounded-lg">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>{(prospect.username || 'U').charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="flex-1 text-sm font-mono">{prospect.username || prospect.senderId}</span>
-                    <Button size="sm" variant="outline">
-                      Seguimiento
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Prospectar nuevos */}
-          <Card className="cursor-pointer transition-all hover:shadow-md border-l-4 border-l-green-500">
-            <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <MessageSquare className="h-5 w-5 text-green-600" />
-                  <span className="text-lg font-mono font-bold text-gray-800">
-                    Nuevos prospectos
-                  </span>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 font-mono">
-                    {prospects.filter(p => p.status === 'new').length}
-                  </Badge>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 text-sm mb-4">
-                Contacta a estos nuevos prospectos
-              </p>
-              <Button className="w-full">
-                Ver todos los prospectos
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Debug Panel */}
-        {showDebugPanel && (
-          <div className="mt-8">
-            <InstagramDebugPanel />
-          </div>
-        )}
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Hamburger Menu - Fixed position on top */}
+      <div className="fixed top-4 right-4 z-50">
+        <TasksHamburgerMenu onMenuClick={handleMenuClick} />
       </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver
+        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDebugPanel(!showDebugPanel)}
+            className="flex items-center gap-2"
+          >
+            <Bug className="h-4 w-4" />
+            Debug
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {/* Titulo Principal */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-foreground">Tareas de Hoy</h1>
+          <p className="text-muted-foreground">Gestiona tus actividades de prospección</p>
+        </div>
+
+        {/* Resumen de actividad */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <MessageCircle className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Pendientes</p>
+                  <p className="text-2xl font-bold">{realProspects.filter(p => p.state === 'pending').length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Clock className="h-5 w-5 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Seguimientos</p>
+                  <p className="text-2xl font-bold">{realProspects.filter(p => p.state === 'yesterday' || p.state === 'week').length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <MessageSquare className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Completados</p>
+                  <p className="text-2xl font-bold">{Object.values(completedTasks).filter(Boolean).length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <BarChart3 className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold">{prospects.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Secciones de Tareas */}
+        <Tabs defaultValue="pending" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pending">Responder ({realProspects.filter(p => p.state === 'pending').length})</TabsTrigger>
+            <TabsTrigger value="followup">Seguimientos ({realProspects.filter(p => p.state === 'yesterday' || p.state === 'week').length})</TabsTrigger>
+            <TabsTrigger value="prospect">Prospectar</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="pending" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-blue-600" />
+                  Mensajes Pendientes de Respuesta
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Estos prospectos te han enviado mensajes que necesitan respuesta
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {realProspects.filter(p => p.state === 'pending').length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">¡Todo al día!</h3>
+                    <p className="text-muted-foreground">No tienes mensajes pendientes por responder</p>
+                  </div>
+                ) : (
+                  realProspects.filter(p => p.state === 'pending').map((prospect) => (
+                    <div key={prospect.senderId} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback>{(prospect.username || 'U').charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{prospect.username || prospect.senderId}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Último mensaje: {new Date(prospect.lastMessageTime).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Button size="sm" onClick={() => navigate('/prospects')}>
+                        Responder
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="followup" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-yellow-600" />
+                  Seguimientos Programados
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Prospectos que requieren seguimiento según tu estrategia
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {realProspects.filter(p => p.state === 'yesterday' || p.state === 'week').length === 0 ? (
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Sin seguimientos pendientes</h3>
+                    <p className="text-muted-foreground">Todos los seguimientos están al día</p>
+                  </div>
+                ) : (
+                  realProspects.filter(p => p.state === 'yesterday' || p.state === 'week').map((prospect) => (
+                    <div key={prospect.senderId} className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback>{(prospect.username || 'U').charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{prospect.username || prospect.senderId}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Seguimiento: {prospect.state === 'yesterday' ? 'Ayer' : 'Esta semana'}
+                          </p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => navigate('/prospects')}>
+                        Enviar seguimiento
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="prospect" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-green-600" />
+                  Prospección Activa
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Busca y contacta nuevos prospectos potenciales
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3">
+                  <Button className="justify-start h-auto p-4" onClick={() => navigate('/prospects')}>
+                    <div className="flex items-center gap-3 w-full">
+                      <Search className="h-5 w-5" />
+                      <div className="text-left">
+                        <div className="font-medium">Buscar nuevos prospectos</div>
+                        <div className="text-sm text-muted-foreground">Encuentra cuentas que encajen con tu ICP</div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 ml-auto" />
+                    </div>
+                  </Button>
+                  
+                  <Button variant="outline" className="justify-start h-auto p-4">
+                    <div className="flex items-center gap-3 w-full">
+                      <Heart className="h-5 w-5" />
+                      <div className="text-left">
+                        <div className="font-medium">Revisar interacciones</div>
+                        <div className="text-sm text-muted-foreground">Analiza likes y comentarios recientes</div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 ml-auto" />
+                    </div>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Debug Panel */}
+      {showDebugPanel && (
+        <div className="mt-8">
+          <InstagramDebugPanel />
+        </div>
+      )}
     </div>
   );
 };
