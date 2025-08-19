@@ -24,6 +24,8 @@ import Analytics from "./pages/Analytics";
 import Prospects from "./pages/Prospects";
 import TasksToDo from "./pages/TasksToDo";
 import HowerLiteOnboarding from "./pages/HowerLiteOnboarding";
+import DreamCustomerRadarGuide from "./pages/DreamCustomerRadarGuide";
+import DreamCustomerRadarGame from "./pages/DreamCustomerRadarGame";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,8 @@ const App = () => (
           <Route path="/prospects" element={<Prospects />} />
           <Route path="/hower-lite-onboarding" element={<HowerLiteOnboarding />} />
           <Route path="/tasks-to-do" element={<TasksToDo />} />
+          <Route path="/dream-customer-radar-guide" element={<DreamCustomerRadarGuide />} />
+          <Route path="/dream-customer-radar" element={<DreamCustomerRadarGame />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface TasksHamburgerMenuProps {
-  onSelectOption: (option: string) => void;
 }
 
-const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = ({ onSelectOption }) => {
+const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const menuItems = [
     { id: 'icp', label: 'ICP' },
@@ -32,7 +33,7 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = ({ onSelectOption 
           <button
             key={item.id}
             onClick={() => {
-              onSelectOption(item.id);
+              navigate('/dream-customer-radar-guide');
               setIsOpen(false);
             }}
             className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-purple-50 transition-colors text-gray-700"

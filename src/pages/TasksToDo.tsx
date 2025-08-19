@@ -17,7 +17,6 @@ import { useProspects } from '@/hooks/useProspects';
 import { useNavigate } from 'react-router-dom';
 import { InstagramDebugPanel } from '@/components/InstagramDebugPanel';
 import TasksHamburgerMenu from '@/components/TasksHamburgerMenu';
-import DreamCustomerRadar from '@/components/DreamCustomerRadar';
 
 interface ProspectData {
   id: string;
@@ -39,7 +38,6 @@ const TasksToDo: React.FC = () => {
   const { currentUser, loading: userLoading } = useInstagramUsers();
   const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [showICP, setShowICP] = useState(false);
 
   // Verificar autenticación al cargar
   useEffect(() => {
@@ -1106,30 +1104,13 @@ const TasksToDo: React.FC = () => {
     );
   }
 
-  // Si está en modo ICP, mostrar solo el componente ICP
-  if (showICP) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
-          <DreamCustomerRadar onBack={() => setShowICP(false)} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
         <div className="mb-6 sm:mb-8 relative">
           <div className="absolute top-4 right-4 z-10">
-            <TasksHamburgerMenu 
-              onSelectOption={(option) => {
-                if (option === 'icp') {
-                  setShowICP(true);
-                }
-              }} 
-            />
+            <TasksHamburgerMenu />
           </div>
           {/* Notebook Style Header */}
           <div className="relative">
