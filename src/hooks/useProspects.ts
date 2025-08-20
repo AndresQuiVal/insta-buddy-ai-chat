@@ -36,10 +36,16 @@ export const useProspects = (currentInstagramUserId?: string) => {
     const senderId = prospect.prospect_instagram_id;
     
     console.log(`🔍 [${senderId.slice(-8)}] Analizando prospecto:`, {
+      username: prospect.username,
       last_owner_message_at: prospect.last_owner_message_at,
       last_message_from_prospect: prospect.last_message_from_prospect,
       messages_count: prospect.messages?.length || 0
     });
+
+    // ⚠️ DEBUG ESPECÍFICO PARA estamosprobando1231
+    if (prospect.username === 'estamosprobando1231') {
+      console.log('🎯 [DEBUG-SPECIFIC] estamosprobando1231 datos completos:', prospect);
+    }
 
     // Verificar si hay invitaciones enviadas (mantenemos esta lógica)
     const messages = prospect.prospect_messages || prospect.messages || [];
@@ -59,13 +65,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
       return { state: 'pending' };
     }
 
-    // 🔥 NUEVA LÓGICA: Si tengo timestamp pero el último mensaje es del prospecto = PENDING  
-    if (prospect.last_message_from_prospect) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (último mensaje es del prospecto)`);
-      return { state: 'pending' };
-    }
-
-    // 🔥 NUEVA LÓGICA: Si yo fui el último en escribir, verificar tiempo desde mi último mensaje
+    // 🔥 LÓGICA CORREGIDA: Calcular tiempo desde mi último mensaje
     const lastOwnerMessageTime = new Date(prospect.last_owner_message_at).getTime();
     const now = new Date().getTime();
     const hoursSinceLastOwnerMessage = (now - lastOwnerMessageTime) / (1000 * 60 * 60);
@@ -79,36 +79,29 @@ export const useProspects = (currentInstagramUserId?: string) => {
       
     console.log(`💬 [${senderId.slice(-8)}] ¿Había conversación previa? ${hadPreviousConversation}`);
 
-    // Solo aplicar timer si ya había conversación previa
-    if (hadPreviousConversation) {
-      // YA HABÍA CONVERSACIÓN - aplicar sistema de timer
-      if (daysSinceLastOwnerMessage >= 7) {
-        console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
-        return { 
-          state: 'week', 
-          daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
-          lastSentMessageTime: prospect.last_owner_message_at 
-        };
-      } else if (daysSinceLastOwnerMessage >= 1) {
-        console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
-        return { 
-          state: 'yesterday', 
-          daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
-          lastSentMessageTime: prospect.last_owner_message_at 
-        };
-      } else {
-        // Menos de 1 día desde mi último mensaje - temporalmente en PENDING
-        console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (esperando respuesta, < 1 día)`);
-        return { 
-          state: 'pending',
-          daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
-          lastSentMessageTime: prospect.last_owner_message_at 
-        };
-      }
+    // 🔥 LÓGICA CORREGIDA: Solo aplicar timer basado en tiempo transcurrido
+    if (daysSinceLastOwnerMessage >= 7) {
+      console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
+      return { 
+        state: 'week', 
+        daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
+        lastSentMessageTime: prospect.last_owner_message_at 
+      };
+    } else if (daysSinceLastOwnerMessage >= 1) {
+      console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
+      return { 
+        state: 'yesterday', 
+        daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
+        lastSentMessageTime: prospect.last_owner_message_at 
+      };
     } else {
-      // NO HABÍA CONVERSACIÓN PREVIA - el prospecto nunca ha respondido, siempre PENDING
-      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (primera vez, nunca ha respondido)`);
-      return { state: 'pending' };
+      // Menos de 1 día desde mi último mensaje - en PENDING
+      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (esperando respuesta, < 1 día)`);
+      return { 
+        state: 'pending',
+        daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
+        lastSentMessageTime: prospect.last_owner_message_at 
+      };
     }
   };
 
