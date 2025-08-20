@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Target, CheckCircle, XCircle, Lightbulb, Share2, Trophy, Sparkles, Radar, Download, Copy, Zap, BarChart3 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
@@ -122,6 +123,7 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
     }
 
     setLoading(true);
+    setResult(null); // Reiniciar análisis anterior
     setAnimationStep(0);
     
     try {
@@ -377,9 +379,9 @@ Responde en formato JSON exactamente así:
       <div className="relative">
         <canvas 
           ref={canvasRef} 
-          width={400} 
-          height={400} 
-          className="rounded-2xl border-4 border-gray-200 shadow-2xl bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"
+          width={320} 
+          height={320} 
+          className="w-full max-w-[320px] h-auto rounded-2xl border-4 border-gray-200 shadow-2xl bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 mx-auto"
         />
         
         {/* Resultado superpuesto */}
@@ -757,10 +759,19 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                     <div className="font-bold text-green-800">WHERE</div>
                     <div className="text-xs text-green-600">¿Qué recursos digitales consume?</div>
                   </div>
-                  <div className="bg-gradient-to-r from-purple-100 to-purple-200 p-3 rounded-lg text-center border border-purple-300">
-                    <div className="font-bold text-purple-800">BAIT</div>
-                    <div className="text-xs text-purple-600">¿Qué lo atrae?</div>
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="bg-gradient-to-r from-purple-100 to-purple-200 p-3 rounded-lg text-center border border-purple-300 cursor-help">
+                          <div className="font-bold text-purple-800">BAIT</div>
+                          <div className="text-xs text-purple-600">¿Qué lo atrae?</div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Hooks, historias o testimonios irresistibles que captan su atención y los hace detenerse</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <div className="bg-gradient-to-r from-orange-100 to-orange-200 p-3 rounded-lg text-center border border-orange-300">
                     <div className="font-bold text-orange-800">RESULT</div>
                     <div className="text-xs text-orange-600">¿Qué busca?</div>
