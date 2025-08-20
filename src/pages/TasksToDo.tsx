@@ -258,26 +258,32 @@ const TasksToDo: React.FC = () => {
     }
 
     try {
-      // Crear canvas de la sección de estadísticas
+      // Crear canvas de la sección de estadísticas con mejor calidad
       const canvas = await html2canvas(statsElement as HTMLElement, {
-        backgroundColor: '#f8fafc',
-        scale: 2,
+        backgroundColor: '#ffffff',
+        scale: 3,
         useCORS: true,
         allowTaint: true,
-        logging: false
+        logging: false,
+        imageTimeout: 0,
+        removeContainer: true,
+        foreignObjectRendering: true,
+        width: 400,
+        height: 600
       });
 
-      // Crear un nuevo canvas más grande para incluir el logo
+      // Crear un nuevo canvas más grande para incluir el logo y mejor diseño
       const finalCanvas = document.createElement('canvas');
       const ctx = finalCanvas.getContext('2d')!;
       
       // Dimensiones del canvas final
-      const padding = 40;
-      const logoHeight = 60;
-      finalCanvas.width = canvas.width + (padding * 2);
-      finalCanvas.height = canvas.height + logoHeight + (padding * 3);
+      const padding = 60;
+      const logoHeight = 80;
+      const titleHeight = 40;
+      finalCanvas.width = 500;
+      finalCanvas.height = canvas.height + logoHeight + titleHeight + (padding * 4);
 
-      // Fondo blanco
+      // Fondo blanco limpio
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
@@ -289,8 +295,22 @@ const TasksToDo: React.FC = () => {
         const logoX = (finalCanvas.width - logoWidth) / 2;
         ctx.drawImage(logo, logoX, padding, logoWidth, logoHeight);
         
-        // Dibujar las estadísticas debajo del logo
-        ctx.drawImage(canvas, padding, logoHeight + (padding * 2));
+        // Añadir título "Mis Estadísticas"
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('📊 Mis Estadísticas', finalCanvas.width / 2, logoHeight + padding + titleHeight);
+        
+        // Dibujar las estadísticas centradas
+        const statsX = (finalCanvas.width - canvas.width) / 2;
+        const statsY = logoHeight + titleHeight + (padding * 2);
+        ctx.drawImage(canvas, Math.max(0, statsX), statsY);
+        
+        // Añadir marca de agua sutil
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '12px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Generado con Hower', finalCanvas.width / 2, finalCanvas.height - 20);
         
         // Convertir a blob y descargar
         finalCanvas.toBlob((blob) => {
@@ -309,12 +329,29 @@ const TasksToDo: React.FC = () => {
               description: "La imagen se ha descargado correctamente"
             });
           }
-        });
+        }, 'image/png', 1.0);
       };
       
       logo.onerror = () => {
-        // Si no se puede cargar el logo, compartir solo las estadísticas
-        canvas.toBlob((blob) => {
+        // Si no se puede cargar el logo, crear una versión sin logo pero bien diseñada
+        // Añadir título
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('📊 Mis Estadísticas', finalCanvas.width / 2, padding + 40);
+        
+        // Dibujar las estadísticas centradas
+        const statsX = (finalCanvas.width - canvas.width) / 2;
+        const statsY = padding + 80;
+        ctx.drawImage(canvas, Math.max(0, statsX), statsY);
+        
+        // Añadir marca de agua
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '12px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Generado con Hower', finalCanvas.width / 2, finalCanvas.height - 20);
+        
+        finalCanvas.toBlob((blob) => {
           if (blob) {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -330,10 +367,10 @@ const TasksToDo: React.FC = () => {
               description: "La imagen se ha descargado correctamente"
             });
           }
-        });
+        }, 'image/png', 1.0);
       };
       
-      // Intentar cargar el logo desde assets
+      // Cargar el logo
       logo.src = howerLogo;
       
     } catch (error) {
@@ -1439,7 +1476,7 @@ const TasksToDo: React.FC = () => {
                             className="h-8 w-8 p-0"
                             title="Compartir estadísticas"
                           >
-                            <Download className="h-4 w-4" />
+                            <Share2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
