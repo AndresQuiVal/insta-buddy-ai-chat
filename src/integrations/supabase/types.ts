@@ -401,6 +401,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_prospect_contacts: {
+        Row: {
+          contact_count: number
+          contact_date: string
+          created_at: string
+          first_contact_at: string
+          id: string
+          instagram_user_id: string
+          prospect_sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          contact_count?: number
+          contact_date?: string
+          created_at?: string
+          first_contact_at?: string
+          id?: string
+          instagram_user_id: string
+          prospect_sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          contact_count?: number
+          contact_date?: string
+          created_at?: string
+          first_contact_at?: string
+          id?: string
+          instagram_user_id?: string
+          prospect_sender_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_prospect_metrics: {
         Row: {
           created_at: string
@@ -1300,6 +1333,10 @@ export type Database = {
       grok_reset_weekly_stats: {
         Args: { p_instagram_user_id?: string }
         Returns: number
+      }
+      increment_daily_prospect_contact: {
+        Args: { p_instagram_user_id: string; p_prospect_sender_id: string }
+        Returns: boolean
       }
       increment_nuevos_prospectos_by_instagram_id: {
         Args: { increment_by?: number; user_instagram_id: string }

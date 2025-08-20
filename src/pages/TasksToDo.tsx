@@ -648,23 +648,24 @@ const TasksToDo: React.FC = () => {
         // Actualizar estado local con el taskType correcto
         setCompletedTasks(prev => ({ ...prev, [`${taskType}-${prospect.id}`]: true }));
         
-        // GROK: Incrementar estadística "abiertas" cuando se contacta prospecto
+        // GROK: Incrementar estadística "abiertas" solo una vez por día por prospecto
         try {
-          const { error: grokError } = await supabase.rpc('grok_increment_stat', {
+          const { data: wasIncremented, error: contactError } = await supabase.rpc('increment_daily_prospect_contact', {
             p_instagram_user_id: currentUser.instagram_user_id,
-            p_stat_type: 'abiertas',
-            p_increment: 1
+            p_prospect_sender_id: prospect.id
           });
           
-          if (grokError) {
-            console.error('Error incrementando estadística GROK:', grokError);
-          } else {
-            console.log('📊 [GROK] Estadística "abiertas" incrementada para:', currentUser.instagram_user_id);
+          if (contactError) {
+            console.error('Error registrando contacto diario:', contactError);
+          } else if (wasIncremented) {
+            console.log('📊 [GROK] Primera vez contactando a este prospecto hoy - "abiertas" incrementada');
             // Recargar estadísticas para mostrar el cambio
             await loadStats();
+          } else {
+            console.log('📊 [GROK] Ya contacté a este prospecto hoy - NO incrementando "abiertas"');
           }
         } catch (error) {
-          console.error('Error en GROK increment:', error);
+          console.error('Error en contacto diario:', error);
         }
         
         toast({
