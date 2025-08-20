@@ -44,7 +44,7 @@ const ThreeMonthPlan = () => {
   const bonusSoftware = [
     {
       icon: <Smartphone className="w-6 h-6" />,
-      logo: "/lovable-uploads/66bc3c7e-9cc2-49c6-9d54-9b1400c0baa1.png",
+      logo: "/lovable-uploads/501a7468-bc0e-4181-8324-d84d1fd86b82.png",
       title: "Hower WhatsApp",
       description: "Sistema de prospección por WhatsApp",
       details: "Un sistema que te ayudará a prospectar a un listado de tus contactos por WhatsApp de manera automatizada y eficiente."
@@ -252,7 +252,7 @@ const ThreeMonthPlan = () => {
                         <img 
                           src={bonus.logo} 
                           alt={bonus.title}
-                          className="w-32 h-32 object-contain"
+                          className="w-48 h-48 object-contain"
                         />
                       </div>
                       <DialogTitle className="text-3xl">{bonus.title}</DialogTitle>
