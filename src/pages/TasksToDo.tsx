@@ -476,7 +476,7 @@ const TasksToDo: React.FC = () => {
     }
   };
 
-  const openOnboarding = async (username: string, type: 'followup' | 'outreach', predefinedMessage?: string) => {
+  const openOnboarding = async (username: string, type: 'followup' | 'outreach', predefinedMessage?: string, taskType: string = 'pending') => {
     try {
       // Generar mensaje con IA si no hay uno predefinido
       let messageToSend = predefinedMessage;
@@ -508,7 +508,7 @@ const TasksToDo: React.FC = () => {
           
           // Marcar como completado automáticamente después de 5 segundos más
           setTimeout(() => {
-            handleMessageSent(username);
+            handleMessageSent(username, taskType);
             toast({
               title: "¡Completado!",
               description: `@${username} marcado como contactado`,
@@ -562,11 +562,11 @@ const TasksToDo: React.FC = () => {
 
 
   // Función mejorada para manejar cuando se envía un mensaje (guardar en BD)
-  const handleMessageSent = async (username: string) => {
+  const handleMessageSent = async (username: string, taskType: string = 'pending') => {
     const prospect = prospects.find(p => p.userName === username);
     if (!prospect || !currentUser) return;
 
-    console.log(`💾 [TASK-UPDATE] Marcando ${username} como completado en BD...`);
+    console.log(`💾 [TASK-UPDATE] Marcando ${username} como completado en BD (taskType: ${taskType})...`);
     
     try {
       // Actualizar en la base de datos
@@ -581,8 +581,8 @@ const TasksToDo: React.FC = () => {
       } else {
         console.log('✅ [TASK-UPDATE] Estado actualizado en BD');
         
-        // Actualizar estado local también
-        setCompletedTasks(prev => ({ ...prev, [`pending-${prospect.id}`]: true }));
+        // Actualizar estado local con el taskType correcto
+        setCompletedTasks(prev => ({ ...prev, [`${taskType}-${prospect.id}`]: true }));
         
         toast({
           title: "¡Prospecto contactado!",
@@ -776,7 +776,7 @@ const TasksToDo: React.FC = () => {
     return (
       <div 
         className={`bg-gradient-to-r from-white to-blue-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}
-        onClick={() => openOnboarding(prospect.userName, 'outreach')}
+        onClick={() => openOnboarding(prospect.userName, 'outreach', undefined, taskType)}
       >
         {/* Información principal del prospecto */}
         <div className="flex items-center justify-between p-6 bg-white rounded-xl border border-gray-100">
