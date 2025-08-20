@@ -10,28 +10,8 @@ import { toast } from '@/hooks/use-toast';
 const ThreeMonthPlan = () => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGetPlan = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { planId: '3-month-plan' }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
-      toast({
-        title: "Error",
-        description: "Hubo un problema al procesar tu solicitud. Inténtalo de nuevo.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGetPlan = () => {
+    window.location.href = '/pricing/';
   };
 
   const features = [
