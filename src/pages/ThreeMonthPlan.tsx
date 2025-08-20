@@ -64,23 +64,27 @@ const ThreeMonthPlan = () => {
   const bonusSoftware = [
     {
       icon: <Smartphone className="w-6 h-6" />,
+      logo: "/lovable-uploads/66bc3c7e-9cc2-49c6-9d54-9b1400c0baa1.png",
       title: "Hower WhatsApp",
       description: "Sistema de prospección por WhatsApp",
       details: "Un sistema que te ayudará a prospectar a un listado de tus contactos por WhatsApp de manera automatizada y eficiente."
     },
     {
+      icon: <Bot className="w-6 h-6" />,
       logo: "/lovable-uploads/601a3443-9a71-43c3-acf1-453f17030650.png",
       title: "Hower Assistant",
       description: "Automatización tipo Manychat para Instagram",
       details: "Un software tipo Manychat que te permitirá automatizar tu Instagram en una máquina de ventas, gestionando respuestas automáticas y flujos de conversación."
     },
     {
+      icon: <Users className="w-6 h-6" />,
       logo: "/lovable-uploads/5b837d31-1b44-46b8-8d4c-5c747e6f94d1.png",
       title: "Hower LITE",
       description: "Centralización y gestión de prospectos",
       details: "Un software que te permitirá centralizar tus prospectos dentro de un apartado y ver los prospectos que tienes pendiente por contestar, prospectos en seguimiento, prospectos nuevos, así como tus números de prospección: cuántas personas contactas, cuántas agendas, etc."
     },
     {
+      icon: <Search className="w-6 h-6" />,
       logo: "/lovable-uploads/1b715cc3-a572-4ded-9d7d-428ae8f396d6.png",
       title: "Hower Cliente Ideal",
       description: "Encuentra cuentas y publicaciones para prospectar",
@@ -247,15 +251,7 @@ const ThreeMonthPlan = () => {
                   <Card className="p-6 hover:shadow-lg transition-all cursor-pointer hover-scale animate-fade-in group">
                     <CardHeader className="text-center pb-4">
                       <div className="mx-auto p-4 bg-green-100 rounded-full text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors w-fit">
-                        {bonus.logo ? (
-                          <img 
-                            src={bonus.logo} 
-                            alt={bonus.title}
-                            className="w-8 h-8 object-contain"
-                          />
-                        ) : (
-                          bonus.icon
-                        )}
+                        {bonus.icon}
                       </div>
                       <CardTitle className="text-xl">{bonus.title}</CardTitle>
                       <CardDescription className="text-base">
@@ -272,16 +268,12 @@ const ThreeMonthPlan = () => {
                 <DialogContent>
                   <DialogHeader>
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-green-100 rounded-lg text-green-600">
-                        {bonus.logo ? (
-                          <img 
-                            src={bonus.logo} 
-                            alt={bonus.title}
-                            className="w-6 h-6 object-contain"
-                          />
-                        ) : (
-                          bonus.icon
-                        )}
+                      <div className="p-3 bg-green-100 rounded-lg">
+                        <img 
+                          src={bonus.logo} 
+                          alt={bonus.title}
+                          className="w-12 h-12 object-contain"
+                        />
                       </div>
                       <DialogTitle className="text-2xl">{bonus.title}</DialogTitle>
                     </div>
