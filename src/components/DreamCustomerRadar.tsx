@@ -687,7 +687,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
           </div>
           
           <div 
-            className="bg-white rounded-2xl shadow-xl border-t-8 border-red-400 p-6 sm:p-8"
+            className="bg-white rounded-2xl shadow-xl border-t-8 border-red-400 p-6 sm:p-8 overflow-hidden"
             style={{
               backgroundImage: `
                 linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
@@ -698,8 +698,8 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
             }}
           >
             {/* Espiral del cuaderno */}
-            <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
-              {Array.from({length: 10}).map((_, i) => (
+            <div className="absolute left-2 top-8 bottom-8 w-1 flex flex-col justify-evenly">
+              {Array.from({length: 8}).map((_, i) => (
                 <div key={i} className="w-3 h-3 rounded-full bg-red-400 shadow-inner" />
               ))}
             </div>
