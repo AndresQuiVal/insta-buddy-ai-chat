@@ -75,7 +75,7 @@ const ThreeMonthPlan = () => {
       details: "Un software tipo Manychat que te permitirá automatizar tu Instagram en una máquina de ventas, gestionando respuestas automáticas y flujos de conversación."
     },
     {
-      icon: <Users className="w-6 h-6" />,
+      logo: "/lovable-uploads/5b837d31-1b44-46b8-8d4c-5c747e6f94d1.png",
       title: "Hower LITE",
       description: "Centralización y gestión de prospectos",
       details: "Un software que te permitirá centralizar tus prospectos dentro de un apartado y ver los prospectos que tienes pendiente por contestar, prospectos en seguimiento, prospectos nuevos, así como tus números de prospección: cuántas personas contactas, cuántas agendas, etc."
