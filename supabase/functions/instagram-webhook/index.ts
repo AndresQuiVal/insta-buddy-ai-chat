@@ -123,6 +123,45 @@ serve(async (req) => {
       } else {
         console.log('✅ Mensaje enviado guardado correctamente en BD')
         
+        // 🔥 NUEVO: Sincronizar a prospect_messages también
+        try {
+          // Buscar el prospecto
+          const { data: existingProspects, error: prospectSearchError } = await supabase
+            .from('prospects')
+            .select('id')
+            .eq('instagram_user_id', instagramUser.id)
+            .eq('prospect_instagram_id', recipientId)
+            .single()
+
+          if (!prospectSearchError && existingProspects) {
+            console.log('🔄 Sincronizando mensaje enviado a prospect_messages...')
+            const { error: messageError } = await supabase
+              .rpc('add_prospect_message', {
+                p_prospect_id: existingProspects.id,
+                p_message_instagram_id: messagingEvent.message?.mid || `sent_${Date.now()}_${recipientId}`,
+                p_message_text: messageText || '',
+                p_is_from_prospect: false, // Es mensaje del DUEÑO
+                p_message_timestamp: timestamp,
+                p_message_type: 'text',
+                p_raw_data: {
+                  ...messagingEvent,
+                  webhook_source: 'manual_sent',
+                  processed_at: new Date().toISOString()
+                }
+              })
+
+            if (messageError) {
+              console.error('❌ Error sincronizando a prospect_messages:', messageError)
+            } else {
+              console.log('✅ Mensaje sincronizado a prospect_messages correctamente')
+            }
+          } else {
+            console.log('⚠️ No se encontró prospecto para sincronizar mensaje enviado')
+          }
+        } catch (syncError) {
+          console.error('❌ Error en sincronización a prospect_messages:', syncError)
+        }
+        
         // 🔥 CRÍTICO: Sincronizar estado de tarea del prospecto
         try {
           console.log('🔄 Ejecutando sync_prospect_task_status para marcar como completado...')
