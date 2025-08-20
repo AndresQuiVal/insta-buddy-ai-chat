@@ -142,7 +142,7 @@ Responde en formato JSON exactamente así:
   "completedBlocks": ["WHO", "WHERE", "BAIT", "RESULT"] [solo los que están completos],
   "missingBlocks": ["WHO", "WHERE", "BAIT", "RESULT"] [solo los que faltan],
   "suggestions": ["sugerencia 1", "sugerencia 2"] [máximo 3 sugerencias específicas],
-  "searchKeywords": ["frase1", "frase2", "frase3"] [solo si score es 4, genera 5-8 frases de 2-4 palabras para buscar en Instagram/Google cuentas que tengan seguidores similares al ICP. Ejemplos: "coaching empresarial", "madre emprendedora", "fitness mujeres", "inversión Bitcoin", "motivación personal"]
+  "searchKeywords": ["frase1", "frase2", "frase3", "frase4", "frase5"] [solo si score es 4, genera 8-10 frases de 2-4 palabras para buscar en Instagram/Google cuentas que tengan seguidores similares al ICP. Ejemplos: "coaching empresarial", "madre emprendedora", "fitness mujeres", "inversión Bitcoin", "motivación personal"]
 }`
         },
       });
@@ -1001,7 +1001,7 @@ ${result.score === 4 ? `🔍 Palabras: ${result.searchKeywords.slice(0, 3).join(
                       <div className="absolute inset-0 bg-gradient-to-r from-yellow-300/20 to-orange-300/20 animate-pulse"></div>
                       <div className="relative">
                         <h4 className="font-bold text-yellow-800 mb-4 text-xl flex items-center gap-2">
-                          🎯 ¡BULLSEYE! PALABRAS DESBLOQUEADAS 🔓
+                          🚀 Palabras de búsqueda para encontrar tu ICP:
                         </h4>
                         <p className="text-yellow-700 mb-4 font-mono">
                           🚀 Usa estas palabras en el buscador de Hower:
