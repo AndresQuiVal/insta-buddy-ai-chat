@@ -90,12 +90,12 @@ const InstagramCallback: React.FC = () => {
             navigate('/hower-lite-onboarding', { replace: true });
           }, 500);
         } else {
-          // Login normal - marcar flag y ir directo a tasks-to-do
-          console.log('🎯 Login exitoso, navegando a tasks-to-do...');
+          // Login normal - marcar flag y ir a welcome dashboard
+          console.log('🎯 Login exitoso, navegando a welcome...');
           localStorage.setItem('just-logged-in', 'true');
           
           setTimeout(() => {
-            navigate('/tasks-to-do', { replace: true });
+            navigate('/welcome', { replace: true });
           }, 500);
         }
       } else {
@@ -122,7 +122,7 @@ const InstagramCallback: React.FC = () => {
       case 'success':
         return {
           title: '¡Conexión exitosa!',
-          description: 'Redirigiendo a tus tareas...',
+          description: 'Redirigiendo al panel de bienvenida...',
           icon: <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">✓</div>,
           bgColor: 'bg-green-50'
         };
