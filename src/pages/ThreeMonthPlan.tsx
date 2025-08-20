@@ -272,7 +272,7 @@ const ThreeMonthPlan = () => {
                         <img 
                           src={bonus.logo} 
                           alt={bonus.title}
-                          className="w-12 h-12 object-contain"
+                          className="w-16 h-16 object-contain"
                         />
                       </div>
                       <DialogTitle className="text-2xl">{bonus.title}</DialogTitle>
