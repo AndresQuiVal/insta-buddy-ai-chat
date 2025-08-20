@@ -230,12 +230,8 @@ const ThreeMonthPlan = () => {
                 <DialogTrigger asChild>
                   <Card className="p-6 hover:shadow-lg transition-all cursor-pointer hover-scale animate-fade-in group">
                     <CardHeader className="text-center pb-4">
-                      <div className="mx-auto mb-6">
-                        <img 
-                          src={bonus.logo} 
-                          alt={bonus.title}
-                          className="w-32 h-32 object-contain mx-auto"
-                        />
+                      <div className="mx-auto p-4 bg-green-100 rounded-full text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors w-fit">
+                        {bonus.icon}
                       </div>
                       <CardTitle className="text-xl">{bonus.title}</CardTitle>
                       <CardDescription className="text-base">
@@ -251,12 +247,14 @@ const ThreeMonthPlan = () => {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <div className="text-center mb-6">
-                      <img 
-                        src={bonus.logo} 
-                        alt={bonus.title}
-                        className="w-32 h-32 object-contain mx-auto mb-4"
-                      />
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-green-100 rounded-lg">
+                        <img 
+                          src={bonus.logo} 
+                          alt={bonus.title}
+                          className="w-24 h-24 object-contain"
+                        />
+                      </div>
                       <DialogTitle className="text-3xl">{bonus.title}</DialogTitle>
                     </div>
                     <DialogDescription className="text-base leading-relaxed">
