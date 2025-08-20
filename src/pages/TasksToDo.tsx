@@ -247,8 +247,13 @@ const TasksToDo: React.FC = () => {
 
   // Función para compartir estadísticas como imagen
   const shareStats = async () => {
+    console.log('🖼️ Iniciando función shareStats...');
+    
     const statsElement = document.querySelector('[data-stats-section]');
+    console.log('🔍 Elemento encontrado:', statsElement);
+    
     if (!statsElement) {
+      console.error('❌ No se encontró el elemento [data-stats-section]');
       toast({
         title: "Error",
         description: "No se pudo capturar las estadísticas",
@@ -258,126 +263,101 @@ const TasksToDo: React.FC = () => {
     }
 
     try {
+      console.log('📸 Iniciando html2canvas...');
+      
       // Crear canvas de la sección de estadísticas con mejor calidad
       const canvas = await html2canvas(statsElement as HTMLElement, {
         backgroundColor: '#ffffff',
-        scale: 3,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
-        logging: false,
-        imageTimeout: 0,
-        removeContainer: true,
-        foreignObjectRendering: true,
-        width: 400,
-        height: 600
+        logging: true
       });
+
+      console.log('✅ html2canvas completado. Canvas:', canvas.width, 'x', canvas.height);
 
       // Crear un nuevo canvas más grande para incluir el logo y mejor diseño
       const finalCanvas = document.createElement('canvas');
       const ctx = finalCanvas.getContext('2d')!;
       
-      // Dimensiones del canvas final
-      const padding = 60;
-      const logoHeight = 80;
-      const titleHeight = 40;
-      finalCanvas.width = 500;
-      finalCanvas.height = canvas.height + logoHeight + titleHeight + (padding * 4);
+      // Dimensiones del canvas final - más pequeño y manejable
+      const padding = 40;
+      const logoHeight = 60;
+      const titleHeight = 30;
+      finalCanvas.width = Math.max(canvas.width, 400) + (padding * 2);
+      finalCanvas.height = canvas.height + logoHeight + titleHeight + (padding * 3);
+
+      console.log('🎨 Canvas final:', finalCanvas.width, 'x', finalCanvas.height);
 
       // Fondo blanco limpio
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-      // Cargar y dibujar el logo de Hower
-      const logo = new Image();
-      logo.onload = () => {
-        // Dibujar logo centrado en la parte superior
-        const logoWidth = logo.width * (logoHeight / logo.height);
-        const logoX = (finalCanvas.width - logoWidth) / 2;
-        ctx.drawImage(logo, logoX, padding, logoWidth, logoHeight);
+      // Añadir título sin logo primero
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('📊 Mis Estadísticas de Hower', finalCanvas.width / 2, padding + 30);
+      
+      // Dibujar las estadísticas centradas
+      const statsX = (finalCanvas.width - canvas.width) / 2;
+      const statsY = padding + titleHeight + 20;
+      ctx.drawImage(canvas, statsX, statsY);
+      
+      // Añadir marca de agua sutil
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '12px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      const currentDate = new Date().toLocaleDateString('es-ES');
+      ctx.fillText(`Generado el ${currentDate}`, finalCanvas.width / 2, finalCanvas.height - 15);
+      
+      console.log('🎯 Creando blob...');
+      
+      // Convertir a blob y descargar
+      finalCanvas.toBlob((blob) => {
+        console.log('📦 Blob creado:', blob);
         
-        // Añadir título "Mis Estadísticas"
-        ctx.fillStyle = '#1f2937';
-        ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('📊 Mis Estadísticas', finalCanvas.width / 2, logoHeight + padding + titleHeight);
-        
-        // Dibujar las estadísticas centradas
-        const statsX = (finalCanvas.width - canvas.width) / 2;
-        const statsY = logoHeight + titleHeight + (padding * 2);
-        ctx.drawImage(canvas, Math.max(0, statsX), statsY);
-        
-        // Añadir marca de agua sutil
-        ctx.fillStyle = '#9ca3af';
-        ctx.font = '12px system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Generado con Hower', finalCanvas.width / 2, finalCanvas.height - 20);
-        
-        // Convertir a blob y descargar
-        finalCanvas.toBlob((blob) => {
-          if (blob) {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `hower-estadisticas-${new Date().toISOString().split('T')[0]}.png`;
-            document.body.appendChild(link);
-            link.click();
+        if (blob) {
+          console.log('💾 Iniciando descarga...');
+          
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `hower-estadisticas-${new Date().toISOString().split('T')[0]}.png`;
+          link.style.display = 'none';
+          
+          document.body.appendChild(link);
+          console.log('🔗 Link creado y añadido al DOM');
+          
+          link.click();
+          console.log('👆 Click ejecutado');
+          
+          // Cleanup
+          setTimeout(() => {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            
-            toast({
-              title: "¡Estadísticas compartidas!",
-              description: "La imagen se ha descargado correctamente"
-            });
-          }
-        }, 'image/png', 1.0);
-      };
-      
-      logo.onerror = () => {
-        // Si no se puede cargar el logo, crear una versión sin logo pero bien diseñada
-        // Añadir título
-        ctx.fillStyle = '#1f2937';
-        ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('📊 Mis Estadísticas', finalCanvas.width / 2, padding + 40);
-        
-        // Dibujar las estadísticas centradas
-        const statsX = (finalCanvas.width - canvas.width) / 2;
-        const statsY = padding + 80;
-        ctx.drawImage(canvas, Math.max(0, statsX), statsY);
-        
-        // Añadir marca de agua
-        ctx.fillStyle = '#9ca3af';
-        ctx.font = '12px system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Generado con Hower', finalCanvas.width / 2, finalCanvas.height - 20);
-        
-        finalCanvas.toBlob((blob) => {
-          if (blob) {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `hower-estadisticas-${new Date().toISOString().split('T')[0]}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            toast({
-              title: "¡Estadísticas compartidas!",
-              description: "La imagen se ha descargado correctamente"
-            });
-          }
-        }, 'image/png', 1.0);
-      };
-      
-      // Cargar el logo
-      logo.src = howerLogo;
+            console.log('🧹 Cleanup completado');
+          }, 100);
+          
+          toast({
+            title: "¡Estadísticas compartidas!",
+            description: "La imagen se ha descargado correctamente"
+          });
+        } else {
+          console.error('❌ No se pudo crear el blob');
+          toast({
+            title: "Error en blob",
+            description: "No se pudo crear la imagen",
+            variant: "destructive"
+          });
+        }
+      }, 'image/png', 1.0);
       
     } catch (error) {
-      console.error('Error generando imagen:', error);
+      console.error('💥 Error en shareStats:', error);
       toast({
         title: "Error",
-        description: "No se pudo generar la imagen para compartir",
+        description: `Error: ${error.message}`,
         variant: "destructive"
       });
     }
