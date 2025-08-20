@@ -1325,18 +1325,12 @@ export type Database = {
         Returns: undefined
       }
       sync_prospect_task_status: {
-        Args:
-          | {
-              p_instagram_user_id: string
-              p_last_message_type: string
-              p_prospect_sender_id: string
-            }
-          | {
-              p_instagram_user_id: string
-              p_last_message_type: string
-              p_prospect_sender_id: string
-              p_task_type?: string
-            }
+        Args: {
+          p_instagram_user_id: string
+          p_last_message_type: string
+          p_prospect_sender_id: string
+          p_task_type?: string
+        }
         Returns: undefined
       }
       update_daily_metric: {
