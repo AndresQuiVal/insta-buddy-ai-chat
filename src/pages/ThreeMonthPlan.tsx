@@ -133,6 +133,11 @@ const ThreeMonthPlan = () => {
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
+          <img 
+            src="/lovable-uploads/66bc3c7e-9cc2-49c6-9d54-9b1400c0baa1.png" 
+            alt="Hower Logo" 
+            className="w-20 h-20 mx-auto mb-6 animate-bounce-in"
+          />
           <Badge className="mb-6 px-6 py-2 text-lg animate-pulse-glow">
             Plan Más Popular 🔥
           </Badge>
@@ -324,15 +329,17 @@ const ThreeMonthPlan = () => {
           {/* Additional Testimonial Images */}
           <div className="mt-16">
             <h3 className="text-3xl font-bold text-center mb-8">👇 y muchos más... 👇</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {testimonialImages.map((image, index) => (
-                <div key={index} className="aspect-square rounded-lg overflow-hidden shadow-md hover-scale">
-                  <img 
-                    src={image} 
-                    alt={`Testimonio ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <Card key={index} className="overflow-hidden hover-scale group">
+                  <div className="aspect-[4/5] overflow-hidden">
+                    <img 
+                      src={image} 
+                      alt={`Testimonio ${index + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                </Card>
               ))}
             </div>
           </div>
