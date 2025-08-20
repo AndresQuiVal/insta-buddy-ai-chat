@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X, LogOut, Instagram, RefreshCw, Trash2, Bug } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X, LogOut, Instagram, RefreshCw, Trash2, Bug, Download } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import howerLogo from '@/assets/hower-logo.png';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -242,6 +244,107 @@ const TasksToDo: React.FC = () => {
       console.error('Error cargando estadísticas GROK:', error);
     }
   }, [currentUser?.instagram_user_id]);
+
+  // Función para compartir estadísticas como imagen
+  const shareStats = async () => {
+    const statsElement = document.querySelector('[data-stats-section]');
+    if (!statsElement) {
+      toast({
+        title: "Error",
+        description: "No se pudo capturar las estadísticas",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Crear canvas de la sección de estadísticas
+      const canvas = await html2canvas(statsElement as HTMLElement, {
+        backgroundColor: '#f8fafc',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+      });
+
+      // Crear un nuevo canvas más grande para incluir el logo
+      const finalCanvas = document.createElement('canvas');
+      const ctx = finalCanvas.getContext('2d')!;
+      
+      // Dimensiones del canvas final
+      const padding = 40;
+      const logoHeight = 60;
+      finalCanvas.width = canvas.width + (padding * 2);
+      finalCanvas.height = canvas.height + logoHeight + (padding * 3);
+
+      // Fondo blanco
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+      // Cargar y dibujar el logo de Hower
+      const logo = new Image();
+      logo.onload = () => {
+        // Dibujar logo centrado en la parte superior
+        const logoWidth = logo.width * (logoHeight / logo.height);
+        const logoX = (finalCanvas.width - logoWidth) / 2;
+        ctx.drawImage(logo, logoX, padding, logoWidth, logoHeight);
+        
+        // Dibujar las estadísticas debajo del logo
+        ctx.drawImage(canvas, padding, logoHeight + (padding * 2));
+        
+        // Convertir a blob y descargar
+        finalCanvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `hower-estadisticas-${new Date().toISOString().split('T')[0]}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            toast({
+              title: "¡Estadísticas compartidas!",
+              description: "La imagen se ha descargado correctamente"
+            });
+          }
+        });
+      };
+      
+      logo.onerror = () => {
+        // Si no se puede cargar el logo, compartir solo las estadísticas
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `hower-estadisticas-${new Date().toISOString().split('T')[0]}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            toast({
+              title: "¡Estadísticas compartidas!",
+              description: "La imagen se ha descargado correctamente"
+            });
+          }
+        });
+      };
+      
+      // Intentar cargar el logo desde assets
+      logo.src = howerLogo;
+      
+    } catch (error) {
+      console.error('Error generando imagen:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar la imagen para compartir",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Cargar estadísticas cuando hay usuario
   useEffect(() => {
@@ -1325,12 +1428,23 @@ const TasksToDo: React.FC = () => {
                         <div className="inline-block p-2 bg-blue-100 rounded-full mb-3">
                           <BarChart3 className="h-6 w-6 text-blue-600" />
                         </div>
-                        <h2 className="text-lg font-bold text-gray-800 font-mono">
-                          📊 Mis Números
-                        </h2>
+                        <div className="flex items-center justify-center gap-3">
+                          <h2 className="text-lg font-bold text-gray-800 font-mono">
+                            📊 Mis Números
+                          </h2>
+                          <Button
+                            onClick={shareStats}
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                            title="Compartir estadísticas"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
 
-                      <Tabs defaultValue="hoy" className="w-full">
+                      <Tabs defaultValue="hoy" className="w-full" data-stats-section>
                         <TabsList className="grid w-full grid-cols-3 mb-4">
                           <TabsTrigger value="hoy" className="font-mono text-sm">Hoy</TabsTrigger>
                           <TabsTrigger value="ayer" className="font-mono text-sm">Ayer</TabsTrigger>
