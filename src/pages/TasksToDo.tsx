@@ -50,6 +50,35 @@ const TasksToDo: React.FC = () => {
   }, [currentUser, prospectsLoading, realProspects]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
 
+  // Debug manual - simular usuario autenticado para hower.a.i
+  useEffect(() => {
+    const simulateAuth = () => {
+      const howerUserData = {
+        instagram: {
+          id: "17841476552113029"
+        },
+        facebook: {
+          id: "17841476552113029"
+        },
+        access_token: "stored_token",
+        username: "hower.a.i"
+      };
+      
+      console.log('🔧 [DEBUG] Simulando autenticación para hower.a.i...');
+      localStorage.setItem('hower-instagram-user', JSON.stringify(howerUserData));
+      console.log('✅ [DEBUG] Datos guardados en localStorage');
+      
+      // Forzar recarga del hook
+      window.dispatchEvent(new Event('storage'));
+    };
+    
+    // Simular si no hay datos en localStorage
+    if (!localStorage.getItem('hower-instagram-user')) {
+      console.log('🔧 [DEBUG] No hay datos en localStorage, simulando...');
+      simulateAuth();
+    }
+  }, []);
+
   // Debug del estado de autenticación
   useEffect(() => {
     console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
