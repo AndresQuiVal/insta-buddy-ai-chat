@@ -145,7 +145,7 @@ const ThreeMonthPlan = () => {
           
           <Card className="p-8 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 animate-scale-in">
             <div className="text-center mb-8">
-              <div className="text-6xl font-bold text-primary mb-2">$197</div>
+              <div className="text-6xl font-bold text-primary mb-2">$88</div>
               <div className="text-muted-foreground">Pago único por 3 meses</div>
             </div>
             
@@ -352,7 +352,7 @@ const ThreeMonthPlan = () => {
           <Card className="p-8 bg-white/50 backdrop-blur-sm">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="text-left">
-                <div className="text-4xl font-bold text-primary mb-2">$197</div>
+                <div className="text-4xl font-bold text-primary mb-2">$88</div>
                 <div className="text-muted-foreground">
                   Pago único • 3 meses completos
                 </div>
