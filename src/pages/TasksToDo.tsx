@@ -249,11 +249,11 @@ const TasksToDo: React.FC = () => {
   const shareStats = async () => {
     console.log('🖼️ Iniciando función shareStats...');
     
-    const statsElement = document.querySelector('[data-stats-section]');
+    const statsElement = document.querySelector('[data-stats-container]');
     console.log('🔍 Elemento encontrado:', statsElement);
     
     if (!statsElement) {
-      console.error('❌ No se encontró el elemento [data-stats-section]');
+      console.error('❌ No se encontró el elemento [data-stats-container]');
       toast({
         title: "Error",
         description: "No se pudo capturar las estadísticas",
@@ -265,27 +265,34 @@ const TasksToDo: React.FC = () => {
     try {
       console.log('📸 Iniciando html2canvas...');
       
+      // Asegurarse de que todos los elementos estén visibles y cargados
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Crear canvas de la sección de estadísticas con mejor calidad
       const canvas = await html2canvas(statsElement as HTMLElement, {
         backgroundColor: '#ffffff',
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        logging: true
+        logging: true,
+        width: statsElement.scrollWidth,
+        height: statsElement.scrollHeight,
+        scrollX: 0,
+        scrollY: 0
       });
 
       console.log('✅ html2canvas completado. Canvas:', canvas.width, 'x', canvas.height);
 
-      // Crear un nuevo canvas más grande para incluir el logo y mejor diseño
+      // Crear un nuevo canvas para la imagen final con mejor diseño
       const finalCanvas = document.createElement('canvas');
       const ctx = finalCanvas.getContext('2d')!;
       
-      // Dimensiones del canvas final - más pequeño y manejable
-      const padding = 40;
-      const logoHeight = 60;
-      const titleHeight = 30;
-      finalCanvas.width = Math.max(canvas.width, 400) + (padding * 2);
-      finalCanvas.height = canvas.height + logoHeight + titleHeight + (padding * 3);
+      // Dimensiones del canvas final
+      const padding = 30;
+      const headerHeight = 60;
+      const footerHeight = 30;
+      finalCanvas.width = Math.max(canvas.width + (padding * 2), 500);
+      finalCanvas.height = canvas.height + headerHeight + footerHeight + (padding * 2);
 
       console.log('🎨 Canvas final:', finalCanvas.width, 'x', finalCanvas.height);
 
@@ -293,23 +300,33 @@ const TasksToDo: React.FC = () => {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-      // Añadir título sin logo primero
-      ctx.fillStyle = '#1f2937';
-      ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('📊 Mis Estadísticas de Hower', finalCanvas.width / 2, padding + 30);
+      // Añadir encabezado con marca Hower
+      ctx.fillStyle = '#6366f1';
+      ctx.fillRect(0, 0, finalCanvas.width, headerHeight);
       
-      // Dibujar las estadísticas centradas
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('📊 Mis Estadísticas - Hower', finalCanvas.width / 2, headerHeight / 2 + 8);
+      
+      // Dibujar las estadísticas capturadas
       const statsX = (finalCanvas.width - canvas.width) / 2;
-      const statsY = padding + titleHeight + 20;
+      const statsY = headerHeight + padding;
       ctx.drawImage(canvas, statsX, statsY);
       
-      // Añadir marca de agua sutil
-      ctx.fillStyle = '#9ca3af';
+      // Añadir pie con fecha
+      ctx.fillStyle = '#f3f4f6';
+      ctx.fillRect(0, finalCanvas.height - footerHeight, finalCanvas.width, footerHeight);
+      
+      ctx.fillStyle = '#6b7280';
       ctx.font = '12px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      const currentDate = new Date().toLocaleDateString('es-ES');
-      ctx.fillText(`Generado el ${currentDate}`, finalCanvas.width / 2, finalCanvas.height - 15);
+      const currentDate = new Date().toLocaleDateString('es-ES', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      ctx.fillText(`Generado el ${currentDate} | hower.ai`, finalCanvas.width / 2, finalCanvas.height - 10);
       
       console.log('🎯 Creando blob...');
       
@@ -1429,7 +1446,7 @@ const TasksToDo: React.FC = () => {
           
 
           {showStats && (
-                  <div className="mb-6">
+                  <div className="mb-6" data-stats-container>
                     <div 
                       className="bg-white rounded-xl shadow-lg border-l-4 border-blue-400 p-4 sm:p-6"
                       style={{
