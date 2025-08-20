@@ -69,7 +69,7 @@ const ThreeMonthPlan = () => {
       details: "Un sistema que te ayudará a prospectar a un listado de tus contactos por WhatsApp de manera automatizada y eficiente."
     },
     {
-      logo: "/lovable-uploads/bc6dd387-b5ba-4b6a-bd69-64718daf43e0.png",
+      logo: "/lovable-uploads/601a3443-9a71-43c3-acf1-453f17030650.png",
       title: "Hower Assistant",
       description: "Automatización tipo Manychat para Instagram",
       details: "Un software tipo Manychat que te permitirá automatizar tu Instagram en una máquina de ventas, gestionando respuestas automáticas y flujos de conversación."
