@@ -79,6 +79,12 @@ const ThreeMonthPlan = () => {
       title: "Hower LITE",
       description: "Centralización y gestión de prospectos",
       details: "Un software que te permitirá centralizar tus prospectos dentro de un apartado y ver los prospectos que tienes pendiente por contestar, prospectos en seguimiento, prospectos nuevos, así como tus números de prospección: cuántas personas contactas, cuántas agendas, etc."
+    },
+    {
+      logo: "/lovable-uploads/1b715cc3-a572-4ded-9d7d-428ae8f396d6.png",
+      title: "Hower Cliente Ideal",
+      description: "Encuentra cuentas y publicaciones para prospectar",
+      details: "Este software está diseñado para encontrar cuentas para prospectar y publicaciones específicas donde puedes aplicar tu estrategia de prospección de manera más efectiva y dirigida."
     }
   ];
 
@@ -228,20 +234,28 @@ const ThreeMonthPlan = () => {
             <Badge className="mb-4 px-4 py-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
               BONUS EXCLUSIVOS 🎁
             </Badge>
-            <h2 className="text-4xl font-bold mb-4">3 Software Adicionales</h2>
+            <h2 className="text-4xl font-bold mb-4">4 Software Adicionales</h2>
             <p className="text-xl text-muted-foreground">
-              Valor adicional de más de $600 - ¡GRATIS con tu plan!
+              Valor adicional de más de $800 - ¡GRATIS con tu plan!
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {bonusSoftware.map((bonus, index) => (
               <Dialog key={index}>
                 <DialogTrigger asChild>
                   <Card className="p-6 hover:shadow-lg transition-all cursor-pointer hover-scale animate-fade-in group">
                     <CardHeader className="text-center pb-4">
                       <div className="mx-auto p-4 bg-green-100 rounded-full text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors w-fit">
-                        {bonus.icon}
+                        {bonus.logo ? (
+                          <img 
+                            src={bonus.logo} 
+                            alt={bonus.title}
+                            className="w-8 h-8 object-contain"
+                          />
+                        ) : (
+                          bonus.icon
+                        )}
                       </div>
                       <CardTitle className="text-xl">{bonus.title}</CardTitle>
                       <CardDescription className="text-base">
@@ -259,7 +273,15 @@ const ThreeMonthPlan = () => {
                   <DialogHeader>
                     <div className="flex items-center gap-3 mb-4">
                       <div className="p-3 bg-green-100 rounded-lg text-green-600">
-                        {bonus.icon}
+                        {bonus.logo ? (
+                          <img 
+                            src={bonus.logo} 
+                            alt={bonus.title}
+                            className="w-6 h-6 object-contain"
+                          />
+                        ) : (
+                          bonus.icon
+                        )}
                       </div>
                       <DialogTitle className="text-2xl">{bonus.title}</DialogTitle>
                     </div>
@@ -366,7 +388,7 @@ const ThreeMonthPlan = () => {
                   Pago único • 3 meses completos
                 </div>
                 <div className="text-sm text-green-600 font-medium mt-1">
-                  + $600 en software bonus GRATIS
+                  + $800 en software bonus GRATIS
                 </div>
               </div>
               
