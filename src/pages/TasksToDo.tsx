@@ -344,12 +344,6 @@ const TasksToDo: React.FC = () => {
         ctx.textAlign = 'left';
         ctx.fillText('Hower', logoX + logoSize + 15, (headerHeight / 2) + 10);
         
-        // Subtítulo
-        ctx.font = '16px Poppins, sans-serif';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.textAlign = 'center';
-        ctx.fillText('📊 Mis Estadísticas', finalCanvas.width / 2, headerHeight - 15);
-        
         // Fondo blanco para las estadísticas
         const statsY = headerHeight + padding;
         const statsHeight = canvas.height + padding;
