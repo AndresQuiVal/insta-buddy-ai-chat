@@ -129,10 +129,10 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
         body: {
           prompt: `Analiza esta descripción de cliente ideal y evalúa qué tan completa está según estos 4 bloques:
 
-WHO (Quién es): edad, género, situación actual, problema principal
-WHERE (Dónde está): qué páginas sigue, qué hashtags usa, qué comunidades/podcasts/blogs consume
-BAIT (Qué lo atrae): qué hook, historia u oferta irresistible lo engancharía
-RESULT (Resultado deseado): qué logro máximo busca, medible y concreto
+WHO (Quién es): edad, género, situación actual, problema principal, ubicación geográfica
+WHERE (Dónde los encuentras digitalmente): qué influencers/cuentas siguen, qué hashtags usan, en qué grupos de Facebook/Telegram están, qué podcasts escuchan, qué blogs/websites visitan, qué comunidades online frecuentan
+BAIT (Qué los atrae): qué hook, historia, testimonio u oferta irresistible los engancharía para detenerse y prestar atención
+RESULT (Resultado que buscan): qué transformación específica y medible quieren lograr
 
 Descripción a analizar: "${icpDescription}"
 
