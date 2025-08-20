@@ -251,14 +251,12 @@ const ThreeMonthPlan = () => {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-4 bg-green-100 rounded-lg">
-                        <img 
-                          src={bonus.logo} 
-                          alt={bonus.title}
-                          className="w-24 h-24 object-contain"
-                        />
-                      </div>
+                    <div className="text-center mb-6">
+                      <img 
+                        src={bonus.logo} 
+                        alt={bonus.title}
+                        className="w-32 h-32 object-contain mx-auto mb-4"
+                      />
                       <DialogTitle className="text-3xl">{bonus.title}</DialogTitle>
                     </div>
                     <DialogDescription className="text-base leading-relaxed">
