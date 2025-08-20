@@ -753,7 +753,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                   </div>
                   <div className="bg-gradient-to-r from-green-100 to-green-200 p-3 rounded-lg text-center border border-green-300">
                     <div className="font-bold text-green-800">WHERE</div>
-                    <div className="text-xs text-green-600">¿Qué consume?</div>
+                    <div className="text-xs text-green-600">¿Qué recursos digitales consume?</div>
                   </div>
                   <div className="bg-gradient-to-r from-purple-100 to-purple-200 p-3 rounded-lg text-center border border-purple-300">
                     <div className="font-bold text-purple-800">BAIT</div>
