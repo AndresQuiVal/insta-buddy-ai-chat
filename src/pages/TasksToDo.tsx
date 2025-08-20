@@ -37,10 +37,27 @@ const TasksToDo: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, loading: userLoading } = useInstagramUsers();
   const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
+
+  // Debug adicional para verificar la carga de prospectos
+  useEffect(() => {
+    console.log('🔍 [PROSPECTS-DEBUG] Estado de carga de prospectos:', {
+      currentUserExists: !!currentUser,
+      instagram_user_id: currentUser?.instagram_user_id,
+      prospectsLoading,
+      prospectsCount: realProspects.length,
+      prospectStates: realProspects.map(p => `${p.username}:${p.state}`).slice(0, 5)
+    });
+  }, [currentUser, prospectsLoading, realProspects]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
 
-  // Verificar autenticación al cargar
+  // Debug del estado de autenticación
   useEffect(() => {
+    console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
+      userLoading,
+      currentUser: currentUser ? currentUser.instagram_user_id : 'null',
+      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
+    });
+    
     if (!userLoading && !currentUser) {
       console.log('❌ No hay usuario autenticado, redirigiendo a home');
       navigate('/', { replace: true });
