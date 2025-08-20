@@ -137,8 +137,8 @@ const DreamCustomerRadarGuide: React.FC = () => {
                   <p className="text-sm text-gray-700 mt-1">edad, género, situación actual, problema principal.</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-lg border border-green-300 shadow-md">
-                  <strong className="text-green-800 text-lg">WHERE (Dónde está):</strong>
-                  <p className="text-sm text-gray-700 mt-1">qué páginas sigue, qué hashtags usa, qué comunidades/podcasts/blogs consume.</p>
+                  <strong className="text-green-800 text-lg">WHERE (¿Dónde los encuentras online?):</strong>
+                  <p className="text-sm text-gray-700 mt-1">qué influencers/cuentas siguen, qué hashtags usan, en qué grupos están, qué podcasts escuchan.</p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-100 to-purple-200 p-4 rounded-lg border border-purple-300 shadow-md">
                   <strong className="text-purple-800 text-lg">BAIT (Qué lo atrae):</strong>
