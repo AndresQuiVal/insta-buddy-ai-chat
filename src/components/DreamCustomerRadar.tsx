@@ -398,29 +398,37 @@ Responde en formato JSON exactamente así:
 
   const generateShareImage = () => {
     const canvas = document.createElement('canvas');
-    canvas.width = 600;
-    canvas.height = 1000;
+    canvas.width = 600; 
+    canvas.height = 600; // Más compacto sin métricas
     const ctx = canvas.getContext('2d');
     if (!ctx || !result) return '';
 
     // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, 1000);
+    const gradient = ctx.createLinearGradient(0, 0, 0, 600);
     gradient.addColorStop(0, '#1e1b4b');
     gradient.addColorStop(1, '#7c3aed');
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 600, 1000);
+    ctx.fillRect(0, 0, 600, 600);
 
-    const { emoji, level, color } = getRadarLevel(result.score);
+    const { emoji, level } = getRadarLevel(result.score);
+
+    // Logo de Hower (simulado como rectángulo con texto por ahora)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(225, 30, 150, 40);
+    ctx.fillStyle = '#7c3aed';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Hower', 300, 55);
 
     // Title
-    ctx.font = 'bold 28px Arial';
+    ctx.font = 'bold 24px Arial';
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
-    ctx.fillText('🎯 DREAM CUSTOMER RADAR', 300, 50);
+    ctx.fillText('🎯 Conoce tu Cliente Ideal', 300, 100);
 
-    // Radar simplified (smaller)
+    // Radar simplified
     const centerX = 300;
-    const centerY = 180;
+    const centerY = 220;
     const rings = [
       { radius: 80, color: '#EF4444', label: 'EXTERNO' },
       { radius: 50, color: '#F59E0B', label: 'INTERMEDIO' },
@@ -438,7 +446,7 @@ Responde en formato JSON exactamente así:
     // User position
     const targetRadius = rings[result.score === 4 ? 2 : result.score >= 2 ? 1 : 0].radius;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 10, 0, 2 * Math.PI);
+    ctx.arc(centerX, centerY, 12, 0, 2 * Math.PI);
     ctx.fillStyle = result.score === 4 ? '#10B981' : result.score >= 2 ? '#F59E0B' : '#EF4444';
     ctx.fill();
     ctx.strokeStyle = 'white';
@@ -446,109 +454,42 @@ Responde en formato JSON exactamente así:
     ctx.stroke();
 
     // Result text
-    ctx.font = 'bold 24px Arial';
+    ctx.font = 'bold 28px Arial';
     ctx.fillStyle = 'white';
-    ctx.fillText(`${emoji} ${level}`, 300, 300);
+    ctx.fillText(`${emoji} ${level}`, 300, 340);
     
-    ctx.font = '18px Arial';
-    ctx.fillText(`${result.score}/4 bloques completos`, 300, 330);
+    ctx.font = '20px Arial';
+    ctx.fillText(`${result.score}/4 bloques completos`, 300, 370);
 
-    // Blocks status (smaller)
-    let yPos = 370;
-    ctx.font = '14px Arial';
+    // Blocks status
+    let yPos = 420;
+    ctx.font = '16px Arial';
     ctx.textAlign = 'left';
     
     if (result.completedBlocks.length > 0) {
       ctx.fillStyle = '#10B981';
       const completedText = `✅ Completos: ${result.completedBlocks.join(', ')}`;
-      ctx.fillText(completedText.substring(0, 50) + (completedText.length > 50 ? '...' : ''), 30, yPos);
-      yPos += 25;
+      const lines = completedText.match(/.{1,45}/g) || [completedText];
+      lines.forEach((line, index) => {
+        ctx.fillText(line, 50, yPos + (index * 25));
+      });
+      yPos += lines.length * 25 + 10;
     }
     
     if (result.missingBlocks.length > 0) {
       ctx.fillStyle = '#EF4444';
       const missingText = `❌ Faltan: ${result.missingBlocks.join(', ')}`;
-      ctx.fillText(missingText.substring(0, 50) + (missingText.length > 50 ? '...' : ''), 30, yPos);
-      yPos += 25;
+      const lines = missingText.match(/.{1,45}/g) || [missingText];
+      lines.forEach((line, index) => {
+        ctx.fillText(line, 50, yPos + (index * 25));
+      });
     }
-
-    // Keywords if Bullseye (smaller)
-    if (result.score === 4 && result.searchKeywords.length > 0) {
-      yPos += 15;
-      ctx.fillStyle = '#FCD34D';
-      ctx.font = 'bold 16px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('🔓 PALABRAS DESBLOQUEADAS:', 300, yPos);
-      yPos += 25;
-      ctx.font = '14px Arial';
-      const keywords = result.searchKeywords.slice(0, 4).join(' • ');
-      ctx.fillText(keywords, 300, yPos);
-      yPos += 30;
-    }
-
-    // METRICS SECTION
-    yPos += 30;
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 22px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('📊 MIS MÉTRICAS DE PROSPECCIÓN', 300, yPos);
-
-    // Metrics background
-    yPos += 30;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.fillRect(50, yPos, 500, 350);
-
-    // Today metrics
-    yPos += 40;
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('📅 HOY', 80, yPos);
-    
-    yPos += 25;
-    ctx.font = '14px Arial';
-    ctx.fillStyle = '#e0e7ff';
-    ctx.fillText(`💬 Abiertas: ${prospectsMetrics.today.nuevosProspectos}`, 100, yPos);
-    yPos += 20;
-    ctx.fillText(`🔄 Seguimientos: ${prospectsMetrics.today.seguimientosHechos}`, 100, yPos);
-    yPos += 20;
-    ctx.fillText(`📅 Agendados: ${prospectsMetrics.today.agendados}`, 100, yPos);
-
-    // Yesterday metrics
-    yPos += 35;
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 16px Arial';
-    ctx.fillText('📅 AYER', 80, yPos);
-    
-    yPos += 25;
-    ctx.font = '14px Arial';
-    ctx.fillStyle = '#e0e7ff';
-    ctx.fillText(`💬 Abiertas: ${prospectsMetrics.yesterday.nuevosProspectos}`, 100, yPos);
-    yPos += 20;
-    ctx.fillText(`🔄 Seguimientos: ${prospectsMetrics.yesterday.seguimientosHechos}`, 100, yPos);
-    yPos += 20;
-    ctx.fillText(`📅 Agendados: ${prospectsMetrics.yesterday.agendados}`, 100, yPos);
-
-    // Week metrics
-    yPos += 35;
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 16px Arial';
-    ctx.fillText('📊 ESTA SEMANA', 80, yPos);
-    
-    yPos += 25;
-    ctx.font = '14px Arial';
-    ctx.fillStyle = '#e0e7ff';
-    ctx.fillText(`💬 Abiertas: ${prospectsMetrics.week.nuevosProspectos}`, 100, yPos);
-    yPos += 20;
-    ctx.fillText(`🔄 Seguimientos: ${prospectsMetrics.week.seguimientosHechos}`, 100, yPos);
-    yPos += 20;
-    ctx.fillText(`📅 Agendados: ${prospectsMetrics.week.agendados}`, 100, yPos);
 
     // Footer
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.font = '14px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Hecho con Dream Customer Radar by Hower', 300, 950);
+    ctx.fillText('Hecho con Hower', 300, 580);
 
     return canvas.toDataURL('image/png');
   };
@@ -570,21 +511,16 @@ Responde en formato JSON exactamente así:
     if (!result) return;
     
     const { level, emoji } = getRadarLevel(result.score);
-    const message = `🎯 MI DREAM CUSTOMER RADAR
+    const message = `🎯 MI CLIENTE IDEAL DEFINIDO
 
 ${emoji} NIVEL: ${level} (${result.score}/4 bloques)
-
-📈 MIS MÉTRICAS DE PROSPECCIÓN:
-📅 Hoy: ${prospectsMetrics.today.nuevosProspectos} abiertas, ${prospectsMetrics.today.seguimientosHechos} seguimientos
-📅 Ayer: ${prospectsMetrics.yesterday.nuevosProspectos} abiertas, ${prospectsMetrics.yesterday.seguimientosHechos} seguimientos  
-📊 Esta semana: ${prospectsMetrics.week.nuevosProspectos} abiertas, ${prospectsMetrics.week.seguimientosHechos} seguimientos
 
 ${result.completedBlocks.length > 0 ? `✅ TENGO: ${result.completedBlocks.join(' + ')}` : ''}
 ${result.missingBlocks.length > 0 ? `❌ ME FALTA: ${result.missingBlocks.join(' + ')}` : ''}
 
-${result.score === 4 ? `🔍 Palabras: ${result.searchKeywords.slice(0, 3).join(' • ')}` : '🚀 ¡Vamos por el BULLSEYE!'}
+${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por el BULLSEYE!'}
 
-#DreamCustomerRadar #ICP #Hower #Prospección`;
+#ConocetuClienteIdeal #ICP #Hower`;
     
     navigator.clipboard.writeText(message).then(() => {
       toast({
@@ -592,6 +528,30 @@ ${result.score === 4 ? `🔍 Palabras: ${result.searchKeywords.slice(0, 3).join(
         description: "Listo para pegar en WhatsApp/Telegram",
       });
       setShowShareModal(false);
+    });
+  };
+
+  const shareToWhatsApp = () => {
+    if (!result) return;
+    
+    const { level, emoji } = getRadarLevel(result.score);
+    const message = `🎯 MI CLIENTE IDEAL DEFINIDO
+
+${emoji} NIVEL: ${level} (${result.score}/4 bloques)
+
+${result.completedBlocks.length > 0 ? `✅ TENGO: ${result.completedBlocks.join(' + ')}` : ''}
+${result.missingBlocks.length > 0 ? `❌ ME FALTA: ${result.missingBlocks.join(' + ')}` : ''}
+
+${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por el BULLSEYE!'}
+
+#ConocetuClienteIdeal #ICP #Hower`;
+    
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    
+    toast({
+      title: "¡Abriendo WhatsApp! 📱",
+      description: "Compartiendo tu resultado",
     });
   };
 
@@ -663,72 +623,6 @@ ${result.score === 4 ? `🔍 Palabras: ${result.searchKeywords.slice(0, 3).join(
               </div>
             </div>
 
-            {/* Metrics Preview */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border-2 border-blue-200">
-              <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                📊 Tus métricas incluidas:
-              </h4>
-              <Tabs defaultValue="hoy" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-3">
-                  <TabsTrigger value="hoy" className="text-xs">Hoy</TabsTrigger>
-                  <TabsTrigger value="ayer" className="text-xs">Ayer</TabsTrigger>
-                  <TabsTrigger value="semana" className="text-xs">Semana</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="hoy" className="space-y-2">
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="bg-white p-2 rounded border-l-2 border-green-400">
-                      <div className="font-semibold text-green-800">💬 Abiertas</div>
-                      <div className="text-lg font-bold text-green-600">{prospectsMetrics.today.nuevosProspectos}</div>
-                    </div>
-                    <div className="bg-white p-2 rounded border-l-2 border-orange-400">
-                      <div className="font-semibold text-orange-800">🔄 Seguimientos</div>
-                      <div className="text-lg font-bold text-orange-600">{prospectsMetrics.today.seguimientosHechos}</div>
-                    </div>
-                    <div className="bg-white p-2 rounded border-l-2 border-purple-400">
-                      <div className="font-semibold text-purple-800">📅 Agendados</div>
-                      <div className="text-lg font-bold text-purple-600">{prospectsMetrics.today.agendados}</div>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="ayer" className="space-y-2">
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="bg-white p-2 rounded border-l-2 border-green-400">
-                      <div className="font-semibold text-green-800">💬 Abiertas</div>
-                      <div className="text-lg font-bold text-green-600">{prospectsMetrics.yesterday.nuevosProspectos}</div>
-                    </div>
-                    <div className="bg-white p-2 rounded border-l-2 border-yellow-400">
-                      <div className="font-semibold text-yellow-800">🔄 Seguimientos</div>
-                      <div className="text-lg font-bold text-yellow-600">{prospectsMetrics.yesterday.seguimientosHechos}</div>
-                    </div>
-                    <div className="bg-white p-2 rounded border-l-2 border-purple-400">
-                      <div className="font-semibold text-purple-800">📅 Agendados</div>
-                      <div className="text-lg font-bold text-purple-600">{prospectsMetrics.yesterday.agendados}</div>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="semana" className="space-y-2">
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="bg-white p-2 rounded border-l-2 border-green-400">
-                      <div className="font-semibold text-green-800">💬 Abiertas</div>
-                      <div className="text-lg font-bold text-green-600">{prospectsMetrics.week.nuevosProspectos}</div>
-                    </div>
-                    <div className="bg-white p-2 rounded border-l-2 border-yellow-400">
-                      <div className="font-semibold text-yellow-800">🔄 Seguimientos</div>
-                      <div className="text-lg font-bold text-yellow-600">{prospectsMetrics.week.seguimientosHechos}</div>
-                    </div>
-                    <div className="bg-white p-2 rounded border-l-2 border-purple-400">
-                      <div className="font-semibold text-purple-800">📅 Agendados</div>
-                      <div className="text-lg font-bold text-purple-600">{prospectsMetrics.week.agendados}</div>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-
             {/* Top suggestions */}
             {result.suggestions.length > 0 && (
               <div className="bg-blue-50 p-4 rounded-xl">
@@ -759,18 +653,17 @@ ${result.score === 4 ? `🔍 Palabras: ${result.searchKeywords.slice(0, 3).join(
                 Cerrar
               </Button>
               <Button 
+                onClick={shareToWhatsApp} 
+                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold"
+              >
+                📱 Compartir WhatsApp
+              </Button>
+              <Button 
                 onClick={downloadImage} 
                 className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold"
               >
                 <Download className="w-5 h-5 mr-2" />
                 📸 Descargar imagen
-              </Button>
-              <Button 
-                onClick={copyShareMessage} 
-                className={`flex-1 bg-gradient-to-r ${color} text-white font-bold`}
-              >
-                <Copy className="w-5 h-5 mr-2" />
-                📋 Copiar mensaje
               </Button>
             </div>
           </div>
