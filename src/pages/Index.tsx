@@ -90,9 +90,9 @@ const Index = () => {
       const justLoggedIn = localStorage.getItem('just-logged-in');
       
       if (justLoggedIn) {
-        console.log('🚀 Usuario recién logueado, redirigiendo a tasks-to-do');
+        console.log('🚀 Usuario recién logueado, redirigiendo a welcome');
         localStorage.removeItem('just-logged-in');
-        navigate('/tasks-to-do', { replace: true });
+        navigate('/welcome', { replace: true });
         return;
       }
       

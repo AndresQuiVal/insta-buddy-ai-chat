@@ -27,6 +27,7 @@ import HowerLiteOnboarding from "./pages/HowerLiteOnboarding";
 import DreamCustomerRadarGuide from "./pages/DreamCustomerRadarGuide";
 import DreamCustomerRadarGame from "./pages/DreamCustomerRadarGame";
 import ThreeMonthPlan from "./pages/ThreeMonthPlan";
+import WelcomeDashboard from "./pages/WelcomeDashboard";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/welcome" element={<WelcomeDashboard />} />
           <Route path="/autoresponder-onboarding" element={<AutoresponderOnboarding />} />
             <Route path="/guides" element={<Guides />} />
             <Route path="/settings" element={<Settings />} />
