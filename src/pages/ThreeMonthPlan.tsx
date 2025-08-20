@@ -248,13 +248,15 @@ const ThreeMonthPlan = () => {
                 <DialogContent>
                   <DialogHeader>
                     <div className="text-center mb-6">
-                      <div className="flex justify-center mb-4">
-                        <img 
-                          src={bonus.logo} 
-                          alt={bonus.title}
-                          className="w-48 h-48 object-contain"
-                        />
-                      </div>
+                       <div className="flex justify-center mb-4">
+                         <div className="w-48 h-48 flex items-center justify-center">
+                           <img 
+                             src={bonus.logo} 
+                             alt={bonus.title}
+                             className="max-w-full max-h-full object-contain rounded-2xl"
+                           />
+                         </div>
+                       </div>
                       <DialogTitle className="text-3xl">{bonus.title}</DialogTitle>
                     </div>
                     <DialogDescription className="text-base leading-relaxed">
