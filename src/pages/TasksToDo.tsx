@@ -274,7 +274,7 @@ const TasksToDo: React.FC = () => {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        logging: true,
+        logging: false,
         width: statsElement.scrollWidth,
         height: statsElement.scrollHeight,
         scrollX: 0,
@@ -287,88 +287,155 @@ const TasksToDo: React.FC = () => {
       const finalCanvas = document.createElement('canvas');
       const ctx = finalCanvas.getContext('2d')!;
       
-      // Dimensiones del canvas final
-      const padding = 30;
-      const headerHeight = 60;
-      const footerHeight = 30;
-      finalCanvas.width = Math.max(canvas.width + (padding * 2), 500);
+      // Dimensiones del canvas final - más ancho para mejor presentación
+      const padding = 40;
+      const headerHeight = 100;
+      const footerHeight = 40;
+      finalCanvas.width = Math.max(canvas.width + (padding * 2), 600);
       finalCanvas.height = canvas.height + headerHeight + footerHeight + (padding * 2);
 
       console.log('🎨 Canvas final:', finalCanvas.width, 'x', finalCanvas.height);
 
-      // Fondo blanco limpio
-      ctx.fillStyle = '#ffffff';
+      // Fondo con gradiente elegante
+      const gradient = ctx.createLinearGradient(0, 0, 0, finalCanvas.height);
+      gradient.addColorStop(0, '#7a60ff'); // primary
+      gradient.addColorStop(0.3, '#9c89ff'); // primary-light
+      gradient.addColorStop(1, '#ffffff');
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-      // Añadir encabezado con marca Hower
-      ctx.fillStyle = '#6366f1';
-      ctx.fillRect(0, 0, finalCanvas.width, headerHeight);
+      // Cargar y dibujar el logo de Hower
+      const logo = new Image();
+      logo.crossOrigin = 'anonymous';
       
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('📊 Mis Estadísticas - Hower', finalCanvas.width / 2, headerHeight / 2 + 8);
-      
-      // Dibujar las estadísticas capturadas
-      const statsX = (finalCanvas.width - canvas.width) / 2;
-      const statsY = headerHeight + padding;
-      ctx.drawImage(canvas, statsX, statsY);
-      
-      // Añadir pie con fecha
-      ctx.fillStyle = '#f3f4f6';
-      ctx.fillRect(0, finalCanvas.height - footerHeight, finalCanvas.width, footerHeight);
-      
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '12px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      const currentDate = new Date().toLocaleDateString('es-ES', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-      ctx.fillText(`Generado el ${currentDate} | hower.ai`, finalCanvas.width / 2, finalCanvas.height - 10);
-      
-      console.log('🎯 Creando blob...');
-      
-      // Convertir a blob y descargar
-      finalCanvas.toBlob((blob) => {
-        console.log('📦 Blob creado:', blob);
+      const drawContent = () => {
+        // Limpiar el área del encabezado con un fondo más suave
+        const headerGradient = ctx.createLinearGradient(0, 0, 0, headerHeight);
+        headerGradient.addColorStop(0, '#7a60ff');
+        headerGradient.addColorStop(1, '#9c89ff');
+        ctx.fillStyle = headerGradient;
+        ctx.fillRect(0, 0, finalCanvas.width, headerHeight);
         
-        if (blob) {
-          console.log('💾 Iniciando descarga...');
+        // Dibujar logo centrado
+        const logoSize = 50;
+        const logoX = finalCanvas.width / 2 - 80; // Posición a la izquierda del texto
+        const logoY = (headerHeight - logoSize) / 2;
+        
+        try {
+          ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+        } catch (error) {
+          // Si no se puede cargar el logo, dibujar un placeholder
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(logoX, logoY, logoSize, logoSize);
+          ctx.strokeStyle = '#e5e7eb';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(logoX, logoY, logoSize, logoSize);
           
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `hower-estadisticas-${new Date().toISOString().split('T')[0]}.png`;
-          link.style.display = 'none';
-          
-          document.body.appendChild(link);
-          console.log('🔗 Link creado y añadido al DOM');
-          
-          link.click();
-          console.log('👆 Click ejecutado');
-          
-          // Cleanup
-          setTimeout(() => {
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            console.log('🧹 Cleanup completado');
-          }, 100);
-          
-          toast({
-            title: "¡Estadísticas compartidas!",
-            description: "La imagen se ha descargado correctamente"
-          });
-        } else {
-          console.error('❌ No se pudo crear el blob');
-          toast({
-            title: "Error en blob",
-            description: "No se pudo crear la imagen",
-            variant: "destructive"
-          });
+          // Texto "H" como placeholder
+          ctx.fillStyle = '#7a60ff';
+          ctx.font = 'bold 24px Poppins, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('H', logoX + logoSize/2, logoY + logoSize/2 + 8);
         }
-      }, 'image/png', 1.0);
+        
+        // Añadir texto "Hower" a la derecha del logo
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 32px Poppins, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Hower', logoX + logoSize + 15, (headerHeight / 2) + 10);
+        
+        // Subtítulo
+        ctx.font = '16px Poppins, sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.textAlign = 'center';
+        ctx.fillText('📊 Mis Estadísticas', finalCanvas.width / 2, headerHeight - 15);
+        
+        // Fondo blanco para las estadísticas
+        const statsY = headerHeight + padding;
+        const statsHeight = canvas.height + padding;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(padding, statsY - padding/2, finalCanvas.width - (padding * 2), statsHeight);
+        
+        // Sombra suave para las estadísticas
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 5;
+        
+        // Dibujar las estadísticas centradas
+        const statsX = (finalCanvas.width - canvas.width) / 2;
+        ctx.drawImage(canvas, statsX, statsY);
+        
+        // Quitar sombra
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+        
+        // Pie de página elegante
+        const footerY = finalCanvas.height - footerHeight;
+        const footerGradient = ctx.createLinearGradient(0, footerY, 0, finalCanvas.height);
+        footerGradient.addColorStop(0, 'rgba(122, 96, 255, 0.1)');
+        footerGradient.addColorStop(1, 'rgba(122, 96, 255, 0.2)');
+        ctx.fillStyle = footerGradient;
+        ctx.fillRect(0, footerY, finalCanvas.width, footerHeight);
+        
+        // Texto del pie
+        ctx.fillStyle = '#7a60ff';
+        ctx.font = '14px Poppins, sans-serif';
+        ctx.textAlign = 'center';
+        const currentDate = new Date().toLocaleDateString('es-ES', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        ctx.fillText(`Generado el ${currentDate} | hower.ai`, finalCanvas.width / 2, footerY + 25);
+        
+        console.log('🎯 Creando blob...');
+        
+        // Convertir a blob y descargar
+        finalCanvas.toBlob((blob) => {
+          console.log('📦 Blob creado:', blob);
+          
+          if (blob) {
+            console.log('💾 Iniciando descarga...');
+            
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `hower-estadisticas-${new Date().toISOString().split('T')[0]}.png`;
+            link.style.display = 'none';
+            
+            document.body.appendChild(link);
+            console.log('🔗 Link creado y añadido al DOM');
+            
+            link.click();
+            console.log('👆 Click ejecutado');
+            
+            // Cleanup
+            setTimeout(() => {
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+              console.log('🧹 Cleanup completado');
+            }, 100);
+            
+            toast({
+              title: "¡Estadísticas compartidas!",
+              description: "La imagen se ha descargado correctamente"
+            });
+          } else {
+            console.error('❌ No se pudo crear el blob');
+            toast({
+              title: "Error en blob",
+              description: "No se pudo crear la imagen",
+              variant: "destructive"
+            });
+          }
+        }, 'image/png', 1.0);
+      };
+      
+      // Intentar cargar el logo
+      logo.onload = drawContent;
+      logo.onerror = drawContent; // Si falla, dibujar sin logo pero con placeholder
+      logo.src = howerLogo;
       
     } catch (error) {
       console.error('💥 Error en shareStats:', error);
