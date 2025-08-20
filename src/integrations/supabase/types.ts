@@ -1281,6 +1281,26 @@ export type Database = {
         Args: { user_instagram_id: string }
         Returns: string
       }
+      grok_get_stats: {
+        Args: { p_instagram_user_id: string; p_period: string }
+        Returns: {
+          abiertas: number
+          agendados: number
+          seguimientos: number
+        }[]
+      }
+      grok_increment_stat: {
+        Args: {
+          p_increment?: number
+          p_instagram_user_id: string
+          p_stat_type: string
+        }
+        Returns: undefined
+      }
+      grok_reset_weekly_stats: {
+        Args: { p_instagram_user_id?: string }
+        Returns: number
+      }
       increment_nuevos_prospectos_by_instagram_id: {
         Args: { increment_by?: number; user_instagram_id: string }
         Returns: undefined

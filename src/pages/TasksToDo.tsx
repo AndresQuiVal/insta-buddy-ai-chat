@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -132,6 +132,13 @@ const TasksToDo: React.FC = () => {
   const [tempListName, setTempListName] = useState('');
   const [motivationalQuote, setMotivationalQuote] = useState('');
 
+  // Estado para estadísticas GROK
+  const [stats, setStats] = useState({
+    today: { abiertas: 0, seguimientos: 0, agendados: 0 },
+    yesterday: { abiertas: 0, seguimientos: 0, agendados: 0 },
+    week: { abiertas: 0, seguimientos: 0, agendados: 0 }
+  });
+
   // Frases motivacionales
   const motivationalQuotes = [
     "Cada 'no' te acerca más a un 'sí'. ¡Sigue prospectando!",
@@ -186,6 +193,62 @@ const TasksToDo: React.FC = () => {
       loadListName();
     }
   }, [currentUser]);
+
+  // Función para cargar estadísticas usando GROK
+  const loadStats = useCallback(async () => {
+    if (!currentUser?.instagram_user_id) return;
+
+    try {
+      // Usar las funciones GROK para obtener estadísticas
+      const [todayData, yesterdayData, weekData] = await Promise.all([
+        supabase.rpc('grok_get_stats', {
+          p_instagram_user_id: currentUser.instagram_user_id,
+          p_period: 'today'
+        }),
+        supabase.rpc('grok_get_stats', {
+          p_instagram_user_id: currentUser.instagram_user_id,
+          p_period: 'yesterday'
+        }),
+        supabase.rpc('grok_get_stats', {
+          p_instagram_user_id: currentUser.instagram_user_id,
+          p_period: 'week'
+        })
+      ]);
+
+      console.log('📊 [GROK] Estadísticas cargadas:', {
+        today: todayData.data?.[0],
+        yesterday: yesterdayData.data?.[0],
+        week: weekData.data?.[0]
+      });
+
+      setStats({
+        today: {
+          abiertas: todayData.data?.[0]?.abiertas || 0,
+          seguimientos: todayData.data?.[0]?.seguimientos || 0,
+          agendados: todayData.data?.[0]?.agendados || 0
+        },
+        yesterday: {
+          abiertas: yesterdayData.data?.[0]?.abiertas || 0,
+          seguimientos: yesterdayData.data?.[0]?.seguimientos || 0,
+          agendados: yesterdayData.data?.[0]?.agendados || 0
+        },
+        week: {
+          abiertas: weekData.data?.[0]?.abiertas || 0,
+          seguimientos: weekData.data?.[0]?.seguimientos || 0,
+          agendados: weekData.data?.[0]?.agendados || 0
+        }
+      });
+    } catch (error) {
+      console.error('Error cargando estadísticas GROK:', error);
+    }
+  }, [currentUser?.instagram_user_id]);
+
+  // Cargar estadísticas cuando hay usuario
+  useEffect(() => {
+    if (currentUser) {
+      loadStats();
+    }
+  }, [currentUser, loadStats]);
 
   // ✅ DESHABILITADO - El webhook ya maneja perfectamente el estado de las tareas
   // No necesitamos sincronizar manualmente porque el webhook de Instagram
@@ -585,6 +648,25 @@ const TasksToDo: React.FC = () => {
         // Actualizar estado local con el taskType correcto
         setCompletedTasks(prev => ({ ...prev, [`${taskType}-${prospect.id}`]: true }));
         
+        // GROK: Incrementar estadística "abiertas" cuando se contacta prospecto
+        try {
+          const { error: grokError } = await supabase.rpc('grok_increment_stat', {
+            p_instagram_user_id: currentUser.instagram_user_id,
+            p_stat_type: 'abiertas',
+            p_increment: 1
+          });
+          
+          if (grokError) {
+            console.error('Error incrementando estadística GROK:', grokError);
+          } else {
+            console.log('📊 [GROK] Estadística "abiertas" incrementada para:', currentUser.instagram_user_id);
+            // Recargar estadísticas para mostrar el cambio
+            await loadStats();
+          }
+        } catch (error) {
+          console.error('Error en GROK increment:', error);
+        }
+        
         toast({
           title: "¡Prospecto contactado!",
           description: `@${username} marcado como completado.`,
@@ -687,18 +769,18 @@ const TasksToDo: React.FC = () => {
              lastMessage >= sevenDaysAgo;
     });
 
-    // Estadísticas para AYER
+    // Estadísticas usando GROK (datos persistentes de la BD)
     const yesterdayStats = {
-      nuevosProspectos: yesterdayNewProspects.length,
-      seguimientosHechos: yesterdayFollowUps.length,
-      agendados: 0 // Por ahora 0, se puede conectar con sistema de citas
+      nuevosProspectos: stats.yesterday.abiertas,
+      seguimientosHechos: stats.yesterday.seguimientos,
+      agendados: stats.yesterday.agendados
     };
 
-    // Estadísticas para LA SEMANA
+    // Estadísticas para LA SEMANA usando GROK
     const weekStats = {
-      nuevosProspectos: weekNewProspects.length,
-      seguimientosHechos: weekFollowUps.length,
-      agendados: 0 // Por ahora 0, se puede conectar con sistema de citas
+      nuevosProspectos: stats.week.abiertas,
+      seguimientosHechos: stats.week.seguimientos,
+      agendados: stats.week.agendados
     };
 
     return {
@@ -1265,7 +1347,7 @@ const TasksToDo: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">💬 Abiertas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  0
+                                  {stats.today.abiertas}
                                 </div>
                               </div>
                               
@@ -1275,7 +1357,7 @@ const TasksToDo: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  0
+                                  {stats.today.seguimientos}
                                 </div>
                               </div>
                               
@@ -1284,7 +1366,7 @@ const TasksToDo: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
                                 <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  0
+                                  {stats.today.agendados}
                                 </div>
                               </div>
                             </div>
@@ -1373,7 +1455,7 @@ const TasksToDo: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">💬 Abiertas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {prospectsClassification.weekStats.nuevosProspectos}
+                                  {stats.week.abiertas}
                                 </div>
                               </div>
                               
@@ -1396,7 +1478,7 @@ const TasksToDo: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">💬 Seguimientos hechos</span>
                                 <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {prospectsClassification.weekStats.seguimientosHechos}
+                                  {stats.week.seguimientos}
                                 </div>
                               </div>
                               
@@ -1419,7 +1501,7 @@ const TasksToDo: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
                                 <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {prospectsClassification.weekStats.agendados}
+                                  {stats.week.agendados}
                                 </div>
                               </div>
                               
