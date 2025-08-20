@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { disconnectInstagram } from '@/services/instagramService';
 import RecommendationsCarousel from './RecommendationsCarousel';
 import MetricTooltip from './MetricTooltip';
+import html2canvas from 'html2canvas';
+import howerLogo from '@/assets/hower-logo.png';
 import { 
   MessageCircle, 
   Users, 
@@ -26,7 +28,8 @@ import {
   Info,
   Lightbulb,
   ArrowLeft,
-  UserPlus
+  UserPlus,
+  Share2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -87,6 +90,8 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
   const [idealTraits, setIdealTraits] = useState<{trait: string, enabled: boolean}[]>([]);
+  const [isSharing, setIsSharing] = useState(false);
+  const statsRef = useRef<HTMLDivElement>(null);
 
   const timeFilterOptions = [
     { value: 'today', label: 'Hoy' },
@@ -395,6 +400,122 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
     }
   };
 
+  const shareStats = async () => {
+    if (!statsRef.current) {
+      toast({
+        title: "Error",
+        description: "No se pudo capturar la imagen de las estadísticas",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSharing(true);
+
+    try {
+      // Crear un canvas temporal con el logo de Hower
+      const canvas = await html2canvas(statsRef.current, {
+        backgroundColor: '#f8fafc',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        height: statsRef.current.scrollHeight + 100, // Espacio extra para el logo
+        y: -50 // Offset para incluir el logo arriba
+      });
+
+      // Crear un nuevo canvas más grande para incluir el logo
+      const finalCanvas = document.createElement('canvas');
+      const ctx = finalCanvas.getContext('2d');
+      
+      if (!ctx) {
+        throw new Error('No se pudo crear el contexto del canvas');
+      }
+
+      // Configurar dimensiones finales
+      finalCanvas.width = canvas.width;
+      finalCanvas.height = canvas.height + 120; // Espacio extra para el logo
+
+      // Fondo
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+      // Cargar y dibujar el logo de Hower
+      const logoImg = new Image();
+      logoImg.onload = () => {
+        // Dibujar logo en la parte superior
+        const logoSize = 80;
+        const logoX = (finalCanvas.width - logoSize) / 2;
+        ctx.drawImage(logoImg, logoX, 20, logoSize, logoSize);
+        
+        // Agregar texto "Hower"
+        ctx.fillStyle = '#7c3aed';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Hower', finalCanvas.width / 2, 130);
+        
+        // Dibujar las estadísticas capturadas
+        ctx.drawImage(canvas, 0, 150);
+
+        // Convertir a blob y compartir
+        finalCanvas.toBlob((blob) => {
+          if (blob) {
+            // Crear enlace de descarga
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `estadisticas-hower-${new Date().toISOString().split('T')[0]}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            toast({
+              title: "¡Imagen generada!",
+              description: "La imagen de tus estadísticas se ha descargado correctamente",
+            });
+          }
+        }, 'image/png');
+      };
+      
+      logoImg.onerror = () => {
+        // Si falla cargar el logo, usar solo las estadísticas
+        finalCanvas.width = canvas.width;
+        finalCanvas.height = canvas.height;
+        ctx.drawImage(canvas, 0, 0);
+        
+        finalCanvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `estadisticas-hower-${new Date().toISOString().split('T')[0]}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            toast({
+              title: "¡Imagen generada!",
+              description: "La imagen de tus estadísticas se ha descargado correctamente",
+            });
+          }
+        }, 'image/png');
+      };
+
+      logoImg.src = howerLogo;
+
+    } catch (error) {
+      console.error('Error al generar imagen:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar la imagen para compartir",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   const StatCard: React.FC<{
     title: string;
     value: string | number;
@@ -498,11 +619,19 @@ const InstagramDashboard: React.FC<InstagramDashboardProps> = ({ onShowAnalysis 
           >
             <RefreshCw className="w-5 h-5" />
           </button>
+          <button
+            onClick={shareStats}
+            disabled={isSharing}
+            className="p-2 bg-transparent hover:bg-purple-100 rounded-full text-purple-500 border border-transparent hover:border-purple-200 transition-colors disabled:opacity-50"
+            title="Compartir estadísticas"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
       {/* Métricas Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Nuevos prospectos contactados"
           value={stats.todayMessages}
