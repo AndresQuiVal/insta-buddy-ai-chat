@@ -620,7 +620,8 @@ export const useProspects = (currentInstagramUserId?: string) => {
               const syncParams = {
                 p_instagram_user_id: userData.instagram_user_id,
                 p_prospect_sender_id: prospectId,
-                p_last_message_type: 'sent'
+                p_last_message_type: 'sent',
+                p_task_type: 'pending' // Para mensajes en tiempo real, usar pending por defecto
               };
               
               console.log('📞 [REALTIME] Parámetros para sync:', syncParams);

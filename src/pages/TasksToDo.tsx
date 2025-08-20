@@ -573,7 +573,8 @@ const TasksToDo: React.FC = () => {
       const { error } = await supabase.rpc('sync_prospect_task_status', {
         p_instagram_user_id: currentUser.instagram_user_id,
         p_prospect_sender_id: prospect.id,
-        p_last_message_type: 'sent' // Porque YO envié el mensaje
+        p_last_message_type: 'sent', // Porque YO envié el mensaje
+        p_task_type: taskType // Pasar el taskType correcto (pending, yesterday, week, etc.)
       });
       
       if (error) {
