@@ -130,7 +130,7 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
           prompt: `Analiza esta descripción de cliente ideal y evalúa qué tan completa está según estos 4 bloques:
 
 WHO (¿Quién es?): edad, género, situación actual, problema principal, ubicación geográfica
-WHERE (¿Dónde los encuentras online?): qué influencers/cuentas siguen, qué hashtags usan, en qué grupos de Facebook/Telegram están, qué podcasts escuchan, qué blogs/websites visitan, qué comunidades online frecuentan
+WHERE (¿Qué recursos digitales consume?): qué influencers/cuentas siguen, qué hashtags usan, en qué grupos de Facebook/Telegram están, qué podcasts escuchan, qué blogs/websites visitan, qué comunidades online frecuentan
 BAIT (¿Qué los atrae?): qué hook, historia, testimonio u oferta irresistible los engancharía para detenerse y prestar atención
 RESULT (¿Qué resultado buscan?): qué transformación específica y medible quieren lograr
 
@@ -753,7 +753,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                   </div>
                   <div className="bg-gradient-to-r from-green-100 to-green-200 p-3 rounded-lg text-center border border-green-300">
                     <div className="font-bold text-green-800">WHERE</div>
-                    <div className="text-xs text-green-600">¿Dónde online?</div>
+                    <div className="text-xs text-green-600">¿Qué consume?</div>
                   </div>
                   <div className="bg-gradient-to-r from-purple-100 to-purple-200 p-3 rounded-lg text-center border border-purple-300">
                     <div className="font-bold text-purple-800">BAIT</div>
