@@ -784,6 +784,15 @@ ${result.score === 4 ? `🔍 Palabras: ${result.searchKeywords.slice(0, 3).join(
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con estilo cuaderno */}
         <div className="relative mb-8">
+          {/* Logo de Hower */}
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/lovable-uploads/af1c9636-71e9-49d6-a2fc-2fbeab94a9ef.png" 
+              alt="Hower Logo" 
+              className="h-16 w-auto"
+            />
+          </div>
+          
           <div 
             className="bg-white rounded-2xl shadow-xl border-t-8 border-red-400 p-6 sm:p-8"
             style={{
@@ -809,7 +818,7 @@ ${result.score === 4 ? `🔍 Palabras: ${result.searchKeywords.slice(0, 3).join(
                 </Button>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 font-mono flex items-center gap-2">
                   <Radar className="w-8 h-8 text-blue-600 animate-spin" />
-                  Dream Customer Radar
+                  Conoce tu Cliente Ideal
                 </h1>
               </div>
             </div>
