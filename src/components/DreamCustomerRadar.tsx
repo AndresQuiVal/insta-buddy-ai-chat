@@ -142,7 +142,7 @@ Responde en formato JSON exactamente así:
   "completedBlocks": ["WHO", "WHERE", "BAIT", "RESULT"] [solo los que están completos],
   "missingBlocks": ["WHO", "WHERE", "BAIT", "RESULT"] [solo los que faltan],
   "suggestions": ["sugerencia 1", "sugerencia 2"] [máximo 3 sugerencias específicas],
-  "searchKeywords": ["keyword1", "keyword2"] [solo si score es 4, palabras clave de búsqueda basadas en dolores]
+  "searchKeywords": ["frase1", "frase2", "frase3"] [solo si score es 4, genera 5-8 frases de 2-4 palabras para buscar en Instagram/Google cuentas que tengan seguidores similares al ICP. Ejemplos: "coaching empresarial", "madre emprendedora", "fitness mujeres", "inversión Bitcoin", "motivación personal"]
 }`
         },
       });
