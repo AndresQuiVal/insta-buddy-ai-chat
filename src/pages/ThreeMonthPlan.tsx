@@ -11,7 +11,7 @@ const ThreeMonthPlan = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGetPlan = () => {
-    window.location.href = 'https://buy.stripe.com/bJe6oG9gYbJA2eV9p63wQ0A';
+    window.open('https://buy.stripe.com/bJe6oG9gYbJA2eV9p63wQ0A', '_blank');
   };
 
   const features = [
