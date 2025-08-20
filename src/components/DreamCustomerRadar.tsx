@@ -676,7 +676,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con estilo cuaderno */}
-        <div className="relative mb-8">
+        <div className="mb-8">
           {/* Logo de Hower */}
           <div className="flex justify-center mb-6">
             <img 
@@ -687,24 +687,24 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
           </div>
           
           <div 
-            className="bg-white rounded-2xl shadow-xl border-t-8 border-red-400 p-6 sm:p-8 overflow-hidden"
+            className="relative bg-white rounded-2xl shadow-xl border-t-8 border-red-400 p-6 sm:p-8 overflow-hidden"
             style={{
               backgroundImage: `
                 linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
                 linear-gradient(#f9fafb 0%, #ffffff 100%)
               `,
               backgroundSize: '24px 1px, 100% 100%',
-              backgroundPosition: '0 40px, 0 0'
+              backgroundPosition: '24px 40px, 0 0'
             }}
           >
-            {/* Espiral del cuaderno */}
-            <div className="absolute left-2 top-8 bottom-8 w-1 flex flex-col justify-evenly">
-              {Array.from({length: 8}).map((_, i) => (
+            {/* Espiral del cuaderno - dentro del contenedor */}
+            <div className="absolute left-0 top-12 bottom-12 w-6 flex flex-col justify-evenly items-center">
+              {Array.from({length: 6}).map((_, i) => (
                 <div key={i} className="w-3 h-3 rounded-full bg-red-400 shadow-inner" />
               ))}
             </div>
             
-            <div className="ml-4 sm:ml-6">
+            <div className="ml-8">
               <div className="flex items-center gap-4 mb-6">
                 <Button variant="ghost" onClick={onBack} className="p-2 hover:bg-purple-100 transition-colors">
                   <ArrowLeft className="w-5 h-5 text-purple-600" />
