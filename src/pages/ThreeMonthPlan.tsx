@@ -133,11 +133,13 @@ const ThreeMonthPlan = () => {
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <img 
-            src="/lovable-uploads/66bc3c7e-9cc2-49c6-9d54-9b1400c0baa1.png" 
-            alt="Hower Logo" 
-            className="w-20 h-20 mx-auto mb-6 animate-bounce-in"
-          />
+          <div className="mb-6 flex justify-center">
+            <img 
+              src="/lovable-uploads/66bc3c7e-9cc2-49c6-9d54-9b1400c0baa1.png" 
+              alt="Hower Logo" 
+              className="w-24 h-24 object-contain animate-bounce-in"
+            />
+          </div>
           <Badge className="mb-6 px-6 py-2 text-lg animate-pulse-glow">
             Plan Más Popular 🔥
           </Badge>
