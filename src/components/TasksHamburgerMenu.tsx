@@ -12,6 +12,7 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
 
   const menuItems = [
     { id: 'icp', label: 'ICP' },
+    { id: 'autoresponder', label: 'Autoresponder' },
   ];
 
   return (
@@ -33,7 +34,11 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
           <button
             key={item.id}
             onClick={() => {
-              navigate('/dream-customer-radar-guide');
+              if (item.id === 'autoresponder') {
+                navigate('/');
+              } else {
+                navigate('/dream-customer-radar-guide');
+              }
               setIsOpen(false);
             }}
             className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-purple-50 transition-colors text-gray-700"
