@@ -751,14 +751,42 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                 
                 {/* Guía visual de los bloques */}
                 <div className="grid grid-cols-2 gap-2 mb-4">
-                  <div className="bg-gradient-to-r from-blue-100 to-blue-200 p-3 rounded-lg text-center border border-blue-300">
-                    <div className="font-bold text-blue-800">WHO</div>
-                    <div className="text-xs text-blue-600">¿Quién es?</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-green-100 to-green-200 p-3 rounded-lg text-center border border-green-300">
-                    <div className="font-bold text-green-800">WHERE</div>
-                    <div className="text-xs text-green-600">¿Qué recursos digitales consume?</div>
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="bg-gradient-to-r from-blue-100 to-blue-200 p-3 rounded-lg text-center border border-blue-300 cursor-help hover:scale-105 transition-transform">
+                          <div className="font-bold text-blue-800">WHO</div>
+                          <div className="text-xs text-blue-600">¿Quién es?</div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="animate-scale-in bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-none shadow-2xl p-4 max-w-sm">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-lg blur opacity-50 animate-pulse"></div>
+                          <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
+                            🎯 <strong>WHO:</strong> Define características específicas de tu cliente ideal: edad, profesión, intereses, problemas principales
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="bg-gradient-to-r from-green-100 to-green-200 p-3 rounded-lg text-center border border-green-300 cursor-help hover:scale-105 transition-transform">
+                          <div className="font-bold text-green-800">WHERE</div>
+                          <div className="text-xs text-green-600">¿Qué recursos digitales consume?</div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="animate-scale-in bg-gradient-to-r from-green-600 to-emerald-600 text-white border-none shadow-2xl p-4 max-w-sm">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-lg blur opacity-50 animate-pulse"></div>
+                          <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
+                            📍 <strong>WHERE:</strong> Identifica dónde consumen contenido: cuentas que siguen, hashtags, podcasts, blogs o comunidades
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -777,10 +805,24 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
         </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <div className="bg-gradient-to-r from-orange-100 to-orange-200 p-3 rounded-lg text-center border border-orange-300">
-                    <div className="font-bold text-orange-800">RESULT</div>
-                    <div className="text-xs text-orange-600">¿Qué busca?</div>
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="bg-gradient-to-r from-orange-100 to-orange-200 p-3 rounded-lg text-center border border-orange-300 cursor-help hover:scale-105 transition-transform">
+                          <div className="font-bold text-orange-800">RESULT</div>
+                          <div className="text-xs text-orange-600">¿Qué busca?</div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="animate-scale-in bg-gradient-to-r from-orange-600 to-red-600 text-white border-none shadow-2xl p-4 max-w-sm">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-lg blur opacity-50 animate-pulse"></div>
+                          <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
+                            🚀 <strong>RESULT:</strong> El resultado específico y medible que tu cliente quiere alcanzar o transformación que desea
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 
                 <Textarea
