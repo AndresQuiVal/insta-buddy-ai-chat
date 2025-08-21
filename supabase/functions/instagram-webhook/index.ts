@@ -453,6 +453,117 @@ serve(async (req) => {
             } catch (error) {
               console.error('❌ Error en RPC sync_prospect_task_status (recibido):', error)
             }
+
+            // 🤖 LÓGICA DE AUTORESPONDERS - VERIFICAR Y ENVIAR RESPUESTA AUTOMÁTICA
+            console.log('🤖 === VERIFICANDO AUTORESPONDERS ===')
+            try {
+              // Consultar autoresponders activos del usuario
+              const { data: autoresponders, error: arError } = await supabase
+                .from('autoresponder_messages')
+                .select('*')
+                .eq('instagram_user_id_ref', recipientId)
+                .eq('is_active', true)
+              
+              if (arError) {
+                console.error('❌ Error consultando autoresponders:', arError)
+              } else if (!autoresponders || autoresponders.length === 0) {
+                console.log('⚠️ No hay autoresponders activos configurados para este usuario')
+              } else {
+                console.log(`🔍 Encontrados ${autoresponders.length} autoresponders activos`)
+                
+                // Buscar coincidencias con keywords
+                let autoresponderActivado = null
+                for (const autoresponder of autoresponders) {
+                  console.log(`🔎 Verificando autoresponder: "${autoresponder.name}"`)
+                  
+                  // Si no tiene keywords configuradas, saltar
+                  if (!autoresponder.keywords || autoresponder.keywords.length === 0) {
+                    console.log(`⚠️ Autoresponder "${autoresponder.name}" no tiene keywords configuradas`)
+                    continue
+                  }
+                  
+                  // Verificar keywords
+                  const messageTextLower = messageText.toLowerCase()
+                  console.log(`📝 Texto del mensaje (lowercase): "${messageTextLower}"`)
+                  console.log(`🏷️ Keywords: [${autoresponder.keywords.join(', ')}]`)
+                  
+                  const hasMatch = autoresponder.keywords.some((keyword: string) => {
+                    const keywordLower = keyword.toLowerCase().trim()
+                    const match = messageTextLower.includes(keywordLower)
+                    console.log(`   "${keywordLower}" -> ${match ? '✅ MATCH' : '❌ NO MATCH'}`)
+                    return match
+                  })
+                  
+                  if (hasMatch) {
+                    autoresponderActivado = autoresponder
+                    console.log(`🎯 ¡AUTORESPONDER ACTIVADO: "${autoresponder.name}"!`)
+                    break
+                  }
+                }
+                
+                // Si encontramos un autoresponder que coincide, enviar respuesta
+                if (autoresponderActivado) {
+                  console.log(`🚀 Enviando respuesta automática: "${autoresponderActivado.name}"`)
+                  
+                  // Verificar si ya se envió este autoresponder a este usuario (send_only_first_message)
+                  let debeEnviar = true
+                  if (autoresponderActivado.send_only_first_message) {
+                    const { data: yaEnviado } = await supabase
+                      .from('autoresponder_sent_log')
+                      .select('id')
+                      .eq('autoresponder_message_id', autoresponderActivado.id)
+                      .eq('sender_id', senderId)
+                      .limit(1)
+                    
+                    if (yaEnviado && yaEnviado.length > 0) {
+                      debeEnviar = false
+                      console.log('⚠️ Autoresponder ya fue enviado anteriormente a este usuario (send_only_first_message=true)')
+                    }
+                  }
+                  
+                  if (debeEnviar) {
+                    // Enviar mensaje automático
+                    try {
+                      const { data: sendResult, error: sendError } = await supabase.functions.invoke('instagram-send-message', {
+                        body: {
+                          instagram_user_id: recipientId,
+                          recipient_id: senderId,
+                          message_text: autoresponderActivado.message_text,
+                          autoresponder_id: autoresponderActivado.id
+                        }
+                      })
+                      
+                      if (sendError) {
+                        console.error('❌ Error enviando autoresponder:', sendError)
+                      } else {
+                        console.log('✅ Autoresponder enviado exitosamente')
+                        
+                        // Registrar el envío en el log
+                        const { error: logError } = await supabase
+                          .from('autoresponder_sent_log')
+                          .insert({
+                            autoresponder_message_id: autoresponderActivado.id,
+                            sender_id: senderId,
+                            sent_at: new Date().toISOString()
+                          })
+                        
+                        if (logError) {
+                          console.error('❌ Error registrando envío en log:', logError)
+                        } else {
+                          console.log('✅ Envío registrado en log')
+                        }
+                      }
+                    } catch (sendError) {
+                      console.error('❌ Error en función instagram-send-message:', sendError)
+                    }
+                  }
+                } else {
+                  console.log('🔍 No se encontraron coincidencias de keywords')
+                }
+              }
+            } catch (autoresponderError) {
+              console.error('❌ Error en lógica de autoresponders:', autoresponderError)
+            }
           }
         }
       }
