@@ -2288,7 +2288,11 @@ const TasksToDo: React.FC = () => {
 
         {/* Logo de Hower al final */}
         <div className="mt-8 mb-4 text-center">
-          <h2 className="text-2xl font-poppins font-bold" style={{color: '#7a60ff'}}>Hower</h2>
+          <img 
+            src="/lovable-uploads/8617edb6-fc8a-4cb3-9c0c-52dd051ca7c7.png" 
+            alt="Hower Logo" 
+            className="h-8 mx-auto"
+          />
           <br />
           <p className="text-xs text-gray-400 mt-2 font-mono">Hecho con 💜 por Hower</p>
           <br />
