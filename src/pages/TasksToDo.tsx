@@ -1854,19 +1854,6 @@ const TasksToDo: React.FC = () => {
                       <span className="text-xs">Sincronizar</span>
                     </Button>
                     
-                    {(prospectsClassification.pendingResponses.hower.length + prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length + prospectsClassification.pendingResponses.ads.length) > 0 && (
-                       <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deletePendingProspects();
-                        }}
-                        className="h-6 px-2 text-xs"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
                     <div className="cursor-pointer" onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}>
                       {activeSection === 'pending' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </div>
