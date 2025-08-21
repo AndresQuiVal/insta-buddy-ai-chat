@@ -1809,7 +1809,7 @@ const TasksToDo: React.FC = () => {
                         backgroundPosition: '0 20px'
                       }}
                     >
-                       <Tabs value="dms" onValueChange={setActiveProspectTab} className="w-full">
+                       <Tabs value={activeProspectTab} onValueChange={setActiveProspectTab} className="w-full">
                          <div className="overflow-x-auto pb-2">
                             <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
                               <TabsTrigger value="dms" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white whitespace-nowrap">
