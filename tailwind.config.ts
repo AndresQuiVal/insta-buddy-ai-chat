@@ -25,10 +25,16 @@ export default {
 				handwriting: ['Kalam', 'cursive'],
 			},
 			colors: {
+				/* Hower Brand Colors */
+				'hower-primary': 'hsl(var(--hower-primary))',
+				'hower-dark': 'hsl(var(--hower-dark))',
+				'hower-light': 'hsl(var(--hower-light))',
+				'hower-medium': 'hsl(var(--hower-medium))',
+				
+				/* Semantic System Colors */
 				primary: {
-					DEFAULT: '#7a60ff',
-					light: '#9c89ff',
-					dark: '#6247e0',
+					DEFAULT: 'hsl(var(--primary))',
+					foreground: 'hsl(var(--primary-foreground))'
 				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -42,6 +48,10 @@ export default {
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
 					foreground: 'hsl(var(--destructive-foreground))'
+				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
 				},
 				muted: {
 					DEFAULT: 'hsl(var(--muted))',
