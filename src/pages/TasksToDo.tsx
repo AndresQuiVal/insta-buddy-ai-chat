@@ -2296,6 +2296,7 @@ const TasksToDo: React.FC = () => {
           <h2 className="text-2xl font-poppins font-bold" style={{color: '#7a60ff'}}>Hower</h2>
           <br />
           <p className="text-xs text-gray-400 mt-2 font-mono">Hecho con 💜 por Hower</p>
+          <br />
           
           {/* Botones de opciones */}
           <div className="flex gap-3 justify-center">
