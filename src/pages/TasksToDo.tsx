@@ -104,9 +104,9 @@ const TasksToDo: React.FC = () => {
   const [activeStatsSection, setActiveStatsSection] = useState<string | null>(null);
   const [activeInteractionTip, setActiveInteractionTip] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<CompletedTasks>({});
-  const [activeProspectTab, setActiveProspectTab] = useState('hower');
-  const [activeYesterdayTab, setActiveYesterdayTab] = useState('hower');
-  const [activeWeekTab, setActiveWeekTab] = useState('hower');
+  const [activeProspectTab, setActiveProspectTab] = useState('dms');
+  const [activeYesterdayTab, setActiveYesterdayTab] = useState('dms');
+  const [activeWeekTab, setActiveWeekTab] = useState('dms');
   const [expandedTips, setExpandedTips] = useState<{[key: string]: boolean}>({});
   
   // Estados para diálogo de contacto guiado
@@ -866,33 +866,29 @@ const TasksToDo: React.FC = () => {
     // Prospectos pendientes: state === 'pending' (separados por fuente)
     const pendingResponses = {
       hower: realProspects.filter(p => p.state === 'pending' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      dm: realProspects.filter(p => p.state === 'pending' && p.source === 'dm').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      comment: realProspects.filter(p => p.state === 'pending' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      ads: realProspects.filter(p => p.state === 'pending' && p.source === 'ads').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
+      dm: realProspects.filter(p => p.state === 'pending' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: realProspects.filter(p => p.state === 'pending' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
     // Prospectos que no respondieron ayer: state === 'yesterday' (separados por fuente)
     const noResponseYesterday = {
       hower: realProspects.filter(p => p.state === 'yesterday' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      dm: realProspects.filter(p => p.state === 'yesterday' && p.source === 'dm').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      comment: realProspects.filter(p => p.state === 'yesterday' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      ads: realProspects.filter(p => p.state === 'yesterday' && p.source === 'ads').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
+      dm: realProspects.filter(p => p.state === 'yesterday' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: realProspects.filter(p => p.state === 'yesterday' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
     // Prospectos que no respondieron en 7 días: state === 'week' (separados por fuente)
     const noResponse7Days = {
       hower: realProspects.filter(p => p.state === 'week' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      dm: realProspects.filter(p => p.state === 'week' && p.source === 'dm').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      comment: realProspects.filter(p => p.state === 'week' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      ads: realProspects.filter(p => p.state === 'week' && p.source === 'ads').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
+      dm: realProspects.filter(p => p.state === 'week' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: realProspects.filter(p => p.state === 'week' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
     // Prospectos nuevos: nunca contactados (separados por fuente)
     const newProspects = {
       hower: prospects.filter(p => p.status === 'new' && realProspects.find(r => r.senderId === p.id)?.source === 'hower'),
-      dm: prospects.filter(p => p.status === 'new' && realProspects.find(r => r.senderId === p.id)?.source === 'dm'),
-      comment: prospects.filter(p => p.status === 'new' && realProspects.find(r => r.senderId === p.id)?.source === 'comment'),
-      ads: prospects.filter(p => p.status === 'new' && realProspects.find(r => r.senderId === p.id)?.source === 'ads')
+      dm: prospects.filter(p => p.status === 'new' && ['dm', 'ads'].includes(realProspects.find(r => r.senderId === p.id)?.source || 'dm')),
+      comment: prospects.filter(p => p.status === 'new' && realProspects.find(r => r.senderId === p.id)?.source === 'comment')
     };
 
     // Prospectos específicos para estadísticas AYER
@@ -952,13 +948,11 @@ const TasksToDo: React.FC = () => {
   const calculateEstimatedTime = () => {
     const pendingCount = prospectsClassification.pendingResponses.hower.length + 
                         prospectsClassification.pendingResponses.dm.length + 
-                        prospectsClassification.pendingResponses.comment.length + 
-                        prospectsClassification.pendingResponses.ads.length;
+                        prospectsClassification.pendingResponses.comment.length;
     
     const newCount = prospectsClassification.newProspects.hower.length + 
                     prospectsClassification.newProspects.dm.length + 
-                    prospectsClassification.newProspects.comment.length + 
-                    prospectsClassification.newProspects.ads.length;
+                    prospectsClassification.newProspects.comment.length;
     
     const totalProspects = pendingCount + newCount;
     const secondsPerProspect = 11; // Promedio entre 10-12 segundos
@@ -1244,7 +1238,7 @@ const TasksToDo: React.FC = () => {
                {/* Tabs para divisiones por tipo */}
                <div className="bg-white rounded-xl p-4 border border-gray-100">
                  <Tabs 
-                   value={taskType === 'yesterday' ? activeYesterdayTab : taskType === 'week' ? activeWeekTab : 'hower'} 
+                   value={taskType === 'yesterday' ? activeYesterdayTab : taskType === 'week' ? activeWeekTab : 'dms'} 
                    onValueChange={(value) => {
                      if (taskType === 'yesterday') setActiveYesterdayTab(value);
                      else if (taskType === 'week') setActiveWeekTab(value);
@@ -1264,10 +1258,6 @@ const TasksToDo: React.FC = () => {
                        <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
                          <span className="block sm:hidden">💭</span>
                          <span className="hidden sm:block">💭 Comentarios</span>
-                       </TabsTrigger>
-                       <TabsTrigger value="ads" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white whitespace-nowrap">
-                         <span className="block sm:hidden">📢</span>
-                         <span className="hidden sm:block">📢 Anuncios</span>
                        </TabsTrigger>
                      </TabsList>
                    </div>
@@ -1803,11 +1793,10 @@ const TasksToDo: React.FC = () => {
                     <span className={`${(completedTasks['section-pending'] || 
                       [...prospectsClassification.pendingResponses.hower, 
                        ...prospectsClassification.pendingResponses.dm, 
-                       ...prospectsClassification.pendingResponses.comment, 
-                       ...prospectsClassification.pendingResponses.ads].every(p => completedTasks[`pending-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>Prospectos pendientes</span>
+                       ...prospectsClassification.pendingResponses.comment].every(p => completedTasks[`pending-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>Prospectos pendientes</span>
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
-                    <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.hower.length + prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length + prospectsClassification.pendingResponses.ads.length}</Badge>
+                    <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.hower.length + prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length}</Badge>
                     
                     {/* 🔥 BOTÓN DE DEBUG PARA REFRESCAR MANUALMENTE */}
                     <Button 
@@ -1888,7 +1877,7 @@ const TasksToDo: React.FC = () => {
                         backgroundPosition: '0 20px'
                       }}
                     >
-                       <Tabs value={activeProspectTab} onValueChange={setActiveProspectTab} className="w-full">
+                       <Tabs value="dms" onValueChange={setActiveProspectTab} className="w-full">
                          <div className="overflow-x-auto pb-2">
                            <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
                              <TabsTrigger value="hower" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-blue-500 data-[state=active]:text-white whitespace-nowrap">
@@ -1902,10 +1891,6 @@ const TasksToDo: React.FC = () => {
                              <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
                                <span className="block sm:hidden">💭</span>
                                <span className="hidden sm:block">💭 Comentarios</span>
-                             </TabsTrigger>
-                             <TabsTrigger value="ads" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-orange-500 data-[state=active]:text-white whitespace-nowrap">
-                               <span className="block sm:hidden">📢</span>
-                               <span className="hidden sm:block">📢 Anuncios</span>
                              </TabsTrigger>
                            </TabsList>
                          </div>
@@ -1970,26 +1955,7 @@ const TasksToDo: React.FC = () => {
                           )}
                         </TabsContent>
                         
-                        <TabsContent value="ads" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                          {prospectsClassification.pendingResponses.ads.length === 0 ? (
-                            <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                              <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                              <p className="text-sm sm:text-base">¡Excelente! No hay anuncios pendientes.</p>
-                            </div>
-                          ) : (
-                            prospectsClassification.pendingResponses.ads.map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible mb-5">
-                                <div className="absolute -top-2 -right-2 z-20">
-                                  <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                                    📢 Anuncios
-                                  </Badge>
-                                </div>
-                                <ProspectCard prospect={prospect} taskType="pending" />
-                              </div>
-                            ))
-                          )}
-                        </TabsContent>
-                      </Tabs>
+                       </Tabs>
                     </div>
                   </div>
                 </CardContent>
@@ -2006,27 +1972,23 @@ const TasksToDo: React.FC = () => {
                 boxShadow: showFollowUpSections ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
               }}
             >
-              <CardHeader className="pb-2 sm:pb-3" onClick={() => setShowFollowUpSections(!showFollowUpSections)}>
+              <CardHeader className="pb-2 sm:pb-3 ml-4 sm:ml-6" onClick={() => setShowFollowUpSections(!showFollowUpSections)}>
                 <CardTitle className="flex items-center justify-between text-base sm:text-lg">
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
                     <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 hidden" />
                     <span className={`${(completedTasks['section-followup'] || 
                       (prospectsClassification.noResponseYesterday.hower.length === 0 && 
                        prospectsClassification.noResponseYesterday.dm.length === 0 && 
-                       prospectsClassification.noResponseYesterday.comment.length === 0 && 
-                       prospectsClassification.noResponseYesterday.ads.length === 0 && 
+                       prospectsClassification.noResponseYesterday.comment.length === 0 &&
                        prospectsClassification.noResponse7Days.hower.length === 0 && 
                        prospectsClassification.noResponse7Days.dm.length === 0 && 
-                       prospectsClassification.noResponse7Days.comment.length === 0 && 
-                       prospectsClassification.noResponse7Days.ads.length === 0) || 
+                       prospectsClassification.noResponse7Days.comment.length === 0) ||
                       [...prospectsClassification.noResponseYesterday.hower, 
                        ...prospectsClassification.noResponseYesterday.dm, 
-                       ...prospectsClassification.noResponseYesterday.comment, 
-                       ...prospectsClassification.noResponseYesterday.ads,
+                       ...prospectsClassification.noResponseYesterday.comment,
                        ...prospectsClassification.noResponse7Days.hower,
                        ...prospectsClassification.noResponse7Days.dm,
-                       ...prospectsClassification.noResponse7Days.comment,
-                       ...prospectsClassification.noResponse7Days.ads].every(p => completedTasks[`yesterday-${p.id}`] || completedTasks[`week-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>
+                       ...prospectsClassification.noResponse7Days.comment].every(p => completedTasks[`yesterday-${p.id}`] || completedTasks[`week-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>
                       Prospectos en seguimiento
                     </span>
                   </div>
@@ -2034,12 +1996,10 @@ const TasksToDo: React.FC = () => {
                     <Badge variant="secondary" className="text-xs">
                       {prospectsClassification.noResponseYesterday.hower.length + 
                        prospectsClassification.noResponseYesterday.dm.length + 
-                       prospectsClassification.noResponseYesterday.comment.length + 
-                       prospectsClassification.noResponseYesterday.ads.length + 
+                       prospectsClassification.noResponseYesterday.comment.length +
                        prospectsClassification.noResponse7Days.hower.length + 
                        prospectsClassification.noResponse7Days.dm.length + 
-                       prospectsClassification.noResponse7Days.comment.length + 
-                       prospectsClassification.noResponse7Days.ads.length}
+                       prospectsClassification.noResponse7Days.comment.length}
                     </Badge>
                     {showFollowUpSections ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </div>
@@ -2055,15 +2015,13 @@ const TasksToDo: React.FC = () => {
                   title="No respondieron ayer"
                   count={prospectsClassification.noResponseYesterday.hower.length + 
                          prospectsClassification.noResponseYesterday.dm.length + 
-                         prospectsClassification.noResponseYesterday.comment.length + 
-                         prospectsClassification.noResponseYesterday.ads.length}
+                         prospectsClassification.noResponseYesterday.comment.length}
                   onClick={() => setActiveSection(activeSection === 'yesterday' ? null : 'yesterday')}
                   isActive={activeSection === 'yesterday'}
                   icon={Clock}
                   prospects={[...prospectsClassification.noResponseYesterday.hower, 
                              ...prospectsClassification.noResponseYesterday.dm, 
-                             ...prospectsClassification.noResponseYesterday.comment, 
-                             ...prospectsClassification.noResponseYesterday.ads]}
+                             ...prospectsClassification.noResponseYesterday.comment]}
                   tip={
                     <div className="space-y-3">
                       <p>Envía este mensaje por <strong>audio</strong>:</p>
@@ -2085,15 +2043,13 @@ const TasksToDo: React.FC = () => {
                   title="No respondieron en 7 días"
                   count={prospectsClassification.noResponse7Days.hower.length + 
                          prospectsClassification.noResponse7Days.dm.length + 
-                         prospectsClassification.noResponse7Days.comment.length + 
-                         prospectsClassification.noResponse7Days.ads.length}
+                         prospectsClassification.noResponse7Days.comment.length}
                   onClick={() => setActiveSection(activeSection === 'week' ? null : 'week')}
                   isActive={activeSection === 'week'}
                   icon={Calendar}
                   prospects={[...prospectsClassification.noResponse7Days.hower,
                              ...prospectsClassification.noResponse7Days.dm,
-                             ...prospectsClassification.noResponse7Days.comment,
-                             ...prospectsClassification.noResponse7Days.ads]}
+                             ...prospectsClassification.noResponse7Days.comment]}
                   tip={
                     <div className="space-y-3">
                       <p>Envía este mensaje por <strong>texto</strong>:</p>
@@ -2119,15 +2075,13 @@ const TasksToDo: React.FC = () => {
             title="Nuevos prospectos"
             count={prospectsClassification.newProspects.hower.length + 
                    prospectsClassification.newProspects.dm.length + 
-                   prospectsClassification.newProspects.comment.length + 
-                   prospectsClassification.newProspects.ads.length}
+                   prospectsClassification.newProspects.comment.length}
             onClick={() => setActiveSection(activeSection === 'new' ? null : 'new')}
             isActive={activeSection === 'new'}
             icon={MessageCircle}
             prospects={[...prospectsClassification.newProspects.hower,
                        ...prospectsClassification.newProspects.dm,
-                       ...prospectsClassification.newProspects.comment,
-                       ...prospectsClassification.newProspects.ads]}
+                       ...prospectsClassification.newProspects.comment]}
             tip="Antes de enviar el primer mensaje, interactúa con sus posts más recientes: da like, comenta algo auténtico. Esto aumenta las posibilidades de que vean y respondan tu mensaje."
             taskType="new"
           />
