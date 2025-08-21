@@ -853,12 +853,7 @@ const TasksToDo: React.FC = () => {
         description: 'Mensaje copiado correctamente.' 
       });
       
-      // Si estamos en el flujo manual (step 2), avanzar automáticamente al paso 3
-      if (dialogStep === 2) {
-        setTimeout(() => {
-          setDialogStep(3);
-        }, 500); // Pequeño delay para que el usuario vea el toast
-      }
+      // No avanzar automáticamente al paso 3 - el flujo termina aquí
     } catch (error) {
       console.error('Error copiando mensaje:', error);
       toast({ 
@@ -2339,12 +2334,11 @@ const TasksToDo: React.FC = () => {
             <DialogTitle className="text-center">
               {dialogStep === 1 && "🤖 Generando mensaje IA"}
               {dialogStep === 2 && "📱 Contactar a @" + dialogUser}
-              {dialogStep === 3 && "✅ ¡Listo!"}
+              {dialogStep === 2 && "✅ ¡Listo!"}
             </DialogTitle>
             <DialogDescription className="text-center">
               {dialogStep === 1 && "Generando mensaje personalizado con IA..."}
-              {dialogStep === 2 && "Paso 1 de 2"}
-              {dialogStep === 3 && "Paso 2 de 2"}
+              {dialogStep === 2 && "Paso 2 de 2"}
             </DialogDescription>
           </DialogHeader>
 
@@ -2411,50 +2405,20 @@ const TasksToDo: React.FC = () => {
               
               <DialogFooter>
                 <Button 
-                  onClick={() => setDialogStep(3)}
-                  disabled={!instagramOpened}
-                  className={`w-full ${!instagramOpened ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {instagramOpened ? 'Continuar' : 'Abre Instagram primero'}
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-
-          {/* Paso 3: Confirmar envío */}
-          {dialogStep === 3 && (
-            <div className="space-y-4">
-              <div className="bg-gradient-to-br from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 text-center">
-                <div className="text-green-700 font-medium mb-2">
-                  📋 Copia este mensaje y envíalo:
-                </div>
-                <div className="bg-white rounded p-3 text-sm font-mono mb-3 text-left">
-                  {dialogMessage}
-                </div>
-                <Button 
-                  onClick={copyMessage} 
-                  variant="outline" 
-                  size="sm"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copiar mensaje
-                </Button>
-              </div>
-              
-              <DialogFooter>
-                <Button 
                   onClick={() => {
                     setOpenDialog(false);
                     handleMessageSent(dialogUser);
                     setInstagramOpened(false);
                   }}
-                  className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                  disabled={!instagramOpened}
+                  className={`w-full ${!instagramOpened ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  ✅ Listo
+                  {instagramOpened ? '✅ Mensaje enviado' : 'Abre Instagram primero'}
                 </Button>
               </DialogFooter>
             </div>
           )}
+
         </DialogContent>
       </Dialog>
     </div>
