@@ -135,7 +135,7 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
     setAnimationStep(0);
     
     try {
-      const { data, error } = await supabase.functions.invoke('chatgpt-response', {
+      const { data, error } = await supabase.functions.invoke('analyze-icp', {
         body: {
           prompt: `Analiza esta descripción de cliente ideal y evalúa qué tan completa está según estos 4 bloques:
 
@@ -170,7 +170,20 @@ Responde en formato JSON exactamente así:
         parsedResult = JSON.parse(response);
       } catch (parseError) {
         console.error('Error parsing JSON:', parseError);
-        throw new Error('Error al procesar la respuesta de análisis');
+        console.log('Response that failed to parse:', response);
+        
+        // Fallback: crear análisis básico si hay error de parsing
+        parsedResult = {
+          score: 0,
+          completedBlocks: [],
+          missingBlocks: ["WHO", "WHERE", "BAIT", "RESULT"],
+          suggestions: [
+            "Error procesando el análisis automático",
+            "Intenta describir tu cliente ideal de forma más detallada",
+            "Si el problema persiste, define tu ICP manualmente"
+          ],
+          searchKeywords: []
+        };
       }
 
       // Animación de revelación
