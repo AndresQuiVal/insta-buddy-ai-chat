@@ -103,8 +103,9 @@
 
   body {
     @apply bg-background text-foreground font-poppins;
-    background: linear-gradient(135deg, hsl(var(--hower-primary)) 50%, white 50%);
+    background: linear-gradient(135deg, #7a60ff 50%, white 50%);
     min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
   }
 }
 
@@ -154,4 +155,8 @@ html {
     padding-top: 2rem;
     padding-right: 1rem;
   }
+}
+
+* {
+  font-family: 'Poppins', sans-serif !important;
 }
