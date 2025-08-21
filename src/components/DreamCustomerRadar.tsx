@@ -598,14 +598,14 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                 
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   {result.completedBlocks.length > 0 && (
-                    <div className="bg-green-600/20 p-3 rounded-lg">
+                    <div className="bg-green-600/20 p-3 rounded-lg text-center">
                       <div className="font-semibold text-green-300 mb-2">✅ COMPLETOS</div>
                       <div className="text-sm">{result.completedBlocks.join(' • ')}</div>
                     </div>
                   )}
                   
                   {result.missingBlocks.length > 0 && (
-                    <div className="bg-red-600/20 p-3 rounded-lg">
+                    <div className="bg-red-600/20 p-3 rounded-lg text-center">
                       <div className="font-semibold text-red-300 mb-2">❌ FALTAN</div>
                       <div className="text-sm">{result.missingBlocks.join(' • ')}</div>
                     </div>
