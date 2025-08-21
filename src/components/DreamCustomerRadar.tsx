@@ -112,6 +112,14 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
     };
   }, [realProspects]);
 
+  // Mapeo de bloques a preguntas en español
+  const blockToQuestion = {
+    WHO: "¿Quién es tu cliente ideal?",
+    WHERE: "¿Qué recursos digitales consume?", 
+    BAIT: "¿Qué los atrae?",
+    RESULT: "¿Qué resultado buscan?"
+  };
+
   const analyzeICP = async () => {
     if (!icpDescription.trim()) {
       toast({
@@ -134,7 +142,9 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
 WHO (¿Quién es?): edad, género, situación actual, problema principal, ubicación geográfica
 WHERE (¿Qué recursos digitales consume?): INCLUYE cualquier mención de: influencers/cuentas que siguen (ej: @usuario), hashtags, grupos/comunidades, podcasts, blogs/websites, páginas que consumen, recursos digitales que leen/ven
 BAIT (¿Qué los atrae?): qué hook, historia, testimonio u oferta irresistible los engancharía para detenerse y prestar atención  
-RESULT (¿Qué resultado buscan?): qué transformación específica y medible quieren lograr
+RESULT (¿Qué resultado buscan?): qué transformación específica y medible quieren lograr. BUSCA frases como "resultado deseado", "objetivo", "meta", "quiere lograr", "busca", "desea", "aspira"
+
+IMPORTANTE PARA RESULT: Si el texto menciona explícitamente "resultado deseado", "El resultado deseado de mi ICP es", "quiere lograr", "objetivo", "meta", etc. entonces RESULT está COMPLETO.
 
 IMPORTANTE: Si mencionan "blogs", "páginas", "cuentas como @...", "consumen", "siguen", etc. CUENTA como WHERE completo.
 
@@ -601,7 +611,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                     {result.completedBlocks.length > 0 && (
                       <div className="bg-green-600/20 p-3 rounded-lg text-center mb-4">
                         <div className="font-semibold text-green-300 mb-2">✅ COMPLETOS</div>
-                        <div className="text-sm">{result.completedBlocks.join(' • ')}</div>
+                        <div className="text-sm">{result.completedBlocks.map(block => blockToQuestion[block] || block).join(' • ')}</div>
                       </div>
                     )}
                     
@@ -922,7 +932,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                         <div className="flex flex-wrap gap-2">
                           {result.completedBlocks.map((block) => (
                             <Badge key={block} className="bg-green-600 text-white px-3 py-1 font-bold text-sm">
-                              {block}
+                              {blockToQuestion[block] || block}
                             </Badge>
                           ))}
                         </div>
@@ -938,7 +948,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                         <div className="flex flex-wrap gap-2">
                           {result.missingBlocks.map((block) => (
                             <Badge key={block} className="bg-red-600 text-white px-3 py-1 font-bold text-sm">
-                              {block}
+                              {blockToQuestion[block] || block}
                             </Badge>
                           ))}
                         </div>
