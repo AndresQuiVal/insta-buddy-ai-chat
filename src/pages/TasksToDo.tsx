@@ -1984,10 +1984,6 @@ const TasksToDo: React.FC = () => {
           />
         </div>
 
-        {/* Espacio en blanco donde estaba la configuración de WhatsApp */}
-        <div className="mt-8 sm:mt-12" style={{ height: '120px' }}>
-          {/* Espacio reservado para mantener el layout */}
-        </div>
 
         {/* Tips generales - Notebook style */}
         <div className="mt-3 sm:mt-4">
