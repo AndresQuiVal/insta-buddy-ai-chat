@@ -281,6 +281,50 @@ serve(async (req) => {
               console.log(`🚀 Enviando DM automático por comentario`)
               
               try {
+                // 🔥 ENVIAR RESPUESTA PÚBLICA AL COMENTARIO PRIMERO
+                if (autoresponderEncontrado.public_reply_messages && autoresponderEncontrado.public_reply_messages.length > 0) {
+                  console.log('💬 Enviando respuesta pública al comentario...')
+                  
+                  // Seleccionar respuesta aleatoria
+                  const respuestaPublica = autoresponderEncontrado.public_reply_messages[
+                    Math.floor(Math.random() * autoresponderEncontrado.public_reply_messages.length)
+                  ]
+                  
+                  console.log(`📝 Respuesta pública seleccionada: "${respuestaPublica}"`)
+                  
+                  // Enviar respuesta pública (reply al comentario)
+                  const publicReplyUrl = `https://graph.instagram.com/${commentData.id}/replies`
+                  const publicReplyBody = new URLSearchParams({
+                    message: respuestaPublica
+                  })
+                  
+                  // Obtener token del usuario
+                  const { data: userToken } = await supabase
+                    .from('instagram_users')
+                    .select('access_token')
+                    .eq('instagram_user_id', entry.id)
+                    .single()
+                  
+                  if (userToken?.access_token) {
+                    const publicResponse = await fetch(publicReplyUrl, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${userToken.access_token}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                      },
+                      body: publicReplyBody
+                    })
+                    
+                    if (publicResponse.ok) {
+                      console.log('✅ Respuesta pública enviada exitosamente')
+                    } else {
+                      const errorData = await publicResponse.json()
+                      console.error('❌ Error enviando respuesta pública:', errorData)
+                    }
+                  }
+                }
+                
+                // 🔥 LUEGO ENVIAR DM PRIVADO
                 const { data: sendResult, error: sendError } = await supabase.functions.invoke('instagram-send-message', {
                   body: {
                     instagram_user_id: entry.id,
