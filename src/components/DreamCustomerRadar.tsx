@@ -611,19 +611,6 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                     </div>
                   )}
                 </div>
-
-                {result.score === 4 && result.searchKeywords.length > 0 && (
-                  <div className="bg-yellow-600/20 p-4 rounded-lg border border-yellow-500">
-                    <div className="font-bold text-yellow-300 mb-2">🔓 PALABRAS DESBLOQUEADAS</div>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {result.searchKeywords.map(keyword => (
-                        <span key={keyword} className="bg-yellow-500 text-black px-2 py-1 rounded-full text-xs font-bold">
-                          "{keyword}"
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
