@@ -14,15 +14,14 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Hower Theme - Based on #7a60ff */
     --primary: 250 100% 68%;
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 250 40% 96%;
-    --secondary-foreground: 250 100% 30%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 250 20% 95%;
-    --muted-foreground: 250 30% 50%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
     --accent: 250 100% 68%;
     --accent-foreground: 0 0% 98%;
@@ -30,32 +29,33 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 250 20% 88%;
-    --input: 250 20% 88%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
     --ring: 250 100% 68%;
 
     --radius: 0.5rem;
     
     /* Hower Brand Colors */
     --hower-primary: 250 100% 68%;
-    --hower-dark: 250 100% 30%;
+    --hower-dark: 273 100% 30%;
     --hower-light: 250 100% 81%;
-    --hower-medium: 250 98% 55%;
-    --hower-section-bg: linear-gradient(to bottom right, hsl(var(--hower-primary)) 50%, hsl(var(--background)) 50%);
-    --hower-control-button: 250 100% 68%;
-    --hower-text-primary: 250 100% 30%;
-    --hower-form-bg: 0 0% 100%;
-    --hower-form-border: 0 0% 80%;
-    --hower-input-bg: 0 0% 100%;
-    --hower-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    --hower-medium: 283 98% 55%;
+    --gradient-hower: linear-gradient(135deg, hsl(var(--hower-primary)), hsl(var(--hower-medium)));
 
     --sidebar-background: 0 0% 98%;
+
     --sidebar-foreground: 240 5.3% 26.1%;
+
     --sidebar-primary: 240 5.9% 10%;
+
     --sidebar-primary-foreground: 0 0% 98%;
+
     --sidebar-accent: 240 4.8% 95.9%;
+
     --sidebar-accent-foreground: 240 5.9% 10%;
+
     --sidebar-border: 220 13% 91%;
+
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Semantic success (pastel green) */
