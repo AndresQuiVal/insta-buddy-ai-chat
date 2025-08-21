@@ -1753,9 +1753,6 @@ const TasksToDo: React.FC = () => {
                   </div>
                 )}
                 
-                <div className="inline-block p-2 sm:p-3 bg-red-100 rounded-full mb-3 sm:mb-4">
-                  <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
-                </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-4 mb-4">
                     {isEditingListName ? (
