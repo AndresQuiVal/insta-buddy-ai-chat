@@ -131,7 +131,7 @@ const TasksToDo: React.FC = () => {
   const [expandedDailyTip, setExpandedDailyTip] = useState(false);
 
   // Estados para nombre de lista editable y frases motivacionales
-  const [listName, setListName] = useState('Mi Lista de prospección');
+  const [listName, setListName] = useState('Mi Lista de Prospectos');
   const [isEditingListName, setIsEditingListName] = useState(false);
   const [tempListName, setTempListName] = useState('');
   const [motivationalQuote, setMotivationalQuote] = useState('');
@@ -1431,7 +1431,7 @@ const TasksToDo: React.FC = () => {
               
               <div className="text-center ml-4 sm:ml-6">
                 {/* Botón para mostrar estadísticas - ARRIBA del título */}
-                <div className="mb-4">
+                <div className="mb-8">
                   <Button
                     onClick={() => setShowStats(!showStats)}
                     variant="outline"
@@ -1777,7 +1777,7 @@ const TasksToDo: React.FC = () => {
                         className="text-2xl sm:text-3xl font-poppins font-bold mb-2 text-gray-800 cursor-pointer hover:text-primary inline-flex items-center gap-2"
                         onClick={handleEditListName}
                       >
-                        🚀 {listName}
+                        {listName}
                         <Edit2 className="w-4 h-4 opacity-50" />
                       </h1>
                     )}
