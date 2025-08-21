@@ -9,7 +9,6 @@ import ProspectaTab from "@/components/ProspectaTab";
 import ContenidosViralesTab from "@/components/ContenidosViralesTab";
 import AutoresponderManager from "@/components/AutoresponderManager";
 import ProspectCRM from "@/components/ProspectCRM";
-import WebhookDebug from "@/components/WebhookDebug";
 import {
   BarChart3,
   MessageCircle,
@@ -189,8 +188,6 @@ const Index = () => {
             <ConfigPanel />
           </div>
         );
-      case "webhook-debug":
-        return <WebhookDebug />;
       default:
         return <AutoresponderManager />;
     }
@@ -259,16 +256,6 @@ const Index = () => {
               }`}
             >
               Prospecta
-            </button>
-            <button
-              onClick={() => setActiveTab("webhook-debug")}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                activeTab === "webhook-debug"
-                  ? "bg-purple-600 text-white shadow-lg"
-                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-              }`}
-            >
-              🔧 Debug Webhooks
             </button>
           </div>
         </div>
