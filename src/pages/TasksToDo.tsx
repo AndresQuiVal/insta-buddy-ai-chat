@@ -1986,7 +1986,7 @@ const TasksToDo: React.FC = () => {
 
 
         {/* Tips generales - Notebook style */}
-        <div className="mt-3 sm:mt-4">
+        <div className="mt-6 sm:mt-8">
           <div 
             className="bg-white rounded-xl shadow-lg border-l-4 border-green-400 p-4 sm:p-6 cursor-pointer hover:shadow-xl transition-shadow"
             onClick={() => setExpandedDailyTip(!expandedDailyTip)}
