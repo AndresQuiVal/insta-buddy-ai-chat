@@ -26,9 +26,10 @@ export default {
 			},
 			colors: {
 				primary: {
-					DEFAULT: '#7a60ff',
-					light: '#9c89ff',
-					dark: '#6247e0',
+					DEFAULT: 'hsl(var(--hower-primary))',
+					light: 'hsl(var(--hower-light))',
+					dark: 'hsl(var(--hower-dark))',
+					medium: 'hsl(var(--hower-medium))',
 				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -68,6 +69,16 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
+				hower: {
+					primary: 'hsl(var(--hower-primary))',
+					dark: 'hsl(var(--hower-dark))',
+					light: 'hsl(var(--hower-light))',
+					medium: 'hsl(var(--hower-medium))',
 				}
 			},
 			borderRadius: {
