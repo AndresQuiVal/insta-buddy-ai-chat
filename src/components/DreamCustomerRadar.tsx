@@ -121,7 +121,10 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
   };
 
   const analyzeICP = async () => {
+    console.log('🚀 [ICP ANÁLISIS] Iniciando análisis...');
+    
     if (!icpDescription.trim()) {
+      console.log('❌ [ICP ANÁLISIS] Descripción vacía');
       toast({
         title: "Campo requerido",
         description: "Por favor describe tu cliente ideal",
@@ -130,11 +133,14 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
       return;
     }
 
+    console.log('📝 [ICP ANÁLISIS] Descripción:', icpDescription);
     setLoading(true);
     setResult(null); // Reiniciar análisis anterior
     setAnimationStep(0);
     
     try {
+      console.log('📡 [ICP ANÁLISIS] Llamando a edge function analyze-icp...');
+      
       const { data, error } = await supabase.functions.invoke('analyze-icp', {
         body: {
           prompt: `Analiza esta descripción de cliente ideal y evalúa qué tan completa está según estos 4 bloques:
@@ -161,16 +167,42 @@ Responde en formato JSON exactamente así:
         },
       });
 
-      if (error) throw error;
+      console.log('📥 [ICP ANÁLISIS] Respuesta recibida:', { data, error });
+
+      if (error) {
+        console.error('❌ [ICP ANÁLISIS] Error en edge function:', error);
+        throw error;
+      }
+
+      if (!data) {
+        console.error('❌ [ICP ANÁLISIS] No hay datos en respuesta');
+        throw new Error('No se recibieron datos del análisis');
+      }
 
       const response = data?.response;
+      console.log('📄 [ICP ANÁLISIS] Response string:', response);
+      
       let parsedResult;
       
       try {
-        parsedResult = JSON.parse(response);
+        if (typeof response === 'string') {
+          parsedResult = JSON.parse(response);
+        } else if (typeof response === 'object') {
+          parsedResult = response;
+        } else {
+          throw new Error('Formato de respuesta inválido');
+        }
+        
+        console.log('✅ [ICP ANÁLISIS] JSON parseado:', parsedResult);
+        
+        // Validar estructura del resultado
+        if (!parsedResult || typeof parsedResult.score !== 'number') {
+          throw new Error('Estructura de respuesta inválida');
+        }
+        
       } catch (parseError) {
-        console.error('Error parsing JSON:', parseError);
-        console.log('Response that failed to parse:', response);
+        console.error('❌ [ICP ANÁLISIS] Error parsing JSON:', parseError);
+        console.log('📄 [ICP ANÁLISIS] Response que falló:', response);
         
         // Fallback: crear análisis básico si hay error de parsing
         parsedResult = {
@@ -184,13 +216,16 @@ Responde en formato JSON exactamente así:
           ],
           searchKeywords: []
         };
+        console.log('🔄 [ICP ANÁLISIS] Usando resultado fallback:', parsedResult);
       }
 
       // Animación de revelación
+      console.log('🎬 [ICP ANÁLISIS] Iniciando animaciones...');
       setAnimationStep(1);
       setTimeout(() => setAnimationStep(2), 500);
       setTimeout(() => setAnimationStep(3), 1000);
       setTimeout(() => {
+        console.log('🎯 [ICP ANÁLISIS] Estableciendo resultado final:', parsedResult);
         setResult(parsedResult);
         setAnimationStep(4);
       }, 1500);
@@ -219,13 +254,16 @@ Responde en formato JSON exactamente así:
       }
 
     } catch (error) {
-      console.error('Error analyzing ICP:', error);
+      console.error('💥 [ICP ANÁLISIS] Error general:', error);
+      
+      // Asegurar que setLoading se ejecute en el finally
       toast({
         title: "Error",
         description: "No se pudo analizar tu ICP. Intenta de nuevo.",
         variant: "destructive"
       });
     } finally {
+      console.log('🔚 [ICP ANÁLISIS] Finalizando (loading = false)');
       setLoading(false);
     }
   };
