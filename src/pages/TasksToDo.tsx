@@ -104,17 +104,6 @@ const TasksToDo: React.FC = () => {
   const [activeStatsSection, setActiveStatsSection] = useState<string | null>(null);
   const [activeInteractionTip, setActiveInteractionTip] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<CompletedTasks>({});
-  const [showWhatsAppConfig, setShowWhatsAppConfig] = useState(false);
-  const [whatsappNumber, setWhatsappNumber] = useState('');
-  const [weekSchedule, setWeekSchedule] = useState({
-    monday: { enabled: false, time: '09:00' },
-    tuesday: { enabled: false, time: '09:00' },
-    wednesday: { enabled: false, time: '09:00' },
-    thursday: { enabled: false, time: '09:00' },
-    friday: { enabled: false, time: '09:00' },
-    saturday: { enabled: false, time: '09:00' },
-    sunday: { enabled: false, time: '09:00' },
-  });
   const [activeProspectTab, setActiveProspectTab] = useState('hower');
   const [activeYesterdayTab, setActiveYesterdayTab] = useState('hower');
   const [activeWeekTab, setActiveWeekTab] = useState('hower');
@@ -2144,114 +2133,10 @@ const TasksToDo: React.FC = () => {
           />
         </div>
 
-        {/* Configuración WhatsApp */}
-        <div className="mt-8 sm:mt-12 text-center">
-          <Button
-            onClick={() => setShowWhatsAppConfig(!showWhatsAppConfig)}
-            variant="outline"
-            className="bg-gradient-to-r from-green-100 to-emerald-100 border-green-300 text-green-700 hover:from-green-200 hover:to-emerald-200 font-mono text-sm transform hover:scale-105 transition-all"
-          >
-            <Phone className="h-4 w-4 mr-2" />
-            {showWhatsAppConfig ? '📱 Ocultar configuración' : '📱 Configurar Conexión a WhatsApp'}
-          </Button>
+        {/* Espacio en blanco donde estaba la configuración de WhatsApp */}
+        <div className="mt-8 sm:mt-12" style={{ height: '120px' }}>
+          {/* Espacio reservado para mantener el layout */}
         </div>
-
-        {showWhatsAppConfig && (
-          <div className="mt-4">
-            <div 
-              className="bg-white rounded-xl shadow-lg border-l-4 border-green-400 p-4 sm:p-6"
-              style={{
-                backgroundImage: `
-                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
-                  linear-gradient(#f0fdf4 0%, #ffffff 100%)
-                `,
-                backgroundSize: '20px 1px, 100% 100%',
-                backgroundPosition: '0 20px, 0 0'
-              }}
-            >
-              <div className="text-center mb-4">
-                <div className="inline-block p-2 bg-green-100 rounded-full mb-3">
-                  <Phone className="h-6 w-6 text-green-600" />
-                </div>
-                <h2 className="text-lg font-bold text-gray-800 font-mono">
-                  📱 Configuración de WhatsApp
-                </h2>
-              </div>
-
-              {/* Número de WhatsApp */}
-              <div className="mb-6">
-                <Label htmlFor="whatsapp-number" className="text-sm font-mono font-bold text-green-800">
-                  📞 Número de WhatsApp
-                </Label>
-                <Input
-                  id="whatsapp-number"
-                  type="tel"
-                  placeholder="+1 234 567 8900"
-                  value={whatsappNumber}
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  className="mt-2"
-                />
-              </div>
-
-              {/* Horarios por día */}
-              <div>
-                <h3 className="text-sm font-mono font-bold text-green-800 mb-4">⏰ Horarios de Mensajes</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {Object.entries(weekSchedule).map(([day, config]) => {
-                    const dayNames = {
-                      monday: 'Lunes',
-                      tuesday: 'Martes', 
-                      wednesday: 'Miércoles',
-                      thursday: 'Jueves',
-                      friday: 'Viernes',
-                      saturday: 'Sábado',
-                      sunday: 'Domingo'
-                    };
-                    
-                    return (
-                      <div key={day} className="bg-gray-50 p-3 rounded-lg border">
-                        <div className="flex items-center justify-between mb-2">
-                          <Label className="text-sm font-mono font-bold">{dayNames[day as keyof typeof dayNames]}</Label>
-                          <input
-                            type="checkbox"
-                            checked={config.enabled}
-                            onChange={(e) => {
-                              setWeekSchedule(prev => ({
-                                ...prev,
-                                [day]: { ...prev[day as keyof typeof prev], enabled: e.target.checked }
-                              }));
-                            }}
-                            className="rounded"
-                          />
-                        </div>
-                        <Input
-                          type="time"
-                          value={config.time}
-                          onChange={(e) => {
-                            setWeekSchedule(prev => ({
-                              ...prev,
-                              [day]: { ...prev[day as keyof typeof prev], time: e.target.value }
-                            }));
-                          }}
-                          disabled={!config.enabled}
-                          className="text-sm"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Botón guardar */}
-              <div className="text-center mt-6">
-                <Button className="bg-green-600 hover:bg-green-700 text-white font-mono">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Guardar Configuración
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Tips generales - Notebook style */}
         <div className="mt-6 sm:mt-8">

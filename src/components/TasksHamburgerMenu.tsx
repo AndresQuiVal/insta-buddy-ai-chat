@@ -13,6 +13,7 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
   const menuItems = [
     { id: 'icp', label: 'ICP' },
     { id: 'autoresponder', label: 'Autoresponder' },
+    { id: 'whatsapp', label: 'Configurar WhatsApp' },
   ];
 
   return (
@@ -36,6 +37,8 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
             onClick={() => {
               if (item.id === 'autoresponder') {
                 navigate('/');
+              } else if (item.id === 'whatsapp') {
+                navigate('/whatsapp-config');
               } else {
                 navigate('/dream-customer-radar-guide');
               }
