@@ -774,9 +774,9 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                       <TooltipContent className="animate-scale-in bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-none shadow-2xl p-4 max-w-sm">
                         <div className="relative">
                           <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-lg blur opacity-50 animate-pulse"></div>
-                          <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
-                            🎯 <strong>WHO:</strong> Define características específicas de tu cliente ideal: edad, profesión, intereses, problemas principales
-                          </p>
+                           <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
+                             🎯 <strong>¿QUIÉN ES?:</strong> Define características específicas de tu cliente ideal: edad, profesión, intereses, problemas principales
+                           </p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -792,9 +792,9 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                       <TooltipContent className="animate-scale-in bg-gradient-to-r from-green-600 to-emerald-600 text-white border-none shadow-2xl p-4 max-w-sm">
                         <div className="relative">
                           <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-lg blur opacity-50 animate-pulse"></div>
-                          <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
-                            📍 <strong>WHERE:</strong> Identifica dónde consumen contenido: cuentas que siguen, hashtags, podcasts, blogs o comunidades
-                          </p>
+                           <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
+                             📍 <strong>¿QUÉ RECURSOS DIGITALES CONSUME?:</strong> Identifica dónde consumen contenido: cuentas que siguen, hashtags, podcasts, blogs o comunidades
+                           </p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -810,9 +810,9 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
         <TooltipContent className="animate-scale-in bg-gradient-to-r from-purple-600 to-pink-600 text-white border-none shadow-2xl p-4 max-w-sm">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg blur opacity-50 animate-pulse"></div>
-            <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
-              ✨ <strong>BAIT:</strong> ¿Qué hace que tu cliente se detenga a leer tu post? Por ejemplo: "Perdí 10 kilos en 2 meses", "Gané $5,000 extra", "Mi hija empezó a hablar a los 18 meses". Son frases que llaman la atención.
-            </p>
+             <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
+               ✨ <strong>¿QUÉ LOS ATRAE?:</strong> ¿Qué hace que tu cliente se detenga a leer tu post? Por ejemplo: "Perdí 10 kilos en 2 meses", "Gané $5,000 extra", "Mi hija empezó a hablar a los 18 meses". Son frases que llaman la atención.
+             </p>
           </div>
         </TooltipContent>
                     </Tooltip>
@@ -828,9 +828,9 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                       <TooltipContent className="animate-scale-in bg-gradient-to-r from-orange-600 to-red-600 text-white border-none shadow-2xl p-4 max-w-sm">
                         <div className="relative">
                           <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-lg blur opacity-50 animate-pulse"></div>
-                          <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
-                            🚀 <strong>RESULT:</strong> El resultado específico y medible que tu cliente quiere alcanzar o transformación que desea
-                          </p>
+                           <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
+                             🚀 <strong>¿QUÉ RESULTADO BUSCAN?:</strong> El resultado específico y medible que tu cliente quiere alcanzar o transformación que desea
+                           </p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
