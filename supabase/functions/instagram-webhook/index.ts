@@ -480,19 +480,63 @@ serve(async (req) => {
           let prospectUsername = `user_${senderId.slice(-8)}`; // Username por defecto
           
           try {
-            // Intentar obtener username del sender desde Instagram API (opcional)
-            try {
-              const instagramApiUrl = `https://graph.instagram.com/${senderId}?fields=username,name&access_token=${instagramUser.access_token}`;
-              const apiResponse = await fetch(instagramApiUrl);
-              if (apiResponse.ok) {
-                const userData = await apiResponse.json();
-                if (userData.username) {
-                  prospectUsername = userData.username;
-                  console.log(`📝 Username obtenido de Instagram API: ${prospectUsername}`);
+            // 🔍 PRIORIDAD 1: Buscar username en mensaje existente si ya existe el prospecto
+            const { data: existingProspect } = await supabase
+              .from('prospects')
+              .select('username')
+              .eq('instagram_user_id', instagramUser.id)
+              .eq('prospect_instagram_id', senderId)
+              .maybeSingle();
+            
+            if (existingProspect?.username && !existingProspect.username.startsWith('user_')) {
+              prospectUsername = existingProspect.username;
+              console.log(`✅ Username encontrado en BD existente: ${prospectUsername}`);
+            } else {
+              // 🔍 PRIORIDAD 2: Intentar obtener desde raw_data del webhook actual
+              if (messagingEvent.sender?.username) {
+                prospectUsername = messagingEvent.sender.username;
+                console.log(`✅ Username obtenido del webhook sender: ${prospectUsername}`);
+              } else {
+                // 🔍 PRIORIDAD 3: Intentar obtener username del sender desde Instagram API
+                try {
+                  console.log(`🔗 Intentando API de Instagram para ${senderId}...`);
+                  
+                  // Verificar que el token no haya expirado
+                  if (instagramUser.token_expires_at) {
+                    const tokenExpiry = new Date(instagramUser.token_expires_at);
+                    if (tokenExpiry < new Date()) {
+                      console.log('⚠️ Token de Instagram expirado, saltando API call');
+                      throw new Error('Token expirado');
+                    }
+                  }
+                  
+                  const instagramApiUrl = `https://graph.instagram.com/${senderId}?fields=username,name&access_token=${instagramUser.access_token}`;
+                  const apiResponse = await fetch(instagramApiUrl, {
+                    headers: {
+                      'User-Agent': 'Hower-Instagram-Bot/1.0'
+                    }
+                  });
+                  
+                  console.log(`📊 API Instagram response status: ${apiResponse.status}`);
+                  
+                  if (apiResponse.ok) {
+                    const userData = await apiResponse.json();
+                    console.log(`📝 API Instagram response:`, userData);
+                    
+                    if (userData.username) {
+                      prospectUsername = userData.username;
+                      console.log(`✅ Username obtenido de Instagram API: ${prospectUsername}`);
+                    } else {
+                      console.log('⚠️ API response no contiene username');
+                    }
+                  } else {
+                    const errorText = await apiResponse.text();
+                    console.log(`❌ Error API Instagram (${apiResponse.status}): ${errorText}`);
+                  }
+                } catch (apiError) {
+                  console.log('⚠️ No se pudo obtener username de Instagram API:', apiError);
                 }
               }
-            } catch (apiError) {
-              console.log('⚠️ No se pudo obtener username de Instagram API, usando fallback');
             }
 
             // Crear/actualizar prospecto usando la función de BD
