@@ -596,7 +596,11 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                 </div>
                 <div className="text-xl">{result.score}/4 bloques completos</div>
                 
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className={`mt-4 gap-4 ${
+                  result.completedBlocks.length > 0 && result.missingBlocks.length > 0 
+                    ? 'grid grid-cols-2' 
+                    : 'flex justify-center'
+                }`}>
                   {result.completedBlocks.length > 0 && (
                     <div className="bg-green-600/20 p-3 rounded-lg text-center">
                       <div className="font-semibold text-green-300 mb-2">✅ COMPLETOS</div>
