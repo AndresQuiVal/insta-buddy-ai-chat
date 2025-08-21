@@ -788,7 +788,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg blur opacity-50 animate-pulse"></div>
             <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
-              ✨ <strong>BAIT:</strong> Hooks, historias o testimonios irresistibles que captan su atención y los hace detenerse en tu contenido
+              ✨ <strong>BAIT:</strong> ¿Qué hace que tu cliente se detenga a leer tu post? Por ejemplo: "Perdí 10 kilos en 2 meses", "Gané $5,000 extra", "Mi hija empezó a hablar a los 18 meses". Son frases que llaman la atención.
             </p>
           </div>
         </TooltipContent>
