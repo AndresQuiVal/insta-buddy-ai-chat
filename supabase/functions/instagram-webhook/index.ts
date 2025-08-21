@@ -182,6 +182,144 @@ serve(async (req) => {
       console.log('📋 Entry ID:', entry.id)
       console.log('📋 Entry keys:', Object.keys(entry))
 
+      // 🔥 PROCESAR COMENTARIOS ANTES QUE MENSAJES
+      if (entry.changes && Array.isArray(entry.changes)) {
+        console.log('📝 PROCESANDO COMENTARIOS EN POSTS')
+        console.log('  - Número de cambios:', entry.changes.length)
+
+        for (const change of entry.changes) {
+          console.log('📋 Change completo:', JSON.stringify(change, null, 2))
+          
+          if (change.field === 'comments' && change.value) {
+            console.log('💬 === PROCESANDO COMENTARIO ===')
+            const commentData = change.value
+            
+            const commenterId = commentData.from?.id
+            const commenterUsername = commentData.from?.username
+            const commentText = commentData.text
+            const postId = commentData.media?.id
+            
+            console.log(`👤 Comentario de: ${commenterUsername} (${commenterId})`)
+            console.log(`📝 Texto: "${commentText}"`)
+            console.log(`📱 Post ID: ${postId}`)
+            
+            if (!commenterId || !commentText) {
+              console.log('⚠️ Datos incompletos del comentario')
+              continue
+            }
+
+            // Buscar autoresponders de comentarios
+            let autoresponderEncontrado = null
+            
+            // 1. Buscar autoresponder específico para este post
+            const { data: postAutoresponders } = await supabase
+              .from('comment_autoresponders')
+              .select('*')
+              .eq('post_id', postId)
+              .eq('is_active', true)
+            
+            if (postAutoresponders && postAutoresponders.length > 0) {
+              console.log(`🎯 Encontrados ${postAutoresponders.length} autoresponders para este post`)
+              
+              for (const ar of postAutoresponders) {
+                const textLower = commentText.toLowerCase()
+                const hasMatch = ar.keywords.some((keyword: string) => {
+                  const match = textLower.includes(keyword.toLowerCase().trim())
+                  console.log(`   "${keyword}" -> ${match ? '✅' : '❌'}`)
+                  return match
+                })
+                
+                if (hasMatch) {
+                  autoresponderEncontrado = ar
+                  console.log(`🎯 ¡Autoresponder específico activado: "${ar.name}"!`)
+                  break
+                }
+              }
+            }
+            
+            // 2. Si no hay match específico, buscar autoresponders generales
+            if (!autoresponderEncontrado) {
+              const { data: generalAutoresponders } = await supabase
+                .from('general_comment_autoresponders')
+                .select('*')
+                .eq('user_id', entry.id) // entry.id es el instagram_user_id
+                .eq('is_active', true)
+              
+              if (generalAutoresponders && generalAutoresponders.length > 0) {
+                console.log(`🌐 Encontrados ${generalAutoresponders.length} autoresponders generales`)
+                
+                for (const ar of generalAutoresponders) {
+                  // Si auto_assign_to_all_posts es true, no necesita keywords
+                  if (ar.auto_assign_to_all_posts) {
+                    // Si tiene keywords, verificar coincidencia
+                    if (ar.keywords && ar.keywords.length > 0) {
+                      const textLower = commentText.toLowerCase()
+                      const hasMatch = ar.keywords.some((keyword: string) => {
+                        const match = textLower.includes(keyword.toLowerCase().trim())
+                        console.log(`   "${keyword}" -> ${match ? '✅' : '❌'}`)
+                        return match
+                      })
+                      
+                      if (hasMatch) {
+                        autoresponderEncontrado = ar
+                        console.log(`🌐 ¡Autoresponder general activado: "${ar.name}"!`)
+                        break
+                      }
+                    } else {
+                      // Sin keywords = responde a todos los comentarios
+                      autoresponderEncontrado = ar
+                      console.log(`🌐 ¡Autoresponder general sin keywords activado: "${ar.name}"!`)
+                      break
+                    }
+                  }
+                }
+              }
+            }
+            
+            // 3. Enviar DM si encontramos autoresponder
+            if (autoresponderEncontrado) {
+              console.log(`🚀 Enviando DM automático por comentario`)
+              
+              try {
+                const { data: sendResult, error: sendError } = await supabase.functions.invoke('instagram-send-message', {
+                  body: {
+                    instagram_user_id: entry.id,
+                    recipient_id: commenterId,
+                    message_text: autoresponderEncontrado.dm_message,
+                    comment_id: commentData.id
+                  }
+                })
+                
+                if (sendError) {
+                  console.error('❌ Error enviando DM por comentario:', sendError)
+                } else {
+                  console.log('✅ DM por comentario enviado exitosamente')
+                  
+                  // Registrar en log de comentarios
+                  const { error: logError } = await supabase
+                    .from('comment_autoresponder_log')
+                    .insert({
+                      comment_autoresponder_id: autoresponderEncontrado.id,
+                      commenter_instagram_id: commenterId,
+                      comment_text: commentText,
+                      dm_message_sent: autoresponderEncontrado.dm_message,
+                      webhook_data: commentData
+                    })
+                  
+                  if (logError) {
+                    console.error('❌ Error registrando log de comentario:', logError)
+                  }
+                }
+              } catch (sendError) {
+                console.error('❌ Error enviando DM por comentario:', sendError)
+              }
+            } else {
+              console.log('🔍 No se encontraron autoresponders que coincidan con el comentario')
+            }
+          }
+        }
+      }
+
       // Procesar mensajes
       if (entry.messaging && Array.isArray(entry.messaging)) {
         console.log('📝 PROCESANDO MENSAJES DIRECTOS (FORMATO PRODUCCIÓN)')
