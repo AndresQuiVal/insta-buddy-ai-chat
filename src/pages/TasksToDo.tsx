@@ -1411,8 +1411,9 @@ const TasksToDo: React.FC = () => {
           {/* Notebook Style Header */}
           <div className="relative">
             <div 
-              className="bg-white rounded-2xl shadow-xl border-t-8 border-red-400 p-6 sm:p-8"
+              className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8"
               style={{
+                borderTopColor: '#7a60ff',
                 backgroundImage: `
                   linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
                   linear-gradient(#f9fafb 0%, #ffffff 100%)
@@ -1424,7 +1425,7 @@ const TasksToDo: React.FC = () => {
               {/* Spiral binding holes */}
               <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
                 {Array.from({length: 8}).map((_, i) => (
-                  <div key={i} className="w-3 h-3 rounded-full bg-red-400 shadow-inner" />
+                  <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
                 ))}
               </div>
               
@@ -1776,7 +1777,7 @@ const TasksToDo: React.FC = () => {
                       </div>
                     ) : (
                       <h1 
-                        className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 font-mono cursor-pointer hover:text-primary inline-flex items-center gap-2"
+                        className="text-2xl sm:text-3xl font-poppins font-bold mb-2 text-gray-800 cursor-pointer hover:text-primary inline-flex items-center gap-2"
                         onClick={handleEditListName}
                       >
                         🚀 {listName}
@@ -2308,11 +2309,8 @@ const TasksToDo: React.FC = () => {
 
         {/* Logo de Hower al final */}
         <div className="mt-8 mb-4 text-center">
-          <img
-            src="https://i.ibb.co/bMLhkc7G/Hower-logo.png"
-            alt="Hower"
-            className="w-12 h-12 rounded-2xl object-cover mx-auto opacity-70 hover:opacity-100 transition-opacity"
-          />
+          <h2 className="text-2xl font-poppins font-bold" style={{color: '#7a60ff'}}>Hower</h2>
+          <br />
           <p className="text-xs text-gray-400 mt-2 font-mono">Hecho con 💜 por Hower</p>
           
           {/* Botones de opciones */}
