@@ -1277,7 +1277,7 @@ const TasksToDo: React.FC = () => {
                          <span className="block sm:hidden">💬</span>
                          <span className="hidden sm:block">💬 DM's</span>
                        </TabsTrigger>
-                       <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
+                        <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-hsl(var(--hower-primary)) data-[state=active]:text-white whitespace-nowrap">
                          <span className="block sm:hidden">💭</span>
                          <span className="hidden sm:block">💭 Comentarios</span>
                        </TabsTrigger>
@@ -1401,8 +1401,8 @@ const TasksToDo: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+    <div className="min-h-screen">
+      <div className="main-content">
         {/* Header con menú hamburguesa */}
         <div className="mb-6 sm:mb-8 relative">
           <div className="absolute top-4 right-4 z-10">
@@ -1540,10 +1540,10 @@ const TasksToDo: React.FC = () => {
                               </div>
                               
                               <div 
-                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400"
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-hsl(var(--hower-primary))"
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
-                                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
+                                <div className="bg-hsl(var(--hower-light)) text-hsl(var(--hower-dark)) px-2 py-1 rounded-full font-bold text-sm">
                                   {stats.today.agendados}
                                 </div>
                               </div>
@@ -1603,11 +1603,11 @@ const TasksToDo: React.FC = () => {
                               )}
                               
                               <div 
-                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400 cursor-pointer hover:shadow-md transition-all"
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-hsl(var(--hower-primary)) cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-agendados' ? null : 'ayer-agendados')}
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
-                                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
+                                <div className="bg-hsl(var(--hower-light)) text-hsl(var(--hower-dark)) px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.agendados}
                                 </div>
                               </div>
@@ -1623,8 +1623,8 @@ const TasksToDo: React.FC = () => {
                         </TabsContent>
                         
                         <TabsContent value="semana" className="space-y-3">
-                          <div className="bg-gradient-to-r from-purple-50 to-white p-3 rounded-lg border border-purple-200">
-                            <h3 className="text-base font-bold text-purple-800 mb-3 font-mono">📊 Esta Semana</h3>
+                          <div className="bg-gradient-to-r from-hsl(var(--hower-light)) to-white p-3 rounded-lg border border-hsl(var(--hower-primary))">
+                            <h3 className="text-base font-bold text-hsl(var(--hower-dark)) mb-3 font-mono">📊 Esta Semana</h3>
                             
                             <div className="space-y-2">
                               <div 
@@ -1674,11 +1674,11 @@ const TasksToDo: React.FC = () => {
                               )}
                               
                               <div 
-                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400 cursor-pointer hover:shadow-md transition-all"
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-hsl(var(--hower-primary)) cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-agendados' ? null : 'semana-agendados')}
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
-                                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
+                                <div className="bg-hsl(var(--hower-light)) text-hsl(var(--hower-dark)) px-2 py-1 rounded-full font-bold text-sm">
                                   {stats.week.agendados}
                                 </div>
                               </div>
@@ -1721,9 +1721,9 @@ const TasksToDo: React.FC = () => {
                               <div className="text-2xl font-bold text-blue-600">8.7</div>
                             </div>
                             
-                            <div className="bg-white p-3 rounded-lg border-l-4 border-purple-400">
-                              <div className="text-sm font-mono font-bold text-purple-800">📋 # de Mensajes para Tener 1 Presentación</div>
-                              <div className="text-2xl font-bold text-purple-600">12.3</div>
+                            <div className="bg-white p-3 rounded-lg border-l-4 border-hsl(var(--hower-primary))">
+                              <div className="text-sm font-mono font-bold text-hsl(var(--hower-dark))">📋 # de Mensajes para Tener 1 Presentación</div>
+                              <div className="text-2xl font-bold text-hsl(var(--hower-primary))">12.3</div>
                             </div>
                             
                             <div className="bg-white p-3 rounded-lg border-l-4 border-orange-400">
@@ -1881,12 +1881,12 @@ const TasksToDo: React.FC = () => {
                   <div className="mb-4">
                     {!expandedTips['tip-pending'] ? (
                       <div 
-                        className="bg-gradient-to-r from-purple-100 via-blue-100 to-cyan-100 border-2 border-purple-300 rounded-xl p-4 cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
+                        className="bg-gradient-to-r from-hsl(var(--hower-light)) via-card to-hsl(var(--hower-light)) border-2 border-hsl(var(--hower-primary)) rounded-xl p-4 cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
                         onClick={() => setExpandedTips(prev => ({ ...prev, ['tip-pending']: !prev['tip-pending'] }))}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-purple-800 font-semibold text-sm">⚡ Hack de velocidad 3X más respuestas</span>
-                          <ChevronRight className="h-4 w-4 text-purple-600" />
+                          <span className="text-hsl(var(--hower-dark)) font-semibold text-sm">⚡ Hack de velocidad 3X más respuestas</span>
+                          <ChevronRight className="h-4 w-4 text-hsl(var(--hower-primary))" />
                         </div>
                       </div>
                     ) : (
@@ -1930,7 +1930,7 @@ const TasksToDo: React.FC = () => {
                                <span className="block sm:hidden">💬</span>
                                <span className="hidden sm:block">💬 DM's</span>
                              </TabsTrigger>
-                             <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
+                             <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-hsl(var(--hower-primary)) data-[state=active]:text-white whitespace-nowrap">
                                <span className="block sm:hidden">💭</span>
                                <span className="hidden sm:block">💭 Comentarios</span>
                              </TabsTrigger>
