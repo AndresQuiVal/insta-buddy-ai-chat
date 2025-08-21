@@ -767,9 +767,14 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                           <div className="text-xs text-purple-600">¿Qué lo atrae?</div>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">Hooks, historias o testimonios irresistibles que captan su atención y los hace detenerse</p>
-                      </TooltipContent>
+        <TooltipContent className="animate-scale-in bg-gradient-to-r from-purple-600 to-pink-600 text-white border-none shadow-2xl p-4 max-w-sm">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg blur opacity-50 animate-pulse"></div>
+            <p className="relative animate-fade-in font-semibold text-sm leading-relaxed">
+              ✨ <strong>BAIT:</strong> Hooks, historias o testimonios irresistibles que captan su atención y los hace detenerse en tu contenido
+            </p>
+          </div>
+        </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                   <div className="bg-gradient-to-r from-orange-100 to-orange-200 p-3 rounded-lg text-center border border-orange-300">
@@ -910,7 +915,35 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                     )}
                   </div>
 
-                  {/* Palabras de búsqueda (solo en Bullseye) */}
+                   {/* Sugerencias de IA prominentes cuando score no es 4 */}
+                   {result.score < 4 && result.suggestions.length > 0 && (
+                     <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 p-6 rounded-xl border-3 border-blue-400 relative overflow-hidden animate-fade-in">
+                       <div className="absolute inset-0 bg-gradient-to-r from-blue-300/20 to-indigo-300/20 animate-pulse"></div>
+                       <div className="relative">
+                         <h4 className="font-bold text-blue-800 mb-4 text-xl flex items-center gap-2">
+                           <Lightbulb className="w-6 h-6 animate-bounce" />
+                           🤖 Recomendaciones de IA para completar tu ICP:
+                         </h4>
+                         <div className="space-y-4">
+                           {result.suggestions.map((suggestion, index) => (
+                             <div key={index} className="flex gap-3 items-start bg-white/70 p-4 rounded-lg border border-blue-200 hover-scale">
+                               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0 animate-scale-in">
+                                 {index + 1}
+                               </div>
+                               <p className="text-blue-800 font-medium leading-relaxed animate-fade-in">
+                                 {suggestion}
+                               </p>
+                             </div>
+                           ))}
+                         </div>
+                         <div className="mt-4 p-3 bg-blue-100 rounded-lg border border-blue-300">
+                           <p className="text-blue-700 text-sm font-mono">
+                             💡 <strong>Tip:</strong> Agrega estos detalles a tu descripción y vuelve a analizar para mejorar tu score
+                           </p>
+                         </div>
+                       </div>
+                     </div>
+                   )}
                   {result.score === 4 && result.searchKeywords.length > 0 && (
                     <div className="bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 p-6 rounded-xl border-3 border-yellow-400 relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-yellow-300/20 to-orange-300/20 animate-pulse"></div>
