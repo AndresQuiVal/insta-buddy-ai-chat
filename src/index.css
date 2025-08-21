@@ -14,8 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Hower Primary Purple - #7a60ff */
-    --primary: 253 100% 69%;
+    --primary: 250 100% 68%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -24,7 +23,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 253 100% 69%;
+    --accent: 250 100% 68%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
@@ -32,34 +31,34 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 253 100% 69%;
+    --ring: 250 100% 68%;
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
     
-    /* Hower Brand Colors Matching Your App */
-    --hower-primary: 253 100% 69%; /* #7a60ff */
-    --hower-dark: 273 100% 30%; /* #5f0099 */
-    --hower-light: 253 100% 89%; /* lighter version */
-    --hower-medium: 253 96% 60%; /* medium version */
-    
-    /* Gradient matching your app */
-    --gradient-hower: linear-gradient(to bottom right, hsl(var(--hower-primary)) 50%, hsl(0 0% 100%) 50%);
-    --gradient-card: linear-gradient(135deg, hsl(var(--hower-primary)), hsl(var(--hower-medium)));
-    
-    /* Shadows matching your app style */
-    --shadow-hower: 0 0 10px rgba(122, 96, 255, 0.1);
-    --shadow-card: 0 5px 15px rgba(0, 0, 0, 0.1);
+    /* Hower Brand Colors */
+    --hower-primary: 250 100% 68%;
+    --hower-dark: 273 100% 30%;
+    --hower-light: 250 100% 81%;
+    --hower-medium: 283 98% 55%;
+    --gradient-hower: linear-gradient(135deg, hsl(var(--hower-primary)), hsl(var(--hower-medium)));
 
-    --sidebar-background: 253 100% 69%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 253 100% 69%;
-    --sidebar-accent: 253 100% 75%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 253 100% 75%;
-    --sidebar-ring: 253 100% 69%;
+    --sidebar-background: 0 0% 98%;
 
-    /* Success color */
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Semantic success (pastel green) */
     --success: 152 58% 52%;
     --success-foreground: 152 90% 10%;
   }
@@ -114,21 +113,6 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Poppins', sans-serif;
-  }
-  
-  /* Custom Hower UI Classes */
-  .hower-card {
-    @apply bg-white rounded-[10px] shadow-[0_0_15px_rgba(0,0,0,0.1)] p-5;
-  }
-  
-  .hower-button {
-    @apply bg-primary text-primary-foreground font-medium text-center px-4 py-2.5 rounded-[10px] border-0 cursor-pointer transition-all duration-300 hover:opacity-90;
-    font-family: 'Poppins', sans-serif;
-  }
-  
-  .hower-gradient-bg {
-    background: linear-gradient(to bottom right, hsl(var(--hower-primary)) 50%, hsl(0 0% 100%) 50%);
   }
 }
 

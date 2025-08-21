@@ -22,7 +22,7 @@ import SignupForm from "./components/SignupForm";
 import AdminTable from "./pages/AdminTable";
 import Analytics from "./pages/Analytics";
 import Prospects from "./pages/Prospects";
-import TasksToDoNewUI from "./pages/TasksToDoNewUI";
+import TasksToDo from "./pages/TasksToDo";
 import HowerLiteOnboarding from "./pages/HowerLiteOnboarding";
 import DreamCustomerRadarGuide from "./pages/DreamCustomerRadarGuide";
 import DreamCustomerRadarGame from "./pages/DreamCustomerRadarGame";
@@ -56,7 +56,7 @@ const App = () => (
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
           <Route path="/prospects" element={<Prospects />} />
           <Route path="/hower-lite-onboarding" element={<HowerLiteOnboarding />} />
-          <Route path="/tasks-to-do" element={<TasksToDoNewUI />} />
+          <Route path="/tasks-to-do" element={<TasksToDo />} />
           <Route path="/dream-customer-radar-guide" element={<DreamCustomerRadarGuide />} />
           <Route path="/dream-customer-radar" element={<DreamCustomerRadarGame />} />
           <Route path="/3-month-plan" element={<ThreeMonthPlan />} />
