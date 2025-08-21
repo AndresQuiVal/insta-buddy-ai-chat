@@ -1419,7 +1419,7 @@ const TasksToDo: React.FC = () => {
                         <TabsList className="grid w-full grid-cols-3 mb-4">
                           <TabsTrigger value="hoy" className="font-mono text-sm">Hoy</TabsTrigger>
                           <TabsTrigger value="ayer" className="font-mono text-sm">Ayer</TabsTrigger>
-                          <TabsTrigger value="semana" className="font-mono text-sm">Esta Semana</TabsTrigger>
+                          <TabsTrigger value="semana" className="font-mono text-sm">Semana</TabsTrigger>
                         </TabsList>
                         
                         <TabsContent value="hoy" className="space-y-3">
@@ -1491,7 +1491,7 @@ const TasksToDo: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-yellow-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-seguimientos' ? null : 'ayer-seguimientos')}
                               >
-                                <span className="font-mono text-sm">💬 Seguimientos hechos</span>
+                                <span className="font-mono text-sm">💬 Seguimientos</span>
                                 <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.seguimientosHechos}
                                 </div>
@@ -1532,7 +1532,7 @@ const TasksToDo: React.FC = () => {
                         
                         <TabsContent value="semana" className="space-y-3">
                           <div className="bg-gradient-to-r from-purple-50 to-white p-3 rounded-lg border border-purple-200">
-                            <h3 className="text-base font-bold text-purple-800 mb-3 font-mono">📊 Esta Semana</h3>
+                            <h3 className="text-base font-bold text-purple-800 mb-3 font-mono">📊 Semana</h3>
                             
                             <div className="space-y-2">
                               <div 
@@ -1562,7 +1562,7 @@ const TasksToDo: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-yellow-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
                               >
-                                <span className="font-mono text-sm">💬 Seguimientos hechos</span>
+                                <span className="font-mono text-sm">💬 Seguimientos</span>
                                 <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {stats.week.seguimientos}
                                 </div>
