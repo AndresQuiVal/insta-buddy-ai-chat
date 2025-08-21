@@ -1970,6 +1970,7 @@ const TasksToDo: React.FC = () => {
     </div>
 
           {/* 3. Prospectar a nuevos */}
+          <div className="mt-8 sm:mt-12">
           <TaskSection
             title="Nuevos prospectos"
             count={prospectsClassification.newProspects.dm.length + 
@@ -1982,6 +1983,7 @@ const TasksToDo: React.FC = () => {
             tip="Antes de enviar el primer mensaje, interactúa con sus posts más recientes: da like, comenta algo auténtico. Esto aumenta las posibilidades de que vean y respondan tu mensaje."
             taskType="new"
           />
+          </div>
         </div>
 
 
