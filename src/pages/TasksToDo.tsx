@@ -2353,24 +2353,11 @@ const TasksToDo: React.FC = () => {
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-center flex-1">
-                {dialogStep === 1 && "🤖 Generando mensaje IA"}
-                {dialogStep === 2 && "📱 Contactar a @" + dialogUser}
-                {dialogStep === 3 && "✅ ¡Listo!"}
-              </DialogTitle>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => {
-                  setOpenDialog(false);
-                  setInstagramOpened(false);
-                }}
-                className="h-6 w-6 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle className="text-center">
+              {dialogStep === 1 && "🤖 Generando mensaje IA"}
+              {dialogStep === 2 && "📱 Contactar a @" + dialogUser}
+              {dialogStep === 3 && "✅ ¡Listo!"}
+            </DialogTitle>
             <DialogDescription className="text-center">
               {dialogStep === 1 && "Generando mensaje personalizado con IA..."}
               {dialogStep === 2 && "Paso 1 de 2"}
@@ -2393,9 +2380,18 @@ const TasksToDo: React.FC = () => {
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                       <span className="font-medium text-sm">Mensaje generado por IA</span>
                     </div>
-                    <div className="bg-white rounded p-3 text-sm font-mono">
+                    <div className="bg-white rounded p-3 text-sm font-mono mb-3">
                       {dialogMessage}
                     </div>
+                    <Button 
+                      onClick={copyMessage} 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar mensaje
+                    </Button>
                   </div>
                   <DialogFooter>
                     <Button onClick={() => setDialogStep(2)} className="w-full">
@@ -2411,26 +2407,23 @@ const TasksToDo: React.FC = () => {
           {dialogStep === 2 && (
             <div className="space-y-4">
               <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">El mensaje está listo. Ahora abre Instagram:</p>
+                <p className="text-sm text-muted-foreground">Ahora abre Instagram y envía el mensaje:</p>
                 
-                <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
-                  <iframe
-                    src={`https://www.instagram.com/m/${dialogUser}/`}
-                    className="w-full h-64 border-0"
-                    title={`Instagram de ${dialogUser}`}
-                  />
+                <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-lg p-4 text-center">
+                  <div className="text-pink-700 font-medium mb-2">
+                    📱 Abrir conversación con @{dialogUser}
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      window.open(`https://www.instagram.com/m/${dialogUser}/`, '_blank');
+                      setInstagramOpened(true);
+                    }}
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                  >
+                    <Instagram className="h-4 w-4 mr-2" />
+                    Abrir Instagram
+                  </Button>
                 </div>
-                
-                <Button 
-                  onClick={() => {
-                    window.open(`https://www.instagram.com/m/${dialogUser}/`, '_blank');
-                    setInstagramOpened(true);
-                  }}
-                  className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
-                >
-                  <Instagram className="h-4 w-4 mr-2" />
-                  Abrir Instagram
-                </Button>
               </div>
               
               <DialogFooter>
