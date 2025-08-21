@@ -596,24 +596,22 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                 </div>
                 <div className="text-xl">{result.score}/4 bloques completos</div>
                 
-                <div className={`mt-4 gap-4 ${
-                  result.completedBlocks.length > 0 && result.missingBlocks.length > 0 
-                    ? 'grid grid-cols-2' 
-                    : 'flex justify-center'
-                }`}>
-                  {result.completedBlocks.length > 0 && (
-                    <div className="bg-green-600/20 p-3 rounded-lg text-center">
-                      <div className="font-semibold text-green-300 mb-2">✅ COMPLETOS</div>
-                      <div className="text-sm">{result.completedBlocks.join(' • ')}</div>
-                    </div>
-                  )}
-                  
-                  {result.missingBlocks.length > 0 && (
-                    <div className="bg-red-600/20 p-3 rounded-lg text-center">
-                      <div className="font-semibold text-red-300 mb-2">❌ FALTAN</div>
-                      <div className="text-sm">{result.missingBlocks.join(' • ')}</div>
-                    </div>
-                  )}
+                <div className="mt-4 flex justify-center">
+                  <div className="w-full max-w-xs">
+                    {result.completedBlocks.length > 0 && (
+                      <div className="bg-green-600/20 p-3 rounded-lg text-center mb-4">
+                        <div className="font-semibold text-green-300 mb-2">✅ COMPLETOS</div>
+                        <div className="text-sm">{result.completedBlocks.join(' • ')}</div>
+                      </div>
+                    )}
+                    
+                    {result.missingBlocks.length > 0 && (
+                      <div className="bg-red-600/20 p-3 rounded-lg text-center">
+                        <div className="font-semibold text-red-300 mb-2">❌ FALTAN</div>
+                        <div className="text-sm">{result.missingBlocks.join(' • ')}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
