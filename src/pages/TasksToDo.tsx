@@ -779,59 +779,16 @@ const TasksToDo: React.FC = () => {
   };
 
 
-  // Función mejorada para manejar cuando se envía un mensaje (guardar en BD)
+  // Función simplificada - solo para marcar que el usuario abrió Instagram pero NO tachará automáticamente
   const handleMessageSent = async (username: string, taskType: string = 'pending') => {
-    const prospect = prospects.find(p => p.userName === username);
-    if (!prospect || !currentUser) return;
-
-    console.log(`💾 [TASK-UPDATE] Marcando ${username} como completado en BD (taskType: ${taskType})...`);
+    console.log(`📱 [MANUAL-CLICK] Usuario indicó que envió mensaje a ${username} (solo registro, no se tacha automáticamente)`);
     
-    try {
-      // Actualizar en la base de datos
-      const { error } = await supabase.rpc('sync_prospect_task_status', {
-        p_instagram_user_id: currentUser.instagram_user_id,
-        p_prospect_sender_id: prospect.id,
-        p_last_message_type: 'sent', // Porque YO envié el mensaje
-        p_task_type: taskType // Pasar el taskType correcto (pending, yesterday, week, etc.)
-      });
-      
-      if (error) {
-        console.error('❌ [TASK-UPDATE] Error actualizando BD:', error);
-      } else {
-        console.log('✅ [TASK-UPDATE] Estado actualizado en BD');
-        
-        // Actualizar estado local con el taskType correcto
-        setCompletedTasks(prev => ({ ...prev, [`${taskType}-${prospect.id}`]: true }));
-        
-        // GROK: Incrementar estadística "abiertas" solo una vez por día por prospecto
-        try {
-          const { data: wasIncremented, error: contactError } = await supabase.rpc('increment_daily_prospect_contact', {
-            p_instagram_user_id: currentUser.instagram_user_id,
-            p_prospect_sender_id: prospect.id
-          });
-          
-          if (contactError) {
-            console.error('Error registrando contacto diario:', contactError);
-          } else if (wasIncremented) {
-            console.log('📊 [GROK] Primera vez contactando a este prospecto hoy - "abiertas" incrementada');
-            // Recargar estadísticas para mostrar el cambio
-            await loadStats();
-          } else {
-            console.log('📊 [GROK] Ya contacté a este prospecto hoy - NO incrementando "abiertas"');
-          }
-        } catch (error) {
-          console.error('Error en contacto diario:', error);
-        }
-        
-        toast({
-          title: "¡Prospecto contactado!",
-          description: `@${username} marcado como completado.`,
-          duration: 3000,
-        });
-      }
-    } catch (error) {
-      console.error('💥 [TASK-UPDATE] Error general:', error);
-    }
+    // Solo mostrar notificación visual - el tachado real ocurrirá cuando se detecte el webhook
+    toast({
+      title: "Registro guardado",
+      description: "El prospecto se tachará automáticamente cuando se detecte que enviaste el mensaje",
+      duration: 3000
+    });
   };
 
   const copyMessage = async () => {
