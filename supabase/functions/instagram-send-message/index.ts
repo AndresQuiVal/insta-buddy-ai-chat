@@ -301,6 +301,37 @@ serve(async (req) => {
     console.log('🆔 Message ID:', responseData.message_id)
     console.log('👤 Recipient ID:', responseData.recipient_id)
 
+    // 🔥 ACTUALIZAR TIMESTAMP DEL ÚLTIMO MENSAJE DEL DUEÑO
+    try {
+      // Primero obtener el UUID del usuario
+      const { data: instagramUser, error: userError } = await supabase
+        .from('instagram_users')
+        .select('id')
+        .eq('instagram_user_id', instagram_user_id)
+        .single()
+
+      if (userError || !instagramUser) {
+        console.error('❌ Error obteniendo UUID del usuario para actualizar timestamp:', userError)
+      } else {
+        // Determinar el recipient_id correcto (para private replies usamos comment_id)
+        const finalRecipientId = recipient_id || comment_id
+
+        const { error: timestampError } = await supabase.rpc('update_prospect_owner_message_timestamp', {
+          p_instagram_user_id: instagramUser.id,
+          p_prospect_instagram_id: finalRecipientId,
+          p_is_from_owner: true
+        })
+        
+        if (timestampError) {
+          console.error('❌ Error actualizando timestamp del último mensaje del dueño:', timestampError)
+        } else {
+          console.log('✅ Timestamp del último mensaje del dueño actualizado correctamente')
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error en actualización de timestamp:', error)
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
