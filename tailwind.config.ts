@@ -25,8 +25,15 @@ export default {
 				handwriting: ['Kalam', 'cursive'],
 			},
 			colors: {
+				// Hower Brand Colors (matching your app design)
+				'hower-primary': '#7a60ff',
+				'hower-dark': '#5f0099',
+				'hower-light': '#d2c5ff',
+				'hower-medium': '#9c89ff',
+				
 				primary: {
-					DEFAULT: '#7a60ff',
+					DEFAULT: 'hsl(var(--primary))',
+					foreground: 'hsl(var(--primary-foreground))',
 					light: '#9c89ff',
 					dark: '#6247e0',
 				},
