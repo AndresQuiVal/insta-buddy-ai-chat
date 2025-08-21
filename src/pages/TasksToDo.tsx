@@ -903,12 +903,10 @@ const TasksToDo: React.FC = () => {
 
   // Calcular tiempo estimado (10-12 segundos por prospecto, usamos 11 como promedio)
   const calculateEstimatedTime = () => {
-    const pendingCount = prospectsClassification.pendingResponses.hower.length + 
-                        prospectsClassification.pendingResponses.dm.length + 
+    const pendingCount = prospectsClassification.pendingResponses.dm.length + 
                         prospectsClassification.pendingResponses.comment.length;
     
-    const newCount = prospectsClassification.newProspects.hower.length + 
-                    prospectsClassification.newProspects.dm.length + 
+    const newCount = prospectsClassification.newProspects.dm.length + 
                     prospectsClassification.newProspects.comment.length;
     
     const totalProspects = pendingCount + newCount;
@@ -1195,49 +1193,27 @@ const TasksToDo: React.FC = () => {
                {/* Tabs para divisiones por tipo */}
                <div className="bg-white rounded-xl p-4 border border-gray-100">
                  <Tabs 
-                   value={taskType === 'yesterday' ? activeYesterdayTab : taskType === 'week' ? activeWeekTab : 'dms'} 
-                   onValueChange={(value) => {
-                     if (taskType === 'yesterday') setActiveYesterdayTab(value);
-                     else if (taskType === 'week') setActiveWeekTab(value);
-                   }} 
+                    value={taskType === 'yesterday' ? activeYesterdayTab : taskType === 'week' ? activeWeekTab : 'dms'} 
+                    onValueChange={(value) => {
+                      if (taskType === 'yesterday') setActiveYesterdayTab(value);
+                      else if (taskType === 'week') setActiveWeekTab(value);
+                      // Para otros casos, no hacemos nada ya que el valor por defecto es 'dms'
+                    }}
                    className="w-full"
                  >
                    <div className="overflow-x-auto pb-2">
-                     <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
-                       <TabsTrigger value="hower" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-blue-500 data-[state=active]:text-white whitespace-nowrap">
-                         <span className="block sm:hidden">📱</span>
-                         <span className="hidden sm:block">📱 Hower</span>
-                       </TabsTrigger>
-                       <TabsTrigger value="dms" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white whitespace-nowrap">
-                         <span className="block sm:hidden">💬</span>
-                         <span className="hidden sm:block">💬 DM's</span>
-                       </TabsTrigger>
-                       <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
-                         <span className="block sm:hidden">💭</span>
-                         <span className="hidden sm:block">💭 Comentarios</span>
-                       </TabsTrigger>
-                     </TabsList>
+                      <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
+                        <TabsTrigger value="dms" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white whitespace-nowrap">
+                          <span className="block sm:hidden">💬</span>
+                          <span className="hidden sm:block">💬 DM's</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
+                          <span className="block sm:hidden">💭</span>
+                          <span className="hidden sm:block">💭 Comentarios</span>
+                        </TabsTrigger>
+                      </TabsList>
                    </div>
                   
-                   <TabsContent value="hower" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                     {prospects.filter((_, i) => i % 4 === 0).length === 0 ? (
-                       <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                         <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                         <p className="text-sm sm:text-base">¡Excelente! No hay prospectos de Hower pendientes.</p>
-                       </div>
-                     ) : (
-                       prospects.filter((_, i) => i % 4 === 0).map((prospect) => (
-                         <div key={prospect.id} className="relative overflow-visible mb-5">
-                           <div className="absolute -top-2 -right-2 z-20">
-                             <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                               📱 Hower
-                             </Badge>
-                           </div>
-                           <ProspectCard prospect={prospect} taskType={taskType} />
-                         </div>
-                       ))
-                     )}
-                   </TabsContent>
                    
                    <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
                      {prospects.filter((_, i) => i % 4 === 1).length === 0 ? (
@@ -1748,12 +1724,11 @@ const TasksToDo: React.FC = () => {
                 <CardTitle className="flex items-center justify-between text-base sm:text-lg">
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1 cursor-pointer" onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}>
                     <span className={`${(completedTasks['section-pending'] || 
-                      [...prospectsClassification.pendingResponses.hower, 
-                       ...prospectsClassification.pendingResponses.dm, 
+                      [...prospectsClassification.pendingResponses.dm, 
                        ...prospectsClassification.pendingResponses.comment].every(p => completedTasks[`pending-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>Prospectos pendientes</span>
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
-                    <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.hower.length + prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length}</Badge>
+                    <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length}</Badge>
                     
                     {/* 🔥 BOTÓN DE DEBUG PARA REFRESCAR MANUALMENTE */}
                     <Button 
@@ -1836,41 +1811,18 @@ const TasksToDo: React.FC = () => {
                     >
                        <Tabs value="dms" onValueChange={setActiveProspectTab} className="w-full">
                          <div className="overflow-x-auto pb-2">
-                           <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
-                             <TabsTrigger value="hower" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-blue-500 data-[state=active]:text-white whitespace-nowrap">
-                               <span className="block sm:hidden">📱</span>
-                               <span className="hidden sm:block">📱 Hower</span>
-                             </TabsTrigger>
-                             <TabsTrigger value="dms" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white whitespace-nowrap">
-                               <span className="block sm:hidden">💬</span>
-                               <span className="hidden sm:block">💬 DM's</span>
-                             </TabsTrigger>
-                             <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
-                               <span className="block sm:hidden">💭</span>
-                               <span className="hidden sm:block">💭 Comentarios</span>
-                             </TabsTrigger>
-                           </TabsList>
+                            <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
+                              <TabsTrigger value="dms" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white whitespace-nowrap">
+                                <span className="block sm:hidden">💬</span>
+                                <span className="hidden sm:block">💬 DM's</span>
+                              </TabsTrigger>
+                              <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
+                                <span className="block sm:hidden">💭</span>
+                                <span className="hidden sm:block">💭 Comentarios</span>
+                              </TabsTrigger>
+                            </TabsList>
                          </div>
                         
-                        <TabsContent value="hower" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                          {prospectsClassification.pendingResponses.hower.length === 0 ? (
-                            <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                              <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                              <p className="text-sm sm:text-base">¡Excelente! No hay prospectos de Hower pendientes.</p>
-                            </div>
-                          ) : (
-                            prospectsClassification.pendingResponses.hower.map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible mb-5">
-                                <div className="absolute -top-2 -right-2 z-20">
-                                  <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                                    📱 Hower
-                                  </Badge>
-                                </div>
-                                <ProspectCard prospect={prospect} taskType="pending" />
-                              </div>
-                            ))
-                          )}
-                        </TabsContent>
                         
                         <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.dm.length === 0 ? (
@@ -1934,16 +1886,12 @@ const TasksToDo: React.FC = () => {
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
                     <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 hidden" />
                     <span className={`${(completedTasks['section-followup'] || 
-                      (prospectsClassification.noResponseYesterday.hower.length === 0 && 
-                       prospectsClassification.noResponseYesterday.dm.length === 0 && 
+                      (prospectsClassification.noResponseYesterday.dm.length === 0 && 
                        prospectsClassification.noResponseYesterday.comment.length === 0 &&
-                       prospectsClassification.noResponse7Days.hower.length === 0 && 
                        prospectsClassification.noResponse7Days.dm.length === 0 && 
                        prospectsClassification.noResponse7Days.comment.length === 0) ||
-                      [...prospectsClassification.noResponseYesterday.hower, 
-                       ...prospectsClassification.noResponseYesterday.dm, 
+                      [...prospectsClassification.noResponseYesterday.dm, 
                        ...prospectsClassification.noResponseYesterday.comment,
-                       ...prospectsClassification.noResponse7Days.hower,
                        ...prospectsClassification.noResponse7Days.dm,
                        ...prospectsClassification.noResponse7Days.comment].every(p => completedTasks[`yesterday-${p.id}`] || completedTasks[`week-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>
                       Prospectos en seguimiento
@@ -1951,10 +1899,8 @@ const TasksToDo: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     <Badge variant="secondary" className="text-xs">
-                      {prospectsClassification.noResponseYesterday.hower.length + 
-                       prospectsClassification.noResponseYesterday.dm.length + 
+                      {prospectsClassification.noResponseYesterday.dm.length + 
                        prospectsClassification.noResponseYesterday.comment.length +
-                       prospectsClassification.noResponse7Days.hower.length + 
                        prospectsClassification.noResponse7Days.dm.length + 
                        prospectsClassification.noResponse7Days.comment.length}
                     </Badge>
@@ -1970,15 +1916,13 @@ const TasksToDo: React.FC = () => {
                 {/* 2.1 No respondieron ayer */}
                 <TaskSection
                   title="No respondieron ayer"
-                  count={prospectsClassification.noResponseYesterday.hower.length + 
-                         prospectsClassification.noResponseYesterday.dm.length + 
-                         prospectsClassification.noResponseYesterday.comment.length}
+                   count={prospectsClassification.noResponseYesterday.dm.length + 
+                          prospectsClassification.noResponseYesterday.comment.length}
                   onClick={() => setActiveSection(activeSection === 'yesterday' ? null : 'yesterday')}
                   isActive={activeSection === 'yesterday'}
                   icon={Clock}
-                  prospects={[...prospectsClassification.noResponseYesterday.hower, 
-                             ...prospectsClassification.noResponseYesterday.dm, 
-                             ...prospectsClassification.noResponseYesterday.comment]}
+                   prospects={[...prospectsClassification.noResponseYesterday.dm, 
+                              ...prospectsClassification.noResponseYesterday.comment]}
                   tip={
                     <div className="space-y-3">
                       <p>Envía este mensaje por <strong>audio</strong>:</p>
@@ -1998,15 +1942,13 @@ const TasksToDo: React.FC = () => {
                 {/* 2.2 No respondieron en 7 días */}
                 <TaskSection
                   title="No respondieron en 7 días"
-                  count={prospectsClassification.noResponse7Days.hower.length + 
-                         prospectsClassification.noResponse7Days.dm.length + 
-                         prospectsClassification.noResponse7Days.comment.length}
+                   count={prospectsClassification.noResponse7Days.dm.length + 
+                          prospectsClassification.noResponse7Days.comment.length}
                   onClick={() => setActiveSection(activeSection === 'week' ? null : 'week')}
                   isActive={activeSection === 'week'}
                   icon={Calendar}
-                  prospects={[...prospectsClassification.noResponse7Days.hower,
-                             ...prospectsClassification.noResponse7Days.dm,
-                             ...prospectsClassification.noResponse7Days.comment]}
+                   prospects={[...prospectsClassification.noResponse7Days.dm,
+                              ...prospectsClassification.noResponse7Days.comment]}
                   tip={
                     <div className="space-y-3">
                       <p>Envía este mensaje por <strong>texto</strong>:</p>
@@ -2030,14 +1972,12 @@ const TasksToDo: React.FC = () => {
           {/* 3. Prospectar a nuevos */}
           <TaskSection
             title="Nuevos prospectos"
-            count={prospectsClassification.newProspects.hower.length + 
-                   prospectsClassification.newProspects.dm.length + 
+            count={prospectsClassification.newProspects.dm.length + 
                    prospectsClassification.newProspects.comment.length}
             onClick={() => setActiveSection(activeSection === 'new' ? null : 'new')}
             isActive={activeSection === 'new'}
             icon={MessageCircle}
-            prospects={[...prospectsClassification.newProspects.hower,
-                       ...prospectsClassification.newProspects.dm,
+            prospects={[...prospectsClassification.newProspects.dm,
                        ...prospectsClassification.newProspects.comment]}
             tip="Antes de enviar el primer mensaje, interactúa con sus posts más recientes: da like, comenta algo auténtico. Esto aumenta las posibilidades de que vean y respondan tu mensaje."
             taskType="new"
