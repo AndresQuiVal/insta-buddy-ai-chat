@@ -103,7 +103,7 @@
 
   body {
     @apply bg-background text-foreground font-poppins;
-    background: linear-gradient(135deg, #7a60ff 50%, white 50%);
+    background: white;
     min-height: 100vh;
     font-family: 'Poppins', sans-serif;
   }
