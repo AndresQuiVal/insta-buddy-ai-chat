@@ -26,7 +26,7 @@
     --accent: 250 100% 68%;
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 60.2%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
@@ -35,22 +35,32 @@
 
     --radius: 0.5rem;
     
-    /* Your Brand Colors */
+    /* Hower Brand Colors */
     --hower-primary: 250 100% 68%;
-    --hower-dark: 250 100% 30%;
+    --hower-dark: 273 100% 30%;
     --hower-light: 250 100% 81%;
-    --hower-medium: 250 98% 55%;
-    --success: 142 76% 73%;
-    --success-foreground: 142 90% 20%;
-    
+    --hower-medium: 283 98% 55%;
+    --gradient-hower: linear-gradient(135deg, hsl(var(--hower-primary)), hsl(var(--hower-medium)));
+
     --sidebar-background: 0 0% 98%;
+
     --sidebar-foreground: 240 5.3% 26.1%;
+
     --sidebar-primary: 240 5.9% 10%;
+
     --sidebar-primary-foreground: 0 0% 98%;
+
     --sidebar-accent: 240 4.8% 95.9%;
+
     --sidebar-accent-foreground: 240 5.9% 10%;
+
     --sidebar-border: 220 13% 91%;
+
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Semantic success (pastel green) */
+    --success: 152 58% 52%;
+    --success-foreground: 152 90% 10%;
   }
 
   .dark {
@@ -102,10 +112,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-poppins;
-    background: white;
-    min-height: 100vh;
-    font-family: 'Poppins', sans-serif;
+    @apply bg-background text-foreground;
   }
 }
 
@@ -138,25 +145,4 @@ html {
 .scroll-animate.animate-fade-in {
   opacity: 1 !important;
   transform: translateY(0) !important;
-}
-
-/* Responsive centered layout */
-.main-content {
-  @apply w-full max-w-6xl mx-auto;
-  padding-left: 300px;
-  padding-top: 100px;
-  padding-right: 2rem;
-  padding-bottom: 2rem;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding-left: 1rem;
-    padding-top: 2rem;
-    padding-right: 1rem;
-  }
-}
-
-* {
-  font-family: 'Poppins', sans-serif !important;
 }
