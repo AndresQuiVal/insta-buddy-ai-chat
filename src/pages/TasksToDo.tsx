@@ -298,10 +298,10 @@ const TasksToDo: React.FC = () => {
 
       console.log('🎨 Canvas final:', finalCanvas.width, 'x', finalCanvas.height);
 
-      // Fondo con gradiente elegante
+      // Fondo con gradiente elegante usando tokens del sistema
       const gradient = ctx.createLinearGradient(0, 0, 0, finalCanvas.height);
-      gradient.addColorStop(0, '#7a60ff'); // primary
-      gradient.addColorStop(0.3, '#9c89ff'); // primary-light
+      gradient.addColorStop(0, 'hsl(250, 100%, 68%)'); // hower-primary
+      gradient.addColorStop(0.3, 'hsl(250, 100%, 81%)'); // hower-light  
       gradient.addColorStop(1, '#ffffff');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
@@ -313,8 +313,8 @@ const TasksToDo: React.FC = () => {
       const drawContent = () => {
         // Limpiar el área del encabezado con un fondo más suave
         const headerGradient = ctx.createLinearGradient(0, 0, 0, headerHeight);
-        headerGradient.addColorStop(0, '#7a60ff');
-        headerGradient.addColorStop(1, '#9c89ff');
+        headerGradient.addColorStop(0, 'hsl(250, 100%, 68%)'); // hower-primary
+        headerGradient.addColorStop(1, 'hsl(250, 100%, 81%)'); // hower-light
         ctx.fillStyle = headerGradient;
         ctx.fillRect(0, 0, finalCanvas.width, headerHeight);
         
@@ -334,7 +334,7 @@ const TasksToDo: React.FC = () => {
           ctx.strokeRect(logoX, logoY, logoSize, logoSize);
           
           // Texto "H" como placeholder
-          ctx.fillStyle = '#7a60ff';
+          ctx.fillStyle = 'hsl(250, 100%, 68%)'; // hower-primary
           ctx.font = 'bold 24px Poppins, sans-serif';
           ctx.textAlign = 'center';
           ctx.fillText('H', logoX + logoSize/2, logoY + logoSize/2 + 8);
@@ -366,16 +366,16 @@ const TasksToDo: React.FC = () => {
         ctx.shadowBlur = 0;
         ctx.shadowOffsetY = 0;
         
-        // Pie de página elegante
+        // Pie de página elegante  
         const footerY = finalCanvas.height - footerHeight;
         const footerGradient = ctx.createLinearGradient(0, footerY, 0, finalCanvas.height);
-        footerGradient.addColorStop(0, 'rgba(122, 96, 255, 0.1)');
+        footerGradient.addColorStop(0, 'rgba(122, 96, 255, 0.1)'); // usar primary con transparencia
         footerGradient.addColorStop(1, 'rgba(122, 96, 255, 0.2)');
         ctx.fillStyle = footerGradient;
         ctx.fillRect(0, footerY, finalCanvas.width, footerHeight);
         
         // Texto del pie
-        ctx.fillStyle = '#7a60ff';
+        ctx.fillStyle = 'hsl(250, 100%, 68%)'; // hower-primary
         ctx.font = '14px Poppins, sans-serif';
         ctx.textAlign = 'center';
         const currentDate = new Date().toLocaleDateString('es-ES', { 
@@ -1401,7 +1401,14 @@ const TasksToDo: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div 
+      className="min-h-screen font-poppins"
+      style={{ 
+        background: 'var(--gradient-diagonal)', 
+        paddingLeft: '300px', 
+        paddingTop: '100px' 
+      }}
+    >
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
         <div className="mb-6 sm:mb-8 relative">
@@ -1543,7 +1550,7 @@ const TasksToDo: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400"
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
-                                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
+                                <div className="bg-hower-primary/10 text-hower-dark px-2 py-1 rounded-full font-bold text-sm">
                                   {stats.today.agendados}
                                 </div>
                               </div>
@@ -1607,7 +1614,7 @@ const TasksToDo: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-agendados' ? null : 'ayer-agendados')}
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
-                                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
+                                <div className="bg-hower-primary/10 text-hower-dark px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.agendados}
                                 </div>
                               </div>
@@ -1623,8 +1630,8 @@ const TasksToDo: React.FC = () => {
                         </TabsContent>
                         
                         <TabsContent value="semana" className="space-y-3">
-                          <div className="bg-gradient-to-r from-purple-50 to-white p-3 rounded-lg border border-purple-200">
-                            <h3 className="text-base font-bold text-purple-800 mb-3 font-mono">📊 Esta Semana</h3>
+                          <div className="bg-gradient-to-r from-hower-light/20 to-background p-3 rounded-lg border border-hower-primary/30">
+                            <h3 className="text-base font-bold text-hower-dark mb-3 font-mono">📊 Esta Semana</h3>
                             
                             <div className="space-y-2">
                               <div 
@@ -1678,7 +1685,7 @@ const TasksToDo: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-agendados' ? null : 'semana-agendados')}
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
-                                <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
+                                <div className="bg-hower-primary/10 text-hower-dark px-2 py-1 rounded-full font-bold text-sm">
                                   {stats.week.agendados}
                                 </div>
                               </div>
@@ -1721,9 +1728,9 @@ const TasksToDo: React.FC = () => {
                               <div className="text-2xl font-bold text-blue-600">8.7</div>
                             </div>
                             
-                            <div className="bg-white p-3 rounded-lg border-l-4 border-purple-400">
-                              <div className="text-sm font-mono font-bold text-purple-800">📋 # de Mensajes para Tener 1 Presentación</div>
-                              <div className="text-2xl font-bold text-purple-600">12.3</div>
+                            <div className="bg-card p-3 rounded-lg border-l-4 border-l-hower-primary">
+                              <div className="text-sm font-mono font-bold text-hower-dark">📋 # de Mensajes para Tener 1 Presentación</div>
+                              <div className="text-2xl font-bold text-hower-primary">12.3</div>
                             </div>
                             
                             <div className="bg-white p-3 rounded-lg border-l-4 border-orange-400">
@@ -1885,8 +1892,8 @@ const TasksToDo: React.FC = () => {
                         onClick={() => setExpandedTips(prev => ({ ...prev, ['tip-pending']: !prev['tip-pending'] }))}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-purple-800 font-semibold text-sm">⚡ Hack de velocidad 3X más respuestas</span>
-                          <ChevronRight className="h-4 w-4 text-purple-600" />
+                          <span className="text-hower-dark font-semibold text-sm">⚡ Hack de velocidad 3X más respuestas</span>
+                          <ChevronRight className="h-4 w-4 text-hower-primary" />
                         </div>
                       </div>
                     ) : (
