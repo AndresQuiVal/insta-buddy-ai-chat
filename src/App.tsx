@@ -22,7 +22,7 @@ import SignupForm from "./components/SignupForm";
 import AdminTable from "./pages/AdminTable";
 import Analytics from "./pages/Analytics";
 import Prospects from "./pages/Prospects";
-import TasksToDo from "./pages/TasksToDo";
+import TasksToDoNew from "./pages/TasksToDoNew";
 import HowerLiteOnboarding from "./pages/HowerLiteOnboarding";
 import DreamCustomerRadarGuide from "./pages/DreamCustomerRadarGuide";
 import DreamCustomerRadarGame from "./pages/DreamCustomerRadarGame";

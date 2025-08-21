@@ -141,14 +141,14 @@ const TasksToDoNew: React.FC = () => {
         id: prospect.id,
         userName: prospect.username,
         status: prospect.state,
-        firstContactDate: prospect.created_at || '',
-        lastContactDate: prospect.updated_at || '',
+        firstContactDate: prospect.lastMessageTime || '',
+        lastContactDate: prospect.lastMessageTime || '',
         unread: false,
         avatar: ''
       };
 
-      const firstContactDate = new Date(prospect.created_at || '');
-      const lastContactDate = new Date(prospect.updated_at || '');
+      const firstContactDate = new Date(prospect.lastMessageTime || '');
+      const lastContactDate = new Date(prospect.lastMessageTime || '');
 
       // Distribución por tipo (simulada)
       const typeIndex = Math.abs(prospect.username.charCodeAt(0)) % 4;
@@ -159,12 +159,12 @@ const TasksToDoNew: React.FC = () => {
         classification.pendingResponses[type].push(prospectData);
       }
 
-      if (prospect.state === 'pending' && lastContactDate >= yesterday) {
+      if (prospect.state === 'pending') {
         classification.noResponseYesterday[type].push(prospectData);
         classification.yesterdayFollowUps.push(prospectData);
       }
 
-      if (prospect.state === 'pending' && lastContactDate < yesterday && lastContactDate >= sevenDaysAgo) {
+      if (prospect.state === 'week') {
         classification.noResponse7Days[type].push(prospectData);
         classification.weekFollowUps.push(prospectData);
       }
