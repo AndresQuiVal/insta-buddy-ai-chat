@@ -1344,7 +1344,7 @@ const TasksToDo: React.FC = () => {
                     variant="outline"
                     className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600 font-mono text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
                   >
-                    {showStats ? '📊 Ocultar mis números' : '🚀 ¿Cómo lo hice?'}
+                    {showStats ? '📊 Ocultar mis números' : '🚀 Mis números'}
                   </Button>
                 </div>
                 
@@ -1990,7 +1990,7 @@ const TasksToDo: React.FC = () => {
         </div>
 
         {/* Tips generales - Notebook style */}
-        <div className="mt-6 sm:mt-8">
+        <div className="mt-3 sm:mt-4">
           <div 
             className="bg-white rounded-xl shadow-lg border-l-4 border-green-400 p-4 sm:p-6 cursor-pointer hover:shadow-xl transition-shadow"
             onClick={() => setExpandedDailyTip(!expandedDailyTip)}
