@@ -1929,7 +1929,7 @@ const TasksToDo: React.FC = () => {
                 boxShadow: showFollowUpSections ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
               }}
             >
-              <CardHeader className="pb-2 sm:pb-3 ml-4 sm:ml-6" onClick={() => setShowFollowUpSections(!showFollowUpSections)}>
+              <CardHeader className="pb-2 sm:pb-3" onClick={() => setShowFollowUpSections(!showFollowUpSections)}>
                 <CardTitle className="flex items-center justify-between text-base sm:text-lg">
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
                     <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 hidden" />
