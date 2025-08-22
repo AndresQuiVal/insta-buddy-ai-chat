@@ -72,9 +72,19 @@ const ThreeMonthPlan = () => {
             />
           </div>
           
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white animate-fade-in">
-            Prospecta y responde en 7 días con IA, o no pagas
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white animate-fade-in text-center">
+            CON ESTA I.A. GENERARÁS<br />
+            <span className="underline">+30 PROSPECTOS CALIFICADOS</span><br />
+            EN 5 MINUTOS
           </h1>
+          
+          <p className="text-xl text-white mb-4">
+            Sin verte como Robot..., sin sacrificar tiempo libre...
+          </p>
+          
+          <p className="text-2xl text-white mb-8">
+            y se llama <span className="text-gray-300">Hower</span>!
+          </p>
           
           <div className="mb-8 flex justify-center">
             <img 
@@ -242,10 +252,6 @@ const ThreeMonthPlan = () => {
                     <div className="flex items-start gap-3">
                       <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
                       <span>IA motivacional: te envía tips, recursos, libros y publicaciones para inspirarte y mejorar cada día.</span>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                      <span>Funciona sin necesidad de tener tu PC encendida.</span>
                     </div>
                     <div className="flex items-start gap-3">
                       <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
