@@ -98,8 +98,8 @@ const ThreeMonthPlan = () => {
               </div>
               <div>
                 <img 
-                  src="/lovable-uploads/66bc3c7e-9cc2-49c6-9d54-9b1400c0baa1.png" 
-                  alt="Hower Webinar Interface"
+                  src="https://i.ibb.co/9mWqbfmp/066500f1339c2e32cf2bd4f4cfc4f34e-8.png" 
+                  alt="HOWER WEBINAR (4)"
                   className="w-full"
                 />
               </div>
