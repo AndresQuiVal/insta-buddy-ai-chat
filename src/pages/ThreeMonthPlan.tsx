@@ -401,7 +401,7 @@ const ThreeMonthPlan = () => {
           <Card className="mt-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
             <CardContent>
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-green-800 mb-3">🚀 BONUS ULTRA SECRETO</h3>
+                <h3 className="text-2xl font-bold text-green-800 mb-3">⭐ BONUS ESPECIAL</h3>
                 <div className="flex items-center justify-center gap-3">
                   <Check className="w-6 h-6 text-green-500 flex-shrink-0" />
                   <span className="text-lg font-semibold">Rutina "5 minutos al día": Sistema de Top 1% para +30 prospectos diarios</span>
