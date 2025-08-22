@@ -78,12 +78,75 @@ const ThreeMonthPlan = () => {
         </div>
       </section>
 
-      {/* Core Offer Section */}
+      {/* Visual Offer Section */}
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">¿Qué vas a recibir?</h2>
           </div>
+          
+          {/* Visual Grid */}
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
+            {/* Column 1 */}
+            <div className="space-y-6">
+              <div className="rounded-lg overflow-hidden shadow-lg">
+                <img 
+                  src="https://i.ibb.co/mVKPrc1X/4a14a7ab1cad32287f80a1d13a37ee4e-1.gif" 
+                  alt="Hower IA Prospección Demo"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+              <div className="rounded-lg overflow-hidden shadow-lg">
+                <img 
+                  src="https://i.ibb.co/5g4ZDcQS/066500f1339c2e32cf2bd4f4cfc4f34e-1.png" 
+                  alt="Hower Webinar"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            </div>
+            
+            {/* Column 2 */}
+            <div className="space-y-6">
+              <div className="rounded-lg overflow-hidden shadow-lg">
+                <img 
+                  src="https://i.ibb.co/dwjHfmDW/cd9a51dfbf992c7a40719a8595136e61-1.gif" 
+                  alt="Hower IA Features Demo"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+              <div className="rounded-lg overflow-hidden shadow-lg">
+                <img 
+                  src="https://i.ibb.co/bM0gX9k4/c8ac4ebb891a0159e7abe2edadd85e6b-1.png" 
+                  alt="Hower Webinar Details"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            </div>
+            
+            {/* Column 3 */}
+            <div className="space-y-6">
+              <div className="rounded-lg overflow-hidden shadow-lg">
+                <img 
+                  src="https://i.ibb.co/KcNq5ssG/b4c939d7cd20e1f7418781fe1afc93b5-1.gif" 
+                  alt="Hower Automation Demo"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+              <div className="rounded-lg overflow-hidden shadow-lg">
+                <img 
+                  src="https://iili.io/3MSYzRp.png" 
+                  alt="Hower Complete System"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Core Offer Section */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
           
           <div className="space-y-12">
             {/* 1. I.A. de Prospección */}
