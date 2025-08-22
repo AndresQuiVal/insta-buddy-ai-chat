@@ -60,7 +60,7 @@ const ThreeMonthPlan = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-purple-800">
+    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-blue-900 to-purple-900">
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
@@ -80,7 +80,7 @@ const ThreeMonthPlan = () => {
             <img 
               src="https://i.ibb.co/G4q8h8v5/Copia-de-Copia-de-Copia-de-Copia-de-Copia-de-Hower-Clase-3-4.png" 
               alt="Hower IA Demo" 
-              className="w-64 h-auto object-contain rounded-lg shadow-lg"
+              className="w-96 h-auto object-contain"
             />
           </div>
         </div>
@@ -357,7 +357,7 @@ const ThreeMonthPlan = () => {
             <Badge className="mb-4 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white text-lg font-bold">
               🎁 BONUSES EXCLUSIVOS
             </Badge>
-            <h2 className="text-3xl font-bold">Además, recibes TODO esto GRATIS</h2>
+            <h2 className="text-3xl font-bold text-white">Además, recibes TODO esto GRATIS</h2>
           </div>
           
           <div className="grid md:grid-cols-2 gap-6">
@@ -448,13 +448,13 @@ const ThreeMonthPlan = () => {
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">
+            <h2 className="text-4xl font-bold mb-4 text-white">
               👇 Networkers de empresas como: 👇
             </h2>
-            <p className="text-xl font-bold text-primary mb-2">
+            <p className="text-xl font-bold text-white mb-2">
               Fuxion, 4Life, inCruises, Farmasi, Herbalife, Amway
             </p>
-            <p className="text-2xl font-bold">ya usan Hower 👇</p>
+            <p className="text-2xl font-bold text-white">ya usan Hower 👇</p>
           </div>
           
           {/* Video Testimonials */}
@@ -489,7 +489,7 @@ const ThreeMonthPlan = () => {
                         </div>
                       </div>
                     </div>
-                    <blockquote className="text-muted-foreground italic">
+                    <blockquote className="text-white italic">
                       "- {testimonial.quote}"
                     </blockquote>
                   </Card>
@@ -500,7 +500,7 @@ const ThreeMonthPlan = () => {
           
           {/* Additional Testimonial Images */}
           <div className="mt-16">
-            <h3 className="text-3xl font-bold text-center mb-8">👇 y muchos más... 👇</h3>
+            <h3 className="text-3xl font-bold text-center mb-8 text-white">👇 y muchos más... 👇</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {testimonialImages.map((image, index) => (
                 <Card key={index} className="overflow-hidden hover-scale group">
@@ -521,10 +521,10 @@ const ThreeMonthPlan = () => {
       {/* Final CTA */}
       <section className="py-16 px-4 bg-gradient-to-r from-primary/10 to-primary/5">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">
+          <h2 className="text-4xl font-bold mb-6 text-white">
             ¿Listo para transformar tu prospección?
           </h2>
-          <p className="text-xl text-muted-foreground mb-8">
+          <p className="text-xl text-white mb-8">
             Únete a cientos de networkers que ya están multiplicando sus resultados con Hower
           </p>
           
