@@ -73,7 +73,8 @@ const ThreeMonthPlan = () => {
           </div>
           
           <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white animate-fade-in text-center">
-            Genera +30 prospectos y abre conversaciones reales en 7 días con I.A. … o no pagas
+            Genera +30 prospectos y abre conversaciones reales en 7 días con I.A. …
+            <span className="text-3xl md:text-4xl block mt-2">o no pagas</span>
           </h1>
           
           <p className="text-xl text-white mb-4">
