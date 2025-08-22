@@ -60,21 +60,29 @@ const ThreeMonthPlan = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-purple-800">
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-6 flex justify-center">
             <img 
-              src="/lovable-uploads/66bc3c7e-9cc2-49c6-9d54-9b1400c0baa1.png" 
+              src="/lovable-uploads/462af5ec-4e83-402d-840d-6f6b49269ee4.png" 
               alt="Hower Logo" 
-              className="w-24 h-24 object-contain animate-bounce-in"
+              className="w-16 h-auto object-contain animate-bounce-in"
             />
           </div>
           
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent animate-fade-in">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white animate-fade-in">
             Prospecta y responde en 7 días con IA, o no pagas
           </h1>
+          
+          <div className="mb-8 flex justify-center">
+            <img 
+              src="https://i.ibb.co/G4q8h8v5/Copia-de-Copia-de-Copia-de-Copia-de-Copia-de-Hower-Clase-3-4.png" 
+              alt="Hower IA Demo" 
+              className="w-64 h-auto object-contain rounded-lg shadow-lg"
+            />
+          </div>
         </div>
       </section>
 
@@ -82,7 +90,7 @@ const ThreeMonthPlan = () => {
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">¿Qué vas a recibir?</h2>
+            <h2 className="text-4xl font-bold mb-4 text-white">TODO lo que vas a recibir es...</h2>
           </div>
           
           {/* Visual Grid - First Row */}
