@@ -454,7 +454,7 @@ const ThreeMonthPlan = () => {
                 <img 
                   src="/lovable-uploads/22c39a27-f00e-4fe7-abfd-18f76c1e1430.png" 
                   alt="3 Months Warranty" 
-                  className="w-24 h-24 object-contain"
+                  className="w-32 h-32 object-contain"
                 />
               </div>
               <CardTitle className="text-3xl font-bold text-green-800 dark:text-green-100 mb-4">✅ Garantía</CardTitle>
