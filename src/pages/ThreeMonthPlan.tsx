@@ -134,11 +134,18 @@ const ThreeMonthPlan = () => {
             {/* Column 3 */}
             <div className="space-y-4">
               <div className="flex justify-center">
-                <img 
-                  src="https://i.ibb.co/KcNq5ssG/b4c939d7cd20e1f7418781fe1afc93b5-1.gif" 
-                  alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (6)"
-                  className="w-60 h-auto"
-                />
+                <a 
+                  href="https://chat.whatsapp.com/FcaEySvfXyi6xdFnys2QB4?mode=ems_copy_t" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  <img 
+                    src="https://i.ibb.co/KcNq5ssG/b4c939d7cd20e1f7418781fe1afc93b5-1.gif" 
+                    alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (6)"
+                    className="w-60 h-auto"
+                  />
+                </a>
               </div>
               <div className="flex justify-center">
                 <img 
@@ -155,11 +162,18 @@ const ThreeMonthPlan = () => {
             {/* Column 1 */}
             <div className="space-y-4">
               <div className="flex justify-center">
-                <img 
-                  src="https://iili.io/3MSZEzb.gif" 
-                  alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (7)"
-                  className="w-60 h-auto"
-                />
+                <a 
+                  href="https://www.howersoftware.io/clients/blog/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  <img 
+                    src="https://iili.io/3MSZEzb.gif" 
+                    alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (7)"
+                    className="w-60 h-auto"
+                  />
+                </a>
               </div>
               <div className="flex justify-center">
                 <img 
