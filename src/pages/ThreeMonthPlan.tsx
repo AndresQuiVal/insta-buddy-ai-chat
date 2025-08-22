@@ -82,7 +82,7 @@ const ThreeMonthPlan = () => {
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">🌐 Oferta Base (Núcleo)</h2>
+            <h2 className="text-4xl font-bold mb-4">¿Qué vas a recibir?</h2>
           </div>
           
           <div className="space-y-12">
