@@ -425,6 +425,13 @@ const ThreeMonthPlan = () => {
         <div className="max-w-4xl mx-auto">
           <Card className="p-8 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
             <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <img 
+                  src="/lovable-uploads/22c39a27-f00e-4fe7-abfd-18f76c1e1430.png" 
+                  alt="3 Months Warranty" 
+                  className="w-24 h-24 object-contain"
+                />
+              </div>
               <CardTitle className="text-3xl font-bold text-green-800 dark:text-green-100 mb-4">✅ Garantía</CardTitle>
               <CardDescription className="text-lg text-green-700 dark:text-green-200">
                 Estamos tan seguros de lo que obtendrás que:
@@ -433,11 +440,11 @@ const ThreeMonthPlan = () => {
             <CardContent className="space-y-4">
               <div className="flex items-start gap-3">
                 <Check className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                <span className="text-lg">Si no consigues una respuesta en 7 días, tienes Full Money Back Guarantee.</span>
+                <span className="text-lg text-green-800 dark:text-green-200">Si no consigues una respuesta en 7 días, tienes Full Money Back Guarantee.</span>
               </div>
               <div className="flex items-start gap-3">
                 <Check className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                <span className="text-lg">Además, te damos 3 meses gratuitos de software con acceso a todos los bonuses.</span>
+                <span className="text-lg text-green-800 dark:text-green-200">Además, te damos 3 meses gratuitos de software con acceso a todos los bonuses.</span>
               </div>
             </CardContent>
           </Card>
@@ -489,7 +496,7 @@ const ThreeMonthPlan = () => {
                         </div>
                       </div>
                     </div>
-                    <blockquote className="text-white italic">
+                    <blockquote className="text-gray-700 italic">
                       "- {testimonial.quote}"
                     </blockquote>
                   </Card>
