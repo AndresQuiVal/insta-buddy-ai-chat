@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Check, Search, MessageSquare, Phone, Smartphone, Bot, Users, ArrowRight, Star } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { Check, MessageSquare, Users, BookOpen, Gift, Shield, ArrowRight } from 'lucide-react';
 
 const ThreeMonthPlan = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,110 +10,6 @@ const ThreeMonthPlan = () => {
   const handleGetPlan = () => {
     window.open('https://buy.stripe.com/bJe6oG9gYbJA2eV9p63wQ0A', '_blank');
   };
-
-  const features = [
-    {
-      icon: <Search className="w-6 h-6" />,
-      title: "600 Créditos de Buscador",
-      description: "Búsquedas mensuales para encontrar cuentas y posts para prospectar",
-      details: "Esto se refiere a 600 búsquedas dentro de nuestra funcionalidad de buscar cuentas para prospectar con Hower. Dentro de Hower tenemos una funcionalidad para buscar cuentas para prospectar, esta funcionalidad te permitirá encontrar cuentas o posts para prospectar con la herramienta. Recordando que Hower prospecta a los seguidores de una cuenta X, o a las personas que comentaron un post Y."
-    },
-    {
-      icon: <MessageSquare className="w-6 h-6" />,
-      title: "800 Créditos de Hower Mensajes IA",
-      description: "Mensajes de prospección generados por IA mensualmente",
-      details: "Esto se refiere a la cantidad de mensajes que te genera la I.A. de prospección al mes, básicamente te permite generar hasta 800 mensajes de prospección al mes personalizados y optimizados para cada prospecto."
-    },
-    {
-      icon: <Smartphone className="w-6 h-6" />,
-      title: "Notificador WhatsApp",
-      description: "2 veces por semana con recomendaciones y estadísticas",
-      details: "Esto se refiere al notificador de WhatsApp que te va a estar notificando: 1. Cuentas recomendadas que puedes prospectar con Hower, 2. Posts recomendados que puedes prospectar con Hower, 3. Tus estadísticas: cuántos prospectos has contactado, cuántos tienes en seguimiento, cuántos no te han contestado, etc."
-    },
-    {
-      icon: <Phone className="w-6 h-6" />,
-      title: "1 Llamada Exclusiva con Enfoque",
-      description: "Asesoría personalizada de 45-60 minutos",
-      details: "La idea es mejorar tu marca personal, tus mensajes de prospección y tus seguimientos en una asesoría de 45 minutos a 1 hora. Asimismo, al finalizar la llamada te llevarás una estrategia que puedes empezar a implementar dentro de tu prospección inmediatamente."
-    }
-  ];
-
-  const bonusSoftware = [
-    {
-      icon: <Smartphone className="w-6 h-6" />,
-      logo: "/lovable-uploads/501a7468-bc0e-4181-8324-d84d1fd86b82.png",
-      title: "Hower WhatsApp",
-      description: "Sistema de prospección por WhatsApp",
-      details: "Un sistema que te ayudará a prospectar a un listado de tus contactos por WhatsApp de manera automatizada y eficiente."
-    },
-    {
-      icon: <Bot className="w-6 h-6" />,
-      logo: "/lovable-uploads/601a3443-9a71-43c3-acf1-453f17030650.png",
-      title: "Hower Assistant",
-      description: "Automatización tipo Manychat para Instagram",
-      details: "Un software tipo Manychat que te permitirá automatizar tu Instagram en una máquina de ventas, gestionando respuestas automáticas y flujos de conversación."
-    },
-    {
-      icon: <Users className="w-6 h-6" />,
-      logo: "/lovable-uploads/5b837d31-1b44-46b8-8d4c-5c747e6f94d1.png",
-      title: "Hower LITE",
-      description: "Centralización y gestión de prospectos",
-      details: "Un software que te permitirá centralizar tus prospectos dentro de un apartado y ver los prospectos que tienes pendiente por contestar, prospectos en seguimiento, prospectos nuevos, así como tus números de prospección: cuántas personas contactas, cuántas agendas, etc."
-    },
-    {
-      icon: <Search className="w-6 h-6" />,
-      logo: "/lovable-uploads/1b715cc3-a572-4ded-9d7d-428ae8f396d6.png",
-      title: "Hower Cliente Ideal",
-      description: "Encuentra cuentas y publicaciones para prospectar",
-      details: "Este software está diseñado para encontrar cuentas para prospectar y publicaciones específicas donde puedes aplicar tu estrategia de prospección de manera más efectiva y dirigida."
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "Noemi",
-      quote: "soy mamá, emprendo un negocio, y esta I.A. me ha cambiado la vida",
-      video: "hs4dh7si13",
-      image: "https://iili.io/3MhMget.png"
-    },
-    {
-      name: "Deisy",
-      quote: "ya NO pierdo 2 o 3 horas prospectando en frio, ahora la I.A. lo hace por mi, mientras yo paso tiempo con mis hijos",
-      video: "wmbuq3prqd",
-      image: "https://iili.io/3MhEsun.png"
-    },
-    {
-      name: "Pedro",
-      quote: "tengo un retorno increible de contactos... y todo gracias a esta I.A.",
-      video: "ip41h9ax0x",
-      image: "https://iili.io/3MhEsun.png"
-    },
-    {
-      name: "Elisa",
-      quote: "tengo un retorno increible de contactos... y todo gracias a esta I.A.",
-      video: "hpx53mcnod",
-      image: "https://iili.io/3MhGPKQ.png"
-    },
-    {
-      name: "Luisa",
-      quote: "estoy teniendo llamadas todos los días gracias a la I.A.",
-      video: "r9deud5rs0",
-      image: "https://iili.io/3MhGPKQ.png"
-    }
-  ];
-
-  const testimonialImages = [
-    "https://i.ibb.co/fdBgbQrW/63b516ddd517da655ffb5362a71ae209-7.jpg",
-    "https://i.ibb.co/Xx4dpMHw/6ae7cf04523bb72ff4f1d311d2ce7d6c-5.jpg",
-    "https://iili.io/3MXDwMu.md.jpg",
-    "https://iili.io/3MXDN6b.md.jpg",
-    "https://iili.io/3MhHeKF.jpg",
-    "https://iili.io/3MhHkcg.jpg",
-    "https://iili.io/3MhHNP1.jpg",
-    "https://iili.io/3MhKCMl.jpg",
-    "https://iili.io/3MhKnP2.jpg",
-    "https://iili.io/3MhKBn4.jpg"
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
@@ -130,253 +23,237 @@ const ThreeMonthPlan = () => {
               className="w-24 h-24 object-contain animate-bounce-in"
             />
           </div>
-          <Badge className="mb-6 px-6 py-2 text-lg animate-pulse-glow">
-            Plan Más Popular 🔥
-          </Badge>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent animate-fade-in">
-            Plan 3 Meses
+          <h1 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent animate-fade-in">
+            Prospecta y responde en 7 días con IA, o no pagas
           </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-fade-in">
-            La solución completa para revolucionar tu prospección con IA y multiplicar tus resultados
-          </p>
+        </div>
+      </section>
+
+      {/* Oferta Base */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">🌐 Oferta Base (Núcleo)</h2>
+          </div>
           
-          <Card className="p-8 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 animate-scale-in">
-            <div className="text-center mb-8">
-              <div className="text-6xl font-bold text-primary mb-2">$88</div>
-              <div className="text-muted-foreground">Pago único por 3 meses</div>
-            </div>
-            
-            <Button 
-              onClick={handleGetPlan}
-              disabled={isLoading}
-              size="lg"
-              className="w-full text-lg py-6 animate-bounce-in hover-scale"
-            >
-              {isLoading ? "Procesando..." : "Obtener Plan 3 Meses"}
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
+          <Card className="p-8 mb-12 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+            <CardHeader className="text-center pb-6">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <MessageSquare className="w-8 h-8 text-primary" />
+                <CardTitle className="text-3xl">1. Hower Prospector</CardTitle>
+              </div>
+              <CardDescription className="text-lg">
+                La herramienta de prospección inteligente de Hower que pone tu negocio en piloto automático. Incluye:
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Mensajes ilimitados al mes con IA.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Lista de cuentas o publicaciones de tu nicho directo a tu WhatsApp cada 2 días, seleccionadas por la IA.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Buscador inteligente de cuentas o publicaciones para prospectar en tu nicho con IA.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>IA de seguimiento: sugerencias de mensajes cuando no sabes qué responder a tus prospectos.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>IA de prospección: genera mensajes adaptados a tu nicho para captar más respuestas.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>IA motivacional: te envía tips, recursos, libros y publicaciones para inspirarte y mejorar cada día.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Funciona sin necesidad de tener tu PC encendida.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Segmentación por ubicación.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Optimizado para PCs lentas (no necesitas una máquina potente).</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Comunidad de Hower */}
+          <Card className="p-8 mb-12 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
+            <CardHeader className="text-center pb-6">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <Users className="w-8 h-8 text-blue-600" />
+                <CardTitle className="text-3xl">2. Comunidad de Hower</CardTitle>
+              </div>
+              <CardDescription className="text-lg">
+                Accede a la comunidad privada de WhatsApp con más de 250 networkers de empresas como Fusion, Forlife, Oriflame, InCruises, NuSkin, Doterra, y muchas más.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Grupos separados por empresa (ejemplo: grupo exclusivo para miembros de Fusion).</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Llamadas semanales en vivo con tips de prospección, entrenamientos de uso del software, actualizaciones y estrategias de otros networkers que podrás copiar y pegar.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Libros y accesos exclusivos a networkers del top 1%, como Curtis Harding, Mijail Milet y más.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Tips diarios por correo con estrategias prácticas de prospección usando Hower.</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Academia de Hower */}
+          <Card className="p-8 mb-12 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
+            <CardHeader className="text-center pb-6">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <BookOpen className="w-8 h-8 text-purple-600" />
+                <CardTitle className="text-3xl">3. Academia de Hower</CardTitle>
+              </div>
+              <CardDescription className="text-lg">
+                Acceso a la plataforma con formación práctica enfocada en escalar tu prospección:
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Curso de Marca Personal por Curtis Harding (top 1% de Doterra).</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Curso de Mensajes de Prospección efectivos con Hower.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Curso de Seguimientos: qué responder a tus prospectos cuando te llegan.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <span>Grabaciones completas de llamadas de Hower con entrenamientos pasados y actualizaciones.</span>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-4">¿Qué incluye tu plan?</h2>
-          <p className="text-xl text-muted-foreground text-center mb-12">
-            Todo lo que necesitas para dominar la prospección con IA
-          </p>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            {features.map((feature, index) => (
-              <Dialog key={index}>
-                <DialogTrigger asChild>
-                  <Card className="p-6 hover:shadow-lg transition-all cursor-pointer hover-scale animate-fade-in group">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                          {feature.icon}
-                        </div>
-                        <div>
-                          <CardTitle className="text-xl">{feature.title}</CardTitle>
-                          <CardDescription className="text-base mt-1">
-                            {feature.description}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <Button variant="ghost" size="sm" className="p-0 h-auto font-normal text-primary hover:text-primary/80">
-                        Ver detalles completos →
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-primary/10 rounded-lg text-primary">
-                        {feature.icon}
-                      </div>
-                      <DialogTitle className="text-2xl">{feature.title}</DialogTitle>
-                    </div>
-                    <DialogDescription className="text-base leading-relaxed">
-                      {feature.details}
-                    </DialogDescription>
-                  </DialogHeader>
-                </DialogContent>
-              </Dialog>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Bonus Section */}
+      {/* Bonuses Exclusivos */}
       <section className="py-16 px-4 bg-muted/30">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <Badge className="mb-4 px-4 py-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-              BONUS EXCLUSIVOS 🎁
+            <Badge className="mb-4 px-4 py-2 bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100">
+              🎁 Bonuses Exclusivos
             </Badge>
-            <h2 className="text-4xl font-bold mb-4">4 Software Adicionales</h2>
-            <p className="text-xl text-muted-foreground">
-              Valor adicional de más de $800 - ¡GRATIS con tu plan!
-            </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {bonusSoftware.map((bonus, index) => (
-              <Dialog key={index}>
-                <DialogTrigger asChild>
-                  <Card className="p-6 hover:shadow-lg transition-all cursor-pointer hover-scale animate-fade-in group">
-                    <CardHeader className="text-center pb-4">
-                      <div className="mx-auto p-4 bg-green-100 rounded-full text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors w-fit">
-                        {bonus.icon}
-                      </div>
-                      <CardTitle className="text-xl">{bonus.title}</CardTitle>
-                      <CardDescription className="text-base">
-                        {bonus.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                      <Button variant="ghost" size="sm" className="p-0 h-auto font-normal text-green-600 hover:text-green-500">
-                        Ver más detalles →
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <div className="text-center mb-6">
-                       <div className="flex justify-center mb-4">
-                         <div className="w-48 h-48 flex items-center justify-center">
-                           <img 
-                             src={bonus.logo} 
-                             alt={bonus.title}
-                             className="max-w-full max-h-full object-contain rounded-2xl"
-                           />
-                         </div>
-                       </div>
-                      <DialogTitle className="text-3xl">{bonus.title}</DialogTitle>
-                    </div>
-                    <DialogDescription className="text-base leading-relaxed">
-                      {bonus.details}
-                    </DialogDescription>
-                  </DialogHeader>
-                </DialogContent>
-              </Dialog>
-            ))}
-          </div>
+          <Card className="p-8">
+            <CardContent className="space-y-6">
+              <div className="flex items-start gap-3">
+                <Gift className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <span>50+ Plantillas de mensajes de prospección creadas por Mijail Milet, adaptadas a tu nicho y probadas por networkers que ya obtuvieron respuestas con Hower.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Gift className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <span>Guía paso a paso de 9 pasos para prospectar y agendar llamadas con Hower (probada por networkers nuevos y sin experiencia).</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Gift className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <div>
+                  <strong>Llamada exclusiva de introducción (25–45 minutos):</strong>
+                  <ul className="ml-4 mt-2 space-y-1">
+                    <li>• Configuración completa de Hower para tu negocio.</li>
+                    <li>• Estrategia probada de prospección para tu empresa.</li>
+                    <li>• Tips prácticos para maximizar resultados desde el día 1.</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Gift className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <span>Guía Anti-Baneos en Instagram y cómo aumentar progresivamente el volumen de mensajes de prospección de forma segura.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Gift className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <span>Grabación privada con Mijail Milet sobre cómo conseguir mejores prospectos en Instagram con Hower.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Gift className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <span>Grabación privada con Mijail sobre cómo construir una Marca Personal de top 1% en network marketing.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Gift className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <span>Guía en PDF + video con los 3 pasos para tener una biografía de Instagram magnética que atrae prospectos.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Gift className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <span>Lista de objeciones comunes + IA entrenada para ayudarte a resolverlas en tus seguimientos.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Gift className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
+                <span>Rutina exclusiva "5 minutos al día": el sistema que usan los top 1% networkers con Hower para generar +30 prospectos diarios.</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Garantía */}
       <section className="py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">
-              👇 Networkers de empresas como: 👇
-            </h2>
-            <p className="text-xl font-bold text-primary mb-2">
-              Fuxion, 4Life, inCruises, Farmasi, Herbalife, Amway
-            </p>
-            <p className="text-2xl font-bold">ya usan Hower 👇</p>
-          </div>
-          
-          {/* Video Testimonials */}
-          <div className="space-y-12">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className={`flex flex-col lg:flex-row gap-8 items-center ${index % 2 === 0 ? '' : 'lg:flex-row-reverse'}`}>
-                <div className="flex-1">
-                  <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-                    <iframe
-                      src={`//fast.wistia.net/embed/iframe/${testimonial.video}?autoplay=0&wmode=transparent`}
-                      title={`Testimonio de ${testimonial.name}`}
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-                <div className="flex-1 lg:max-w-md">
-                  <Card className="p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                      <img 
-                        src={testimonial.image} 
-                        alt={testimonial.name}
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                      <div>
-                        <h3 className="font-bold text-lg">- {testimonial.name}</h3>
-                        <div className="flex text-yellow-400">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="w-4 h-4 fill-current" />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <blockquote className="text-muted-foreground italic">
-                      "- {testimonial.quote}"
-                    </blockquote>
-                  </Card>
-                </div>
+        <div className="max-w-4xl mx-auto">
+          <Card className="p-8 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
+            <CardHeader className="text-center pb-6">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <Shield className="w-8 h-8 text-green-600" />
+                <CardTitle className="text-3xl">✅ Garantía</CardTitle>
               </div>
-            ))}
-          </div>
-          
-          {/* Additional Testimonial Images */}
-          <div className="mt-16">
-            <h3 className="text-3xl font-bold text-center mb-8">👇 y muchos más... 👇</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {testimonialImages.map((image, index) => (
-                <Card key={index} className="overflow-hidden hover-scale group">
-                  <div className="aspect-[4/5] overflow-hidden">
-                    <img 
-                      src={image} 
-                      alt={`Testimonio ${index + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
+              <CardDescription className="text-lg">
+                Estamos tan seguros de lo que obtendrás que:
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                <span className="text-lg">Si no consigues una respuesta en 7 días, tienes Full Money Back Guarantee.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                <span className="text-lg">Además, te damos 3 meses gratuitos de software con acceso a todos los bonuses.</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       {/* Final CTA */}
       <section className="py-16 px-4 bg-gradient-to-r from-primary/10 to-primary/5">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">
-            ¿Listo para transformar tu prospección?
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Únete a cientos de networkers que ya están multiplicando sus resultados con Hower
-          </p>
-          
-          <Card className="p-8 bg-white/50 backdrop-blur-sm">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="text-left">
-                <div className="text-4xl font-bold text-primary mb-2">$88</div>
-                <div className="text-muted-foreground">
-                  Pago único • 3 meses completos
-                </div>
-                <div className="text-sm text-green-600 font-medium mt-1">
-                  + $800 en software bonus GRATIS
-                </div>
-              </div>
-              
-              <Button 
-                onClick={handleGetPlan}
-                disabled={isLoading}
-                size="lg"
-                className="text-lg py-6 px-8 animate-pulse-glow hover-scale"
-              >
-                {isLoading ? "Procesando..." : "Obtener Plan Ahora"}
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </div>
-          </Card>
+          <Button 
+            onClick={handleGetPlan}
+            disabled={isLoading}
+            size="lg"
+            className="text-2xl py-8 px-12 animate-pulse-glow hover-scale"
+          >
+            {isLoading ? "Procesando..." : "OBTENER ACCESO AHORA"}
+            <ArrowRight className="ml-3 w-6 h-6" />
+          </Button>
         </div>
       </section>
     </div>
