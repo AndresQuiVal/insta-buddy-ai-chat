@@ -471,6 +471,9 @@ const ThreeMonthPlan = () => {
                 <Check className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
                 <span className="text-lg text-green-800 dark:text-green-200">Además, te damos 3 meses gratuitos de software con acceso a todos los bonuses.</span>
               </div>
+              <div className="text-center mt-6">
+                <p className="text-sm text-green-700 dark:text-green-300 italic">(aplican condiciones)</p>
+              </div>
             </CardContent>
           </Card>
         </div>
