@@ -86,10 +86,10 @@ const ThreeMonthPlan = () => {
           </div>
           
           <div className="space-y-12">
-            {/* 1. Hower Prospector */}
+            {/* 1. I.A. de Prospección */}
             <Card className="p-8 hover:shadow-lg transition-all animate-fade-in">
               <CardHeader>
-                <CardTitle className="text-3xl font-bold text-primary mb-4">1. Hower Prospector</CardTitle>
+                <CardTitle className="text-3xl font-bold text-primary mb-4">1. I.A. de Prospección</CardTitle>
                 <CardDescription className="text-lg mb-6">
                   La herramienta de prospección inteligente de Hower que pone tu negocio en piloto automático. Incluye:
                 </CardDescription>
