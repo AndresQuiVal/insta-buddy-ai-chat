@@ -94,89 +94,89 @@ const ThreeMonthPlan = () => {
           </div>
           
           {/* Visual Grid - First Row */}
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
             {/* Column 1 */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
                 <img 
                   src="https://i.ibb.co/mVKPrc1X/4a14a7ab1cad32287f80a1d13a37ee4e-1.gif" 
                   alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (5)"
-                  className="w-full"
+                  className="w-full max-w-xs mx-auto"
                 />
               </div>
               <div>
                 <img 
                   src="https://i.ibb.co/9mWqbfmp/066500f1339c2e32cf2bd4f4cfc4f34e-8.png" 
                   alt="HOWER WEBINAR (4)"
-                  className="w-full"
+                  className="w-full max-w-xs mx-auto"
                 />
               </div>
             </div>
             
             {/* Column 2 */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
                 <img 
                   src="https://i.ibb.co/dwjHfmDW/cd9a51dfbf992c7a40719a8595136e61-1.gif" 
                   alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (1)"
-                  className="w-full"
+                  className="w-full max-w-xs mx-auto"
                 />
               </div>
               <div>
                 <img 
                   src="https://i.ibb.co/bM0gX9k4/c8ac4ebb891a0159e7abe2edadd85e6b-1.png" 
                   alt="HOWER WEBINAR"
-                  className="w-full"
+                  className="w-full max-w-xs mx-auto"
                 />
               </div>
             </div>
             
             {/* Column 3 */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
                 <img 
                   src="https://i.ibb.co/KcNq5ssG/b4c939d7cd20e1f7418781fe1afc93b5-1.gif" 
                   alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (6)"
-                  className="w-full"
+                  className="w-full max-w-xs mx-auto"
                 />
               </div>
               <div>
                 <img 
                   src="https://iili.io/3MSYzRp.png" 
                   alt="HOWER WEBINAR (3)"
-                  className="w-full"
+                  className="w-full max-w-xs mx-auto"
                 />
               </div>
             </div>
           </div>
 
           {/* Visual Grid - Second Row */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
             {/* Column 1 */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
                 <img 
                   src="https://iili.io/3MSZEzb.gif" 
                   alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (7)"
-                  className="w-full"
+                  className="w-full max-w-xs mx-auto"
                 />
               </div>
               <div>
                 <img 
                   src="https://i.ibb.co/xq8pLNRm/8da90b8e332ae59cff6d04ee8b141756-1.png" 
                   alt="HOWER WEBINAR"
-                  className="w-full"
+                  className="w-full max-w-xs mx-auto"
                 />
               </div>
             </div>
             
             {/* Column 2 */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Empty column to maintain layout */}
             </div>
             
             {/* Column 3 */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Empty column to maintain layout */}
             </div>
           </div>
