@@ -68,7 +68,7 @@ const ThreeMonthPlan = () => {
             <img 
               src="/lovable-uploads/462af5ec-4e83-402d-840d-6f6b49269ee4.png" 
               alt="Hower Logo" 
-              className="w-16 h-auto object-contain animate-bounce-in"
+              className="w-20 h-auto object-contain animate-bounce-in"
             />
           </div>
           
