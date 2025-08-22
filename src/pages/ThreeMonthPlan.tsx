@@ -98,8 +98,8 @@ const ThreeMonthPlan = () => {
               </div>
               <div>
                 <img 
-                  src="https://i.ibb.co/5g4ZDcQS/066500f1339c2e32cf2bd4f4cfc4f34e-1.png" 
-                  alt="HOWER WEBINAR (4)"
+                  src="/lovable-uploads/66bc3c7e-9cc2-49c6-9d54-9b1400c0baa1.png" 
+                  alt="Hower Webinar Interface"
                   className="w-full"
                 />
               </div>
@@ -346,98 +346,66 @@ const ThreeMonthPlan = () => {
       <section className="py-16 px-4 bg-muted/30">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <Badge className="mb-4 px-4 py-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-              🎁 Bonuses Exclusivos
+            <Badge className="mb-4 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white text-lg font-bold">
+              🎁 BONUSES EXCLUSIVOS
             </Badge>
+            <h2 className="text-3xl font-bold">Además, recibes TODO esto GRATIS</h2>
           </div>
           
-          <Card className="p-8">
-            <CardContent className="space-y-4">
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                <span>
-                  50+ Plantillas de mensajes de prospección creadas por{' '}
-                  <a 
-                    href="https://www.instagram.com/p/DIu5fZqtqFi/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-                  >
-                    Mihail Millet
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                  , adaptadas a tu nicho y probadas por networkers que ya obtuvieron respuestas con Hower.
-                </span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                <span>Guía paso a paso de 9 pasos para prospectar y agendar llamadas con Hower (probada por networkers nuevos y sin experiencia).</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                <span>Llamada exclusiva de introducción (25–45 minutos):</span>
-              </div>
-              <div className="ml-8 space-y-2">
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
+              <CardContent className="space-y-4">
+                <h3 className="text-xl font-bold text-orange-800 mb-4">📝 Recursos Pro</h3>
                 <div className="flex items-start gap-3">
-                  <Check className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>Configuración completa de Hower para tu negocio.</span>
+                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                  <span className="font-medium">50+ Plantillas de Mihail Millet probadas en el mercado</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Check className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>Estrategia probada de prospección para tu empresa.</span>
+                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                  <span className="font-medium">Guía 9 pasos para agendar llamadas (infalible)</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Check className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>Tips prácticos para maximizar resultados desde el día 1.</span>
+                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                  <span className="font-medium">Guía Anti-Baneos Instagram</span>
                 </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                <span>Guía Anti-Baneos en Instagram y cómo aumentar progresivamente el volumen de mensajes de prospección de forma segura.</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                <span>
-                  Grabación privada con{' '}
-                  <a 
-                    href="https://www.instagram.com/p/DIu5fZqtqFi/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-                  >
-                    Mihail Millet
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                  {' '}sobre cómo conseguir mejores prospectos en Instagram con Hower.
-                </span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                <span>
-                  Grabación privada con{' '}
-                  <a 
-                    href="https://www.instagram.com/p/DIu5fZqtqFi/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-                  >
-                    Mihail
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                  {' '}sobre cómo construir una Marca Personal de top 1% en network marketing.
-                </span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                <span>Guía en PDF + video con los 3 pasos para tener una biografía de Instagram magnética que atrae prospectos.</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                <span>Lista de objeciones comunes + IA entrenada para ayudarte a resolverlas en tus seguimientos.</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                <span>Rutina exclusiva "5 minutos al día": el sistema que usan los top 1% networkers con Hower para generar +30 prospectos diarios.</span>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                  <span className="font-medium">PDF + Video: Bio magnética que atrae prospectos</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+              <CardContent className="space-y-4">
+                <h3 className="text-xl font-bold text-blue-800 mb-4">🎯 Sesiones Exclusivas</h3>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                  <span className="font-medium">Llamada 1-a-1 de configuración completa (45 min)</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                  <span className="font-medium">Masterclass con Mihail: Mejores prospectos Instagram</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                  <span className="font-medium">Masterclass: Marca Personal de Top 1%</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                  <span className="font-medium">Lista de objeciones + IA para resolverlas</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="mt-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <CardContent>
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-green-800 mb-3">🚀 BONUS ULTRA SECRETO</h3>
+                <div className="flex items-center justify-center gap-3">
+                  <Check className="w-6 h-6 text-green-500 flex-shrink-0" />
+                  <span className="text-lg font-semibold">Rutina "5 minutos al día": Sistema de Top 1% para +30 prospectos diarios</span>
+                </div>
               </div>
             </CardContent>
           </Card>
