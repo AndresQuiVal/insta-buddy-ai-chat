@@ -180,6 +180,10 @@ const ThreeMonthPlan = () => {
               {/* Empty column to maintain layout */}
             </div>
           </div>
+
+          <div className="text-center mb-16">
+            <h3 className="text-3xl font-bold text-white">y MUCHO más...</h3>
+          </div>
         </div>
       </section>
 
