@@ -101,14 +101,14 @@ const ThreeMonthPlan = () => {
                 <img 
                   src="https://i.ibb.co/mVKPrc1X/4a14a7ab1cad32287f80a1d13a37ee4e-1.gif" 
                   alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (5)"
-                  className="w-60 h-auto"
+                  className="w-72 h-auto"
                 />
               </div>
               <div className="flex justify-center">
                 <img 
                   src="https://i.ibb.co/9mWqbfmp/066500f1339c2e32cf2bd4f4cfc4f34e-8.png" 
                   alt="HOWER WEBINAR (4)"
-                  className="w-60 h-auto"
+                  className="w-72 h-auto"
                 />
               </div>
             </div>
@@ -119,14 +119,14 @@ const ThreeMonthPlan = () => {
                 <img 
                   src="https://i.ibb.co/dwjHfmDW/cd9a51dfbf992c7a40719a8595136e61-1.gif" 
                   alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (1)"
-                  className="w-60 h-auto"
+                  className="w-72 h-auto"
                 />
               </div>
               <div className="flex justify-center">
                 <img 
                   src="https://i.ibb.co/bM0gX9k4/c8ac4ebb891a0159e7abe2edadd85e6b-1.png" 
                   alt="HOWER WEBINAR"
-                  className="w-60 h-auto"
+                  className="w-72 h-auto"
                 />
               </div>
             </div>
@@ -143,7 +143,7 @@ const ThreeMonthPlan = () => {
                   <img 
                     src="https://i.ibb.co/KcNq5ssG/b4c939d7cd20e1f7418781fe1afc93b5-1.gif" 
                     alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (6)"
-                    className="w-60 h-auto"
+                    className="w-72 h-auto"
                   />
                 </a>
               </div>
@@ -151,7 +151,7 @@ const ThreeMonthPlan = () => {
                 <img 
                   src="https://iili.io/3MSYzRp.png" 
                   alt="HOWER WEBINAR (3)"
-                  className="w-60 h-auto"
+                  className="w-72 h-auto"
                 />
               </div>
             </div>
@@ -171,7 +171,7 @@ const ThreeMonthPlan = () => {
                   <img 
                     src="https://iili.io/3MSZEzb.gif" 
                     alt="Copia de Copia de Copia de Copia de Hower - Clase 3 (7)"
-                    className="w-60 h-auto"
+                    className="w-72 h-auto"
                   />
                 </a>
               </div>
@@ -179,7 +179,7 @@ const ThreeMonthPlan = () => {
                 <img 
                   src="https://i.ibb.co/xq8pLNRm/8da90b8e332ae59cff6d04ee8b141756-1.png" 
                   alt="HOWER WEBINAR"
-                  className="w-60 h-auto"
+                  className="w-72 h-auto"
                 />
               </div>
             </div>
