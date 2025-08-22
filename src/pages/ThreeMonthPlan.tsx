@@ -76,6 +76,7 @@ const ThreeMonthPlan = () => {
             CON ESTA I.A. GENERARÁS<br />
             <span className="underline">+30 PROSPECTOS CALIFICADOS</span><br />
             EN 5 MINUTOS
+            <span className="text-3xl md:text-4xl block mt-2">(o no pagas)</span>
           </h1>
           
           <p className="text-xl text-white mb-4">
@@ -83,7 +84,7 @@ const ThreeMonthPlan = () => {
           </p>
           
           <p className="text-2xl text-white mb-8">
-            y se llama <span className="text-gray-300">Hower</span>!
+            y se llama <span className="text-blue-200">Hower</span>!
           </p>
           
           <div className="mb-8 flex justify-center">
