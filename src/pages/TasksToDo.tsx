@@ -818,6 +818,17 @@ const TasksToDo: React.FC = () => {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+    // 🔥 DEBUG ESPECÍFICO PARA estamosprobando1231
+    const debugProspect = realProspects.find(p => p.username === 'estamosprobando1231');
+    if (debugProspect) {
+      console.log('🎯 [DEBUG] estamosprobando1231 en realProspects:', {
+        state: debugProspect.state,
+        source: debugProspect.source,
+        username: debugProspect.username,
+        senderId: debugProspect.senderId
+      });
+    }
+
     // 🔥 NUEVA LÓGICA: Usar los estados del hook useProspects
     
     // Prospectos pendientes: state === 'pending' (separados por fuente)
@@ -834,12 +845,40 @@ const TasksToDo: React.FC = () => {
       comment: realProspects.filter(p => p.state === 'yesterday' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
+    // 🔥 DEBUG PARA yesterday
+    const yesterdayFiltered = realProspects.filter(p => p.state === 'yesterday');
+    console.log('🔍 [DEBUG] Prospectos con state=yesterday:', yesterdayFiltered.map(p => ({
+      username: p.username,
+      state: p.state,
+      source: p.source
+    })));
+
     // Prospectos que no respondieron en 7 días: state === 'week' (separados por fuente)
     const noResponse7Days = {
       hower: realProspects.filter(p => p.state === 'week' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
       dm: realProspects.filter(p => p.state === 'week' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
       comment: realProspects.filter(p => p.state === 'week' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
+
+    // 🔥 DEBUG PARA week
+    const weekFiltered = realProspects.filter(p => p.state === 'week');
+    console.log('🔍 [DEBUG] Prospectos con state=week:', weekFiltered.map(p => ({
+      username: p.username,
+      state: p.state,
+      source: p.source
+    })));
+
+    // 🔥 DEBUG FINAL
+    console.log('🔍 [DEBUG] noResponseYesterday totales:', {
+      dm: noResponseYesterday.dm.length,
+      comment: noResponseYesterday.comment.length,
+      hower: noResponseYesterday.hower.length
+    });
+    console.log('🔍 [DEBUG] noResponse7Days totales:', {
+      dm: noResponse7Days.dm.length,
+      comment: noResponse7Days.comment.length,
+      hower: noResponse7Days.hower.length
+    });
 
     // Prospectos nuevos: nunca contactados (separados por fuente)
     const newProspects = {
