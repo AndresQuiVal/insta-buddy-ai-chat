@@ -1254,65 +1254,90 @@ const TasksToDo: React.FC = () => {
                    </div>
                   
                    
-                   <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                     {prospects.filter((_, i) => i % 4 === 1).length === 0 ? (
-                       <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                         <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                         <p className="text-sm sm:text-base">¡Excelente! No hay DM's pendientes.</p>
-                       </div>
-                     ) : (
-                       prospects.filter((_, i) => i % 4 === 1).map((prospect) => (
-                         <div key={prospect.id} className="relative overflow-visible mb-5">
-                           <div className="absolute -top-2 -right-2 z-20">
-                             <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                               💬 DM's
-                             </Badge>
-                           </div>
-                           <ProspectCard prospect={prospect} taskType={taskType} />
-                         </div>
-                       ))
-                     )}
-                   </TabsContent>
+                    <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                      {(() => {
+                        // Obtener prospectos de DM según el tipo de tarea
+                        let dmProspects = [];
+                        if (taskType === 'yesterday') {
+                          dmProspects = prospectsClassification.noResponseYesterday.dm;
+                        } else if (taskType === 'week') {
+                          dmProspects = prospectsClassification.noResponse7Days.dm;
+                        } else if (taskType === 'pending') {
+                          dmProspects = prospectsClassification.pendingResponses.dm;
+                        } else if (taskType === 'new') {
+                          dmProspects = prospectsClassification.newProspects.dm;
+                        } else {
+                          dmProspects = prospects.filter((_, i) => i % 4 === 1); // Fallback para otros casos
+                        }
+                        
+                        return dmProspects.length === 0 ? (
+                          <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                            <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                            <p className="text-sm sm:text-base">¡Excelente! No hay DM's en seguimiento.</p>
+                          </div>
+                        ) : (
+                          dmProspects.map((prospect) => (
+                            <div key={prospect.id} className="relative overflow-visible mb-5">
+                              <div className="absolute -top-2 -right-2 z-20">
+                                <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
+                                  💬 DM's
+                                </Badge>
+                              </div>
+                              <ProspectCard prospect={prospect} taskType={taskType} />
+                            </div>
+                          ))
+                        );
+                      })()}
+                    </TabsContent>
+                    
+                    <TabsContent value="comments" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                      {(() => {
+                        // Obtener prospectos de Comentarios según el tipo de tarea
+                        let commentProspects = [];
+                        if (taskType === 'yesterday') {
+                          commentProspects = prospectsClassification.noResponseYesterday.comment;
+                        } else if (taskType === 'week') {
+                          commentProspects = prospectsClassification.noResponse7Days.comment;
+                        } else if (taskType === 'pending') {
+                          commentProspects = prospectsClassification.pendingResponses.comment;
+                        } else if (taskType === 'new') {
+                          commentProspects = prospectsClassification.newProspects.comment;
+                        } else {
+                          commentProspects = prospects.filter((_, i) => i % 4 === 2); // Fallback para otros casos
+                        }
+                        
+                        return commentProspects.length === 0 ? (
+                          <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                            <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                            <p className="text-sm sm:text-base">¡Excelente! No hay comentarios en seguimiento.</p>
+                          </div>
+                        ) : (
+                          commentProspects.map((prospect) => (
+                            <div key={prospect.id} className="relative overflow-visible mb-5">
+                              <div className="absolute -top-2 -right-2 z-20">
+                                <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
+                                  💭 Comentarios
+                                </Badge>
+                              </div>
+                              <ProspectCard prospect={prospect} taskType={taskType} />
+                            </div>
+                          ))
+                        );
+                      })()}
+                    </TabsContent>
                    
-                   <TabsContent value="comments" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                     {prospects.filter((_, i) => i % 4 === 2).length === 0 ? (
-                       <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                         <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                         <p className="text-sm sm:text-base">¡Excelente! No hay comentarios pendientes.</p>
-                       </div>
-                     ) : (
-                       prospects.filter((_, i) => i % 4 === 2).map((prospect) => (
-                         <div key={prospect.id} className="relative overflow-visible mb-5">
-                           <div className="absolute -top-2 -right-2 z-20">
-                             <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                               💭 Comentarios
-                             </Badge>
-                           </div>
-                           <ProspectCard prospect={prospect} taskType={taskType} />
-                         </div>
-                       ))
-                     )}
-                   </TabsContent>
-                   
-                   <TabsContent value="ads" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                     {prospects.filter((_, i) => i % 4 === 3).length === 0 ? (
-                       <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                         <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                         <p className="text-sm sm:text-base">¡Excelente! No hay anuncios pendientes.</p>
-                       </div>
-                     ) : (
-                       prospects.filter((_, i) => i % 4 === 3).map((prospect) => (
-                         <div key={prospect.id} className="relative overflow-visible mb-5">
-                           <div className="absolute -top-2 -right-2 z-20">
-                             <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                               📢 Anuncios
-                             </Badge>
-                           </div>
-                           <ProspectCard prospect={prospect} taskType={taskType} />
-                         </div>
-                       ))
-                     )}
-                   </TabsContent>
+                    <TabsContent value="ads" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                      {(() => {
+                        // Los anuncios están incluidos en la clasificación de DMs
+                        // Por ahora mostramos mensaje vacío ya que se manejan junto con DMs
+                        return (
+                          <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                            <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                            <p className="text-sm sm:text-base">Los anuncios se muestran en la tab de DM's.</p>
+                          </div>
+                        );
+                      })()}
+                    </TabsContent>
                  </Tabs>
                </div>
             </CardContent>
