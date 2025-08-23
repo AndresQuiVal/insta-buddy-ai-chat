@@ -1552,11 +1552,11 @@ const TasksToDo: React.FC = () => {
                               )}
                               
                               <div 
-                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-yellow-400 cursor-pointer hover:shadow-md transition-all"
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-seguimientos' ? null : 'ayer-seguimientos')}
                               >
-                                <span className="font-mono text-sm">💬 Seguimientos</span>
-                                <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold text-sm">
+                                <span className="font-mono text-sm">🔄 Seguimientos</span>
+                                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.seguimientosHechos}
                                 </div>
                               </div>
