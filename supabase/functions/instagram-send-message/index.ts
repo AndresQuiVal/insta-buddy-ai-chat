@@ -301,7 +301,7 @@ serve(async (req) => {
     console.log('🆔 Message ID:', responseData.message_id)
     console.log('👤 Recipient ID:', responseData.recipient_id)
 
-    // 🔥 ACTUALIZAR TIMESTAMP DEL ÚLTIMO MENSAJE DEL DUEÑO
+    // 🔥 ACTUALIZAR TIMESTAMP Y MÉTRICAS DIARIAS
     try {
       // Primero obtener el UUID del usuario
       const { data: instagramUser, error: userError } = await supabase
@@ -316,6 +316,7 @@ serve(async (req) => {
         // Determinar el recipient_id correcto (para private replies usamos comment_id)
         const finalRecipientId = recipient_id || comment_id
 
+        // 1. Actualizar timestamp del último mensaje del dueño
         const { error: timestampError } = await supabase.rpc('update_prospect_owner_message_timestamp', {
           p_instagram_user_id: instagramUser.id,
           p_prospect_instagram_id: finalRecipientId,
@@ -327,9 +328,26 @@ serve(async (req) => {
         } else {
           console.log('✅ Timestamp del último mensaje del dueño actualizado correctamente')
         }
+
+        // 2. 📊 INCREMENTAR MÉTRICAS DIARIAS (Abiertas/Seguimientos)
+        try {
+          const { data: contactResult, error: contactError } = await supabase.rpc('increment_daily_prospect_contact', {
+            p_instagram_user_id: instagram_user_id,  // Tu instagram user ID
+            p_prospect_sender_id: finalRecipientId   // El prospecto al que le escribes
+          })
+          
+          if (contactError) {
+            console.error('❌ Error incrementando métricas de contacto diario:', contactError)
+          } else {
+            console.log('✅ Métricas de contacto diario actualizadas:', contactResult)
+            console.log('📊 Se incrementaron las métricas según el estado del prospecto (Abiertas/Seguimientos)')
+          }
+        } catch (error) {
+          console.error('❌ Error en RPC increment_daily_prospect_contact:', error)
+        }
       }
     } catch (error) {
-      console.error('❌ Error en actualización de timestamp:', error)
+      console.error('❌ Error en actualización de timestamp y métricas:', error)
     }
 
     return new Response(
