@@ -1361,6 +1361,12 @@ export type Database = {
         Args: { user_instagram_id: string }
         Returns: undefined
       }
+      sync_prospect_last_owner_message_at: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          updated_count: number
+        }[]
+      }
       sync_prospect_task_status: {
         Args: {
           p_instagram_user_id: string
