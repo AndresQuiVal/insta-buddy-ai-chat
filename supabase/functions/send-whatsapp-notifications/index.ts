@@ -170,28 +170,57 @@ serve(async (req) => {
     
     console.log(`Current day: ${currentDay}, time: ${currentTime}, hour: ${currentHour}, minute: ${currentMinute}`);
     
-    // Get all users who should receive notifications at this time
-    const { data: scheduledNotifications, error: scheduleError } = await supabase
+    // Get all scheduled notifications for today
+    const { data: scheduleData, error: scheduleError } = await supabase
       .from('whatsapp_schedule_days')
-      .select(`
-        instagram_user_id,
-        notification_time,
-        whatsapp_notification_settings!inner(
-          whatsapp_number,
-          enabled
-        )
-      `)
+      .select('instagram_user_id, notification_time')
       .eq('day_of_week', currentDay)
-      .eq('enabled', true)
-      .eq('whatsapp_notification_settings.enabled', true);
+      .eq('enabled', true);
     
     if (scheduleError) {
-      console.error('Error getting scheduled notifications:', scheduleError);
+      console.error('Error getting scheduled days:', scheduleError);
       return new Response(
-        JSON.stringify({ error: "Error al obtener notificaciones programadas" }),
+        JSON.stringify({ error: "Error al obtener días programados" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    // Get WhatsApp settings for these users
+    const userIds = scheduleData?.map(s => s.instagram_user_id) || [];
+    
+    if (userIds.length === 0) {
+      console.log("No hay usuarios programados para este día y hora");
+      return new Response(
+        JSON.stringify({ message: "No hay usuarios programados" }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('whatsapp_notification_settings')
+      .select('instagram_user_id, whatsapp_number, enabled')
+      .in('instagram_user_id', userIds)
+      .eq('enabled', true);
+    
+    if (settingsError) {
+      console.error('Error getting WhatsApp settings:', settingsError);
+      return new Response(
+        JSON.stringify({ error: "Error al obtener configuraciones de WhatsApp" }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Combine schedule and settings data
+    const scheduledNotifications = scheduleData.filter(schedule => {
+      const settings = settingsData?.find(s => s.instagram_user_id === schedule.instagram_user_id);
+      return settings && settings.enabled;
+    }).map(schedule => {
+      const settings = settingsData.find(s => s.instagram_user_id === schedule.instagram_user_id);
+      return {
+        ...schedule,
+        whatsapp_notification_settings: settings
+      };
+    });
     
     if (!scheduledNotifications || scheduledNotifications.length === 0) {
       console.log("No hay notificaciones programadas para este momento");
