@@ -1219,6 +1219,7 @@ export type Database = {
           notification_time: string
           timezone: string
           updated_at: string
+          whatsapp_number: string | null
         }
         Insert: {
           created_at?: string
@@ -1229,6 +1230,7 @@ export type Database = {
           notification_time?: string
           timezone?: string
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Update: {
           created_at?: string
@@ -1238,6 +1240,37 @@ export type Database = {
           notification_days?: number[]
           notification_time?: string
           timezone?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_schedule_days: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          enabled: boolean
+          id: string
+          instagram_user_id: string
+          notification_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          enabled?: boolean
+          id?: string
+          instagram_user_id: string
+          notification_time?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          enabled?: boolean
+          id?: string
+          instagram_user_id?: string
+          notification_time?: string
           updated_at?: string
         }
         Relationships: []

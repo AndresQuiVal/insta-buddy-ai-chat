@@ -84,31 +84,30 @@ const WhatsAppConfig: React.FC = () => {
       if (settingsError) {
         console.error('Error loading WhatsApp settings:', settingsError);
       } else if (settings) {
-        // @ts-ignore - Table will exist after migration
         setWhatsappNumber(settings.whatsapp_number || '');
       }
       
-      // Load schedule days - temporarily disabled until migration
-      // const { data: scheduleDays, error: scheduleError } = await supabase
-      //   .from('whatsapp_schedule_days')
-      //   .select('*')
-      //   .eq('instagram_user_id', instagramUserId);
+      // Load schedule days
+      const { data: scheduleDays, error: scheduleError } = await supabase
+        .from('whatsapp_schedule_days')
+        .select('*')
+        .eq('instagram_user_id', instagramUserId);
         
-      // if (scheduleError) {
-      //   console.error('Error loading schedule:', scheduleError);
-      // } else if (scheduleDays && scheduleDays.length > 0) {
-      //   const newSchedule = { ...weekSchedule };
-      //   scheduleDays.forEach(day => {
-      //     const dayName = getDayName(day.day_of_week);
-      //     if (dayName) {
-      //       newSchedule[dayName as keyof typeof newSchedule] = {
-      //         enabled: day.enabled,
-      //         time: day.notification_time.substring(0, 5) // HH:MM format
-      //       };
-      //     }
-      //   });
-      //   setWeekSchedule(newSchedule);
-      // }
+      if (scheduleError) {
+        console.error('Error loading schedule:', scheduleError);
+      } else if (scheduleDays && scheduleDays.length > 0) {
+        const newSchedule = { ...weekSchedule };
+        scheduleDays.forEach(day => {
+          const dayName = getDayName(day.day_of_week);
+          if (dayName) {
+            newSchedule[dayName as keyof typeof newSchedule] = {
+              enabled: day.enabled,
+              time: day.notification_time.substring(0, 5) // HH:MM format
+            };
+          }
+        });
+        setWeekSchedule(newSchedule);
+      }
       
     } catch (error) {
       console.error('Error loading configuration:', error);
@@ -177,7 +176,6 @@ const WhatsAppConfig: React.FC = () => {
         .from('whatsapp_notification_settings')
         .upsert({
           instagram_user_id: instagramUserId,
-          // @ts-ignore - Column will exist after migration
           whatsapp_number: whatsappNumber.trim(),
           enabled: true,
           notification_time: '09:00:00',
@@ -195,38 +193,37 @@ const WhatsAppConfig: React.FC = () => {
         return;
       }
       
-      // Schedule days saving temporarily disabled until migration
       // Delete existing schedule days for this user
-      // await supabase
-      //   .from('whatsapp_schedule_days')
-      //   .delete()
-      //   .eq('instagram_user_id', instagramUserId);
+      await supabase
+        .from('whatsapp_schedule_days')
+        .delete()
+        .eq('instagram_user_id', instagramUserId);
       
       // Save new schedule days
-      // const scheduleDaysToInsert = Object.entries(weekSchedule)
-      //   .filter(([, config]) => config.enabled)
-      //   .map(([dayName, config]) => ({
-      //     instagram_user_id: instagramUserId,
-      //     day_of_week: getDayOfWeek(dayName),
-      //     enabled: true,
-      //     notification_time: `${config.time}:00`
-      //   }));
+      const scheduleDaysToInsert = Object.entries(weekSchedule)
+        .filter(([, config]) => config.enabled)
+        .map(([dayName, config]) => ({
+          instagram_user_id: instagramUserId,
+          day_of_week: getDayOfWeek(dayName),
+          enabled: true,
+          notification_time: `${config.time}:00`
+        }));
       
-      // if (scheduleDaysToInsert.length > 0) {
-      //   const { error: scheduleError } = await supabase
-      //     .from('whatsapp_schedule_days')
-      //     .insert(scheduleDaysToInsert);
+      if (scheduleDaysToInsert.length > 0) {
+        const { error: scheduleError } = await supabase
+          .from('whatsapp_schedule_days')
+          .insert(scheduleDaysToInsert);
           
-      //   if (scheduleError) {
-      //     console.error('Error saving schedule:', scheduleError);
-      //     toast({
-      //       title: "Error",
-      //       description: "Error al guardar los horarios",
-      //       variant: "destructive"
-      //     });
-      //     return;
-      //   }
-      // }
+        if (scheduleError) {
+          console.error('Error saving schedule:', scheduleError);
+          toast({
+            title: "Error",
+            description: "Error al guardar los horarios",
+            variant: "destructive"
+          });
+          return;
+        }
+      }
       
       toast({
         title: "✅ Configuración guardada",
