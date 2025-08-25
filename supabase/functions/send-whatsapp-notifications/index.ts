@@ -36,7 +36,15 @@ async function getWhatsAppConnectionId(): Promise<string | null> {
     const response = await fetch(`${API_URL}/whatsapps`, { headers });
     
     if (!response.ok) {
-      console.error("❌ Error obteniendo conexiones:", await response.text());
+      const errorText = await response.text();
+      console.error("❌ Error obteniendo conexiones:", errorText);
+      // Try to parse error message
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error("❌ Error obteniendo conexiones:", errorJson);
+      } catch {
+        console.error("❌ Error response not JSON:", errorText);
+      }
       return null;
     }
     
@@ -161,14 +169,15 @@ serve(async (req) => {
       );
     }
     
-    // Get current time info
-    const now = new Date();
+    // Get current time info IN MEXICO TIME ZONE
+    const mexicoTime = new Date().toLocaleString("en-US", {timeZone: "America/Mexico_City"});
+    const now = new Date(mexicoTime);
     const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const currentTime = now.toTimeString().substring(0, 5); // HH:MM format
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     
-    console.log(`Current day: ${currentDay}, time: ${currentTime}, hour: ${currentHour}, minute: ${currentMinute}`);
+    console.log(`Current day (Mexico): ${currentDay}, time (Mexico): ${currentTime}, hour: ${currentHour}, minute: ${currentMinute}`);
     
     // Get all scheduled notifications for today
     const { data: scheduleData, error: scheduleError } = await supabase
