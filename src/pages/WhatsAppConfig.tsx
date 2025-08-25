@@ -44,8 +44,8 @@ const WhatsAppConfig: React.FC = () => {
     try {
       setLoading(true);
       
-      // Get current Instagram user
-      const instagramUserData = localStorage.getItem('instagramUser');
+      // Get current Instagram user - usar la clave correcta
+      const instagramUserData = localStorage.getItem('hower-instagram-user');
       if (!instagramUserData) {
         toast({
           title: "Error",
@@ -57,7 +57,22 @@ const WhatsAppConfig: React.FC = () => {
       }
       
       const instagramUser = JSON.parse(instagramUserData);
-      const instagramUserId = instagramUser.instagram_user_id;
+      console.log('Instagram user data:', instagramUser);
+      
+      // Obtener el instagram_user_id de la estructura correcta
+      const instagramUserId = instagramUser.instagram?.id || instagramUser.facebook?.id;
+      
+      if (!instagramUserId) {
+        toast({
+          title: "Error",
+          description: "No se encontró ID de Instagram. Reconéctate por favor.",
+          variant: "destructive"
+        });
+        navigate('/');
+        return;
+      }
+      
+      console.log('Using Instagram user ID:', instagramUserId);
       
       // Load WhatsApp settings
       const { data: settings, error: settingsError } = await supabase
@@ -124,8 +139,8 @@ const WhatsAppConfig: React.FC = () => {
     try {
       setSaving(true);
       
-      // Get current Instagram user
-      const instagramUserData = localStorage.getItem('instagramUser');
+      // Get current Instagram user - usar la clave correcta
+      const instagramUserData = localStorage.getItem('hower-instagram-user');
       if (!instagramUserData) {
         toast({
           title: "Error",
@@ -136,7 +151,16 @@ const WhatsAppConfig: React.FC = () => {
       }
       
       const instagramUser = JSON.parse(instagramUserData);
-      const instagramUserId = instagramUser.instagram_user_id;
+      const instagramUserId = instagramUser.instagram?.id || instagramUser.facebook?.id;
+      
+      if (!instagramUserId) {
+        toast({
+          title: "Error",  
+          description: "No se encontró ID de Instagram. Reconéctate por favor.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       // Validate WhatsApp number
       if (!whatsappNumber.trim()) {
