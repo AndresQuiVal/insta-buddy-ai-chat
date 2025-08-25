@@ -166,8 +166,9 @@ serve(async (req) => {
     const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const currentTime = now.toTimeString().substring(0, 5); // HH:MM format
     const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
     
-    console.log(`Current day: ${currentDay}, time: ${currentTime}, hour: ${currentHour}`);
+    console.log(`Current day: ${currentDay}, time: ${currentTime}, hour: ${currentHour}, minute: ${currentMinute}`);
     
     // Get all users who should receive notifications at this time
     const { data: scheduledNotifications, error: scheduleError } = await supabase
@@ -207,11 +208,11 @@ serve(async (req) => {
     // Process each user
     for (const notification of scheduledNotifications) {
       try {
-        const notificationHour = parseInt(notification.notification_time.substring(0, 2));
+        const notificationTime = notification.notification_time.substring(0, 5); // HH:MM
         
-        // Check if current hour matches notification hour
-        if (currentHour !== notificationHour) {
-          console.log(`Skipping user ${notification.instagram_user_id} - hour mismatch (${currentHour} vs ${notificationHour})`);
+        // Check if current time matches notification time exactly
+        if (currentTime !== notificationTime) {
+          console.log(`Skipping user ${notification.instagram_user_id} - time mismatch (${currentTime} vs ${notificationTime})`);
           continue;
         }
         
