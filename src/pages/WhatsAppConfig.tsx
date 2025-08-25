@@ -161,6 +161,8 @@ const WhatsAppConfig: React.FC = () => {
         return;
       }
       
+      console.log('Saving config for Instagram user ID:', instagramUserId);
+      
       // Validate WhatsApp number
       if (!whatsappNumber.trim()) {
         toast({
@@ -171,23 +173,44 @@ const WhatsAppConfig: React.FC = () => {
         return;
       }
       
-      // Save or update WhatsApp settings
-      const { error: settingsError } = await supabase
+      // Check if user exists in whatsapp_notification_settings
+      const { data: existingSettings } = await supabase
         .from('whatsapp_notification_settings')
-        .upsert({
-          instagram_user_id: instagramUserId,
-          whatsapp_number: whatsappNumber.trim(),
-          enabled: true,
-          notification_time: '09:00:00',
-          notification_days: [1, 2, 3, 4, 5], // Default Monday to Friday
-          timezone: 'America/Mexico_City'
-        });
+        .select('id')
+        .eq('instagram_user_id', instagramUserId)
+        .maybeSingle();
+      
+      // Save or update WhatsApp settings
+      const settingsData = {
+        instagram_user_id: instagramUserId,
+        whatsapp_number: whatsappNumber.trim(),
+        enabled: true,
+        notification_time: '09:00:00',
+        notification_days: [1, 2, 3, 4, 5], // Default Monday to Friday
+        timezone: 'America/Mexico_City'
+      };
+      
+      let settingsError;
+      if (existingSettings) {
+        // Update existing
+        const { error } = await supabase
+          .from('whatsapp_notification_settings')
+          .update(settingsData)
+          .eq('instagram_user_id', instagramUserId);
+        settingsError = error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('whatsapp_notification_settings')
+          .insert(settingsData);
+        settingsError = error;
+      }
         
       if (settingsError) {
         console.error('Error saving WhatsApp settings:', settingsError);
         toast({
           title: "Error",
-          description: "Error al guardar la configuración de WhatsApp",
+          description: `Error al guardar la configuración de WhatsApp: ${settingsError.message}`,
           variant: "destructive"
         });
         return;
