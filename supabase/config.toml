@@ -75,3 +75,6 @@ verify_jwt = true
 
 [functions.generate-prospect-messages]
 verify_jwt = false
+
+[functions.send-whatsapp-notifications]
+verify_jwt = false

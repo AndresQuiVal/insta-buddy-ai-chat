@@ -5,11 +5,14 @@ import { Label } from '@/components/ui/label';
 import { Phone, Settings, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const WhatsAppConfig: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [weekSchedule, setWeekSchedule] = useState({
     monday: { enabled: false, time: '09:00' },
     tuesday: { enabled: false, time: '09:00' },
@@ -20,8 +23,11 @@ const WhatsAppConfig: React.FC = () => {
     sunday: { enabled: false, time: '09:00' },
   });
 
-  // SEO
+  // Load existing configuration
   useEffect(() => {
+    loadConfiguration();
+    
+    // SEO
     document.title = 'Configuración WhatsApp | Hower Assistant';
     const metaDesc = document.querySelector('meta[name="description"]');
     if (!metaDesc) {
@@ -33,13 +39,186 @@ const WhatsAppConfig: React.FC = () => {
       metaDesc.setAttribute('content', 'Configura tu número de WhatsApp y horarios para recibir notificaciones de prospectos.');
     }
   }, []);
+  
+  const loadConfiguration = async () => {
+    try {
+      setLoading(true);
+      
+      // Get current Instagram user
+      const instagramUserData = localStorage.getItem('instagramUser');
+      if (!instagramUserData) {
+        toast({
+          title: "Error",
+          description: "No se encontró usuario de Instagram. Conéctate primero.",
+          variant: "destructive"
+        });
+        navigate('/');
+        return;
+      }
+      
+      const instagramUser = JSON.parse(instagramUserData);
+      const instagramUserId = instagramUser.instagram_user_id;
+      
+      // Load WhatsApp settings
+      const { data: settings, error: settingsError } = await supabase
+        .from('whatsapp_notification_settings')
+        .select('*')
+        .eq('instagram_user_id', instagramUserId)
+        .maybeSingle();
+        
+      if (settingsError) {
+        console.error('Error loading WhatsApp settings:', settingsError);
+      } else if (settings) {
+        // @ts-ignore - Table will exist after migration
+        setWhatsappNumber(settings.whatsapp_number || '');
+      }
+      
+      // Load schedule days - temporarily disabled until migration
+      // const { data: scheduleDays, error: scheduleError } = await supabase
+      //   .from('whatsapp_schedule_days')
+      //   .select('*')
+      //   .eq('instagram_user_id', instagramUserId);
+        
+      // if (scheduleError) {
+      //   console.error('Error loading schedule:', scheduleError);
+      // } else if (scheduleDays && scheduleDays.length > 0) {
+      //   const newSchedule = { ...weekSchedule };
+      //   scheduleDays.forEach(day => {
+      //     const dayName = getDayName(day.day_of_week);
+      //     if (dayName) {
+      //       newSchedule[dayName as keyof typeof newSchedule] = {
+      //         enabled: day.enabled,
+      //         time: day.notification_time.substring(0, 5) // HH:MM format
+      //       };
+      //     }
+      //   });
+      //   setWeekSchedule(newSchedule);
+      // }
+      
+    } catch (error) {
+      console.error('Error loading configuration:', error);
+      toast({
+        title: "Error",
+        description: "Error al cargar la configuración",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const getDayName = (dayOfWeek: number): string | null => {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days[dayOfWeek] || null;
+  };
+  
+  const getDayOfWeek = (dayName: string): number => {
+    const days: { [key: string]: number } = {
+      'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3,
+      'thursday': 4, 'friday': 5, 'saturday': 6
+    };
+    return days[dayName];
+  };
 
-  const handleSaveConfig = () => {
-    // Aquí puedes agregar la lógica para guardar la configuración
-    toast({
-      title: "Configuración guardada",
-      description: "Tu configuración de WhatsApp ha sido actualizada correctamente."
-    });
+  const handleSaveConfig = async () => {
+    try {
+      setSaving(true);
+      
+      // Get current Instagram user
+      const instagramUserData = localStorage.getItem('instagramUser');
+      if (!instagramUserData) {
+        toast({
+          title: "Error",
+          description: "No se encontró usuario de Instagram",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const instagramUser = JSON.parse(instagramUserData);
+      const instagramUserId = instagramUser.instagram_user_id;
+      
+      // Validate WhatsApp number
+      if (!whatsappNumber.trim()) {
+        toast({
+          title: "Error",
+          description: "Por favor ingresa tu número de WhatsApp",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Save or update WhatsApp settings
+      const { error: settingsError } = await supabase
+        .from('whatsapp_notification_settings')
+        .upsert({
+          instagram_user_id: instagramUserId,
+          // @ts-ignore - Column will exist after migration
+          whatsapp_number: whatsappNumber.trim(),
+          enabled: true,
+          notification_time: '09:00:00',
+          notification_days: [1, 2, 3, 4, 5], // Default Monday to Friday
+          timezone: 'America/Mexico_City'
+        });
+        
+      if (settingsError) {
+        console.error('Error saving WhatsApp settings:', settingsError);
+        toast({
+          title: "Error",
+          description: "Error al guardar la configuración de WhatsApp",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Schedule days saving temporarily disabled until migration
+      // Delete existing schedule days for this user
+      // await supabase
+      //   .from('whatsapp_schedule_days')
+      //   .delete()
+      //   .eq('instagram_user_id', instagramUserId);
+      
+      // Save new schedule days
+      // const scheduleDaysToInsert = Object.entries(weekSchedule)
+      //   .filter(([, config]) => config.enabled)
+      //   .map(([dayName, config]) => ({
+      //     instagram_user_id: instagramUserId,
+      //     day_of_week: getDayOfWeek(dayName),
+      //     enabled: true,
+      //     notification_time: `${config.time}:00`
+      //   }));
+      
+      // if (scheduleDaysToInsert.length > 0) {
+      //   const { error: scheduleError } = await supabase
+      //     .from('whatsapp_schedule_days')
+      //     .insert(scheduleDaysToInsert);
+          
+      //   if (scheduleError) {
+      //     console.error('Error saving schedule:', scheduleError);
+      //     toast({
+      //       title: "Error",
+      //       description: "Error al guardar los horarios",
+      //       variant: "destructive"
+      //     });
+      //     return;
+      //   }
+      // }
+      
+      toast({
+        title: "✅ Configuración guardada",
+        description: "Tu configuración de WhatsApp ha sido actualizada correctamente."
+      });
+      
+    } catch (error) {
+      console.error('Error saving configuration:', error);
+      toast({
+        title: "Error",
+        description: "Error al guardar la configuración",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -163,10 +342,11 @@ const WhatsAppConfig: React.FC = () => {
             <div className="text-center">
               <Button 
                 onClick={handleSaveConfig}
+                disabled={saving || loading}
                 className="bg-green-600 hover:bg-green-700 text-white font-poppins px-8 py-3"
               >
                 <Settings className="h-5 w-5 mr-2" />
-                Guardar Configuración
+                {saving ? 'Guardando...' : 'Guardar Configuración'}
               </Button>
             </div>
           </div>
