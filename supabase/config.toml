@@ -78,3 +78,6 @@ verify_jwt = false
 
 [functions.send-whatsapp-notifications]
 verify_jwt = false
+
+[functions.test-whatsapp]
+verify_jwt = false
