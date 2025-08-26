@@ -31,7 +31,7 @@ const HowerPresentation = () => {
         </h1>
 
         {/* Video Container */}
-        <div className="w-full max-w-4xl mb-16 animate-scale-in">
+        <div className="w-full max-w-4xl mb-12 animate-scale-in">
           <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden shadow-2xl">
             <iframe
               src="https://www.loom.com/embed/YOUR_LOOM_VIDEO_ID"
@@ -42,6 +42,15 @@ const HowerPresentation = () => {
             ></iframe>
           </div>
         </div>
+
+        {/* CTA Button */}
+        <Button 
+          onClick={handleGetStarted}
+          size="lg"
+          className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-4 px-8 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-fade-in mb-16"
+        >
+          Usar Hower Assistant
+        </Button>
 
         {/* Features Section */}
         <div className="w-full max-w-6xl mb-16 px-4">
@@ -92,15 +101,6 @@ const HowerPresentation = () => {
             </Card>
           </div>
         </div>
-
-        {/* CTA Button */}
-        <Button 
-          onClick={handleGetStarted}
-          size="lg"
-          className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-4 px-8 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 animate-fade-in"
-        >
-          Usar Hower Assistant
-        </Button>
       </div>
     </div>
   );
