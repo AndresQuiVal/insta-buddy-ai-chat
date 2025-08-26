@@ -22,8 +22,10 @@ const HowerPresentation = () => {
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl md:text-5xl font-bold mb-12 text-white text-center animate-fade-in max-w-4xl">
-          Administra tus prospectos en un solo lugar con Hower Assistant
+        <h1 className="text-3xl md:text-5xl mb-12 text-white text-center animate-fade-in max-w-4xl">
+          Administra tus prospectos en un solo lugar con{' '}
+          <span className="font-normal">Hower</span>{' '}
+          <span className="font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Assistant</span>
         </h1>
 
         {/* Video Container */}
