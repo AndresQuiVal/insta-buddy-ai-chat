@@ -22,9 +22,16 @@ const WhatsAppConfig: React.FC = () => {
     saturday: { enabled: false, time: '09:00' },
     sunday: { enabled: false, time: '09:00' },
   });
+  const [userTimezone, setUserTimezone] = useState('');
+  const [detectedTimezone, setDetectedTimezone] = useState('');
 
   // Load existing configuration
   useEffect(() => {
+    // Detect user timezone automatically
+    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setDetectedTimezone(detected);
+    setUserTimezone(detected); // Set as default
+    
     loadConfiguration();
     
     // SEO
@@ -85,6 +92,7 @@ const WhatsAppConfig: React.FC = () => {
         console.error('Error loading WhatsApp settings:', settingsError);
       } else if (settings) {
         setWhatsappNumber(settings.whatsapp_number || '');
+        setUserTimezone(settings.timezone || detectedTimezone);
       }
       
       // Load schedule days
@@ -187,7 +195,7 @@ const WhatsAppConfig: React.FC = () => {
         enabled: true,
         notification_time: '09:00:00',
         notification_days: [1, 2, 3, 4, 5], // Default Monday to Friday
-        timezone: 'America/Mexico_City'
+        timezone: userTimezone
       };
       
       let settingsError;
@@ -326,6 +334,46 @@ const WhatsAppConfig: React.FC = () => {
               <p className="text-xs text-gray-500 mt-1">
                 Incluye el código de país (ej: +52 para México)
               </p>
+            </div>
+
+            {/* Zona Horaria */}
+            <div className="mb-8">
+              <Label htmlFor="timezone" className="text-sm font-poppins font-bold text-green-800">
+                🌍 Zona Horaria
+              </Label>
+              <div className="mt-2 space-y-3">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-700">
+                    <span className="font-semibold">Detectado automáticamente:</span> {detectedTimezone}
+                  </p>
+                </div>
+                <select
+                  id="timezone"
+                  value={userTimezone}
+                  onChange={(e) => setUserTimezone(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-lg bg-white text-sm"
+                >
+                  <option value="America/Mexico_City">🇲🇽 México (America/Mexico_City)</option>
+                  <option value="America/New_York">🇺🇸 Nueva York (America/New_York)</option>
+                  <option value="America/Los_Angeles">🇺🇸 Los Ángeles (America/Los_Angeles)</option>
+                  <option value="America/Chicago">🇺🇸 Chicago (America/Chicago)</option>
+                  <option value="America/Denver">🇺🇸 Denver (America/Denver)</option>
+                  <option value="America/Bogota">🇨🇴 Bogotá (America/Bogota)</option>
+                  <option value="America/Lima">🇵🇪 Lima (America/Lima)</option>
+                  <option value="America/Argentina/Buenos_Aires">🇦🇷 Buenos Aires (America/Argentina/Buenos_Aires)</option>
+                  <option value="America/Santiago">🇨🇱 Santiago (America/Santiago)</option>
+                  <option value="Europe/Madrid">🇪🇸 Madrid (Europe/Madrid)</option>
+                  <option value="Europe/London">🇬🇧 Londres (Europe/London)</option>
+                  <option value="Europe/Paris">🇫🇷 París (Europe/Paris)</option>
+                  <option value="Europe/Berlin">🇩🇪 Berlín (Europe/Berlin)</option>
+                  <option value="Asia/Tokyo">🇯🇵 Tokio (Asia/Tokyo)</option>
+                  <option value="Australia/Sydney">🇦🇺 Sidney (Australia/Sydney)</option>
+                  <option value={detectedTimezone}>{detectedTimezone !== userTimezone ? `🔄 Usar detectado: ${detectedTimezone}` : '✅ Zona detectada'}</option>
+                </select>
+                <p className="text-xs text-gray-500">
+                  Las notificaciones se enviarán según esta zona horaria
+                </p>
+              </div>
             </div>
 
             {/* Horarios por día */}
