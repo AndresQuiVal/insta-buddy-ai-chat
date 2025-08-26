@@ -1752,7 +1752,7 @@ const TasksToDo: React.FC = () => {
                         onClick={handleEditListName}
                       >
                         {listName}
-                        <Edit2 className="w-4 h-4 opacity-50" />
+                        <Edit2 className="w-4 h-4 opacity-50" style={{ display: 'none' }} />
                       </h1>
                     )}
                   </div>
