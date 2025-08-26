@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Phone, Settings, ArrowLeft, Globe } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Phone, Settings, ArrowLeft, Globe, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,10 +13,14 @@ const WhatsAppConfig: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [countryCode, setCountryCode] = useState('+52');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [timezone, setTimezone] = useState('');
   const [detectedTimezone, setDetectedTimezone] = useState('');
+  const [copyTimeDialogOpen, setCopyTimeDialogOpen] = useState(false);
+  const [timeToApply, setTimeToApply] = useState('');
   const [weekSchedule, setWeekSchedule] = useState({
     monday: { enabled: false, time: '09:00' },
     tuesday: { enabled: false, time: '09:00' },
@@ -101,7 +106,18 @@ const WhatsAppConfig: React.FC = () => {
       if (settingsError) {
         console.error('Error loading WhatsApp settings:', settingsError);
       } else if (settings) {
-        setWhatsappNumber(settings.whatsapp_number || '');
+        const fullNumber = settings.whatsapp_number || '';
+        setWhatsappNumber(fullNumber);
+        // Extract country code and number
+        if (fullNumber.startsWith('+')) {
+          const match = fullNumber.match(/^(\+\d{1,4})(.*)$/);
+          if (match) {
+            setCountryCode(match[1]);
+            setPhoneNumber(match[2]);
+          }
+        } else {
+          setPhoneNumber(fullNumber);
+        }
         setTimezone(settings.timezone || detectedTimezone);
       }
       
@@ -182,7 +198,8 @@ const WhatsAppConfig: React.FC = () => {
       console.log('Saving config for Instagram user ID:', instagramUserId);
       
       // Validate WhatsApp number
-      if (!whatsappNumber.trim()) {
+      const fullNumber = countryCode + phoneNumber;
+      if (!phoneNumber.trim()) {
         toast({
           title: "Error",
           description: "Por favor ingresa tu número de WhatsApp",
@@ -201,7 +218,7 @@ const WhatsAppConfig: React.FC = () => {
       // Save or update WhatsApp settings
       const settingsData = {
         instagram_user_id: instagramUserId,
-        whatsapp_number: whatsappNumber.trim(),
+        whatsapp_number: fullNumber.trim(),
         enabled: true,
         notification_time: '09:00:00',
         notification_days: [1, 2, 3, 4, 5], // Default Monday to Friday
@@ -283,6 +300,24 @@ const WhatsAppConfig: React.FC = () => {
     }
   };
 
+  // Country codes for phone numbers
+  const countryCodes = [
+    { value: '+52', label: '🇲🇽 México (+52)', country: 'México' },
+    { value: '+1', label: '🇺🇸 Estados Unidos (+1)', country: 'Estados Unidos' },
+    { value: '+54', label: '🇦🇷 Argentina (+54)', country: 'Argentina' },
+    { value: '+55', label: '🇧🇷 Brasil (+55)', country: 'Brasil' },
+    { value: '+57', label: '🇨🇴 Colombia (+57)', country: 'Colombia' },
+    { value: '+51', label: '🇵🇪 Perú (+51)', country: 'Perú' },
+    { value: '+56', label: '🇨🇱 Chile (+56)', country: 'Chile' },
+    { value: '+58', label: '🇻🇪 Venezuela (+58)', country: 'Venezuela' },
+    { value: '+593', label: '🇪🇨 Ecuador (+593)', country: 'Ecuador' },
+    { value: '+34', label: '🇪🇸 España (+34)', country: 'España' },
+    { value: '+44', label: '🇬🇧 Reino Unido (+44)', country: 'Reino Unido' },
+    { value: '+33', label: '🇫🇷 Francia (+33)', country: 'Francia' },
+    { value: '+49', label: '🇩🇪 Alemania (+49)', country: 'Alemania' },
+    { value: '+39', label: '🇮🇹 Italia (+39)', country: 'Italia' },
+  ];
+
   // Common timezones for the selector
   const commonTimezones = [
     { value: 'America/Mexico_City', label: 'México (UTC-6)' },
@@ -299,6 +334,29 @@ const WhatsAppConfig: React.FC = () => {
     { value: 'Europe/Paris', label: 'París (UTC+1)' },
     { value: 'Asia/Tokyo', label: 'Tokio (UTC+9)' },
   ];
+
+  // Copy time to all active days function
+  const copyTimeToActiveDays = () => {
+    if (!timeToApply) return;
+    
+    setWeekSchedule(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(day => {
+        if (updated[day as keyof typeof updated].enabled) {
+          updated[day as keyof typeof updated].time = timeToApply;
+        }
+      });
+      return updated;
+    });
+    
+    setCopyTimeDialogOpen(false);
+    setTimeToApply('');
+    
+    toast({
+      title: "✅ Horario copiado",
+      description: "Se aplicó el horario a todos los días activos"
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -350,16 +408,30 @@ const WhatsAppConfig: React.FC = () => {
               <Label htmlFor="whatsapp-number" className="text-sm font-poppins font-bold text-green-800">
                 📞 Número de WhatsApp
               </Label>
-              <Input
-                id="whatsapp-number"
-                type="tel"
-                placeholder="+1 234 567 8900"
-                value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
-                className="mt-2"
-              />
+              <div className="flex gap-2 mt-2">
+                <Select value={countryCode} onValueChange={setCountryCode}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Código país" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countryCodes.map((code) => (
+                      <SelectItem key={code.value} value={code.value}>
+                        {code.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="whatsapp-number"
+                  type="tel"
+                  placeholder="234 567 8900"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
               <p className="text-xs text-gray-500 mt-1">
-                Incluye el código de país (ej: +52 para México)
+                Tu número completo será: {countryCode} {phoneNumber}
               </p>
             </div>
 
@@ -394,10 +466,59 @@ const WhatsAppConfig: React.FC = () => {
 
             {/* Horarios por día */}
             <div className="mb-8">
-              <h3 className="text-lg font-poppins font-bold text-green-800 mb-4">⏰ Horarios de Mensajes</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Selecciona los días y horarios en que quieres recibir notificaciones
-              </p>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-poppins font-bold text-green-800">⏰ Horarios de Mensajes</h3>
+                  <p className="text-sm text-gray-600">
+                    Selecciona los días y horarios en que quieres recibir notificaciones
+                  </p>
+                </div>
+                <Dialog open={copyTimeDialogOpen} onOpenChange={setCopyTimeDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      onClick={() => {
+                        // Get the first active day's time as default
+                        const firstActiveTime = Object.values(weekSchedule).find(config => config.enabled)?.time || '09:00';
+                        setTimeToApply(firstActiveTime);
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copiar horario
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Copiar horario a todos los días activos</DialogTitle>
+                      <DialogDescription>
+                        ¿Quieres aplicar este horario a todos los días que están activos?
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <Label htmlFor="time-to-copy" className="text-sm font-medium">
+                        Horario a aplicar:
+                      </Label>
+                      <Input
+                        id="time-to-copy"
+                        type="time"
+                        value={timeToApply}
+                        onChange={(e) => setTimeToApply(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setCopyTimeDialogOpen(false)}>
+                        No
+                      </Button>
+                      <Button onClick={copyTimeToActiveDays} className="bg-green-600 hover:bg-green-700">
+                        Sí, aplicar horario
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.entries(weekSchedule).map(([day, config]) => {
                   const dayNames = {
@@ -428,18 +549,34 @@ const WhatsAppConfig: React.FC = () => {
                           className="rounded"
                         />
                       </div>
-                      <Input
-                        type="time"
-                        value={config.time}
-                        onChange={(e) => {
-                          setWeekSchedule(prev => ({
-                            ...prev,
-                            [day]: { ...prev[day as keyof typeof prev], time: e.target.value }
-                          }));
-                        }}
-                        disabled={!config.enabled}
-                        className="text-sm"
-                      />
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          type="time"
+                          value={config.time}
+                          onChange={(e) => {
+                            setWeekSchedule(prev => ({
+                              ...prev,
+                              [day]: { ...prev[day as keyof typeof prev], time: e.target.value }
+                            }));
+                          }}
+                          disabled={!config.enabled}
+                          className="text-sm flex-1"
+                        />
+                        {config.enabled && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setTimeToApply(config.time);
+                              setCopyTimeDialogOpen(true);
+                            }}
+                            className="p-2"
+                            title="Copiar este horario a todos los días activos"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
