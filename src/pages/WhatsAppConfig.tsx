@@ -408,7 +408,7 @@ const WhatsAppConfig: React.FC = () => {
               Volver
             </Button>
             <h1 className="text-3xl font-poppins font-bold text-foreground">
-              Configuración WhatsApp
+              🤖 Tu Asistente te Recordará De Prospectar!
             </h1>
           </div>
 
@@ -430,10 +430,10 @@ const WhatsAppConfig: React.FC = () => {
                 <Phone className="h-8 w-8 text-green-600" />
               </div>
               <h2 className="text-2xl font-poppins font-bold text-gray-800">
-                📱 Configuración de WhatsApp
+                🚀 Deja que tu asistente controle tus prospectos por ti!
               </h2>
               <p className="text-gray-600 mt-2">
-                Configura tu número y horarios para recibir notificaciones
+                Nunca más olvides hacer seguimiento a tus prospectos calientes
               </p>
             </div>
 
