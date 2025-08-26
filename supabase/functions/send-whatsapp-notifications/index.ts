@@ -79,7 +79,7 @@ async function getUserStats(instagramUserId: string) {
         username,
         last_owner_message_at,
         last_message_from_prospect,
-        prospect_messages!inner (
+        prospect_messages (
           id,
           is_from_prospect,
           is_invitation,
