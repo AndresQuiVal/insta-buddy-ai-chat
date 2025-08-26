@@ -32,7 +32,7 @@ const HowerPresentation = () => {
 
         {/* Video Container */}
         <div className="w-full max-w-4xl mb-12 animate-scale-in">
-          <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden shadow-2xl">
+          <div className="relative w-full h-0 pb-[74.69%] rounded-lg overflow-hidden shadow-2xl">
             <iframe
               src="https://www.loom.com/embed/1863bb5dd56a4fcb919ece8d74043298?sid=4ed2cc61-1c74-4270-afe8-c7d39b1c55b1"
               frameBorder="0"
