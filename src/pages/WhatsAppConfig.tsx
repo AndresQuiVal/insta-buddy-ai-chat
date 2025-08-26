@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Phone, Settings, ArrowLeft } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Phone, Settings, ArrowLeft, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,8 @@ const WhatsAppConfig: React.FC = () => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [timezone, setTimezone] = useState('');
+  const [detectedTimezone, setDetectedTimezone] = useState('');
   const [weekSchedule, setWeekSchedule] = useState({
     monday: { enabled: false, time: '09:00' },
     tuesday: { enabled: false, time: '09:00' },
@@ -22,6 +25,20 @@ const WhatsAppConfig: React.FC = () => {
     saturday: { enabled: false, time: '09:00' },
     sunday: { enabled: false, time: '09:00' },
   });
+
+  // Detect user's timezone automatically
+  useEffect(() => {
+    try {
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setDetectedTimezone(userTimezone);
+      setTimezone(userTimezone); // Set as default
+      console.log('Detected timezone:', userTimezone);
+    } catch (error) {
+      console.error('Error detecting timezone:', error);
+      setDetectedTimezone('America/Mexico_City'); // Fallback
+      setTimezone('America/Mexico_City');
+    }
+  }, []);
 
   // Load existing configuration
   useEffect(() => {
@@ -85,6 +102,7 @@ const WhatsAppConfig: React.FC = () => {
         console.error('Error loading WhatsApp settings:', settingsError);
       } else if (settings) {
         setWhatsappNumber(settings.whatsapp_number || '');
+        setTimezone(settings.timezone || detectedTimezone);
       }
       
       // Load schedule days
@@ -187,7 +205,7 @@ const WhatsAppConfig: React.FC = () => {
         enabled: true,
         notification_time: '09:00:00',
         notification_days: [1, 2, 3, 4, 5], // Default Monday to Friday
-        timezone: 'America/Mexico_City'
+        timezone: timezone
       };
       
       let settingsError;
@@ -265,6 +283,23 @@ const WhatsAppConfig: React.FC = () => {
     }
   };
 
+  // Common timezones for the selector
+  const commonTimezones = [
+    { value: 'America/Mexico_City', label: 'México (UTC-6)' },
+    { value: 'America/New_York', label: 'Nueva York (UTC-5)' },
+    { value: 'America/Chicago', label: 'Chicago (UTC-6)' },
+    { value: 'America/Denver', label: 'Denver (UTC-7)' },
+    { value: 'America/Los_Angeles', label: 'Los Angeles (UTC-8)' },
+    { value: 'America/Sao_Paulo', label: 'São Paulo (UTC-3)' },
+    { value: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires (UTC-3)' },
+    { value: 'America/Lima', label: 'Lima (UTC-5)' },
+    { value: 'America/Bogota', label: 'Bogotá (UTC-5)' },
+    { value: 'Europe/Madrid', label: 'Madrid (UTC+1)' },
+    { value: 'Europe/London', label: 'Londres (UTC+0)' },
+    { value: 'Europe/Paris', label: 'París (UTC+1)' },
+    { value: 'Asia/Tokyo', label: 'Tokio (UTC+9)' },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <div className="main-content">
@@ -325,6 +360,35 @@ const WhatsAppConfig: React.FC = () => {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Incluye el código de país (ej: +52 para México)
+              </p>
+            </div>
+
+            {/* Zona Horaria */}
+            <div className="mb-8">
+              <Label htmlFor="timezone" className="text-sm font-poppins font-bold text-green-800">
+                🌍 Zona Horaria
+              </Label>
+              <Select value={timezone} onValueChange={setTimezone}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Selecciona tu zona horaria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {commonTimezones.map((tz) => (
+                    <SelectItem key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+                <Globe className="h-3 w-3" />
+                <span>
+                  Detectado automáticamente: {detectedTimezone}
+                  {timezone === detectedTimezone && " (seleccionado)"}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Los mensajes se enviarán según esta zona horaria
               </p>
             </div>
 
