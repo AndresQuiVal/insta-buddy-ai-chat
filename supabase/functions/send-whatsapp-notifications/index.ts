@@ -135,21 +135,22 @@ serve(async (req) => {
     console.log("🚀 Starting WhatsApp notification process...");
     console.log("🔧 Usando endpoint simplificado de WhatsApp");
     
-    // Get current UTC time
-    const utcNow = new Date();
-    console.log(`UTC time: ${utcNow.toISOString()}`);
+    // Get current time info IN MEXICO TIME ZONE
+    const mexicoTime = new Date().toLocaleString("en-US", {timeZone: "America/Mexico_City"});
+    const now = new Date(mexicoTime);
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentTime = now.toTimeString().substring(0, 5); // HH:MM format
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
     
-    // Get all enabled scheduled notifications with user timezone info
+    console.log(`Current day (Mexico): ${currentDay}, time (Mexico): ${currentTime}, hour: ${currentHour}, minute: ${currentMinute}`);
+    
+    // Get all scheduled notifications for today
     const { data: scheduleData, error: scheduleError } = await supabase
       .from('whatsapp_schedule_days')
-      .select(`
-        instagram_user_id, 
-        notification_time, 
-        day_of_week,
-        whatsapp_notification_settings!inner(timezone, enabled)
-      `)
-      .eq('enabled', true)
-      .eq('whatsapp_notification_settings.enabled', true);
+      .select('instagram_user_id, notification_time')
+      .eq('day_of_week', currentDay)
+      .eq('enabled', true);
     
     if (scheduleError) {
       console.error('Error getting scheduled days:', scheduleError);
@@ -159,51 +160,47 @@ serve(async (req) => {
       );
     }
     
-    if (scheduleError) {
-      console.error('Error getting scheduled days:', scheduleError);
-      return new Response(
-        JSON.stringify({ error: "Error al obtener días programados" }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!scheduleData || scheduleData.length === 0) {
-      console.log("No hay usuarios programados");
+    // Get WhatsApp settings for these users
+    const userIds = scheduleData?.map(s => s.instagram_user_id) || [];
+    
+    if (userIds.length === 0) {
+      console.log("No hay usuarios programados para este día y hora");
       return new Response(
         JSON.stringify({ message: "No hay usuarios programados" }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Filter notifications that match current time in their timezone
-    const validNotifications = [];
     
-    for (const schedule of scheduleData) {
-      const userTimezone = schedule.whatsapp_notification_settings.timezone;
-      
-      // Convert current UTC time to user's timezone
-      const userTime = new Date().toLocaleString("en-US", {timeZone: userTimezone});
-      const userLocalTime = new Date(userTime);
-      const userDay = userLocalTime.getDay();
-      const userTimeString = userLocalTime.toTimeString().substring(0, 5); // HH:MM
-      
-      console.log(`User ${schedule.instagram_user_id}: timezone=${userTimezone}, day=${userDay}, time=${userTimeString}, scheduled_day=${schedule.day_of_week}, scheduled_time=${schedule.notification_time.substring(0, 5)}`);
-      
-      // Check if current day and time match the scheduled notification
-      if (userDay === schedule.day_of_week && userTimeString === schedule.notification_time.substring(0, 5)) {
-        validNotifications.push(schedule);
-        console.log(`✅ User ${schedule.instagram_user_id} matches scheduled time`);
-      } else {
-        console.log(`⏰ User ${schedule.instagram_user_id} doesn't match (day: ${userDay}vs${schedule.day_of_week}, time: ${userTimeString}vs${schedule.notification_time.substring(0, 5)})`);
-      }
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('whatsapp_notification_settings')
+      .select('instagram_user_id, whatsapp_number, enabled')
+      .in('instagram_user_id', userIds)
+      .eq('enabled', true);
+    
+    if (settingsError) {
+      console.error('Error getting WhatsApp settings:', settingsError);
+      return new Response(
+        JSON.stringify({ error: "Error al obtener configuraciones de WhatsApp" }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
-    const scheduledNotifications = validNotifications;
+    // Combine schedule and settings data
+    const scheduledNotifications = scheduleData.filter(schedule => {
+      const settings = settingsData?.find(s => s.instagram_user_id === schedule.instagram_user_id);
+      return settings && settings.enabled;
+    }).map(schedule => {
+      const settings = settingsData.find(s => s.instagram_user_id === schedule.instagram_user_id);
+      return {
+        ...schedule,
+        whatsapp_notification_settings: settings
+      };
+    });
     
-    if (scheduledNotifications.length === 0) {
-      console.log("No hay notificaciones que coincidan con el momento actual");
+    if (!scheduledNotifications || scheduledNotifications.length === 0) {
+      console.log("No hay notificaciones programadas para este momento");
       return new Response(
-        JSON.stringify({ message: "No hay notificaciones programadas para este momento" }),
+        JSON.stringify({ message: "No hay notificaciones programadas" }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -212,9 +209,17 @@ serve(async (req) => {
     
     const results = [];
     
-    // Process each user (they already passed the time/day validation)
+    // Process each user
     for (const notification of scheduledNotifications) {
       try {
+        const notificationTime = notification.notification_time.substring(0, 5); // HH:MM
+        
+        // Check if current time matches notification time exactly
+        if (currentTime !== notificationTime) {
+          console.log(`Skipping user ${notification.instagram_user_id} - time mismatch (${currentTime} vs ${notificationTime})`);
+          continue;
+        }
+        
         console.log(`Processing user: ${notification.instagram_user_id}`);
         
         // Get user stats
@@ -227,28 +232,15 @@ serve(async (req) => {
         // Create message
         const messageBody = createMotivationalMessage(stats);
         
-        // Get WhatsApp number from settings
-        const { data: settings, error: settingsError } = await supabase
-          .from('whatsapp_notification_settings')
-          .select('whatsapp_number')
-          .eq('instagram_user_id', notification.instagram_user_id)
-          .single();
-          
-        if (settingsError || !settings?.whatsapp_number) {
-          console.error(`No WhatsApp number found for user ${notification.instagram_user_id}`);
-          continue;
-        }
-
         // Send WhatsApp message using new simplified endpoint
         const success = await sendWhatsAppMessage(
           messageBody, 
-          settings.whatsapp_number
+          notification.whatsapp_notification_settings.whatsapp_number
         );
         
         results.push({
           instagram_user_id: notification.instagram_user_id,
-          whatsapp_number: settings.whatsapp_number,
-          timezone: notification.whatsapp_notification_settings.timezone,
+          whatsapp_number: notification.whatsapp_notification_settings.whatsapp_number,
           status: success ? 'sent' : 'failed',
           stats: stats,
           message_length: messageBody.length
