@@ -40,7 +40,7 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
               } else if (item.id === 'whatsapp') {
                 navigate('/whatsapp-config');
               } else {
-                navigate('/dream-customer-radar-guide');
+                navigate('/dream-customer-radar');
               }
               setIsOpen(false);
             }}
