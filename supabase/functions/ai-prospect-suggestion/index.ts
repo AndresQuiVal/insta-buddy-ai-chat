@@ -35,26 +35,31 @@ serve(async (req) => {
       )
     }
 
-    console.log('🤖 Generando sugerencia estratégica para:', prospect_name)
+    console.log('🤖 Generando mensaje frío para:', prospect_name)
     console.log('📝 Conversación:', conversation)
     console.log('🎯 Características recibidas:', ideal_traits)
 
-    // Crear prompt específico para sugerencias de ACCIONES estratégicas
-    let systemPrompt = `Eres un experto en ventas consultivas y estrategia de conversación. Tu objetivo es analizar conversaciones de Instagram y sugerir la ACCIÓN ESTRATÉGICA más efectiva que debe tomar la persona de la app.
+    // Crear prompt específico para generar mensajes fríos de Instagram
+    let systemPrompt = `Quiero que generes mensajes fríos para Instagram con la siguiente estructura obligatoria:
+	1.	Saludo casual + mención directa al nombre del prospecto.
+	2.	Observación sobre algo que viste de la persona (su perfil, su publicación, su estilo, etc.).
+	3.	Pregunta abierta única y curiosa, que invite a conversación natural (solo un «¿» y un «?» en todo el mensaje).
+	4.	Personalización final breve, que refuerce que el mensaje es humano y no comercial.
 
-OBJETIVOS PRINCIPALES:
-1. Obtener el número de WhatsApp de manera orgánica
-2. Agendar una reunión/llamada naturalmente  
-3. Mantener el interés y construir confianza del prospecto
+Instrucciones estrictas:
+	•	Cada mensaje debe ser 100 % humano, cálido y espontáneo, sin sonar a venta.
+	•	Longitud total: entre 22 y 40 palabras.
+	•	Prohibido usar: "oportunidad", "negocio", "ganancias", "cliente", "precio", "vender", "seguidores", "likes", "comentarios", "te interesa", "quieres", "puedo mostrarte", "agenda", "únete".
+	•	No uses emojis, viñetas ni comillas.
+	•	Una sola pregunta por mensaje.
+	•	Cambia vocabulario y ritmo entre mensajes, evita repeticiones literales.
+	•	Entrega exactamente 1 mensaje.
+	•	Formato de salida obligatorio: solo el mensaje, sin numeración ni separadores.
 
-INSTRUCCIONES PARA SUGERENCIAS DE ACCIÓN:
-- Analiza el nivel de interés y engagement del prospecto
-- Sugiere QUÉ HACER NEXT (no qué decir exactamente)
-- Las acciones deben ser graduales y orgánicas, NO agresivas
-- Considera el timing y contexto de la conversación
-- Enfócate en ESTRATEGIA más que en palabras específicas`;
+🔹 Ejemplo de mensaje válido siguiendo la estructura:
+Hola Laura, noté que compartes fotos de viajes con mucha naturalidad, me dio curiosidad, ¿qué destino sientes que más te ha cambiado? Me gusta conectar con personas que disfrutan explorar.`;
 
-    // Si hay características configuradas, añadirlas al prompt
+    // Si hay características configuradas, añadirlas al contexto del mensaje
     if (ideal_traits && ideal_traits.length > 0) {
       const enabledTraits = ideal_traits.filter((trait: any) => trait.enabled);
       
@@ -64,57 +69,17 @@ INSTRUCCIONES PARA SUGERENCIAS DE ACCIÓN:
 🎯 CARACTERÍSTICAS DEL CLIENTE IDEAL:
 ${enabledTraits.map((trait: any, index: number) => `${index + 1}. ${trait.trait}`).join('\n')}
 
-ESTRATEGIA CON CARACTERÍSTICAS:
-- Evalúa qué características ya cumple el prospecto basándose en la conversación
-- Si cumple las características clave, sugiere acciones más directas hacia contacto/reunión
-- Si no las cumple claramente, sugiere acciones para descubrir más información
-- Usa las características como filtro para determinar el nivel de agresividad de la acción`;
+Considera estas características para hacer observaciones más relevantes en tu mensaje, pero siempre mantén el tono natural y humano.`;
       }
-    } else {
-      systemPrompt += `
-
-ESTRATEGIA SIN CARACTERÍSTICAS ESPECÍFICAS:
-- Enfócate en construir rapport y confianza primero
-- Sugiere acciones que ayuden a entender mejor al prospecto
-- Gradualmente mueve hacia obtener contacto según el nivel de interés mostrado`;
     }
 
-    systemPrompt += `
 
-🎯 TIPOS DE ACCIONES ESTRATÉGICAS A SUGERIR:
+    const userPrompt = `Genera un mensaje frío para Instagram dirigido a ${prospect_name}. 
 
-📱 ACCIONES DE INFORMACIÓN:
-- "Pregunta sobre [tema específico] para entender mejor su situación"
-- "Comparte una experiencia similar para generar conexión"
-- "Solicita más detalles sobre [aspecto mencionado]"
-
-📞 ACCIONES DE CONEXIÓN:
-- "Sugiere continuar la conversación por WhatsApp por comodidad"
-- "Propón una llamada rápida para explicar mejor las opciones"
-- "Ofrece enviar información más detallada por WhatsApp"
-
-⏰ ACCIONES DE TIMING:
-- "Espera a que responda antes de hacer más preguntas"
-- "Dale tiempo para procesar la información compartida"
-- "Retoma la conversación mañana con un seguimiento suave"
-
-💡 ACCIONES DE VALOR:
-- "Comparte un caso de éxito similar a su situación"
-- "Ofrece una consulta gratuita para evaluar su caso"
-- "Proporciona un tip útil relacionado con su necesidad"
-
-Responde con UNA acción estratégica específica y práctica, explicando brevemente el PORQUÉ de esa acción.
-
-FORMATO DE RESPUESTA:
-🎯 ACCIÓN RECOMENDADA: [Descripción clara de qué hacer]
-💡 RAZÓN: [Por qué esta acción es efectiva ahora]
-⏱️ TIMING: [Cuándo ejecutar esta acción]`;
-
-    const userPrompt = `Analiza esta conversación con ${prospect_name} y sugiere la mejor ACCIÓN ESTRATÉGICA:
-
+Información del prospecto y conversación previa (si existe):
 ${conversation}
 
-Sugerencia de acción:`;
+Genera un mensaje siguiendo exactamente la estructura y reglas especificadas:`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -128,7 +93,7 @@ Sugerencia de acción:`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        max_tokens: 200,
+        max_tokens: 100,
         temperature: 0.8,
       }),
     });
@@ -162,7 +127,7 @@ Sugerencia de acción:`;
       )
     }
 
-    console.log('✅ Sugerencia estratégica generada:', suggestion)
+    console.log('✅ Mensaje frío generado:', suggestion)
 
     return new Response(
       JSON.stringify({ 
