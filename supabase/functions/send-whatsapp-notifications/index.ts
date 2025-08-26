@@ -68,19 +68,63 @@ async function sendWhatsAppMessage(message: string, toNumber: string): Promise<b
 
 async function getUserStats(instagramUserId: string) {
   try {
-    // Get stats using the existing function
-    const { data: stats, error } = await supabase
-      .rpc('grok_get_stats', {
-        p_instagram_user_id: instagramUserId,
-        p_period: 'today'
-      });
-      
-    if (error) {
-      console.error('Error getting user stats:', error);
+    // Get user's UUID from instagram_user_id
+    const { data: userData, error: userError } = await supabase
+      .from('instagram_users')
+      .select('id')
+      .eq('instagram_user_id', instagramUserId)
+      .eq('is_active', true)
+      .single();
+
+    if (userError || !userData) {
+      console.error('Error getting user:', userError);
       return { abiertas: 0, seguimientos: 0, agendados: 0 };
     }
+
+    // Get prospects waiting for response (abiertas)
+    const { data: prospectsData, error: prospectsError } = await supabase
+      .from('prospects')
+      .select('id, last_owner_message_at, prospect_instagram_id')
+      .eq('instagram_user_id', userData.id)
+      .eq('status', 'esperando_respuesta');
+
+    if (prospectsError) {
+      console.error('Error getting prospects:', prospectsError);
+      return { abiertas: 0, seguimientos: 0, agendados: 0 };
+    }
+
+    const prospects = prospectsData || [];
+    const now = new Date();
     
-    return stats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
+    // Calculate real stats
+    let abiertas = 0;
+    let seguimientos = 0;
+    
+    prospects.forEach(prospect => {
+      if (!prospect.last_owner_message_at) {
+        // No previous message sent = new prospect
+        abiertas++;
+      } else {
+        const lastMessageTime = new Date(prospect.last_owner_message_at);
+        const hoursSinceLastMessage = (now.getTime() - lastMessageTime.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursSinceLastMessage >= 24) {
+          // More than 24 hours = follow-up
+          seguimientos++;
+        } else {
+          // Less than 24 hours = still fresh
+          abiertas++;
+        }
+      }
+    });
+
+    console.log(`📊 Real-time stats for ${instagramUserId}: ${abiertas} abiertas, ${seguimientos} seguimientos`);
+
+    return { 
+      abiertas, 
+      seguimientos, 
+      agendados: 0  // For now, keeping agendados at 0 as requested
+    };
     
   } catch (error) {
     console.error('Error in getUserStats:', error);
