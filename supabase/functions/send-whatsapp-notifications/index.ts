@@ -68,30 +68,45 @@ async function sendWhatsAppMessage(message: string, toNumber: string): Promise<b
 
 async function getUserStats(instagramUserId: string) {
   try {
-    // Get all prospect states for this user
-    const { data: prospectStates, error: statesError } = await supabase
-      .from('prospect_states')
-      .select('prospect_sender_id, state')
-      .eq('instagram_user_id', instagramUserId);
+    // Get user UUID first
+    const { data: userData, error: userError } = await supabase
+      .from('instagram_users')
+      .select('id')
+      .eq('instagram_user_id', instagramUserId)
+      .eq('is_active', true)
+      .single();
 
-    if (statesError) {
-      console.error('Error getting prospect states:', statesError);
+    if (userError || !userData) {
+      console.error('Error getting user:', userError);
       return { abiertas: 0, seguimientos: 0, agendados: 20 };
     }
 
-    // Get completed tasks (tachados)
+    // Get prospects waiting for response
+    const { data: prospectsData, error: prospectsError } = await supabase
+      .from('prospects')
+      .select('prospect_instagram_id, last_owner_message_at')
+      .eq('instagram_user_id', userData.id)
+      .eq('status', 'esperando_respuesta');
+
+    if (prospectsError) {
+      console.error('Error getting prospects:', prospectsError);
+      return { abiertas: 0, seguimientos: 0, agendados: 20 };
+    }
+
+    // Get completed tasks (tachados) for pending, yesterday, and week
     const { data: taskStatus, error: taskError } = await supabase
       .from('prospect_task_status')
       .select('prospect_sender_id, task_type, is_completed')
       .eq('instagram_user_id', instagramUserId)
-      .eq('is_completed', true);
+      .eq('is_completed', true)
+      .in('task_type', ['pending', 'yesterday', 'week']);
 
     if (taskError) {
       console.error('Error getting task status:', taskError);
       return { abiertas: 0, seguimientos: 0, agendados: 20 };
     }
 
-    // Create a set of completed (tachados) prospect IDs by task type
+    // Create sets of completed (tachados) prospect IDs by task type
     const completedPending = new Set(
       taskStatus?.filter(t => t.task_type === 'pending').map(t => t.prospect_sender_id) || []
     );
@@ -102,25 +117,39 @@ async function getUserStats(instagramUserId: string) {
       taskStatus?.filter(t => t.task_type === 'week').map(t => t.prospect_sender_id) || []
     );
 
-    // Calculate stats
+    const prospects = prospectsData || [];
+    const now = new Date();
+    
     let abiertas = 0; // Prospectos pendientes NO tachados
     let seguimientos = 0; // Prospectos en seguimiento NO tachados
-
-    prospectStates?.forEach(prospect => {
-      if (prospect.state === 'pending') {
-        // Pendientes NO tachados
-        if (!completedPending.has(prospect.prospect_sender_id)) {
+    
+    prospects.forEach(prospect => {
+      const prospectId = prospect.prospect_instagram_id;
+      
+      if (!prospect.last_owner_message_at) {
+        // No previous message sent = new prospect (pending)
+        if (!completedPending.has(prospectId)) {
           abiertas++;
         }
-      } else if (prospect.state === 'yesterday') {
-        // Seguimiento de ayer NO tachados
-        if (!completedYesterday.has(prospect.prospect_sender_id)) {
-          seguimientos++;
-        }
-      } else if (prospect.state === 'week') {
-        // Seguimiento de semana NO tachados
-        if (!completedWeek.has(prospect.prospect_sender_id)) {
-          seguimientos++;
+      } else {
+        const lastMessageTime = new Date(prospect.last_owner_message_at);
+        const hoursSinceLastMessage = (now.getTime() - lastMessageTime.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursSinceLastMessage >= 168) { // 7 days = 168 hours
+          // More than 7 days = week follow-up
+          if (!completedWeek.has(prospectId)) {
+            seguimientos++;
+          }
+        } else if (hoursSinceLastMessage >= 24) { // 1 day = 24 hours
+          // More than 24 hours = yesterday follow-up
+          if (!completedYesterday.has(prospectId)) {
+            seguimientos++;
+          }
+        } else {
+          // Less than 24 hours = pending
+          if (!completedPending.has(prospectId)) {
+            abiertas++;
+          }
         }
       }
     });
