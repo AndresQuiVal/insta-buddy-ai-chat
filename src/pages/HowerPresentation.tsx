@@ -1,5 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { BarChart3, Users, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const HowerPresentation = () => {
@@ -38,7 +40,57 @@ const HowerPresentation = () => {
               className="absolute top-0 left-0 w-full h-full"
               title="Hower Assistant Demo"
             ></iframe>
+        </div>
+
+        {/* Features Section */}
+        <div className="w-full max-w-6xl mb-12 px-4">
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Tus Números */}
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300 animate-fade-in">
+              <CardContent className="p-6 text-center">
+                <div className="mb-4 flex justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                    <BarChart3 className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Tus Números</h3>
+                <p className="text-white/90 text-sm">
+                  Controla cuántos prospectos contactas, cuántos das seguimiento, etc
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Tus prospectos en 1 lugar */}
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300 animate-fade-in">
+              <CardContent className="p-6 text-center">
+                <div className="mb-4 flex justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Tus prospectos en 1 lugar</h3>
+                <p className="text-white/90 text-sm">
+                  Nada de usar etiquetas en Instagram, controla tus prospectos fácil en Hower Assistant
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Un Asistente para ti */}
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300 animate-fade-in">
+              <CardContent className="p-6 text-center">
+                <div className="mb-4 flex justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
+                    <Bot className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Un Asistente para ti</h3>
+                <p className="text-white/90 text-sm">
+                  Deja que Hower Assistant sea tu asistente de prospección y te recuerde de la tarea más importante: prospectar
+                </p>
+              </CardContent>
+            </Card>
           </div>
+        </div>
         </div>
 
         {/* CTA Button */}
