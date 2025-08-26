@@ -16,9 +16,9 @@ const Settings = () => {
   useEffect(() => {
     console.log('🔍 DEBUG Settings useEffect - isOnboarded:', isOnboarded);
     if (!isOnboarded) {
-      console.log('🔍 DEBUG Settings - Redirigiendo a /autoresponder-onboarding');
-      // Redirigir a la página de autoresponder onboarding
-      window.location.href = '/autoresponder-onboarding';
+      console.log('🔍 DEBUG Settings - Redirigiendo a /welcome');
+      // Redirigir a la página de welcome
+      window.location.href = '/welcome';
     }
   }, [isOnboarded]);
 
