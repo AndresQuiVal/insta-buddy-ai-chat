@@ -46,6 +46,7 @@ const ProspectCRM = () => {
   const [filter, setFilter] = useState<'all' | 'enviados' | 'respuestas' | 'agendados'>('all');
   const [selectedProspect, setSelectedProspect] = useState<ProspectData | null>(null);
   const [showActionDialog, setShowActionDialog] = useState(false);
+  const [showAIDialog, setShowAIDialog] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [listName, setListName] = useState('Mi Lista de prospección');
@@ -250,6 +251,7 @@ const ProspectCRM = () => {
       });
 
       setSelectedProspect(null);
+      setShowAIDialog(false);
       setContactMessage('');
     } catch (error) {
       console.error('Error enviando mensaje:', error);
@@ -317,10 +319,7 @@ const ProspectCRM = () => {
 
   const handleAISuggestion = () => {
     setShowActionDialog(false);
-    // Mantener selectedProspect para abrir el dialog original con IA después de un pequeño delay
-    setTimeout(() => {
-      // El dialog de IA se abrirá automáticamente porque selectedProspect existe y showActionDialog es false
-    }, 100);
+    setShowAIDialog(true);
   };
 
   // Componente de tarjeta de prospecto
@@ -516,7 +515,12 @@ const ProspectCRM = () => {
       />
 
       {/* Popup de contacto con IA */}
-      <Dialog open={!!selectedProspect && !showActionDialog} onOpenChange={(open) => !open && setSelectedProspect(null)}>
+      <Dialog open={showAIDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowAIDialog(false);
+          setSelectedProspect(null);
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -559,7 +563,10 @@ const ProspectCRM = () => {
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => setSelectedProspect(null)}
+                onClick={() => {
+                  setShowAIDialog(false);
+                  setSelectedProspect(null);
+                }}
               >
                 Cancelar
               </Button>
