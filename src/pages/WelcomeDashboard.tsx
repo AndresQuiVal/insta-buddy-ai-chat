@@ -48,7 +48,7 @@ const WelcomeDashboard = () => {
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-gray-600 mb-6">
-                Administra tus prospectos, haz seguimiento de leads y organiza tu pipeline de ventas de manera eficiente.
+                Administra tus prospectos, haz seguimiento de leads y obtén tus números de manera eficiente.
               </p>
               <Button 
                 onClick={handleCRM}
