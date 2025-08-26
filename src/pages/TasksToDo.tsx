@@ -1281,12 +1281,7 @@ const TasksToDo: React.FC = () => {
                           </div>
                         ) : (
                           dmProspects.map((prospect) => (
-                            <div key={prospect.id} className="relative overflow-visible mb-5">
-                              <div className="absolute -top-2 -right-2 z-20">
-                                <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                                  💬 DM's
-                                </Badge>
-                              </div>
+                            <div key={prospect.id} className="mb-5">
                               <ProspectCard prospect={prospect} taskType={taskType} />
                             </div>
                           ))
@@ -1317,12 +1312,7 @@ const TasksToDo: React.FC = () => {
                           </div>
                         ) : (
                           commentProspects.map((prospect) => (
-                            <div key={prospect.id} className="relative overflow-visible mb-5">
-                              <div className="absolute -top-2 -right-2 z-20">
-                                <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                                  💭 Comentarios
-                                </Badge>
-                              </div>
+                            <div key={prospect.id} className="mb-5">
                               <ProspectCard prospect={prospect} taskType={taskType} />
                             </div>
                           ))
@@ -1903,12 +1893,7 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.dm.map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible mb-5">
-                                <div className="absolute -top-2 -right-2 z-20">
-                                  <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                                    💬 DM's
-                                  </Badge>
-                                </div>
+                              <div key={prospect.id} className="mb-5">
                                 <ProspectCard prospect={prospect} taskType="pending" />
                               </div>
                             ))
@@ -1923,12 +1908,7 @@ const TasksToDo: React.FC = () => {
                             </div>
                           ) : (
                             prospectsClassification.pendingResponses.comment.map((prospect) => (
-                              <div key={prospect.id} className="relative overflow-visible mb-5">
-                                <div className="absolute -top-2 -right-2 z-20">
-                                  <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-bold shadow-md border-2 border-white px-2 py-1 rounded-full">
-                                    💭 Comentarios
-                                  </Badge>
-                                </div>
+                              <div key={prospect.id} className="mb-5">
                                 <ProspectCard prospect={prospect} taskType="pending" />
                               </div>
                             ))
