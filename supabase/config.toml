@@ -87,3 +87,6 @@ verify_jwt = false
 
 [functions.simple-whatsapp-test]
 verify_jwt = false
+
+[functions.diagnose-whatsapp]
+verify_jwt = false

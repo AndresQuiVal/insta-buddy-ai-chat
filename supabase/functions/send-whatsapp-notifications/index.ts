@@ -22,6 +22,8 @@ async function sendWhatsAppMessage(message: string, toNumber: string): Promise<b
     
     console.log("📤 Enviando mensaje WhatsApp a:", toNumber);
     console.log("📤 Mensaje:", message.substring(0, 100) + "...");
+    console.log("📤 Payload completo:", JSON.stringify(payload));
+    console.log("📤 URL:", WHATSAPP_API_URL);
     
     const response = await fetch(WHATSAPP_API_URL, {
       method: 'POST',
@@ -32,19 +34,34 @@ async function sendWhatsAppMessage(message: string, toNumber: string): Promise<b
     });
     
     console.log("📥 Status code:", response.status);
-    const responseData = await response.json();
-    console.log("📥 Response:", responseData);
+    console.log("📥 Status text:", response.statusText);
+    console.log("📥 Response headers:", JSON.stringify(Object.fromEntries(response.headers.entries())));
+    
+    const responseText = await response.text();
+    console.log("📥 Response text (raw):", responseText);
+    
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+      console.log("📥 Response JSON:", JSON.stringify(responseData, null, 2));
+    } catch (parseError) {
+      console.log("⚠️ No se pudo parsear como JSON:", parseError.message);
+      responseData = { raw: responseText };
+    }
     
     if (response.ok && responseData.success) {
       console.log("✅ Mensaje enviado exitosamente");
       return true;
     } else {
-      console.error("❌ Error en respuesta:", responseData.message || responseData.error);
+      console.error("❌ Error en respuesta:");
+      console.error("❌ Status:", response.status);
+      console.error("❌ Data:", responseData);
       return false;
     }
     
   } catch (error) {
     console.error("❌ Error enviando mensaje WhatsApp:", error);
+    console.error("❌ Error stack:", error.stack);
     return false;
   }
 }
