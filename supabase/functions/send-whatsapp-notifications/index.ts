@@ -6,88 +6,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface WhatsAppMessage {
-  number: string;
-  name: string;
-  body: string;
-}
-
-interface WhatsAppConnection {
-  id: string;
-  name: string;
-}
-
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
 
-const API_URL = Deno.env.get('WHATICKET_API_URL') || "https://api.whaticket.com/api/v1";
-const TOKEN = Deno.env.get('WHATICKET_TOKEN')!;
-const CONNECTION_NAME = Deno.env.get('WHATICKET_CONNECTION_NAME') || "Hower Assistant";
+const WHATSAPP_API_URL = "https://www.howersoftware.io/clients/api/send-whatsapp/";
 
-const headers = {
-  "Authorization": `Bearer ${TOKEN}`,
-  "Content-Type": "application/json"
-};
-
-async function getWhatsAppConnectionId(): Promise<string | null> {
-  try {
-    const response = await fetch(`${API_URL}/whatsapps`, { headers });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Error obteniendo conexiones:", errorText);
-      // Try to parse error message
-      try {
-        const errorJson = JSON.parse(errorText);
-        console.error("❌ Error obteniendo conexiones:", errorJson);
-      } catch {
-        console.error("❌ Error response not JSON:", errorText);
-      }
-      return null;
-    }
-    
-    const whatsapps: WhatsAppConnection[] = await response.json();
-    console.log("Conexiones encontradas:", whatsapps);
-    
-    const connection = whatsapps.find(w => w.name === CONNECTION_NAME);
-    
-    if (!connection) {
-      console.error("❌ No se encontró la conexión con nombre:", CONNECTION_NAME);
-      return null;
-    }
-    
-    console.log("✅ Conexión encontrada. ID =", connection.id);
-    return connection.id;
-    
-  } catch (error) {
-    console.error("Error getting WhatsApp connection:", error);
-    return null;
-  }
-}
-
-async function sendWhatsAppMessage(whatsappId: string, message: WhatsAppMessage): Promise<boolean> {
+async function sendWhatsAppMessage(message: string, toNumber: string): Promise<boolean> {
   try {
     const payload = {
-      whatsappId: whatsappId,
-      messages: [message]
+      message: message,
+      to_number: toNumber
     };
     
-    const response = await fetch(`${API_URL}/messages`, {
+    console.log("📤 Enviando mensaje WhatsApp a:", toNumber);
+    console.log("📤 Mensaje:", message.substring(0, 100) + "...");
+    
+    const response = await fetch(WHATSAPP_API_URL, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(payload)
     });
     
-    console.log("Send message status code:", response.status);
-    const responseText = await response.text();
-    console.log("Send message response:", responseText);
+    console.log("📥 Status code:", response.status);
+    const responseData = await response.json();
+    console.log("📥 Response:", responseData);
     
-    return response.ok;
+    if (response.ok && responseData.success) {
+      console.log("✅ Mensaje enviado exitosamente");
+      return true;
+    } else {
+      console.error("❌ Error en respuesta:", responseData.message || responseData.error);
+      return false;
+    }
     
   } catch (error) {
-    console.error("Error sending WhatsApp message:", error);
+    console.error("❌ Error enviando mensaje WhatsApp:", error);
     return false;
   }
 }
@@ -160,14 +117,7 @@ serve(async (req) => {
   try {
     console.log("🚀 Starting WhatsApp notification process...");
     
-    // Get WhatsApp connection ID
-    const whatsappId = await getWhatsAppConnectionId();
-    if (!whatsappId) {
-      return new Response(
-        JSON.stringify({ error: "No se pudo obtener la conexión de WhatsApp" }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log("🔧 Usando endpoint simplificado de WhatsApp");
     
     // Get current time info IN MEXICO TIME ZONE
     const mexicoTime = new Date().toLocaleString("en-US", {timeZone: "America/Mexico_City"});
@@ -275,14 +225,11 @@ serve(async (req) => {
         // Create message
         const messageBody = createMotivationalMessage(stats);
         
-        const message: WhatsAppMessage = {
-          number: notification.whatsapp_notification_settings.whatsapp_number,
-          name: "Prospecto",
-          body: messageBody
-        };
-        
-        // Send WhatsApp message
-        const success = await sendWhatsAppMessage(whatsappId, message);
+        // Send WhatsApp message using new simplified endpoint
+        const success = await sendWhatsAppMessage(
+          messageBody, 
+          notification.whatsapp_notification_settings.whatsapp_number
+        );
         
         results.push({
           instagram_user_id: notification.instagram_user_id,
