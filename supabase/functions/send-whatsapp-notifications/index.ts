@@ -226,17 +226,8 @@ serve(async (req) => {
         const stats = await getUserStats(notification.instagram_user_id);
         console.log(`User stats:`, stats);
         
-        // Skip if no prospects to contact
-        const totalProspects = (stats.abiertas || 0) + (stats.seguimientos || 0);
-        if (totalProspects === 0) {
-          console.log(`Skipping user ${notification.instagram_user_id} - no prospects to contact`);
-          results.push({
-            instagram_user_id: notification.instagram_user_id,
-            status: 'skipped',
-            reason: 'no_prospects'
-          });
-          continue;
-        }
+        // SIEMPRE enviar mensaje, sin importar si hay prospectos o no
+        console.log(`💪 Enviando mensaje motivacional independientemente de prospectos`);
         
         // Create message
         const messageBody = createMotivationalMessage(stats);
