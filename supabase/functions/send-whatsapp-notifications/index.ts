@@ -68,32 +68,59 @@ async function sendWhatsAppMessage(message: string, toNumber: string): Promise<b
 
 async function getUserStats(instagramUserId: string) {
   try {
-    // Get user UUID first
-    const { data: userData, error: userError } = await supabase
-      .from('instagram_users')
-      .select('id')
-      .eq('instagram_user_id', instagramUserId)
-      .eq('is_active', true)
-      .single();
+    // Calculate prospect states using the same logic as frontend (useProspects hook)
+    // 1. Get all received messages from last 30 days
+    const { data: receivedMessages, error: messagesError } = await supabase
+      .from('instagram_messages')
+      .select(`
+        sender_id,
+        timestamp,
+        instagram_user_id,
+        instagram_users (instagram_user_id)
+      `)
+      .eq('instagram_users.instagram_user_id', instagramUserId)
+      .eq('message_type', 'received')
+      .gte('timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
-    if (userError || !userData) {
-      console.error('Error getting user:', userError);
+    if (messagesError) {
+      console.error('Error getting messages:', messagesError);
       return { abiertas: 0, seguimientos: 0, agendados: 20 };
     }
 
-    // Get prospects waiting for response
-    const { data: prospectsData, error: prospectsError } = await supabase
-      .from('prospects')
-      .select('prospect_instagram_id, last_owner_message_at')
-      .eq('instagram_user_id', userData.id)
-      .eq('status', 'esperando_respuesta');
+    // 2. For each unique sender, determine their state
+    const senderStates = new Map();
+    const uniqueSenders = [...new Set(receivedMessages?.map(m => m.sender_id) || [])];
 
-    if (prospectsError) {
-      console.error('Error getting prospects:', prospectsError);
-      return { abiertas: 0, seguimientos: 0, agendados: 20 };
+    for (const senderId of uniqueSenders) {
+      // Check if user has sent any message to this prospect
+      const { data: sentMessages } = await supabase
+        .from('instagram_messages')
+        .select('timestamp')
+        .eq('sender_id', instagramUserId)
+        .eq('recipient_id', senderId)
+        .order('timestamp', { ascending: false })
+        .limit(1);
+
+      let state = 'pending'; // default
+
+      if (sentMessages && sentMessages.length > 0) {
+        const lastSentTime = new Date(sentMessages[0].timestamp);
+        const now = new Date();
+        const hoursSinceLastSent = (now.getTime() - lastSentTime.getTime()) / (1000 * 60 * 60);
+
+        if (hoursSinceLastSent < 24) {
+          state = 'pending';
+        } else if (hoursSinceLastSent < 48) {
+          state = 'yesterday';
+        } else {
+          state = 'week';
+        }
+      }
+
+      senderStates.set(senderId, state);
     }
 
-    // Get completed tasks (tachados) for pending, yesterday, and week
+    // 3. Get completed tasks for each state
     const { data: taskStatus, error: taskError } = await supabase
       .from('prospect_task_status')
       .select('prospect_sender_id, task_type, is_completed')
@@ -106,65 +133,38 @@ async function getUserStats(instagramUserId: string) {
       return { abiertas: 0, seguimientos: 0, agendados: 20 };
     }
 
-    // Create sets of completed (tachados) prospect IDs by task type
-    const completedPending = new Set(
-      taskStatus?.filter(t => t.task_type === 'pending').map(t => t.prospect_sender_id) || []
-    );
-    const completedYesterday = new Set(
-      taskStatus?.filter(t => t.task_type === 'yesterday').map(t => t.prospect_sender_id) || []
-    );
-    const completedWeek = new Set(
-      taskStatus?.filter(t => t.task_type === 'week').map(t => t.prospect_sender_id) || []
-    );
+    // Create sets of completed tasks
+    const completedByType = {
+      pending: new Set(taskStatus?.filter(t => t.task_type === 'pending').map(t => t.prospect_sender_id) || []),
+      yesterday: new Set(taskStatus?.filter(t => t.task_type === 'yesterday').map(t => t.prospect_sender_id) || []),
+      week: new Set(taskStatus?.filter(t => t.task_type === 'week').map(t => t.prospect_sender_id) || [])
+    };
 
-    const prospects = prospectsData || [];
-    const now = new Date();
-    
-    let abiertas = 0; // Prospectos pendientes NO tachados
-    let seguimientos = 0; // Prospectos en seguimiento NO tachados
-    
-    prospects.forEach(prospect => {
-      const prospectId = prospect.prospect_instagram_id;
-      
-      if (!prospect.last_owner_message_at) {
-        // No previous message sent = new prospect (pending)
-        if (!completedPending.has(prospectId)) {
-          abiertas++;
-        }
-      } else {
-        const lastMessageTime = new Date(prospect.last_owner_message_at);
-        const hoursSinceLastMessage = (now.getTime() - lastMessageTime.getTime()) / (1000 * 60 * 60);
-        
-        if (hoursSinceLastMessage >= 24) { // More than 24 hours = follow-up
-          // Check if completed in yesterday or week tasks
-          if (!completedYesterday.has(prospectId) && !completedWeek.has(prospectId)) {
-            seguimientos++;
-          }
-        } else {
-          // Less than 24 hours = pending
-          if (!completedPending.has(prospectId)) {
-            abiertas++;
-          }
-        }
+    // 4. Calculate final stats
+    let abiertas = 0; // pending NOT completed
+    let seguimientos = 0; // yesterday + week NOT completed
+
+    senderStates.forEach((state, senderId) => {
+      if (state === 'pending' && !completedByType.pending.has(senderId)) {
+        abiertas++;
+      } else if ((state === 'yesterday' && !completedByType.yesterday.has(senderId)) ||
+                 (state === 'week' && !completedByType.week.has(senderId))) {
+        seguimientos++;
       }
     });
 
-    console.log(`📊 Real-time stats for ${instagramUserId}:`);
-    console.log(`   💬 Abiertas (pendientes NO tachados): ${abiertas}`);
-    console.log(`   🔄 Seguimientos (yesterday+week NO tachados): ${seguimientos}`);
-    console.log(`   🎯 Agendados (siempre): 20`);
+    console.log('📊 Real-time stats for', instagramUserId + ':');
+    console.log('   💬 Abiertas (pending NOT tachados):', abiertas);
+    console.log('   🔄 Seguimientos (yesterday+week NOT tachados):', seguimientos);
+    console.log('   🎯 Agendados (siempre):', 20);
 
-    return { 
-      abiertas, 
-      seguimientos, 
-      agendados: 20  // SIEMPRE 20 como solicitado
-    };
-    
+    return { abiertas, seguimientos, agendados: 20 };
   } catch (error) {
     console.error('Error in getUserStats:', error);
     return { abiertas: 0, seguimientos: 0, agendados: 20 };
   }
 }
+
 
 function createMotivationalMessage(stats: { abiertas: number, seguimientos: number, agendados: number }): string {
   const greetings = [
