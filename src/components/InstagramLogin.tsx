@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Instagram, Copy, Check, ExternalLink } from 'lucide-react';
+import { Instagram, Copy, Check } from 'lucide-react';
 import { initiateInstagramAuth } from '@/services/instagramService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -43,11 +43,6 @@ const InstagramLogin = () => {
         variant: "destructive"
       });
     }
-  };
-
-  const openInNewTab = () => {
-    const url = generateAuthUrl();
-    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleInstagramLogin = () => {
@@ -127,28 +122,18 @@ const InstagramLogin = () => {
           {/* Opciones alternativas */}
           <div className="space-y-3">
             <p className="text-gray-500 text-xs font-light">
-              ¿Problemas con el botón? Usa estos enlaces alternativos:
+              ¿Problemas con el botón? Usa este método alternativo:
             </p>
             
-            <div className="flex gap-2">
+            <div className="flex justify-center">
               <Button
                 onClick={copyToClipboard}
                 variant="outline"
                 size="sm"
-                className="flex-1 text-xs py-2"
+                className="text-xs py-2 px-4"
               >
                 {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
                 {copied ? 'Copiado' : 'Copiar URL'}
-              </Button>
-              
-              <Button
-                onClick={openInNewTab}
-                variant="outline"
-                size="sm"
-                className="flex-1 text-xs py-2"
-              >
-                <ExternalLink className="w-3 h-3 mr-1" />
-                Abrir en nueva pestaña
               </Button>
             </div>
             
@@ -157,6 +142,25 @@ const InstagramLogin = () => {
               <p className="text-xs text-gray-500 break-all leading-relaxed">
                 {generateAuthUrl().substring(0, 80)}...
               </p>
+            </div>
+
+            {/* Instrucciones paso a paso */}
+            <div className="bg-blue-50 rounded-lg p-3 text-left mt-3">
+              <p className="text-xs font-medium text-blue-700 mb-2">Instrucciones:</p>
+              <ol className="text-xs text-blue-600 space-y-1">
+                <li className="flex items-start">
+                  <span className="font-medium mr-1">1.</span>
+                  <span>Copia el link</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-medium mr-1">2.</span>
+                  <span>Abre el link en una NUEVA pestaña</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-medium mr-1">3.</span>
+                  <span>Sigue los pasos!</span>
+                </li>
+              </ol>
             </div>
           </div>
 
