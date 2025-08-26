@@ -56,20 +56,30 @@ export const initiateInstagramAuth = (
     console.log("Dominio actual:", currentDomain);
 
     if (isMobileDevice()) {
-      console.log("📱 DISPOSITIVO MÓVIL: Intentando evitar app nativa...");
+      console.log("📱 DISPOSITIVO MÓVIL: Implementando estrategias anti-app...");
       
-      // Estrategia 1: Crear un elemento link temporal y hacer click
-      const link = document.createElement('a');
-      link.href = authUrl.toString();
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      
-      // Agregar al DOM temporalmente
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      console.log("✅ Link temporal creado y ejecutado");
+      // Estrategia 1: Usar window.open con parámetros específicos para evitar app
+      try {
+        const newWindow = window.open(
+          authUrl.toString(),
+          '_blank',
+          'noopener,noreferrer,menubar=yes,toolbar=yes,location=yes,status=yes,resizable=yes,scrollbars=yes'
+        );
+        
+        if (newWindow) {
+          console.log("✅ Ventana abierta con window.open");
+          // Enfocar la nueva ventana
+          newWindow.focus();
+        } else {
+          throw new Error("window.open bloqueado");
+        }
+      } catch (error) {
+        console.log("⚠️ window.open falló, intentando estrategia alternativa...");
+        
+        // Estrategia 2: Redirección directa en la misma ventana
+        console.log("🔄 Usando redirección directa para evitar app");
+        window.location.href = authUrl.toString();
+      }
     } else {
       console.log("💻 DISPOSITIVO DESKTOP: Redirección normal");
       window.location.href = authUrl.toString();
