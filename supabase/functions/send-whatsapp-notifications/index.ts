@@ -249,10 +249,13 @@ serve(async (req) => {
     const [datePart, timePart] = mexicoTime.split(', ')
     const [month, day, year] = datePart.split('/')
     const [hour, minute] = timePart.split(':')
-    const dayOfWeek = new Intl.DateTimeFormat('en-US', {
+    const mexicoTimeObj = new Date(new Intl.DateTimeFormat('en-CA', {
       timeZone: 'America/Mexico_City',
-      weekday: 'numeric'
-    }).format(now)
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(now) + 'T' + timePart + ':00')
+    const dayOfWeek = mexicoTimeObj.getDay() === 0 ? 7 : mexicoTimeObj.getDay() // Sunday = 7, Monday = 1
     
     console.log(`Current day (Mexico): ${dayOfWeek}, time (Mexico): ${hour}:${minute}, hour: ${parseInt(hour)}, minute: ${parseInt(minute)}`)
     
