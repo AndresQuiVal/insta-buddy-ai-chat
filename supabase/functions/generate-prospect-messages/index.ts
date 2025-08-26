@@ -38,107 +38,41 @@ serve(async (req) => {
     }
     console.log('✅ OpenAI API key encontrada')
 
-    // Crear el prompt específico con las variables
-    const contextDataList = [username, tema]
-    
-    const prompt = `# 🧠 ROL
-Eres un redactor creativo experto en prospección fría por Instagram. Generas mensajes 100 % humanos, cálidos, espontáneos y cero comerciales.
+    // Crear prompt específico para generar mensajes de seguimiento de Instagram
+    let prompt = `Quiero que generes mensajes de seguimiento para Instagram dirigidos a personas que dejaron de responder o nunca respondieron.
 
----
+Estructura obligatoria de cada mensaje
+	1.	Saludo casual con nombre o forma breve, usando variedad:
+	•	Formatos válidos:
+	•	"¡Hola [NOMBRE]!"
+	•	"[NOMBRE]?"
+	•	"Hola [NOMBRE]?"
+	•	"¿Estás por ahí?"
+	•	Deben alternarse entre mensajes para dar naturalidad.
+	2.	Observación ligera / excusa amable para justificar el nuevo mensaje (ejemplo: "por si se perdió mi mensaje", "solo quería romper el silencio").
+	3.	Pregunta abierta breve que invite a reanudar sin presión (ejemplo: "¿seguimos en contacto?", "¿aún tiene sentido para ti?", "¿lo retomamos?").
+	4.	Personalización opcional para sonar cercano y cero comercial.
 
-# 🎯 OBJETIVO
-Crear **${messageLimit}** mensajes autónomos (no parten de un MENSAJE_BASE) que:
-• Sigan la narrativa Saludo + Observación + Gancho + Pregunta abierta (+ P.D. opcional).
-• Mantengan tono conversacional, cercano y natural.
-• Despierten curiosidad y motiven respuesta sin parecer venta ni spam.
+Instrucciones estrictas
+	•	Estilo 100 % humano, cálido, cero venta.
+	•	Longitud total: entre 18 y 28 palabras.
+	•	Una sola pregunta por mensaje.
+	•	Prohibido: "negocio", "oportunidad", "ganancias", "precio", "cliente", "vender", "seguidores", "likes", "comentarios".
+	•	Sin emojis, sin llamadas a la acción tipo agenda/reunión.
+	•	Cambiar vocabulario, ritmo y excusas en cada mensaje para no sonar repetitivo.
+	•	Saludos deben variar entre los cuatro formatos listados arriba.
+	•	Generar exactamente ${messageLimit} mensajes.
+	•	Formato de salida obligatorio: cada mensaje separado por &&
 
----
-
-# 📥 VARIABLES DISPONIBLES
-- **TEMA** → ${contextDataList[1]}
-- **USERNAME** → @${contextDataList[0]}
-- **typeOfProspection** → ${typeOfProspection} (puede ser **followers** o **comments**)
-- **followObservationText** → ${followObservationText}
-- **messageLimit** → número fijo de salidas a generar
-- **[NOMBRE]** → marcador que **NO** debes reemplazar ni eliminar
-
----
-
-# 🛠️ INSTRUCCIONES DE GENERACIÓN
-
-## 1. Cantidad
-Debes generar exactamente **${messageLimit}** mensajes distintos. Si generas más o menos, la salida es inválida.
-
-## 2. Estructura interna de cada mensaje (una sola línea)
-a. **Saludo** casual + espacio + [NOMBRE], (coma opcional)
-b. **Observación** ► el inicio debe depender estrictamente de *typeOfProspection*:
-   • **followers** → \`[NOMBRE], vi que ${followObservationText}\` / \`Hola [NOMBRE], noté que ${followObservationText}\`
-   • **comments** → \`[NOMBRE], vi tu comentario en ${contextDataList[0]} sobre ${contextDataList[1]}\` / \`Hola [NOMBRE], vi que comentaste en ${contextDataList[0]} sobre ${contextDataList[1]}\`
-   (Si followObservationText está vacío, usa "Sobre ${contextDataList[1]}…")
-c. **Gancho personal** : frase de conexión suave con el tema (máx. 15 palabras).
-d. **Pregunta abierta** : exactamente UNA pregunta que empiece con «¿» y termine con «?».
-   • Debe ser curiosa o exploratoria; prohíbe inicios como: "¿Te gustaría…", "¿Quieres…", "¿Te interesaría…", "¿Puedo…", "¿Podrías…".
-   • El mensaje completo solo puede contener un signo «¿» y un signo «?».
-   • No incluyas palabras como "seguidores", "likes", "comments", "comentarios", "followers"
-e. **P.D. (opcional)** : si la añades, debe comenzar con "P.D." y aludir a *typeOfProspection* o al TEMA en un cierre breve.
-
-## 3. Longitud
-22 – 40 palabras (contando P.D. si existe).
-
-## 4. Prohibiciones
-– No uses: "oportunidad", "negocio", "ganancias", "cliente", "precio", "vender", "te interesa", "tengo algo", "ingreso extra".
-– **Evita frases de oferta o venta como: "¿Te gustaría conocer/tener/saber…?", "¿Quieres que te cuente…?", "puedo mostrarte/ayudarte…".**
-– Sin llamadas a la acción ("agenda…", "únete…", etc.), sin emojis, comillas, viñetas ni saltos de línea internos.
-– Solo un signo de interrogación por pregunta.
-– **P.D.** debe comenzar con "P.D." y usar **SOLO** estas fórmulas de cierre (elige una distinta cada vez):
-  - "P.D. encantado de cruzarnos por aquí!."
-  - "P.D. solo quiero compartir buena vibra!."
-  - "P.D. me mueve conocer historias nuevas!."
-  - "P.D. escribo para sumar, no vender!."
-  - "P.D. solo busco intercambiar ideas!."
-  - "P.D. me inspira conectar con gente afín!."
-  - "P.D. esto va sin agenda oculta, lo prometo!."
-  - "P.D. aquí para aprender de tu experiencia!."
-  - "P.D. feliz de romper el hielo así!."
-  - "P.D. valoro tu tiempo, gracias por leerme!."
-  - P.D. **NO PUEDE Y NO DEBE** ser una pregunta! Si pones una pregunta tu respuesta COMPLETA se considera INVALIDA!
-
-## 5. Variabilidad
-– Cambia vocabulario, orden sintáctico y ritmo entre mensajes.
-– No repitas literalmente frases o preguntas.
-– Si añades P.D., usa fórmulas de cierre diferentes ("P.D. solo lo pregunto para conectar!…", "P.D. encantado de conocerte!…", etc.).
-
----
-
-# 🗒️ FORMATO DE SALIDA (obligatorio)
-\`Mensaje 1 && Mensaje 2 && Mensaje 3 … && Mensaje ${messageLimit}\`
-
----
-
-# REGLAS ESTRICTAS DE FORMATO
-• Cada mensaje ocupa UNA sola línea, está separado por '&&' al final del mensaje!.
-• POR NINGUN MOTIVO incluyas el caracter '\\n' explicitamente en la salida, mas bien quiero dar a entender que debes hacer el salto de linea que representa '\\n'
-• '&&' debe aparecer **SOLO** EN LÍNEAS INDIVIDUALES, sin espacios antes/ después.
-• No añadas líneas en blanco antes, después ni entre los mensajes y los separadores.
-
-# Ejemplo de salida:
-Mensaje1 && Mensaje2 && Mensaje3 ... MensajeN
-
----
-
-**IMPORTANTE:** No seguir las reglas de formato TAL CUAL como están descritas, resultará en una mala respuesta y **NO SERÁ TOMADA EN CUENTA!!**
-
----
-
-# ⚠️ VALIDACIÓN RÁPIDA
-Si cualquier mensaje:
-• omite [NOMBRE]
-• viola las frases de observación exigidas
-• contiene MÁS de un «¿» o más de un «?»
-• contiene palabras prohibidas, CTAs, emojis
-→ Deséchalo y regenera hasta cumplir todas las reglas.
-
-(GENERA LA SALIDA AHORA SIGUIENDO LAS INSTRUCCIONES.)`
+🔹 Ejemplos de mensajes válidos con este ajuste:
+	•	Hola Laura? solo paso a dejarte este recordatorio amistoso ¿seguimos en contacto?
+	•	Felipe? escribo de nuevo por si no viste lo anterior ¿lo retomamos?
+	•	¿Estás por ahí? me parecía raro dejar la conversación en pausa ¿aún tiene sentido retomarla?
+	
+Usuario objetivo: ${username}
+Tema/contexto: ${tema}
+Tipo de prospección: ${typeOfProspection}
+Observación adicional: ${followObservationText || 'N/A'}`
 
     console.log('🤖 Generando mensajes de prospección con OpenAI...')
 
