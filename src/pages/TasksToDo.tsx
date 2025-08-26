@@ -2197,7 +2197,7 @@ const TasksToDo: React.FC = () => {
                   </div>
                   <Button 
                     onClick={() => {
-                      window.open(`https://www.instagram.com/${dialogUser}/`, '_blank');
+                      window.open(`https://www.instagram.com/m/${dialogUser}/`, '_blank');
                       setInstagramOpened(true);
                     }}
                     className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
@@ -2214,7 +2214,7 @@ const TasksToDo: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const url = `https://www.instagram.com/${dialogUser}/`;
+                        const url = `https://www.instagram.com/m/${dialogUser}/`;
                         navigator.clipboard.writeText(url);
                         toast({
                           title: "Enlace copiado",
