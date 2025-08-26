@@ -29,6 +29,7 @@ import DreamCustomerRadarGame from "./pages/DreamCustomerRadarGame";
 import ThreeMonthPlan from "./pages/ThreeMonthPlan";
 import WelcomeDashboard from "./pages/WelcomeDashboard";
 import WhatsAppConfig from "./pages/WhatsAppConfig";
+import HowerPresentation from "./pages/HowerPresentation";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
           <Route path="/dream-customer-radar" element={<DreamCustomerRadarGame />} />
           <Route path="/3-month-plan" element={<ThreeMonthPlan />} />
           <Route path="/whatsapp-config" element={<WhatsAppConfig />} />
+          <Route path="/presentation" element={<HowerPresentation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
