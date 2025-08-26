@@ -317,7 +317,10 @@ const ProspectCRM = () => {
 
   const handleAISuggestion = () => {
     setShowActionDialog(false);
-    // Mantener selectedProspect para abrir el dialog original con IA
+    // Mantener selectedProspect para abrir el dialog original con IA después de un pequeño delay
+    setTimeout(() => {
+      // El dialog de IA se abrirá automáticamente porque selectedProspect existe y showActionDialog es false
+    }, 100);
   };
 
   // Componente de tarjeta de prospecto
