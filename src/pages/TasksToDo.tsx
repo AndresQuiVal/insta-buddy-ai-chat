@@ -2205,6 +2205,28 @@ const TasksToDo: React.FC = () => {
                     <Instagram className="h-4 w-4 mr-2" />
                     Abrir Instagram
                   </Button>
+                  
+                  <div className="mt-3 pt-3 border-t border-pink-200">
+                    <p className="text-xs text-gray-500 text-center mb-2">
+                      ¿No se abrió el chat? Copia este enlace y pégalo en tu navegador:
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const url = `https://www.instagram.com/${dialogUser}/`;
+                        navigator.clipboard.writeText(url);
+                        toast({
+                          title: "Enlace copiado",
+                          description: `Pega el enlace en tu navegador para ir al chat de @${dialogUser}`,
+                        });
+                      }}
+                      className="w-full text-xs border-pink-200 text-pink-600 hover:bg-pink-50"
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copiar enlace de @{dialogUser}
+                    </Button>
+                  </div>
                 </div>
               </div>
               
