@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import ProspectActionDialog from '@/components/ProspectActionDialog';
 import { 
   Send, 
   MessageCircle, 
@@ -44,6 +45,7 @@ const ProspectCRM = () => {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'enviados' | 'respuestas' | 'agendados'>('all');
   const [selectedProspect, setSelectedProspect] = useState<ProspectData | null>(null);
+  const [showActionDialog, setShowActionDialog] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [listName, setListName] = useState('Mi Lista de prospección');
@@ -299,11 +301,30 @@ const ProspectCRM = () => {
     }
   };
 
+  // Manejar acciones del prospecto
+  const handleProspectClick = (prospect: ProspectData) => {
+    setSelectedProspect(prospect);
+    setShowActionDialog(true);
+  };
+
+  const handleViewConversation = () => {
+    if (selectedProspect) {
+      window.open(`https://www.instagram.com/direct/t/${selectedProspect.username}`, '_blank');
+      setShowActionDialog(false);
+      setSelectedProspect(null);
+    }
+  };
+
+  const handleAISuggestion = () => {
+    setShowActionDialog(false);
+    // Mantener selectedProspect para abrir el dialog original con IA
+  };
+
   // Componente de tarjeta de prospecto
   const ProspectCard = ({ prospect }: { prospect: ProspectData }) => (
     <Card 
       className="mb-3 hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-primary/20 group"
-      onClick={() => setSelectedProspect(prospect)}
+      onClick={() => handleProspectClick(prospect)}
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
@@ -479,8 +500,20 @@ const ProspectCRM = () => {
         />
       </div>
 
-      {/* Popup de contacto */}
-      <Dialog open={!!selectedProspect} onOpenChange={(open) => !open && setSelectedProspect(null)}>
+      {/* Dialog de acciones del prospecto */}
+      <ProspectActionDialog
+        isOpen={showActionDialog}
+        onClose={() => {
+          setShowActionDialog(false);
+          setSelectedProspect(null);
+        }}
+        prospectUsername={selectedProspect?.username || ''}
+        onViewConversation={handleViewConversation}
+        onAISuggestion={handleAISuggestion}
+      />
+
+      {/* Popup de contacto con IA */}
+      <Dialog open={!!selectedProspect && !showActionDialog} onOpenChange={(open) => !open && setSelectedProspect(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">

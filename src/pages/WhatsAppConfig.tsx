@@ -430,7 +430,7 @@ const WhatsAppConfig: React.FC = () => {
                 <Phone className="h-8 w-8 text-green-600" />
               </div>
               <h2 className="text-2xl font-poppins font-bold text-gray-800">
-                🚀 Automatiza tu prospección!
+                💪 Prospección sin olvidos!
               </h2>
               <p className="text-gray-600 mt-2">
                 Nunca más olvides hacer seguimiento a tus prospectos calientes
