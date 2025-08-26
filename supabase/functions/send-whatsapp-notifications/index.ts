@@ -153,6 +153,8 @@ async function getUserStats(instagramUserId: string) {
     // 4. Calculate final stats
     let abiertas = 0; // pending NOT completed
     let seguimientos = 0; // yesterday + week NOT completed
+    let yesterdayCount = 0; // Debug
+    let weekCount = 0; // Debug
 
     prospectsWithStates.forEach((prospect: any) => {
       const senderId = prospect.prospect_instagram_id;
@@ -160,15 +162,20 @@ async function getUserStats(instagramUserId: string) {
 
       if (state === 'pending' && !completedByType.pending.has(senderId)) {
         abiertas++;
-      } else if ((state === 'yesterday' && !completedByType.yesterday.has(senderId)) ||
-                 (state === 'week' && !completedByType.week.has(senderId))) {
+      } else if (state === 'yesterday' && !completedByType.yesterday.has(senderId)) {
         seguimientos++;
+        yesterdayCount++;
+      } else if (state === 'week' && !completedByType.week.has(senderId)) {
+        seguimientos++;
+        weekCount++;
       }
     });
 
     console.log('📊 Real-time stats for', instagramUserId + ':');
     console.log('   💬 Abiertas (pending NOT tachados):', abiertas);
     console.log('   🔄 Seguimientos (yesterday+week NOT tachados):', seguimientos);
+    console.log('   📅 Yesterday count:', yesterdayCount);
+    console.log('   📆 Week count:', weekCount);
     console.log('   🎯 Agendados (siempre):', 20);
 
     return { abiertas, seguimientos, agendados: 20 };
