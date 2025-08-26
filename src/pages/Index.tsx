@@ -225,7 +225,23 @@ const Index = () => {
               <LogOut className="w-4 h-4 mr-2" />
               Cerrar Sesión
             </Button>
-            <Button onClick={() => navigate('/tasks-to-do')} variant="default" size="sm" className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium">
+            <Button 
+              onClick={() => {
+                if (!currentUser) {
+                  toast({
+                    title: "Error",
+                    description: "Sesión no válida, reconectando...",
+                    variant: "destructive"
+                  });
+                  handleLogout();
+                  return;
+                }
+                navigate('/tasks-to-do');
+              }} 
+              variant="default" 
+              size="sm" 
+              className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium"
+            >
               📋 Mis Tareas
             </Button>
             <div className="hidden">

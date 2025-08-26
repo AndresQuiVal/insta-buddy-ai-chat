@@ -3,6 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,6 +32,7 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 const ProspectsPage: React.FC = () => {
   const { toast } = useToast();
   const { currentUser, loading: userLoading } = useInstagramUsers();
+  const navigate = useNavigate();
 
   // SEO minimal
   useEffect(() => {
@@ -490,7 +492,18 @@ const ProspectsPage: React.FC = () => {
         {/* Botón Tareas de Hoy */}
         <div className="text-center mb-8">
           <Button 
-            onClick={() => window.location.href = '/tasks-to-do'}
+            onClick={() => {
+              if (!currentUser && !userLoading) {
+                toast({
+                  title: "Acceso restringido",
+                  description: "Necesitas conectar tu cuenta de Instagram primero", 
+                  variant: "destructive"
+                });
+                navigate('/');
+                return;
+              }
+              window.location.href = '/tasks-to-do';
+            }}
             className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <CalendarClock className="h-5 w-5 mr-2" />

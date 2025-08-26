@@ -3,15 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Users, ArrowRight } from 'lucide-react';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
+import { useToast } from '@/hooks/use-toast';
 
 const WelcomeDashboard = () => {
   const navigate = useNavigate();
+  const { currentUser, loading } = useInstagramUsers();
+  const { toast } = useToast();
 
   const handleAutoresponder = () => {
     navigate('/');
   };
 
   const handleCRM = () => {
+    if (!currentUser && !loading) {
+      toast({
+        title: "Acceso restringido", 
+        description: "Necesitas conectar tu cuenta de Instagram primero",
+        variant: "destructive"
+      });
+      navigate('/');
+      return;
+    }
     navigate('/tasks-to-do');
   };
 

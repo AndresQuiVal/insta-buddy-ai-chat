@@ -10,11 +10,13 @@ import { Instagram, MessageCircle, Clock, ArrowRight, ArrowLeft, CheckCircle, Ph
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { initiateInstagramAuth } from "@/services/instagramService";
+import { useInstagramUsers } from "@/hooks/useInstagramUsers";
 import howerLogo from "@/assets/hower-logo.png";
 
 const HowerLiteOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [instagramConnected, setInstagramConnected] = useState(false);
+  const { currentUser } = useInstagramUsers();
   const [clientData, setClientData] = useState({
     age: "",
     gender: "",
@@ -120,7 +122,16 @@ const HowerLiteOnboarding = () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Guardar datos y navegar a tasks-to-do
+      // Guardar datos y navegar a tasks-to-do solo si hay sesión de Instagram válida
+      if (!currentUser) {
+        toast({
+          title: "❌ Error de autenticación",
+          description: "Necesitas conectar Instagram antes de continuar",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       localStorage.setItem('hower_lite_setup_complete', 'true');
       localStorage.setItem('ideal_client_data', JSON.stringify(clientData));
       localStorage.setItem('whatsapp_config', JSON.stringify(whatsappData));
