@@ -115,7 +115,35 @@ serve(async (req) => {
   }
 
   try {
-    console.log("🚀 Starting WhatsApp notification process...");
+    console.log("🧪 Starting WhatsApp notification process...");
+    
+    // MODO DE PRUEBA: Si recibimos el parámetro test=true, enviar mensaje de prueba
+    const url = new URL(req.url);
+    const isTestMode = url.searchParams.get('test') === 'true';
+    
+    if (isTestMode) {
+      console.log("🧪 MODO DE PRUEBA ACTIVADO");
+      
+      const testMessage = `🧪 PRUEBA DIRECTA - ${new Date().toLocaleString('es-MX', {timeZone: 'America/Mexico_City'})}
+
+Este es un mensaje de prueba para verificar que el endpoint de WhatsApp funciona correctamente.
+
+✅ Si recibes este mensaje, la integración está funcionando perfectamente.
+
+Saludos! 🤖`;
+
+      const success = await sendWhatsAppMessage(testMessage, "523338459844");
+      
+      return new Response(
+        JSON.stringify({
+          testMode: true,
+          success: success,
+          message: success ? "Mensaje de prueba enviado" : "Error enviando mensaje de prueba",
+          timestamp: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     console.log("🔧 Usando endpoint simplificado de WhatsApp");
     
