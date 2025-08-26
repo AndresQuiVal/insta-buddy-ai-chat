@@ -1513,6 +1513,7 @@ const TasksToDo: React.FC = () => {
                               
                               <div 
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400"
+                                style={{ display: 'none' }}
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
                                 <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
@@ -1577,6 +1578,7 @@ const TasksToDo: React.FC = () => {
                               <div 
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-agendados' ? null : 'ayer-agendados')}
+                                style={{ display: 'none' }}
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
                                 <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
@@ -1586,7 +1588,7 @@ const TasksToDo: React.FC = () => {
                               
                               {/* Listado de agendados de ayer */}
                               {activeStatsSection === 'ayer-agendados' && (
-                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" style={{ display: 'none' }}>
                                   <p className="text-xs text-muted-foreground italic">Funcionalidad próximamente</p>
                                 </div>
                               )}
@@ -1648,6 +1650,7 @@ const TasksToDo: React.FC = () => {
                               <div 
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-agendados' ? null : 'semana-agendados')}
+                                style={{ display: 'none' }}
                               >
                                 <span className="font-mono text-sm">📅 Agendados</span>
                                 <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold text-sm">
@@ -1657,7 +1660,7 @@ const TasksToDo: React.FC = () => {
                               
                               {/* Listado de agendados de la semana */}
                               {activeStatsSection === 'semana-agendados' && (
-                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" style={{ display: 'none' }}>
                                   <p className="text-xs text-muted-foreground italic">Funcionalidad próximamente</p>
                                 </div>
                               )}
