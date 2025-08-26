@@ -138,22 +138,12 @@ serve(async (req) => {
     // We'll get current time for each user's timezone individually
     console.log("UTC time:", new Date().toISOString());
     
-    // Get all scheduled notifications and their settings with timezone info
-    const { data: scheduleData, error: scheduleError } = await supabase
+    // Get all scheduled notifications first
+    const { data: scheduleDays, error: scheduleError } = await supabase
       .from('whatsapp_schedule_days')
-      .select(`
-        instagram_user_id, 
-        notification_time,
-        day_of_week,
-        whatsapp_notification_settings!inner(
-          whatsapp_number,
-          enabled,
-          timezone
-        )
-      `)
-      .eq('enabled', true)
-      .eq('whatsapp_notification_settings.enabled', true);
-    
+      .select('*')
+      .eq('enabled', true);
+
     if (scheduleError) {
       console.error('Error getting scheduled days:', scheduleError);
       return new Response(
@@ -161,6 +151,37 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    if (!scheduleDays || scheduleDays.length === 0) {
+      console.log("No hay días programados");
+      return new Response(
+        JSON.stringify({ message: "No hay días programados" }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get WhatsApp settings for each user
+    const { data: whatsappSettings, error: settingsError } = await supabase
+      .from('whatsapp_notification_settings')
+      .select('*')
+      .eq('enabled', true);
+
+    if (settingsError) {
+      console.error('Error getting WhatsApp settings:', settingsError);
+      return new Response(
+        JSON.stringify({ error: "Error al obtener configuración WhatsApp" }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Combine schedule and settings data
+    const scheduleData = scheduleDays.map(day => {
+      const settings = whatsappSettings.find(s => s.instagram_user_id === day.instagram_user_id);
+      return {
+        ...day,
+        whatsapp_notification_settings: settings
+      };
+    }).filter(item => item.whatsapp_notification_settings);
     
     if (!scheduleData || scheduleData.length === 0) {
       console.log("No hay usuarios con configuración de horarios");
