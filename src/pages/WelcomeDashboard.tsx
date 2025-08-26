@@ -36,31 +36,7 @@ const WelcomeDashboard = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Autoresponder Card */}
-          <Card className="bg-white/90 backdrop-blur-lg border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-[1.02]" onClick={handleAutoresponder}>
-            <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <MessageSquare className="w-8 h-8 text-white" />
-              </div>
-              <CardTitle className="text-2xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Autoresponder
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-gray-600 mb-6">
-                Gestiona tus respuestas automáticas en Instagram, configura mensajes personalizados y automatiza tu comunicación.
-              </p>
-              <Button 
-                onClick={handleAutoresponder}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 border-0"
-              >
-                Ir al Autoresponder
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* CRM Card */}
+          {/* CRM Card - MOVED FIRST */}
           <Card className="bg-white/90 backdrop-blur-lg border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-[1.02]" onClick={handleCRM}>
             <CardHeader className="text-center pb-4">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
@@ -79,6 +55,30 @@ const WelcomeDashboard = () => {
                 className="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 border-0"
               >
                 Ir al CRM
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Autoresponder Card - MOVED SECOND */}
+          <Card className="bg-white/90 backdrop-blur-lg border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-[1.02]" onClick={handleAutoresponder}>
+            <CardHeader className="text-center pb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <MessageSquare className="w-8 h-8 text-white" />
+              </div>
+              <CardTitle className="text-2xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Autoresponder
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-gray-600 mb-6">
+                Gestiona tus respuestas automáticas en Instagram, configura mensajes personalizados y automatiza tu comunicación.
+              </p>
+              <Button 
+                onClick={handleAutoresponder}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 border-0"
+              >
+                Ir al Autoresponder
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </CardContent>

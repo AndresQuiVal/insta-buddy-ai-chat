@@ -74,15 +74,45 @@ const HowerLiteOnboarding = () => {
 
   const handleInstagramConnect = () => {
     console.log('🔗 Iniciando conexión con Instagram desde onboarding...');
+    
+    // Detectar si es móvil
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log("📱 Es dispositivo móvil:", isMobile);
+    
     // Marcar que venimos del onboarding
     localStorage.setItem('instagram_auth_source', 'onboarding');
-    const success = initiateInstagramAuth();
-    if (!success) {
+    
+    if (isMobile) {
+      // Para móviles, mostrar instrucciones específicas
       toast({
-        title: "Error",
-        description: "No se pudo conectar con Instagram",
-        variant: "destructive"
+        title: "📱 Conexión en móvil",
+        description: "Te redirigiremos a Instagram. Si se abre la app, usa el menú (⋯) para 'Abrir en navegador'",
+        variant: "default"
       });
+      
+      // Delay pequeño para que el usuario lea el toast
+      setTimeout(() => {
+        console.log("⏰ Ejecutando redirección después de delay...");
+        const success = initiateInstagramAuth();
+        if (!success) {
+          toast({
+            title: "Error",
+            description: "No se pudo conectar con Instagram",
+            variant: "destructive"
+          });
+        }
+      }, 2000);
+    } else {
+      // Para desktop, proceso normal
+      console.log("💻 Dispositivo desktop, proceso normal");
+      const success = initiateInstagramAuth();
+      if (!success) {
+        toast({
+          title: "Error",
+          description: "No se pudo conectar con Instagram",
+          variant: "destructive"
+        });
+      }
     }
   };
 
