@@ -37,7 +37,7 @@ const ProspectActionDialog = ({
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                Ver conversación
+                Conversar con @{prospectUsername}
               </h3>
               <p className="text-sm text-gray-600">
                 Ir directo al chat de Instagram
