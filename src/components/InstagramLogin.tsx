@@ -75,11 +75,6 @@ const InstagramLogin = () => {
             Conectar Instagram
           </Button>
 
-          {/* Instrucciones para móviles */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
-            <p className="mb-2 font-medium">📱 ¿Usando móvil?</p>
-            <p>Si se abre la app de Instagram, busca el menú (⋯) y selecciona "Abrir en navegador" para completar la conexión.</p>
-          </div>
 
           {/* Texto mínimo */}
           <p className="text-gray-400 text-sm mt-4 font-light">
