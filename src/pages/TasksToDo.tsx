@@ -2197,13 +2197,16 @@ const TasksToDo: React.FC = () => {
                   </div>
                   <Button 
                     onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = `https://www.instagram.com/m/${dialogUser}/`;
-                      link.target = '_blank';
-                      link.rel = 'noopener noreferrer';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      // Crear URL con parámetros que fuercen navegador web
+                      const webUrl = `https://www.instagram.com/${dialogUser}/?__a=1&__d=dis`;
+                      
+                      // Para dispositivos móviles, usar location.href en lugar de window.open
+                      if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                        window.location.href = webUrl;
+                      } else {
+                        // Para desktop, usar window.open normal
+                        window.open(webUrl, '_blank', 'noopener,noreferrer');
+                      }
                       setInstagramOpened(true);
                     }}
                     className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
