@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BarChart3, Users, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import howerLogo from '@/assets/hower-logo.png';
 
 const HowerPresentation = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const HowerPresentation = () => {
         {/* Logo */}
         <div className="mb-8 flex justify-center animate-fade-in">
           <img 
-            src="/src/assets/hower-logo.png" 
+            src={howerLogo} 
             alt="Hower Assistant Logo" 
             className="w-24 h-auto object-contain"
           />
