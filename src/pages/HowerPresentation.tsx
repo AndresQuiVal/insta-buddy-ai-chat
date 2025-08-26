@@ -31,7 +31,7 @@ const HowerPresentation = () => {
         </h1>
 
         {/* Video Container */}
-        <div className="w-full max-w-4xl mb-12 animate-scale-in">
+        <div className="w-full max-w-4xl mb-16 animate-scale-in">
           <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden shadow-2xl">
             <iframe
               src="https://www.loom.com/embed/YOUR_LOOM_VIDEO_ID"
@@ -40,10 +40,11 @@ const HowerPresentation = () => {
               className="absolute top-0 left-0 w-full h-full"
               title="Hower Assistant Demo"
             ></iframe>
+          </div>
         </div>
 
         {/* Features Section */}
-        <div className="w-full max-w-6xl mb-12 px-4">
+        <div className="w-full max-w-6xl mb-16 px-4">
           <div className="grid md:grid-cols-3 gap-6">
             {/* Tus Números */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300 animate-fade-in">
@@ -55,7 +56,7 @@ const HowerPresentation = () => {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Tus Números</h3>
                 <p className="text-white/90 text-sm">
-                  Controla cuántos prospectos contactas, cuántos das seguimiento, etc
+                  Controla cuántos prospectos contactas y das seguimiento
                 </p>
               </CardContent>
             </Card>
@@ -70,7 +71,7 @@ const HowerPresentation = () => {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Tus prospectos en 1 lugar</h3>
                 <p className="text-white/90 text-sm">
-                  Nada de usar etiquetas en Instagram, controla tus prospectos fácil en Hower Assistant
+                  Gestiona todos tus prospectos sin usar etiquetas de Instagram
                 </p>
               </CardContent>
             </Card>
@@ -85,12 +86,11 @@ const HowerPresentation = () => {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Un Asistente para ti</h3>
                 <p className="text-white/90 text-sm">
-                  Deja que Hower Assistant sea tu asistente de prospección y te recuerde de la tarea más importante: prospectar
+                  Tu asistente de prospección que te recuerda las tareas importantes
                 </p>
               </CardContent>
             </Card>
           </div>
-        </div>
         </div>
 
         {/* CTA Button */}
