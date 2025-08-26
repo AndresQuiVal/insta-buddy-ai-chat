@@ -983,7 +983,8 @@ const TasksToDo: React.FC = () => {
   };
 
   const ProspectCard = ({ prospect, taskType }: { prospect: ProspectData; taskType: string }) => {
-    const taskKey = `${taskType}-${prospect.id}`;
+    // Usar siempre 'pending' como task_type para la clave, independientemente del estado del prospecto
+    const taskKey = `pending-${prospect.id}`;
     const isCompleted = completedTasks[taskKey];
     const isFollowUpProspect = taskType === 'yesterday' || taskType === 'week';
     const interactionTipKey = `interaction-${prospect.id}`;
