@@ -201,7 +201,10 @@ const ProspectList: React.FC = () => {
             raw_data
           )
         `)
-        .eq('instagram_user_id', currentUser.id)
+        .eq('instagram_user_id', currentUser.id)  // FILTRO POR USUARIO ESPECÍFICO
+        .not('username', 'like', 'user_%')  // EXCLUIR usernames genéricos user_*
+        .not('username', 'like', 'prospect_%')  // EXCLUIR usernames genéricos prospect_*
+        .neq('username', '')  // EXCLUIR usernames vacíos
         .order('last_message_date', { ascending: false });
 
       console.log('📊 RESULTADO DE LA CONSULTA:');

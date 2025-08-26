@@ -276,8 +276,8 @@ export const useProspects = (currentInstagramUserId?: string) => {
       }
       
       if (!instagramToken) {
-        console.log(`❌ [${shortId}] No hay token de Instagram disponible - retornando fallback`);
-        return `user_${shortId}`;
+        console.log(`❌ [${shortId}] No hay token de Instagram disponible - NO RETORNAR PROSPECTO`);
+        return null; // Cambio crítico: retornar null en lugar de fallback
       }
 
       // Llamar a la API de Instagram para obtener información del usuario
@@ -301,12 +301,12 @@ export const useProspects = (currentInstagramUserId?: string) => {
       console.error(`❌ [${shortId}] Error fetching Instagram username:`, error);
     }
 
-    // Fallback: usar el sender_id acortado
-    console.log(`⚠️ [${shortId}] Usando fallback username: user_${shortId}`);
-    return `user_${shortId}`;
+    // NO crear fallback - retornar null para que se filtre el prospecto
+    console.log(`❌ [${shortId}] No se pudo obtener username real - prospecto será filtrado`);
+    return null;
   };
 
-  const extractUsernameFromMessage = async (messages: InstagramMessage[], senderId: string): Promise<string> => {
+  const extractUsernameFromMessage = async (messages: InstagramMessage[], senderId: string): Promise<string | null> => {
     console.log(`🔍 [${senderId.slice(-8)}] ==> extractUsernameFromMessage iniciado con ${messages.length} mensajes`);
     
     // PRIORIDAD 1: Intentar extraer del raw_data del webhook
@@ -319,14 +319,14 @@ export const useProspects = (currentInstagramUserId?: string) => {
     console.log(`🔄 [${senderId.slice(-8)}] No se encontró username en raw_data, intentando API de Instagram...`);
     // PRIORIDAD 2: Intentar obtener el username real de Instagram API
     const realUsername = await fetchInstagramUsername(senderId);
-    if (realUsername && !realUsername.includes('user_')) {
+    if (realUsername) {
       console.log(`✅ [${senderId.slice(-8)}] Username obtenido de Instagram API: ${realUsername}`);
       return realUsername;
     }
 
-    // FALLBACK: Usar el sender_id acortado
-    console.log(`⚠️ [${senderId.slice(-8)}] Usando fallback para sender_id: ${senderId} -> ${realUsername}`);
-    return realUsername;
+    // NO FALLBACK: Si no se puede obtener el username real, no mostrar el prospecto
+    console.log(`❌ [${senderId.slice(-8)}] No se pudo obtener username válido - prospecto será filtrado`);
+    return null;
   };
 
   const createProspectFromMessages = async (senderId: string, senderMessages: InstagramMessage[]): Promise<Prospect> => {
@@ -373,6 +373,12 @@ export const useProspects = (currentInstagramUserId?: string) => {
     console.log(`🔍 [${senderId.slice(-8)}] Iniciando extracción de username...`);
     const username = await extractUsernameFromMessage(messagesForThisSender, senderId);
     console.log(`🔍 [${senderId.slice(-8)}] Username final obtenido: ${username}`);
+    
+    // FILTRO CRÍTICO: Si no se pudo obtener un username válido, no crear el prospecto
+    if (!username) {
+      console.log(`❌ [${senderId.slice(-8)}] No se pudo obtener username válido - prospecto descartado`);
+      throw new Error(`No se pudo obtener username válido para ${senderId}`);
+    }
     
     const source = determineProspectSource(messagesForThisSender);
 
@@ -431,9 +437,19 @@ export const useProspects = (currentInstagramUserId?: string) => {
       // 🔄 CONVERTIR datos de BD a formato de Prospect
       const convertedProspects: Prospect[] = [];
       
-      for (const prospectData of prospectsData) {
+       for (const prospectData of prospectsData) {
         try {
           console.log(`🔄 [FETCH] Procesando prospecto: ${prospectData.username} (${prospectData.prospect_instagram_id})`);
+          
+          // FILTROS CRÍTICOS: Excluir usernames inválidos
+          if (!prospectData.username || 
+              prospectData.username.startsWith('user_') || 
+              prospectData.username.startsWith('prospect_') ||
+              prospectData.username === prospectData.prospect_instagram_id ||
+              prospectData.username.trim() === '') {
+            console.log(`❌ [FETCH] Prospecto filtrado por username inválido: ${prospectData.username}`);
+            continue;
+          }
           
           // Obtener mensajes del prospecto
           const messages = prospectData.prospect_messages || [];

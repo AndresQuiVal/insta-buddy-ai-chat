@@ -145,7 +145,7 @@ export class ProspectService implements ProspectServiceInterface {
 
       const userUUID = userData.id;
 
-      // Obtener prospectos con sus mensajes
+      // Obtener prospectos con sus mensajes - FILTROS ESTRICTOS
       const { data: prospects, error: prospectsError } = await supabase
         .from('prospects')
         .select(`
@@ -154,7 +154,10 @@ export class ProspectService implements ProspectServiceInterface {
             *
           )
         `)
-        .eq('instagram_user_id', userUUID)
+        .eq('instagram_user_id', userUUID)  // FILTRO POR USUARIO ESPECÍFICO
+        .not('username', 'like', 'user_%')  // EXCLUIR usernames genéricos user_*
+        .not('username', 'like', 'prospect_%')  // EXCLUIR usernames genéricos prospect_*
+        .neq('username', '')  // EXCLUIR usernames vacíos
         .order('last_message_date', { ascending: false });
 
       if (prospectsError) {
