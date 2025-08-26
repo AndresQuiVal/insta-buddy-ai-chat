@@ -19,6 +19,7 @@ import { useProspects } from '@/hooks/useProspects';
 import { useNavigate } from 'react-router-dom';
 import { InstagramDebugPanel } from '@/components/InstagramDebugPanel';
 import TasksHamburgerMenu from '@/components/TasksHamburgerMenu';
+import ProspectActionDialog from '@/components/ProspectActionDialog';
 
 interface ProspectData {
   id: string;
@@ -94,10 +95,12 @@ const TasksToDo: React.FC = () => {
   const [dialogMessage, setDialogMessage] = useState<string>('');
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   const [instagramOpened, setInstagramOpened] = useState(false);
+  
+  // Estados para ProspectActionDialog
+  const [selectedProspectUsername, setSelectedProspectUsername] = useState<string>('');
+  const [showActionDialog, setShowActionDialog] = useState(false);
 
   const [expandedDailyTip, setExpandedDailyTip] = useState(false);
-
-  // Estados para nombre de lista editable y frases motivacionales
   const [listName, setListName] = useState('Mi Lista de Prospectos');
   const [isEditingListName, setIsEditingListName] = useState(false);
   const [tempListName, setTempListName] = useState('');
@@ -960,6 +963,29 @@ const TasksToDo: React.FC = () => {
     }
   };
 
+  // Funciones para manejar ProspectActionDialog
+  const handleProspectClick = (username: string) => {
+    setSelectedProspectUsername(username);
+    setShowActionDialog(true);
+  };
+
+  const handleViewConversation = () => {
+    if (selectedProspectUsername) {
+      window.open(`https://www.instagram.com/direct/t/${selectedProspectUsername}`, '_blank');
+      setShowActionDialog(false);
+      setSelectedProspectUsername('');
+    }
+  };
+
+  const handleAISuggestion = () => {
+    setShowActionDialog(false);
+    if (selectedProspectUsername) {
+      // Llamar a openOnboarding para abrir el dialog de IA
+      openOnboarding(selectedProspectUsername, 'outreach', undefined, 'pending');
+    }
+    setSelectedProspectUsername('');
+  };
+
   const ProspectCard = ({ prospect, taskType }: { prospect: ProspectData; taskType: string }) => {
     const taskKey = `${taskType}-${prospect.id}`;
     const isCompleted = completedTasks[taskKey];
@@ -976,7 +1002,7 @@ const TasksToDo: React.FC = () => {
     return (
       <div 
         className={`bg-gradient-to-r from-white to-blue-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}
-        onClick={() => openOnboarding(prospect.userName, 'outreach', undefined, taskType)}
+        onClick={() => handleProspectClick(prospect.userName)}
       >
         {/* Información principal del prospecto */}
         <div className="flex items-center justify-between p-6 bg-white rounded-xl border border-gray-100">
@@ -2226,6 +2252,18 @@ const TasksToDo: React.FC = () => {
 
         </DialogContent>
       </Dialog>
+
+      {/* ProspectActionDialog */}
+      <ProspectActionDialog
+        isOpen={showActionDialog}
+        onClose={() => {
+          setShowActionDialog(false);
+          setSelectedProspectUsername('');
+        }}
+        prospectUsername={selectedProspectUsername}
+        onViewConversation={handleViewConversation}
+        onAISuggestion={handleAISuggestion}
+      />
     </div>
   );
 };
