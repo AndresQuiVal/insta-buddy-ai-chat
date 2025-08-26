@@ -2197,7 +2197,13 @@ const TasksToDo: React.FC = () => {
                   </div>
                   <Button 
                     onClick={() => {
-                      window.open(`https://www.instagram.com/m/${dialogUser}/`, '_blank');
+                      const link = document.createElement('a');
+                      link.href = `https://www.instagram.com/m/${dialogUser}/`;
+                      link.target = '_blank';
+                      link.rel = 'noopener noreferrer';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
                       setInstagramOpened(true);
                     }}
                     className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
