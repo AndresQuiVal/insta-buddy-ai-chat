@@ -135,14 +135,9 @@ async function getUserStats(instagramUserId: string) {
         const lastMessageTime = new Date(prospect.last_owner_message_at);
         const hoursSinceLastMessage = (now.getTime() - lastMessageTime.getTime()) / (1000 * 60 * 60);
         
-        if (hoursSinceLastMessage >= 168) { // 7 days = 168 hours
-          // More than 7 days = week follow-up
-          if (!completedWeek.has(prospectId)) {
-            seguimientos++;
-          }
-        } else if (hoursSinceLastMessage >= 24) { // 1 day = 24 hours
-          // More than 24 hours = yesterday follow-up
-          if (!completedYesterday.has(prospectId)) {
+        if (hoursSinceLastMessage >= 24) { // More than 24 hours = follow-up
+          // Check if completed in yesterday or week tasks
+          if (!completedYesterday.has(prospectId) && !completedWeek.has(prospectId)) {
             seguimientos++;
           }
         } else {
