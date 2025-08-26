@@ -43,7 +43,7 @@ const WelcomeDashboard = () => {
                 <Users className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
-                CRM de Prospectos
+                Administra tus prospectos
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center">
