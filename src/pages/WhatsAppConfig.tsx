@@ -302,20 +302,20 @@ const WhatsAppConfig: React.FC = () => {
 
   // Country codes for phone numbers
   const countryCodes = [
-    { value: '+52', label: '🇲🇽 México (+52)', country: 'México' },
-    { value: '+1', label: '🇺🇸 Estados Unidos (+1)', country: 'Estados Unidos' },
-    { value: '+54', label: '🇦🇷 Argentina (+54)', country: 'Argentina' },
-    { value: '+55', label: '🇧🇷 Brasil (+55)', country: 'Brasil' },
-    { value: '+57', label: '🇨🇴 Colombia (+57)', country: 'Colombia' },
-    { value: '+51', label: '🇵🇪 Perú (+51)', country: 'Perú' },
-    { value: '+56', label: '🇨🇱 Chile (+56)', country: 'Chile' },
-    { value: '+58', label: '🇻🇪 Venezuela (+58)', country: 'Venezuela' },
-    { value: '+593', label: '🇪🇨 Ecuador (+593)', country: 'Ecuador' },
-    { value: '+34', label: '🇪🇸 España (+34)', country: 'España' },
-    { value: '+44', label: '🇬🇧 Reino Unido (+44)', country: 'Reino Unido' },
-    { value: '+33', label: '🇫🇷 Francia (+33)', country: 'Francia' },
-    { value: '+49', label: '🇩🇪 Alemania (+49)', country: 'Alemania' },
-    { value: '+39', label: '🇮🇹 Italia (+39)', country: 'Italia' },
+    { value: '+52', label: '🇲🇽 +52', country: 'México' },
+    { value: '+1', label: '🇺🇸 +1', country: 'Estados Unidos' },
+    { value: '+54', label: '🇦🇷 +54', country: 'Argentina' },
+    { value: '+55', label: '🇧🇷 +55', country: 'Brasil' },
+    { value: '+57', label: '🇨🇴 +57', country: 'Colombia' },
+    { value: '+51', label: '🇵🇪 +51', country: 'Perú' },
+    { value: '+56', label: '🇨🇱 +56', country: 'Chile' },
+    { value: '+58', label: '🇻🇪 +58', country: 'Venezuela' },
+    { value: '+593', label: '🇪🇨 +593', country: 'Ecuador' },
+    { value: '+34', label: '🇪🇸 +34', country: 'España' },
+    { value: '+44', label: '🇬🇧 +44', country: 'Reino Unido' },
+    { value: '+33', label: '🇫🇷 +33', country: 'Francia' },
+    { value: '+49', label: '🇩🇪 +49', country: 'Alemania' },
+    { value: '+39', label: '🇮🇹 +39', country: 'Italia' },
   ];
 
   // Common timezones for the selector
@@ -410,12 +410,12 @@ const WhatsAppConfig: React.FC = () => {
               </Label>
               <div className="flex gap-2 mt-2">
                 <Select value={countryCode} onValueChange={setCountryCode}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Código país" />
+                  <SelectTrigger className="w-24">
+                    <SelectValue placeholder="País" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-auto">
                     {countryCodes.map((code) => (
-                      <SelectItem key={code.value} value={code.value}>
+                      <SelectItem key={code.value} value={code.value} className="hover:bg-gray-100 cursor-pointer">
                         {code.label}
                       </SelectItem>
                     ))}
@@ -444,9 +444,9 @@ const WhatsAppConfig: React.FC = () => {
                 <SelectTrigger className="mt-2">
                   <SelectValue placeholder="Selecciona tu zona horaria" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-auto">
                   {commonTimezones.map((tz) => (
-                    <SelectItem key={tz.value} value={tz.value}>
+                    <SelectItem key={tz.value} value={tz.value} className="hover:bg-gray-100 cursor-pointer">
                       {tz.label}
                     </SelectItem>
                   ))}
