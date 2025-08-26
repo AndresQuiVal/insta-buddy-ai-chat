@@ -22,7 +22,7 @@ const ProspectActionDialog = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-bold text-gray-800">
-            ¿Hacia qué <span className="text-primary">prospectos</span> contactar?
+            @{prospectUsername}
           </DialogTitle>
         </DialogHeader>
         
@@ -32,7 +32,7 @@ const ProspectActionDialog = ({
             onClick={onViewConversation}
             className="flex items-center p-6 bg-white rounded-2xl border border-gray-200 hover:border-primary/30 cursor-pointer transition-all duration-200 hover:shadow-lg group"
           >
-            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mr-6 group-hover:scale-105 transition-transform">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mr-6 group-hover:scale-105 transition-transform" style={{ backgroundColor: '#7a60ff' }}>
               <MessageCircle className="w-8 h-8 text-white" />
             </div>
             <div className="flex-1">
@@ -50,7 +50,7 @@ const ProspectActionDialog = ({
             onClick={onAISuggestion}
             className="flex items-center p-6 bg-white rounded-2xl border border-gray-200 hover:border-primary/30 cursor-pointer transition-all duration-200 hover:shadow-lg group"
           >
-            <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center mr-6 group-hover:scale-105 transition-transform">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mr-6 group-hover:scale-105 transition-transform" style={{ backgroundColor: '#7a60ff' }}>
               <Bot className="w-8 h-8 text-white" />
             </div>
             <div className="flex-1">
