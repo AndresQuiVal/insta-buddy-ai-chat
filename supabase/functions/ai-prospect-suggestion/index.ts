@@ -39,25 +39,35 @@ serve(async (req) => {
     console.log('📝 Conversación:', conversation)
     console.log('🎯 Características recibidas:', ideal_traits)
 
-    // Crear prompt específico para generar mensajes fríos de Instagram
-    let systemPrompt = `Quiero que generes mensajes fríos para Instagram con la siguiente estructura obligatoria:
-	1.	Saludo casual + mención directa al nombre del prospecto.
-	2.	Observación sobre algo que viste de la persona (su perfil, su publicación, su estilo, etc.).
-	3.	Pregunta abierta única y curiosa, que invite a conversación natural (solo un «¿» y un «?» en todo el mensaje).
-	4.	Personalización final breve, que refuerce que el mensaje es humano y no comercial.
+    // Crear prompt específico para generar mensajes de seguimiento de Instagram
+    let systemPrompt = `Quiero que generes mensajes de seguimiento para Instagram dirigidos a personas que dejaron de responder o nunca respondieron.
 
-Instrucciones estrictas:
-	•	Cada mensaje debe ser 100 % humano, cálido y espontáneo, sin sonar a venta.
-	•	Longitud total: entre 22 y 40 palabras.
-	•	Prohibido usar: "oportunidad", "negocio", "ganancias", "cliente", "precio", "vender", "seguidores", "likes", "comentarios", "te interesa", "quieres", "puedo mostrarte", "agenda", "únete".
-	•	No uses emojis, viñetas ni comillas.
+Estructura obligatoria de cada mensaje
+	1.	Saludo casual con nombre o forma breve, usando variedad:
+	•	Formatos válidos:
+	•	"¡Hola [NOMBRE]!"
+	•	"[NOMBRE]?"
+	•	"Hola [NOMBRE]?"
+	•	"¿Estás por ahí?"
+	•	Deben alternarse entre mensajes para dar naturalidad.
+	2.	Observación ligera / excusa amable para justificar el nuevo mensaje (ejemplo: "por si se perdió mi mensaje", "solo quería romper el silencio").
+	3.	Pregunta abierta breve que invite a reanudar sin presión (ejemplo: "¿seguimos en contacto?", "¿aún tiene sentido para ti?", "¿lo retomamos?").
+	4.	Personalización opcional para sonar cercano y cero comercial.
+
+Instrucciones estrictas
+	•	Estilo 100 % humano, cálido, cero venta.
+	•	Longitud total: entre 18 y 28 palabras.
 	•	Una sola pregunta por mensaje.
-	•	Cambia vocabulario y ritmo entre mensajes, evita repeticiones literales.
-	•	Entrega exactamente 1 mensaje.
+	•	Prohibido: "negocio", "oportunidad", "ganancias", "precio", "cliente", "vender", "seguidores", "likes", "comentarios".
+	•	Sin emojis, sin llamadas a la acción tipo agenda/reunión.
+	•	Cambiar vocabulario, ritmo y excusas en cada mensaje para no sonar repetitivo.
+	•	Saludos deben variar entre los cuatro formatos listados arriba.
 	•	Formato de salida obligatorio: solo el mensaje, sin numeración ni separadores.
 
-🔹 Ejemplo de mensaje válido siguiendo la estructura:
-Hola Laura, noté que compartes fotos de viajes con mucha naturalidad, me dio curiosidad, ¿qué destino sientes que más te ha cambiado? Me gusta conectar con personas que disfrutan explorar.`;
+🔹 Ejemplos de mensajes válidos con este ajuste:
+	•	Hola Laura? solo paso a dejarte este recordatorio amistoso ¿seguimos en contacto?
+	•	Felipe? escribo de nuevo por si no viste lo anterior ¿lo retomamos?
+	•	¿Estás por ahí? me parecía raro dejar la conversación en pausa ¿aún tiene sentido retomarla?`;
 
     // Si hay características configuradas, añadirlas al contexto del mensaje
     if (ideal_traits && ideal_traits.length > 0) {
