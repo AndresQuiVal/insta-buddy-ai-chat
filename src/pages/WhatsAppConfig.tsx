@@ -106,18 +106,52 @@ const WhatsAppConfig: React.FC = () => {
       if (settingsError) {
         console.error('Error loading WhatsApp settings:', settingsError);
       } else if (settings) {
+        console.log('Loaded WhatsApp settings:', settings);
         const fullNumber = settings.whatsapp_number || '';
+        console.log('Full number from DB:', fullNumber);
+        
         setWhatsappNumber(fullNumber);
-        // Extract country code and number
+        
+        // Extract country code and number - mejorar la lógica
         if (fullNumber.startsWith('+')) {
-          const match = fullNumber.match(/^(\+\d{1,4})(.*)$/);
-          if (match) {
-            setCountryCode(match[1]);
-            setPhoneNumber(match[2]);
+          // Buscar el primer espacio o después de los primeros 2-4 dígitos
+          let countryCodePart = '';
+          let phonePart = '';
+          
+          // Probar diferentes longitudes de código de país
+          for (let i = 2; i <= 5; i++) {
+            const potentialCode = fullNumber.substring(0, i);
+            const potentialPhone = fullNumber.substring(i).trim();
+            
+            // Verificar si este código existe en nuestra lista
+            const codeExists = countryCodes.find(c => c.value === potentialCode);
+            if (codeExists) {
+              countryCodePart = potentialCode;
+              phonePart = potentialPhone;
+              break;
+            }
           }
+          
+          // Si no encontramos el código, usar fallback regex
+          if (!countryCodePart) {
+            const match = fullNumber.match(/^(\+\d{1,4})\s*(.*)$/);
+            if (match) {
+              countryCodePart = match[1];
+              phonePart = match[2].trim();
+            }
+          }
+          
+          console.log('Extracted country code:', countryCodePart);
+          console.log('Extracted phone number:', phonePart);
+          
+          setCountryCode(countryCodePart || '+52');
+          setPhoneNumber(phonePart || '');
         } else {
           setPhoneNumber(fullNumber);
+          setCountryCode('+52'); // Default
         }
+        
+        console.log('Setting timezone to:', settings.timezone || detectedTimezone);
         setTimezone(settings.timezone || detectedTimezone);
       }
       
