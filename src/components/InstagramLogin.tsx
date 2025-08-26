@@ -1,12 +1,54 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Instagram } from 'lucide-react';
+import { Instagram, Copy, Check, ExternalLink } from 'lucide-react';
 import { initiateInstagramAuth } from '@/services/instagramService';
 import { useToast } from '@/hooks/use-toast';
 
 const InstagramLogin = () => {
   const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  // Generar URL de autorización manual
+  const generateAuthUrl = () => {
+    const clientId = "1059372749433300";
+    const redirectUri = window.location.origin + "/auth/instagram/callback";
+    const scope = "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments";
+    
+    const authUrl = new URL("https://www.instagram.com/oauth/authorize");
+    authUrl.searchParams.append("client_id", clientId);
+    authUrl.searchParams.append("redirect_uri", redirectUri);
+    authUrl.searchParams.append("scope", scope);
+    authUrl.searchParams.append("response_type", "code");
+    authUrl.searchParams.append("state", "hower-state-" + Date.now());
+    
+    return authUrl.toString();
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      const url = generateAuthUrl();
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast({
+        title: "URL copiada",
+        description: "El enlace de autorización ha sido copiado al portapapeles",
+        variant: "default"
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Error al copiar",
+        description: "No se pudo copiar el enlace. Inténtalo de nuevo.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const openInNewTab = () => {
+    const url = generateAuthUrl();
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const handleInstagramLogin = () => {
     console.log("🔥 BOTÓN CLICKEADO - Iniciando proceso de login");
@@ -75,9 +117,51 @@ const InstagramLogin = () => {
             Conectar Instagram
           </Button>
 
+          {/* Separador */}
+          <div className="flex items-center my-6">
+            <div className="flex-1 border-t border-gray-200"></div>
+            <span className="px-3 text-gray-400 text-sm font-light">o</span>
+            <div className="flex-1 border-t border-gray-200"></div>
+          </div>
+
+          {/* Opciones alternativas */}
+          <div className="space-y-3">
+            <p className="text-gray-500 text-xs font-light">
+              ¿Problemas con el botón? Usa estos enlaces alternativos:
+            </p>
+            
+            <div className="flex gap-2">
+              <Button
+                onClick={copyToClipboard}
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs py-2"
+              >
+                {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                {copied ? 'Copiado' : 'Copiar URL'}
+              </Button>
+              
+              <Button
+                onClick={openInNewTab}
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs py-2"
+              >
+                <ExternalLink className="w-3 h-3 mr-1" />
+                Abrir en nueva pestaña
+              </Button>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-3 text-left">
+              <p className="text-xs text-gray-600 mb-1 font-medium">URL de autorización:</p>
+              <p className="text-xs text-gray-500 break-all leading-relaxed">
+                {generateAuthUrl().substring(0, 80)}...
+              </p>
+            </div>
+          </div>
 
           {/* Texto mínimo */}
-          <p className="text-gray-400 text-sm mt-4 font-light">
+          <p className="text-gray-400 text-sm mt-6 font-light">
             Conecta tu cuenta para comenzar
           </p>
         </div>
