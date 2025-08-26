@@ -1,213 +1,116 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { supabase } from '../_shared/supabase.ts'
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-// Configuración para WhatsApp usando Railway endpoint
-const WHATSAPP_API_URL = 'https://www.howersoftware.io/clients/api/send-whatsapp/'
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
+
+const WHATSAPP_API_URL = "https://www.howersoftware.io/clients/api/send-whatsapp/";
 
 async function sendWhatsAppMessage(message: string, toNumber: string): Promise<boolean> {
   try {
-    console.log('📤 Enviando mensaje WhatsApp a:', toNumber)
-    console.log('📤 Mensaje:', message.substring(0, 50) + '...')
-    
     const payload = {
       message: message,
       to_number: toNumber
-    }
+    };
     
-    console.log('📤 Payload completo:', JSON.stringify(payload))
-    console.log('📤 URL:', WHATSAPP_API_URL)
+    console.log("📤 Enviando mensaje WhatsApp a:", toNumber);
+    console.log("📤 Mensaje:", message.substring(0, 100) + "...");
+    console.log("📤 Payload completo:", JSON.stringify(payload));
+    console.log("📤 URL:", WHATSAPP_API_URL);
     
     const response = await fetch(WHATSAPP_API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
-    })
+    });
     
-    console.log('📥 Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())))
-    console.log('📥 Status code:', response.status)
-    console.log('📥 Status text:', response.statusText)
+    console.log("📥 Status code:", response.status);
+    console.log("📥 Status text:", response.statusText);
+    console.log("📥 Response headers:", JSON.stringify(Object.fromEntries(response.headers.entries())));
     
-    const responseText = await response.text()
-    console.log('📥 Response text (raw):', responseText)
+    const responseText = await response.text();
+    console.log("📥 Response text (raw):", responseText);
     
-    if (response.ok) {
-      try {
-        const responseJson = JSON.parse(responseText)
-        console.log('📥 Response JSON:', JSON.stringify(responseJson, null, 2))
-        console.log('✅ Mensaje enviado exitosamente')
-        return true
-      } catch (parseError) {
-        console.log('⚠️ Response no es JSON válido, pero status OK:', responseText)
-        return true
-      }
-    } else {
-      console.error('❌ Error en respuesta:', response.status, responseText)
-      return false
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+      console.log("📥 Response JSON:", JSON.stringify(responseData, null, 2));
+    } catch (parseError) {
+      console.log("⚠️ No se pudo parsear como JSON:", parseError.message);
+      responseData = { raw: responseText };
     }
+    
+    if (response.ok && responseData.success) {
+      console.log("✅ Mensaje enviado exitosamente");
+      return true;
+    } else {
+      console.error("❌ Error en respuesta:");
+      console.error("❌ Status:", response.status);
+      console.error("❌ Data:", responseData);
+      return false;
+    }
+    
   } catch (error) {
-    console.error('❌ Error enviando mensaje WhatsApp:', error)
-    return false
+    console.error("❌ Error enviando mensaje WhatsApp:", error);
+    console.error("❌ Error stack:", error.stack);
+    return false;
   }
 }
 
 async function getUserStats(instagramUserId: string) {
   try {
-    // Get the instagram_user UUID for this instagram_user_id 
-    const { data: instagramUser, error: userError } = await supabase
-      .from('instagram_users')
-      .select('id')
-      .eq('instagram_user_id', instagramUserId)
-      .single();
-
-    if (userError || !instagramUser) {
-      console.error('Error getting instagram user:', userError);
-      return { abiertas: 0, seguimientos: 0, agendados: 20 };
-    }
-
-    // Use EXACT same logic as frontend - get prospects from prospects table with last_owner_message_at
-    const { data: prospects, error: prospectsError } = await supabase
-      .from('prospects')
-      .select(`
-        prospect_instagram_id,
-        username,
-        last_owner_message_at,
-        last_message_from_prospect,
-        prospect_messages (
-          id,
-          is_from_prospect,
-          is_invitation,
-          message_timestamp
-        )
-      `)
-      .eq('instagram_user_id', instagramUser.id);
-
-    if (prospectsError) {
-      console.error('Error getting prospects:', prospectsError);
-      return { abiertas: 0, seguimientos: 0, agendados: 20 };
-    }
-
-    if (!prospects) {
-      console.log('No prospects found');
-      return { abiertas: 0, seguimientos: 0, agendados: 20 };
-    }
-
-    // 2. For each prospect, determine state using EXACT same logic as frontend
-    const prospectsWithStates = prospects.map(prospect => {
-      // Check for invitations sent (same as frontend)
-      const messages = prospect.prospect_messages || [];
-      const hasInvitation = messages.some((msg: any) => 
-        msg.is_invitation === true && msg.is_from_prospect === false
-      );
+    // Get stats using the existing function
+    const { data: stats, error } = await supabase
+      .rpc('grok_get_stats', {
+        p_instagram_user_id: instagramUserId,
+        p_period: 'today'
+      });
       
-      if (hasInvitation) {
-        return { ...prospect, state: 'invited' };
-      }
-
-      // If no last_owner_message_at = PENDING (same as frontend)
-      if (!prospect.last_owner_message_at) {
-        return { ...prospect, state: 'pending' };
-      }
-
-      // Calculate time since last owner message (same as frontend)
-      const lastOwnerMessageTime = new Date(prospect.last_owner_message_at).getTime();
-      const now = new Date().getTime();
-      const hoursSinceLastOwnerMessage = (now - lastOwnerMessageTime) / (1000 * 60 * 60);
-      const daysSinceLastOwnerMessage = hoursSinceLastOwnerMessage / 24;
-
-      // Apply time-based logic (same as frontend)
-      if (daysSinceLastOwnerMessage >= 7) {
-        return { ...prospect, state: 'week' };
-      } else if (daysSinceLastOwnerMessage >= 1) {
-        return { ...prospect, state: 'yesterday' };
-      } else {
-        return { ...prospect, state: 'pending' };
-      }
-    });
-
-    // 3. Get completed tasks 
-    const { data: taskStatus, error: taskError } = await supabase
-      .from('prospect_task_status')
-      .select('prospect_sender_id, task_type, is_completed')
-      .eq('instagram_user_id', instagramUserId)
-      .eq('is_completed', true)
-      .in('task_type', ['pending', 'yesterday', 'week']);
-
-    if (taskError) {
-      console.error('Error getting task status:', taskError);
+    if (error) {
+      console.error('Error getting user stats:', error);
+      return { abiertas: 0, seguimientos: 0, agendados: 0 };
     }
-
-    // Create sets of completed tasks
-    const completedByType = {
-      pending: new Set(taskStatus?.filter(t => t.task_type === 'pending').map(t => t.prospect_sender_id) || []),
-      yesterday: new Set(taskStatus?.filter(t => t.task_type === 'yesterday').map(t => t.prospect_sender_id) || []),
-      week: new Set(taskStatus?.filter(t => t.task_type === 'week').map(t => t.prospect_sender_id) || [])
-    };
-
-    // 4. Calculate final stats
-    let abiertas = 0; // pending NOT completed
-    let seguimientos = 0; // yesterday + week NOT completed
-    let yesterdayCount = 0; // Debug
-    let weekCount = 0; // Debug
-
-    prospectsWithStates.forEach((prospect: any) => {
-      const senderId = prospect.prospect_instagram_id;
-      const state = prospect.state;
-
-      if (state === 'pending' && !completedByType.pending.has(senderId)) {
-        abiertas++;
-      } else if (state === 'yesterday' && !completedByType.yesterday.has(senderId)) {
-        seguimientos++;
-        yesterdayCount++;
-      } else if (state === 'week' && !completedByType.week.has(senderId)) {
-        seguimientos++;
-        weekCount++;
-      }
-    });
-
-    console.log('📊 Real-time stats for', instagramUserId + ':');
-    console.log('   💬 Abiertas (pending NOT tachados):', abiertas);
-    console.log('   🔄 Seguimientos (yesterday+week NOT tachados):', seguimientos);
-    console.log('   📅 Yesterday count:', yesterdayCount);
-    console.log('   📆 Week count:', weekCount);
-    console.log('   🎯 Agendados (siempre):', 20);
-
-    return { abiertas, seguimientos, agendados: 20 };
+    
+    return stats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
+    
   } catch (error) {
     console.error('Error in getUserStats:', error);
-    return { abiertas: 0, seguimientos: 0, agendados: 20 };
+    return { abiertas: 0, seguimientos: 0, agendados: 0 };
   }
 }
 
 function createMotivationalMessage(stats: { abiertas: number, seguimientos: number, agendados: number }): string {
   const greetings = [
-    '¡Hola campeón!',
-    '¡Hey crack!',
-    '¡Hola máquina!',
-    '¡Qué tal guerrero!',
-    '¡Hola tigre!'
-  ]
+    "¡Buenos días! 🌟",
+    "¡Hola campeón! 💪",
+    "¡Arranca el día con energía! ⚡",
+    "¡A conquistar el día! 🚀",
+    "¡Buenos días, prospector! 🎯"
+  ];
   
   const motivationalPhrases = [
-    '¡Tu dedicación se convertirá en resultados!',
-    '¡Cada mensaje cuenta, sigue así!',
-    '¡Tu constancia te llevará al éxito!',
-    '¡Sigue conquistando prospectos!',
-    '¡Eres imparable, continúa!',
-    '¡El éxito está en tus manos!',
-    '¡Tu esfuerzo vale la pena!'
-  ]
+    "¡Cada contacto te acerca más a tu objetivo! 🎯",
+    "¡El éxito está en la constancia! 💪",
+    "¡Hoy es un gran día para cerrar negocios! 🚀",
+    "¡Tu dedicación se convertirá en resultados! ⭐",
+    "¡Sigue así, vas por buen camino! 🔥"
+  ];
   
-  const greeting = greetings[Math.floor(Math.random() * greetings.length)]
-  const phrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)]
+  const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+  const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
   
-  const message = `${greeting} 💪
+  const totalProspects = stats.abiertas + stats.seguimientos;
+  
+  return `${randomGreeting}
 
 Tienes estos prospectos por contactar:
 URGENTES de contestar: ${stats.abiertas}
@@ -219,128 +122,158 @@ https://preview--insta-buddy-ai-chat.lovable.app/tasks-to-do
 
 y limpia esos prospectos
 
-${phrase} ⭐`
-
-  return message
+${randomPhrase}`;
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('🔧 Usando endpoint simplificado de WhatsApp')
-    console.log('🚀 Starting WhatsApp notification process...')
+    console.log("🚀 Starting WhatsApp notification process...");
+    console.log("🔧 Usando endpoint simplificado de WhatsApp");
     
-    // Get current time in Mexico City timezone
-    const now = new Date()
-    const mexicoTime = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Mexico_City',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }).format(now)
+    // Get current time info IN MEXICO TIME ZONE
+    const mexicoTime = new Date().toLocaleString("en-US", {timeZone: "America/Mexico_City"});
+    const now = new Date(mexicoTime);
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentTime = now.toTimeString().substring(0, 5); // HH:MM format
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
     
-    const [datePart, timePart] = mexicoTime.split(', ')
-    const [month, day, year] = datePart.split('/')
-    const [hour, minute] = timePart.split(':')
-    const mexicoTimeObj = new Date(new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Mexico_City',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(now) + 'T' + timePart + ':00')
-    const dayOfWeek = mexicoTimeObj.getDay() === 0 ? 7 : mexicoTimeObj.getDay() // Sunday = 7, Monday = 1
+    console.log(`Current day (Mexico): ${currentDay}, time (Mexico): ${currentTime}, hour: ${currentHour}, minute: ${currentMinute}`);
     
-    console.log(`Current day (Mexico): ${dayOfWeek}, time (Mexico): ${hour}:${minute}, hour: ${parseInt(hour)}, minute: ${parseInt(minute)}`)
-    
-    // Get users who should receive notifications at this time
-    const { data: scheduledUsers, error: scheduleError } = await supabase
-      .from('whatsapp_notification_settings')
-      .select(`
-        instagram_user_id,
-        whatsapp_number,
-        notification_time,
-        notification_days,
-        enabled
-      `)
-      .eq('enabled', true)
-      .contains('notification_days', [parseInt(dayOfWeek)])
+    // Get all scheduled notifications for today
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from('whatsapp_schedule_days')
+      .select('instagram_user_id, notification_time')
+      .eq('day_of_week', currentDay)
+      .eq('enabled', true);
     
     if (scheduleError) {
-      console.error('Error fetching scheduled users:', scheduleError)
+      console.error('Error getting scheduled days:', scheduleError);
       return new Response(
-        JSON.stringify({ error: 'Error fetching scheduled users' }),
+        JSON.stringify({ error: "Error al obtener días programados" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
     
-    console.log('Found', scheduledUsers?.length || 0, 'users with scheduled notifications')
+    // Get WhatsApp settings for these users
+    const userIds = scheduleData?.map(s => s.instagram_user_id) || [];
     
-    let processedCount = 0
-    let sentCount = 0
+    if (userIds.length === 0) {
+      console.log("No hay usuarios programados para este día y hora");
+      return new Response(
+        JSON.stringify({ message: "No hay usuarios programados" }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
-    for (const user of scheduledUsers || []) {
-      console.log('Processing user:', user.instagram_user_id)
-      
-      // Check if notification time matches current time (with 5-minute tolerance)
-      const [scheduleHour, scheduleMinute] = user.notification_time.split(':').map(Number)
-      const currentHour = parseInt(hour)
-      const currentMinute = parseInt(minute)
-      
-      const scheduleTimeInMinutes = scheduleHour * 60 + scheduleMinute
-      const currentTimeInMinutes = currentHour * 60 + currentMinute
-      const timeDifference = Math.abs(currentTimeInMinutes - scheduleTimeInMinutes)
-      
-      if (timeDifference <= 5 || timeDifference >= (24 * 60 - 5)) { // 5 minute tolerance or wrap-around
-        // Time matches, get user stats and send notification
-        const stats = await getUserStats(user.instagram_user_id)
-        console.log('User stats:', stats)
+    const { data: settingsData, error: settingsError } = await supabase
+      .from('whatsapp_notification_settings')
+      .select('instagram_user_id, whatsapp_number, enabled')
+      .in('instagram_user_id', userIds)
+      .eq('enabled', true);
+    
+    if (settingsError) {
+      console.error('Error getting WhatsApp settings:', settingsError);
+      return new Response(
+        JSON.stringify({ error: "Error al obtener configuraciones de WhatsApp" }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Combine schedule and settings data
+    const scheduledNotifications = scheduleData.filter(schedule => {
+      const settings = settingsData?.find(s => s.instagram_user_id === schedule.instagram_user_id);
+      return settings && settings.enabled;
+    }).map(schedule => {
+      const settings = settingsData.find(s => s.instagram_user_id === schedule.instagram_user_id);
+      return {
+        ...schedule,
+        whatsapp_notification_settings: settings
+      };
+    });
+    
+    if (!scheduledNotifications || scheduledNotifications.length === 0) {
+      console.log("No hay notificaciones programadas para este momento");
+      return new Response(
+        JSON.stringify({ message: "No hay notificaciones programadas" }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log(`Found ${scheduledNotifications.length} users with scheduled notifications`);
+    
+    const results = [];
+    
+    // Process each user
+    for (const notification of scheduledNotifications) {
+      try {
+        const notificationTime = notification.notification_time.substring(0, 5); // HH:MM
         
-        // Siempre enviar mensaje motivacional, independientemente de si hay prospectos o no
-        console.log('💪 Enviando mensaje motivacional independientemente de prospectos')
-        const message = createMotivationalMessage(stats)
-        
-        if (user.whatsapp_number) {
-          const success = await sendWhatsAppMessage(message, user.whatsapp_number)
-          if (success) {
-            console.log(`Message sent successfully to ${user.instagram_user_id}`)
-            sentCount++
-          } else {
-            console.log(`Failed to send message to ${user.instagram_user_id}`)
-          }
-        } else {
-          console.log(`No WhatsApp number for user ${user.instagram_user_id}`)
+        // Check if current time matches notification time exactly
+        if (currentTime !== notificationTime) {
+          console.log(`Skipping user ${notification.instagram_user_id} - time mismatch (${currentTime} vs ${notificationTime})`);
+          continue;
         }
         
-        processedCount++
-      } else {
-        console.log(`Skipping user ${user.instagram_user_id} - time mismatch (${hour}:${minute} vs ${scheduleHour}:${String(scheduleMinute).padStart(2, '0')})`)
+        console.log(`Processing user: ${notification.instagram_user_id}`);
+        
+        // Get user stats
+        const stats = await getUserStats(notification.instagram_user_id);
+        console.log(`User stats:`, stats);
+        
+        // SIEMPRE enviar mensaje, sin importar si hay prospectos o no
+        console.log(`💪 Enviando mensaje motivacional independientemente de prospectos`);
+        
+        // Create message
+        const messageBody = createMotivationalMessage(stats);
+        
+        // Send WhatsApp message using new simplified endpoint
+        const success = await sendWhatsAppMessage(
+          messageBody, 
+          notification.whatsapp_notification_settings.whatsapp_number
+        );
+        
+        results.push({
+          instagram_user_id: notification.instagram_user_id,
+          whatsapp_number: notification.whatsapp_notification_settings.whatsapp_number,
+          status: success ? 'sent' : 'failed',
+          stats: stats,
+          message_length: messageBody.length
+        });
+        
+        console.log(`Message ${success ? 'sent successfully' : 'failed'} to ${notification.instagram_user_id}`);
+        
+      } catch (error) {
+        console.error(`Error processing user ${notification.instagram_user_id}:`, error);
+        results.push({
+          instagram_user_id: notification.instagram_user_id,
+          status: 'error',
+          error: error.message
+        });
       }
     }
     
-    console.log('🏁 WhatsApp notification process completed')
+    console.log("🏁 WhatsApp notification process completed");
     
     return new Response(
       JSON.stringify({
         success: true,
-        processedUsers: processedCount,
-        messagesSent: sentCount,
-        timestamp: mexicoTime
+        processed: results.length,
+        results: results
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
     
   } catch (error) {
-    console.error('Error in WhatsApp notification function:', error)
+    console.error('Error in send-whatsapp-notifications function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
-})
+});
