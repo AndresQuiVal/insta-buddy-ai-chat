@@ -408,7 +408,7 @@ const WhatsAppConfig: React.FC = () => {
               Volver
             </Button>
             <h1 className="text-3xl font-poppins font-bold text-foreground">
-              🤖 Tu Asistente te Recordará De Prospectar!
+              🤖 Tu Asistente de Prospección!
             </h1>
           </div>
 
