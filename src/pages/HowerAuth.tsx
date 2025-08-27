@@ -101,9 +101,14 @@ const HowerAuth = () => {
               />
               
               <div className="text-center">
-                <button className="text-blue-600 underline hover:text-blue-700 transition-colors">
+                <a 
+                  href="https://www.howersoftware.io/clients/reset-password/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline hover:text-blue-700 transition-colors"
+                >
                   ¿Olvidaste tu contraseña?
-                </button>
+                </a>
               </div>
             </div>
             
