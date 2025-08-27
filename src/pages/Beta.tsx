@@ -100,31 +100,7 @@ const Beta: React.FC = () => {
   };
 
   useEffect(() => {
-    // Scripts para los videos de testimonios
-    const videoScripts = [
-      'https://fast.wistia.com/embed/hs4dh7si13.js',
-      'https://fast.wistia.com/embed/wmbuq3prqd.js', 
-      'https://fast.wistia.com/embed/ip41h9ax0x.js',
-      'https://fast.wistia.com/embed/hpx53mcnod.js',
-      'https://fast.wistia.com/embed/r9deud5rs0.js'
-    ];
-
-    const scriptElements = videoScripts.map(src => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.async = true;
-      script.type = 'module';
-      document.head.appendChild(script);
-      return script;
-    });
-
-    return () => {
-      scriptElements.forEach(script => {
-        if (document.head.contains(script)) {
-          document.head.removeChild(script);
-        }
-      });
-    };
+    // No necesitamos scripts específicos para iframes de Wistia
   }, []);
 
   return (
@@ -199,31 +175,35 @@ const Beta: React.FC = () => {
             Resultados Reales de Nuestros Usuarios
           </h2>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="p-6 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all">
-                <CardContent className="space-y-4">
-                  <div className="text-center">
-                    <h4 className="font-semibold mb-2">{testimonial.name}</h4>
-                    <div className="flex justify-center space-x-1 mb-4">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      ))}
+              <div key={index} className="flex flex-col space-y-6">
+                {/* Video testimonial */}
+                <div className="aspect-video rounded-lg overflow-hidden shadow-lg bg-gray-100">
+                  <iframe
+                    src={`//fast.wistia.net/embed/iframe/${testimonial.video}?autoplay=0&wmode=transparent`}
+                    title={`Testimonio de ${testimonial.name}`}
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allowFullScreen
+                  />
+                </div>
+                
+                {/* Información del testimonial */}
+                <Card className="p-6 bg-white/90 backdrop-blur-sm">
+                  <CardContent className="space-y-4">
+                    <div className="text-center">
+                      <h4 className="font-semibold text-lg mb-2">{testimonial.name}</h4>
+                      <div className="flex justify-center space-x-1 mb-4">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Video testimonial */}
-                  <div className="aspect-video rounded-lg overflow-hidden bg-gray-100">
-                    <wistia-player 
-                      media-id={testimonial.video}
-                      aspect="16:9"
-                      style={{ width: '100%', height: '100%' }}
-                    />
-                  </div>
-                  
-                  <p className="text-gray-700 italic text-center">"{testimonial.quote}"</p>
-                </CardContent>
-              </Card>
+                    <p className="text-gray-700 italic text-center">"{testimonial.quote}"</p>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
 
