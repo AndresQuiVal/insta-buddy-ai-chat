@@ -65,10 +65,10 @@ serve(async (req) => {
     const instagramUserId = userData.instagram_user_id;
     console.log(`📋 Usuario encontrado - usando instagram_user_id: ${instagramUserId}`);
 
-    // Preparar payload para la API de Hower
+    // Preparar payload para la API de Hower con credenciales hardcodeadas para testing
     const payload = {
-      howerUsername,
-      howerToken,
+      howerUsername: "andresquival", // Hardcodeado para testing
+      howerToken: "testhower", // Hardcodeado para testing
       query: query || "emprendedores jóvenes",
       location: "",
       followers_from: "1000",
