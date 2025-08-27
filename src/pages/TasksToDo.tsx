@@ -133,10 +133,34 @@ const TasksToDo: React.FC = () => {
       const response = await HowerService.getSentMessagesUsernames();
       
       if (response.success && response.data) {
-        // Extraer usernames del response y guardar máximo 500
-        const usernames = response.data.slice(0, 500).map((item: any) => item.username || item.recipient_username || item);
+        console.log('📊 Estructura de datos de Hower:', response.data);
+        console.log('📊 Tipo de datos:', typeof response.data);
+        console.log('📊 Es array:', Array.isArray(response.data));
+        
+        let usernames: string[] = [];
+        
+        // Manejar diferentes estructuras de respuesta
+        if (Array.isArray(response.data)) {
+          // Si es un array directamente
+          usernames = response.data.slice(0, 500).map((item: any) => 
+            item.username || item.recipient_username || item
+          );
+        } else if (response.data && typeof response.data === 'object') {
+          // Si es un objeto, buscar arrays dentro
+          const possibleArrays = Object.values(response.data).filter(Array.isArray);
+          if (possibleArrays.length > 0) {
+            const dataArray = possibleArrays[0] as any[];
+            usernames = dataArray.slice(0, 500).map((item: any) => 
+              item.username || item.recipient_username || item
+            );
+          } else {
+            // Si no hay arrays, intentar extraer usernames de las propiedades
+            usernames = Object.keys(response.data).slice(0, 500);
+          }
+        }
+        
         setHowerUsernames(usernames);
-        console.log('✅ Usuarios de Hower cargados:', usernames.length);
+        console.log('✅ Usuarios de Hower cargados:', usernames.length, usernames.slice(0, 5));
       } else {
         console.error('❌ Error al cargar usuarios de Hower:', response.error);
         toast({
