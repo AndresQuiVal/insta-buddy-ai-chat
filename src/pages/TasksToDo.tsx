@@ -146,7 +146,7 @@ const TasksToDo: React.FC = () => {
         const usernames = response.data.data.usernames.slice(0, 500);
         
         setHowerUsernames(usernames);
-        console.log('✅ Usuarios de Hower cargados:', usernames.length, usernames.slice(0, 5));
+        console.log('✅ Usuarios de Hower cargados:', usernames.length, 'total. Primeros 5:', usernames.slice(0, 5));
       } else {
         console.error('❌ Error al cargar usuarios de Hower:', response.error);
         toast({
