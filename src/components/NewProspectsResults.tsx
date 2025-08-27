@@ -107,9 +107,9 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
 
   const getDialogContent = (result: ProspectResult) => {
     if (result.result_type === 'post') {
-      return `Para prospectar en este ${result.title.toLowerCase()}, ve al enlace, revisa los comentarios y contacta directamente a las personas que comentaron. Los comentarios más recientes suelen tener mejores tasas de respuesta.`;
+      return `Ve al enlace, revisa los comentarios y contacta directamente a las personas que comentaron.`;
     } else {
-      return `Para prospectar en esta cuenta, ve al perfil, revisa sus seguidores y contacta directamente a las personas que siguen esta cuenta. Los seguidores más activos suelen tener mejores tasas de respuesta.`;
+      return `Ve al perfil, revisa sus seguidores y contacta directamente a las personas que siguen esta cuenta.`;
     }
   };
 
@@ -254,9 +254,8 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-lg">
           <div 
-            className="bg-white rounded-2xl shadow-xl border-t-8 p-6"
+            className="bg-white rounded-2xl shadow-xl p-6"
             style={{
-              borderTopColor: selectedResult?.result_type === 'post' ? '#7a60ff' : '#22c55e',
               backgroundImage: `
                 linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
                 linear-gradient(#f9fafb 0%, #ffffff 100%)
