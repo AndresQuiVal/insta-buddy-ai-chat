@@ -166,6 +166,28 @@ const Beta: React.FC = () => {
             Combina autorespuestas inteligentes, prospección en frío sin baneo y CRM completo en una sola plataforma
           </p>
 
+          {/* Video explicativo */}
+          <div className="bg-gray-800 rounded-2xl p-8 mb-16">
+            <div className="flex justify-center">
+              <div style={{ width: '640px', maxWidth: '100%' }}>
+                <script src="https://fast.wistia.com/player.js" async></script>
+                <script src="https://fast.wistia.com/embed/gcks3zv7lu.js" async type="module"></script>
+                <style>{`
+                  wistia-player[media-id='gcks3zv7lu']:not(:defined) { 
+                    background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/gcks3zv7lu/swatch'); 
+                    display: block; 
+                    filter: blur(5px); 
+                  }
+                `}</style>
+                <wistia-player 
+                  media-id="gcks3zv7lu" 
+                  aspect="1.6" 
+                  style={{ width: '640px', height: '400px', maxWidth: '100%' }}
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Iconos explicativos */}
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             <div className="flex flex-col items-center p-6 bg-gray-800 rounded-lg">
@@ -190,19 +212,6 @@ const Beta: React.FC = () => {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-white">Hower CRM</h3>
               <p className="text-gray-300">Gestión completa de todos tus prospectos</p>
-            </div>
-          </div>
-
-          {/* Video explicativo */}
-          <div className="bg-gray-800 rounded-2xl p-8 mb-16">
-            <div className="aspect-video rounded-lg overflow-hidden">
-              <iframe 
-                src="https://www.loom.com/embed/f7ed0f4d02d34cc692b48b8be08302fe?sid=088bd30c-4bb8-410b-9798-4b3dc27023fa" 
-                frameBorder="0" 
-                allowFullScreen
-                className="w-full h-full"
-                title="Video explicativo de Hower AI"
-              />
             </div>
           </div>
         </div>
