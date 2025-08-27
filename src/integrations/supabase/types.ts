@@ -721,6 +721,8 @@ export type Database = {
         Row: {
           access_token: string
           created_at: string
+          hower_token: string | null
+          hower_username: string | null
           ia_persona: string | null
           id: string
           instagram_user_id: string
@@ -735,6 +737,8 @@ export type Database = {
         Insert: {
           access_token: string
           created_at?: string
+          hower_token?: string | null
+          hower_username?: string | null
           ia_persona?: string | null
           id?: string
           instagram_user_id: string
@@ -749,6 +753,8 @@ export type Database = {
         Update: {
           access_token?: string
           created_at?: string
+          hower_token?: string | null
+          hower_username?: string | null
           ia_persona?: string | null
           id?: string
           instagram_user_id?: string
