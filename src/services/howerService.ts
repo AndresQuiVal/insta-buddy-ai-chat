@@ -5,11 +5,15 @@ interface HowerUserData {
 
 interface HowerResponse {
   data?: {
-    hower_username: string;
-    limited_to_500: boolean;
-    total_available: number;
-    total_count: number;
-    usernames: string[];
+    success: boolean;
+    message: string;
+    data: {
+      hower_username: string;
+      limited_to_500: boolean;
+      total_available: number;
+      total_count: number;
+      usernames: string[];
+    };
   };
   error?: string;
   success: boolean;

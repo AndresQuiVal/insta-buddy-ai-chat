@@ -135,15 +135,15 @@ const TasksToDo: React.FC = () => {
       console.log('🔍 Response completo:', response);
       console.log('🔍 response.success:', response.success);
       console.log('🔍 response.data:', response.data);
-      console.log('🔍 response.data?.usernames existe:', response.data?.usernames ? 'SI' : 'NO');
+      console.log('🔍 response.data?.data?.usernames existe:', response.data?.data?.usernames ? 'SI' : 'NO');
       
-      if (response.success && response.data && response.data.usernames) {
-        console.log('📊 Estructura de datos de Hower:', response.data);
-        console.log('📊 Total disponible:', response.data.total_count);
-        console.log('📊 Limitado a 500:', response.data.limited_to_500);
+      if (response.success && response.data && response.data.data && response.data.data.usernames) {
+        console.log('📊 Estructura de datos de Hower:', response.data.data);
+        console.log('📊 Total disponible:', response.data.data.total_count);
+        console.log('📊 Limitado a 500:', response.data.data.limited_to_500);
         
         // Extraer directamente el array de usernames
-        const usernames = response.data.usernames.slice(0, 500);
+        const usernames = response.data.data.usernames.slice(0, 500);
         
         setHowerUsernames(usernames);
         console.log('✅ Usuarios de Hower cargados:', usernames.length, usernames.slice(0, 5));
