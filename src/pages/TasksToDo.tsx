@@ -2142,15 +2142,6 @@ const TasksToDo: React.FC = () => {
             taskType="new"
             customContent={
               <div className="mt-6">
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                    🎯 Prospectos Encontrados Automáticamente
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    Estos prospectos fueron encontrados automáticamente usando tu ICP (Ideal Customer Profile). 
-                    Haz clic en cada card para ver instrucciones de cómo contactarlos.
-                  </p>
-                </div>
                 <div style={{ display: activeSection === 'new' ? 'block' : 'none' }}>
                   <NewProspectsResults instagramUserId={currentUser?.instagram_user_id || ''} />
                 </div>
