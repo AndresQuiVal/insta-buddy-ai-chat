@@ -35,7 +35,7 @@ const HowerProspector = () => {
             className="flex items-center gap-2 text-white border-white hover:bg-white hover:text-gray-900"
           >
             <ArrowLeft className="w-4 h-4" />
-            Volver a Tareas
+            Volver al CRM
           </Button>
           
           <div className="flex items-center gap-3">
@@ -91,44 +91,56 @@ const HowerProspector = () => {
           {/* Descripción simplificada */}
           <div className="bg-gray-800 rounded-lg p-8 mb-16 max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-white mb-6">¿Qué es Hower Prospector?</h2>
-            <p className="text-gray-300 text-lg mb-8">
-              Una extensión de Chrome que prospecta automáticamente en Instagram por ti. 
-              Detecta tu cliente ideal, envía mensajes personalizados y se conecta con tu CRM en /tasks-to-do
-            </p>
-            
-            {/* Flujo de integración */}
-            <div className="bg-gray-700 rounded-lg p-6 mb-8">
-              <h3 className="text-xl font-bold text-white mb-6">Cómo se integra con tu CRM</h3>
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="text-center flex-1">
-                  <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Chrome className="w-8 h-8 text-white" />
-                  </div>
-                  <h4 className="text-white font-semibold mb-2">1. Prospector encuentra leads</h4>
-                  <p className="text-gray-300 text-sm">La extensión detecta y contacta prospectos en Instagram</p>
+          <p className="text-gray-300 text-lg mb-8">
+            Una extensión de Chrome que prospecta automáticamente en Instagram por ti. 
+            Detecta tu cliente ideal, envía mensajes personalizados y controlas tus prospectos desde tu CRM con I.A.!
+          </p>
+          
+          {/* Cómo funciona */}
+          <div className="bg-gray-700 rounded-lg p-6 mb-8">
+            <h3 className="text-xl font-bold text-white mb-6">Cómo funciona</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-white font-bold text-sm">1</span>
                 </div>
-                
-                <ArrowRight className="w-8 h-8 text-gray-400 hidden md:block" />
-                
-                <div className="text-center flex-1">
-                  <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <h4 className="text-white font-semibold mb-2">2. Aparecen en /tasks-to-do</h4>
-                  <p className="text-gray-300 text-sm">Los prospectos interesados se sincronizan automáticamente</p>
+                <div>
+                  <h4 className="text-white font-semibold mb-2">Detecta prospectos</h4>
+                  <p className="text-gray-300 text-sm">Hower detecta cuentas donde los seguidores son tus prospectos</p>
                 </div>
-                
-                <ArrowRight className="w-8 h-8 text-gray-400 hidden md:block" />
-                
-                <div className="text-center flex-1">
-                  <div className="w-16 h-16 bg-pink-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle className="w-8 h-8 text-white" />
-                  </div>
-                  <h4 className="text-white font-semibold mb-2">3. Gestionas y cierras</h4>
-                  <p className="text-gray-300 text-sm">Usas el CRM para dar seguimiento y cerrar ventas</p>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-white font-bold text-sm">2</span>
+                </div>
+                <div>
+                  <h4 className="text-white font-semibold mb-2">Genera mensajes con I.A.</h4>
+                  <p className="text-gray-300 text-sm">Hower genera un mensaje 100% personalizado con I.A.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-white font-bold text-sm">3</span>
+                </div>
+                <div>
+                  <h4 className="text-white font-semibold mb-2">Envío automático</h4>
+                  <p className="text-gray-300 text-sm">Hower lo envía en automático, abriendo conversaciones con prospectos de interés</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-white font-bold text-sm">4</span>
+                </div>
+                <div>
+                  <h4 className="text-white font-semibold mb-2">Control en tu CRM</h4>
+                  <p className="text-gray-300 text-sm">Tus prospectos aparecen en tu CRM para que puedas controlar a quienes debes darles seguimiento y agendar llamadas de venta</p>
                 </div>
               </div>
             </div>
+          </div>
 
             {/* Características */}
             <div className="grid md:grid-cols-2 gap-6">
@@ -147,6 +159,62 @@ const HowerProspector = () => {
               <div className="flex items-center gap-3">
                 <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
                 <span className="text-gray-300">Funciona mientras haces otras cosas</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Embudo de Prospección */}
+          <div className="bg-gray-800 rounded-lg p-8 mb-16 max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold text-white mb-6 text-center">Embudo de Prospección con Hower</h2>
+            <p className="text-gray-300 text-center mb-8">Embudo probado que funciona para agendar llamadas con Hower</p>
+            
+            <div className="space-y-4">
+              {/* Paso 1 */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg p-4 text-white">
+                <h3 className="font-bold text-lg mb-2">1. Mensaje corto con pregunta final</h3>
+                <p className="text-blue-100 text-sm">(Enviado automáticamente por Hower)</p>
+              </div>
+
+              {/* Paso 2 */}
+              <div className="bg-gradient-to-r from-blue-500 to-blue-400 rounded-lg p-4 text-white ml-4">
+                <h3 className="font-bold text-lg mb-2">2. Respuesta del prospecto</h3>
+                <p className="text-blue-100 text-sm">(Gracias a tu marca personal)</p>
+              </div>
+
+              {/* Paso 3 */}
+              <div className="bg-gradient-to-r from-blue-400 to-indigo-500 rounded-lg p-4 text-white ml-8">
+                <h3 className="font-bold text-lg mb-2">3. Audio de presentación + 'Por qué su perfil'</h3>
+                <p className="text-blue-100 text-sm">(Storytelling y conexión)</p>
+              </div>
+
+              {/* Paso 4 */}
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg p-4 text-white ml-12">
+                <h3 className="font-bold text-lg mb-2">4. Filtro inicial</h3>
+                <p className="text-purple-100 text-sm">(Video o audio breve explicando el proyecto)</p>
+              </div>
+
+              {/* Paso 5 */}
+              <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white ml-16">
+                <h3 className="font-bold text-lg mb-2">5. Seguimiento al día siguiente</h3>
+                <p className="text-purple-100 text-sm">(Recordar video/audio y resolver dudas)</p>
+              </div>
+
+              {/* Paso 6 */}
+              <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg p-4 text-white ml-20">
+                <h3 className="font-bold text-lg mb-2">6. Invitación a Café Virtual (Zoom)</h3>
+                <p className="text-purple-100 text-sm">(15-20 min, pedir teléfono y enviar info)</p>
+              </div>
+
+              {/* Paso 7 */}
+              <div className="bg-gradient-to-r from-purple-700 to-purple-800 rounded-lg p-4 text-white ml-24">
+                <h3 className="font-bold text-lg mb-2">7. Presentación of negocio en Zoom</h3>
+                <p className="text-purple-100 text-sm">(Explicar proyecto con entusiasmo)</p>
+              </div>
+
+              {/* Paso 8 */}
+              <div className="bg-gradient-to-r from-purple-800 to-purple-900 rounded-lg p-4 text-white ml-28">
+                <h3 className="font-bold text-lg mb-2">8. Cierre post-reunión</h3>
+                <p className="text-purple-100 text-sm">siguiente paso es...', seguimiento y material</p>
               </div>
             </div>
           </div>
