@@ -234,15 +234,6 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className="text-red-600 hover:text-red-700"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Cerrar Sesión
-            </Button>
             <Button 
               onClick={() => {
                 if (!currentUser) {
@@ -255,12 +246,12 @@ const Index = () => {
                   return;
                 }
                 navigate('/tasks-to-do');
-              }}
+              }} 
               variant="default" 
               size="sm" 
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-light shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
-              <span className="font-bold text-purple-100">Hower</span> CRM
+              <span className="font-bold text-purple-100">Volver a</span> CRM
             </Button>
             <div className="hidden">
               <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
