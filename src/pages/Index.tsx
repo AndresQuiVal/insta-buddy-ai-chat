@@ -90,10 +90,12 @@ const Index = () => {
       // Verificar si viene del welcome con intención específica de usar autoresponder
       const tabParam = searchParams.get('tab');
       if (tabParam === 'autoresponder') {
-        console.log('🎯 Usuario viene de welcome queriendo usar autoresponder, limpiando URL...');
+        console.log('🎯 Usuario viene de welcome queriendo usar autoresponder, verificando autoresponders...');
         // Limpiar el parámetro de la URL
         setSearchParams({});
-        return; // No redirigir, quedarse en autoresponder
+        // Verificar si tiene autoresponders configurados
+        checkAutoresponderOnboardingStatus(true); // Pasar true para indicar que viene de welcome
+        return;
       }
       
       // Verificar si viene de login reciente
@@ -112,7 +114,7 @@ const Index = () => {
   }, [currentUser, userLoading, navigate, searchParams, setSearchParams]);
 
   // Verificar si debe mostrar autoresponder onboarding
-  const checkAutoresponderOnboardingStatus = async () => {
+  const checkAutoresponderOnboardingStatus = async (fromWelcome = false) => {
     if (currentUser && !userLoading) {
       // Verificar si el usuario tiene autorespondedores configurados
       const { data: autoresponders, error } = await supabase
@@ -139,8 +141,13 @@ const Index = () => {
                                (commentAutoresponders && commentAutoresponders.length > 0);
 
       if (!hasAutoresponders) {
-        console.log('🔍 DEBUG Index - No autoresponders found, navigating to /welcome');
-        navigate('/welcome');
+        if (fromWelcome) {
+          console.log('🔍 DEBUG Index - No autoresponders found, usuario viene de welcome, navegando a /autoresponder-onboarding/');
+          navigate('/autoresponder-onboarding/');
+        } else {
+          console.log('🔍 DEBUG Index - No autoresponders found, navigating to /welcome');
+          navigate('/welcome');
+        }
       }
     }
   };
