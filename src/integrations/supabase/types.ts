@@ -1033,6 +1033,54 @@ export type Database = {
           },
         ]
       }
+      prospect_search_results: {
+        Row: {
+          comments_count: number | null
+          created_at: string
+          description: string | null
+          has_keywords: boolean | null
+          id: string
+          instagram_url: string
+          instagram_user_id: string
+          is_recent: boolean | null
+          publish_date: string | null
+          result_type: string
+          search_keywords: string[] | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          comments_count?: number | null
+          created_at?: string
+          description?: string | null
+          has_keywords?: boolean | null
+          id?: string
+          instagram_url: string
+          instagram_user_id: string
+          is_recent?: boolean | null
+          publish_date?: string | null
+          result_type: string
+          search_keywords?: string[] | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comments_count?: number | null
+          created_at?: string
+          description?: string | null
+          has_keywords?: boolean | null
+          id?: string
+          instagram_url?: string
+          instagram_user_id?: string
+          is_recent?: boolean | null
+          publish_date?: string | null
+          result_type?: string
+          search_keywords?: string[] | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prospect_states: {
         Row: {
           created_at: string

@@ -66,6 +66,197 @@ async function sendWhatsAppMessage(message: string, toNumber: string): Promise<b
   }
 }
 
+async function getPerplexitySearch(query: string, location: string, followers_from: string, followers_to: string) {
+  try {
+    const payload = {
+      howerUsername: 'andresquival',
+      howerToken: 'testhower',
+      query: query,
+      location: location,
+      followers_from: followers_from.replaceAll(",", ""),
+      followers_to: followers_to.replaceAll(",", "")
+    };
+
+    console.log(`🔍 Realizando búsqueda con query: "${query}"`);
+
+    const response = await fetch('https://www.howersoftware.io/clients/perplexity_instagram_search_2/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(JSON.stringify(payload))
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`✅ Búsqueda completada para query: "${query}", resultados: ${data.accounts?.length || 0}`);
+    
+    return data;
+
+  } catch (error) {
+    console.error('Error en getPerplexitySearch:', error);
+    throw error;
+  }
+}
+
+async function searchAndSaveProspects(instagramUserId: string) {
+  try {
+    console.log(`🔍 Iniciando búsqueda de prospectos para usuario: ${instagramUserId}`);
+    
+    // Obtener ICP del usuario
+    const { data: icpData, error: icpError } = await supabase
+      .from('user_icp')
+      .select('search_keywords, is_complete')
+      .eq('instagram_user_id', instagramUserId)
+      .single();
+
+    if (icpError || !icpData || !icpData.is_complete) {
+      console.log(`⚠️ Usuario ${instagramUserId} no tiene ICP definido o completo`);
+      return;
+    }
+
+    const searchKeywords = icpData.search_keywords || [];
+    if (searchKeywords.length === 0) {
+      console.log(`⚠️ Usuario ${instagramUserId} no tiene palabras clave definidas`);
+      return;
+    }
+
+    // Seleccionar 3 palabras aleatorias
+    const selectedKeywords = searchKeywords
+      .sort(() => 0.5 - Math.random())
+      .slice(0, Math.min(3, searchKeywords.length));
+
+    console.log(`🎯 Palabras clave seleccionadas para ${instagramUserId}:`, selectedKeywords);
+
+    // Limpiar resultados anteriores del usuario
+    await supabase
+      .from('prospect_search_results')
+      .delete()
+      .eq('instagram_user_id', instagramUserId);
+
+    let allAccounts: any[] = [];
+    
+    // Realizar búsquedas con cada palabra clave
+    for (const keyword of selectedKeywords) {
+      try {
+        const searchResults = await getPerplexitySearch(keyword, '', '1000', '50000');
+        if (searchResults?.accounts) {
+          allAccounts = allAccounts.concat(searchResults.accounts.map((account: any) => ({
+            ...account,
+            search_keyword: keyword
+          })));
+        }
+      } catch (error) {
+        console.error(`Error buscando con keyword "${keyword}":`, error);
+      }
+    }
+
+    if (allAccounts.length === 0) {
+      console.log(`⚠️ No se encontraron resultados para usuario ${instagramUserId}`);
+      return;
+    }
+
+    // Separar posts/reels de cuentas
+    const posts = allAccounts.filter(account => 
+      account.profile.includes('/reel/') || account.profile.includes('/p/')
+    );
+    const accounts = allAccounts.filter(account => 
+      !account.profile.includes('/reel/') && !account.profile.includes('/p/')
+    );
+
+    // Seleccionar y priorizar posts (máximo 5)
+    const selectedPosts = posts
+      .sort((a, b) => {
+        // Priorizar por fecha y comentarios
+        const aCommentsMatch = a.description?.match(/([\d,]+)\s*[Cc]omentarios?/);
+        const bCommentsMatch = b.description?.match(/([\d,]+)\s*[Cc]omentarios?/);
+        
+        const aComments = aCommentsMatch ? parseInt(aCommentsMatch[1].replace(/,/g, '')) : 0;
+        const bComments = bCommentsMatch ? parseInt(bCommentsMatch[1].replace(/,/g, '')) : 0;
+        
+        return bComments - aComments; // Más comentarios primero
+      })
+      .slice(0, 5);
+
+    // Seleccionar cuentas aleatoriamente (máximo 15)
+    const selectedAccounts = accounts
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 15);
+
+    // Guardar resultados en la base de datos
+    const resultsToSave = [];
+
+    // Procesar posts
+    selectedPosts.forEach(post => {
+      const commentsMatch = post.description?.match(/([\d,]+)\s*[Cc]omentarios?/);
+      const commentsCount = commentsMatch ? parseInt(commentsMatch[1].replace(/,/g, '')) : 0;
+      
+      const dateMatch = post.description?.match(/([A-Za-z]+ \d{1,2}, \d{4}):/);
+      let isRecent = false;
+      let publishDate = '';
+      
+      if (dateMatch) {
+        publishDate = dateMatch[1];
+        const publishDateObj = new Date(publishDate);
+        const currentDate = new Date();
+        const monthsDiff = (currentDate.getFullYear() - publishDateObj.getFullYear()) * 12 + 
+                         (currentDate.getMonth() - publishDateObj.getMonth());
+        isRecent = monthsDiff <= 3;
+      }
+
+      resultsToSave.push({
+        instagram_user_id: instagramUserId,
+        result_type: 'post',
+        instagram_url: post.profile,
+        title: post.profile.includes('/reel/') ? 'Reel de Instagram' : 'Post de Instagram',
+        description: post.description || '',
+        comments_count: commentsCount,
+        is_recent: isRecent,
+        has_keywords: true,
+        publish_date: publishDate,
+        search_keywords: selectedKeywords
+      });
+    });
+
+    // Procesar cuentas
+    selectedAccounts.forEach(account => {
+      const username = account.profile.split('/').pop();
+      
+      resultsToSave.push({
+        instagram_user_id: instagramUserId,
+        result_type: 'account',
+        instagram_url: account.profile,
+        title: username.includes('?locale') ? '' : '@' + username,
+        description: account.description || '',
+        comments_count: 0,
+        is_recent: false,
+        has_keywords: true,
+        publish_date: '',
+        search_keywords: selectedKeywords
+      });
+    });
+
+    // Insertar todos los resultados
+    if (resultsToSave.length > 0) {
+      const { error: insertError } = await supabase
+        .from('prospect_search_results')
+        .insert(resultsToSave);
+
+      if (insertError) {
+        console.error('Error guardando resultados:', insertError);
+      } else {
+        console.log(`✅ Guardados ${resultsToSave.length} resultados para usuario ${instagramUserId} (${selectedPosts.length} posts, ${selectedAccounts.length} cuentas)`);
+      }
+    }
+
+  } catch (error) {
+    console.error(`Error en searchAndSaveProspects para usuario ${instagramUserId}:`, error);
+  }
+}
+
 async function getUserStats(instagramUserId: string) {
   try {
     // Get stats using the existing function
@@ -132,6 +323,25 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json().catch(() => ({}));
+    
+    // Modo de test - solo buscar prospectos sin enviar WhatsApp
+    if (body.test_mode) {
+      console.log("🧪 Modo de test activado - solo búsqueda de prospectos");
+      
+      // Usar un usuario de test
+      const testUserId = '17841476656827421'; // Usuario de test
+      await searchAndSaveProspects(testUserId);
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Test de búsqueda de prospectos completado",
+          test_mode: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     console.log("🚀 Starting WhatsApp notification process...");
     console.log("🔧 Usando endpoint simplificado de WhatsApp");
     
@@ -221,6 +431,9 @@ serve(async (req) => {
         }
         
         console.log(`✅ Processing user: ${notification.instagram_user_id} at ${userCurrentTime} in ${userTimezone}`);
+        
+        // PRIMERO: Buscar y guardar nuevos prospectos
+        await searchAndSaveProspects(notification.instagram_user_id);
         
         // Get user stats
         const stats = await getUserStats(notification.instagram_user_id);

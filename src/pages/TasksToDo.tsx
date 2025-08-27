@@ -21,6 +21,7 @@ import { InstagramDebugPanel } from '@/components/InstagramDebugPanel';
 import TasksHamburgerMenu from '@/components/TasksHamburgerMenu';
 import ProspectActionDialog from '@/components/ProspectActionDialog';
 import HowerService from '@/services/howerService';
+import NewProspectsResults from '@/components/NewProspectsResults';
 
 interface ProspectData {
   id: string;
@@ -1197,7 +1198,8 @@ const TasksToDo: React.FC = () => {
     prospects,
     tip,
     taskType,
-    showCheckbox = true
+    showCheckbox = true,
+    customContent
   }: {
     title: string;
     count: number;
@@ -1208,6 +1210,7 @@ const TasksToDo: React.FC = () => {
     tip?: string | React.ReactNode;
     taskType: string;
     showCheckbox?: boolean;
+    customContent?: React.ReactNode;
   }) => {
     const taskKey = `section-${taskType}`;
     const sectionCompleted = completedTasks[taskKey];
@@ -1412,8 +1415,15 @@ const TasksToDo: React.FC = () => {
                         );
                       })()}
                     </TabsContent>
-                 </Tabs>
-               </div>
+                  </Tabs>
+                </div>
+                
+                {/* Custom Content */}
+                {customContent && (
+                  <div className="mt-6">
+                    {customContent}
+                  </div>
+                )}
             </CardContent>
           )}
         </Card>
@@ -2114,6 +2124,20 @@ const TasksToDo: React.FC = () => {
                        ...prospectsClassification.newProspects.comment]}
             tip="Antes de enviar el primer mensaje, interactúa con sus posts más recientes: da like, comenta algo auténtico. Esto aumenta las posibilidades de que vean y respondan tu mensaje."
             taskType="new"
+            customContent={
+              <div className="mt-6">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                    🎯 Prospectos Encontrados Automáticamente
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Estos prospectos fueron encontrados automáticamente usando tu ICP (Ideal Customer Profile). 
+                    Haz clic en cada card para ver instrucciones de cómo contactarlos.
+                  </p>
+                </div>
+                <NewProspectsResults instagramUserId={currentUser?.instagram_user_id || ''} />
+              </div>
+            }
           />
           </div>
         </div>
