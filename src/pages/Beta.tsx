@@ -426,7 +426,7 @@ const Beta: React.FC = () => {
           </p>
           
           <Button
-            onClick={() => window.open('https://wa.me/15551234567?text=Hola,%20necesito%20ayuda%20con%20Hower%20AI', '_blank')}
+            onClick={() => window.open('https://wa.me/5233310623555?text=Hola,%20necesito%20ayuda%20con%20Hower%20AI', '_blank')}
             className="bg-green-600 hover:bg-green-700 text-white font-semibold py-6 px-8 text-lg rounded-2xl transition-all duration-300 hover:scale-105 shadow-lg"
             size="lg"
           >
@@ -435,7 +435,7 @@ const Beta: React.FC = () => {
           </Button>
           
           <p className="text-gray-400 mt-4">
-            +1 (555) 123-4567
+            +52 33 3106 2355
           </p>
         </div>
       </section>
