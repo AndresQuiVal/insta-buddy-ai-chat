@@ -35,22 +35,33 @@ const ICPOnboarding: React.FC = () => {
   // Verificar si el usuario ya tiene ICP configurado y redirigir
   useEffect(() => {
     const checkICPStatus = async () => {
-      if (!currentUser?.instagram_user_id) return;
+      if (!currentUser?.instagram_user_id) {
+        console.log('❌ No currentUser found:', currentUser);
+        return;
+      }
+      
+      console.log('🔍 Checking ICP status for user:', currentUser.instagram_user_id);
       
       try {
         const { data, error } = await supabase
           .from('user_icp')
-          .select('is_complete')
+          .select('is_complete, bullseye_score')
           .eq('instagram_user_id', currentUser.instagram_user_id)
-          .single();
+          .maybeSingle();
+          
+        console.log('📊 ICP Data found:', data);
+        console.log('❌ Error (if any):', error);
           
         // Si ya tiene ICP configurado, redirigir a tasks-to-do
-        if (data?.is_complete) {
+        if (data && (data.is_complete === true || data.bullseye_score > 0)) {
+          console.log('✅ User has ICP configured, redirecting to /tasks-to-do');
           navigate('/tasks-to-do');
           return;
+        } else {
+          console.log('🚫 User does not have ICP configured, staying on onboarding');
         }
       } catch (error) {
-        console.log('No ICP found, continuing with onboarding');
+        console.log('❌ Error checking ICP:', error);
       }
     };
     
