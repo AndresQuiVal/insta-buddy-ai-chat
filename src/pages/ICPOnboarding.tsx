@@ -321,7 +321,7 @@ Responde en formato JSON exactamente así:
               
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-success mb-2">
-                  ¡Onboarding Completado!
+                  ¡A prospectar!
                 </h2>
                 <p className="text-muted-foreground text-base sm:text-lg">
                   Tu cliente ideal ha sido definido y tu configuración está lista.

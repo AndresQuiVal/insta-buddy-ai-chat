@@ -11,7 +11,7 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { id: 'icp', label: 'ICP' },
+    { id: 'icp', label: 'Editar mi ICP' },
     { id: 'autoresponder', label: 'Autoresponder' },
     { id: 'whatsapp', label: 'Configurar WhatsApp' },
   ];
@@ -35,12 +35,12 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
           <button
             key={item.id}
             onClick={() => {
-              if (item.id === 'autoresponder') {
+              if (item.id === 'icp') {
+                navigate('/icp-editor');
+              } else if (item.id === 'autoresponder') {
                 navigate('/');
               } else if (item.id === 'whatsapp') {
                 navigate('/whatsapp-config');
-              } else {
-                navigate('/dream-customer-radar');
               }
               setIsOpen(false);
             }}

@@ -1485,13 +1485,6 @@ const TasksToDo: React.FC = () => {
                     {showStats ? '📊 Ocultar mis números' : '🚀 Mis números'}
                   </Button>
                   
-                  <Button
-                    onClick={() => navigate('/icp-editor')}
-                    variant="outline"
-                    className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 hover:from-blue-600 hover:to-cyan-600 font-mono text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-                  >
-                    🎯 Editar mi ICP
-                  </Button>
                 </div>
                 
                 {/* Estadísticas - Aparece arriba del título cuando se hace click */}
