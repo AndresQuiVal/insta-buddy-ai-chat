@@ -306,7 +306,7 @@ Responde en formato JSON exactamente así:
                     placeholder={questions[currentStep - 1].placeholder}
                     value={icpData[questions[currentStep - 1].key]}
                     onChange={(e) => handleInputChange(questions[currentStep - 1].key, e.target.value)}
-                    className="min-h-[150px] sm:min-h-[180px] text-base resize-none border-primary/20 focus:border-primary focus:ring-primary/20 font-mono bg-white/80"
+                    className="min-h-[150px] sm:min-h-[180px] text-base resize-none border-primary/20 focus:border-primary focus:ring-primary/20 font-mono bg-white/80 placeholder:text-muted-foreground/40"
                   />
                   
                   <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
