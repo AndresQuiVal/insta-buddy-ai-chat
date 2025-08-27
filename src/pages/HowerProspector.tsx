@@ -30,9 +30,9 @@ const HowerProspector = () => {
         <div className="flex items-center justify-between mb-8">
           <Button
             onClick={() => navigate('/tasks-to-do')}
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="flex items-center gap-2 text-white border-white hover:bg-white hover:text-gray-900"
+            className="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800 border border-gray-600 hover:border-gray-500"
           >
             <ArrowLeft className="w-4 h-4" />
             Volver al CRM
@@ -92,8 +92,7 @@ const HowerProspector = () => {
           <div className="bg-gray-800 rounded-lg p-8 mb-16 max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-white mb-6">¿Qué es Hower Prospector?</h2>
           <p className="text-gray-300 text-lg mb-8">
-            Una extensión de Chrome que prospecta automáticamente en Instagram por ti. 
-            Detecta tu cliente ideal, envía mensajes personalizados y controlas tus prospectos desde tu CRM con I.A.!
+            Una extensión de Chrome que prospecta automáticamente en Instagram por ti.
           </p>
           
           {/* Cómo funciona */}
@@ -101,8 +100,8 @@ const HowerProspector = () => {
             <h3 className="text-xl font-bold text-white mb-6">Cómo funciona</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-white font-bold text-sm">1</span>
+                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Target className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="text-white font-semibold mb-2">Detecta prospectos</h4>
@@ -111,8 +110,8 @@ const HowerProspector = () => {
               </div>
               
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-white font-bold text-sm">2</span>
+                <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Zap className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="text-white font-semibold mb-2">Genera mensajes con I.A.</h4>
@@ -121,8 +120,8 @@ const HowerProspector = () => {
               </div>
               
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-white font-bold text-sm">3</span>
+                <div className="w-12 h-12 bg-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <MessageSquare className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="text-white font-semibold mb-2">Envío automático</h4>
@@ -131,8 +130,8 @@ const HowerProspector = () => {
               </div>
               
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-white font-bold text-sm">4</span>
+                <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <UserCheck className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="text-white font-semibold mb-2">Control en tu CRM</h4>
@@ -141,27 +140,7 @@ const HowerProspector = () => {
               </div>
             </div>
           </div>
-
-            {/* Características */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
-                <span className="text-gray-300">Detecta automáticamente tu cliente ideal</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
-                <span className="text-gray-300">Envía mensajes con embudo probado</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
-                <span className="text-gray-300">Se sincroniza con tu CRM automáticamente</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
-                <span className="text-gray-300">Funciona mientras haces otras cosas</span>
-              </div>
-            </div>
-          </div>
+        </div>
 
           {/* Embudo de Prospección */}
           <div className="bg-gray-800 rounded-lg p-8 mb-16 max-w-4xl mx-auto">
