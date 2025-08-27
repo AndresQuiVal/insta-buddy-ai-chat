@@ -495,7 +495,7 @@ const CommentAutoresponderForm = ({ selectedPost, onBack, onSubmit }: CommentAut
           </div>
 
           {/* Configuración del Botón en DM */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200" style={{ display: 'none' }}>
             <div className="flex items-start space-x-3 mb-4">
               <Switch
                 id="useButtonMessage"
