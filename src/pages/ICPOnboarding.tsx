@@ -247,14 +247,6 @@ Responde en formato JSON exactamente así:
 
         {/* Progress Bar */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-muted-foreground font-mono">
-              Paso {currentStep} de {totalSteps}
-            </span>
-            <span className="text-sm font-medium text-muted-foreground font-mono">
-              {Math.round((currentStep / totalSteps) * 100)}%
-            </span>
-          </div>
           <div className="w-full bg-muted rounded-full h-3">
             <div 
               className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
