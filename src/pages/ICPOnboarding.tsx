@@ -47,7 +47,8 @@ const ICPOnboarding: React.FC = () => {
     {
       id: 'who',
       title: '¿QUIÉN es tu cliente ideal?',
-      subtitle: 'Describe a tu cliente perfecto',
+      subtitle: '🎯 ¿QUIÉN ES?',
+      description: 'Define características específicas de tu cliente ideal: edad, profesión, intereses, problemas principales',
       placeholder: 'Ejemplo: Emprendedores de 25-45 años, dueños de pequeñas empresas de servicios, que facturan entre $50K-$200K anuales, ubicados en México y países de habla hispana. Personas ambiciosas que buscan escalar su negocio pero se sienten abrumados por las tareas operativas...',
       icon: Users,
       key: 'who' as keyof ICPData
@@ -55,7 +56,8 @@ const ICPOnboarding: React.FC = () => {
     {
       id: 'where',
       title: '¿DÓNDE consume contenido tu cliente ideal?',
-      subtitle: 'Recursos digitales, cuentas que sigue, hashtags',
+      subtitle: '🌍 ¿DÓNDE ESTÁ?',
+      description: 'Identifica qué recursos digitales consume: cuentas que sigue, hashtags favoritos, plataformas donde pasa tiempo',
       placeholder: 'Ejemplo: Siguen cuentas como @emprendedores, @biznesmx, @carlosmunoz. Consumen contenido de podcasts como "Leyendas Legendarias", blogs de marketing digital, grupos de Facebook de emprendedores. Hashtags: #emprendedor #negocio #ventas #marketing...',
       icon: Globe,
       key: 'where' as keyof ICPData
@@ -63,7 +65,8 @@ const ICPOnboarding: React.FC = () => {
     {
       id: 'bait',
       title: '¿QUÉ los atrae y capta su atención?',
-      subtitle: 'Hooks, historias, ofertas irresistibles',
+      subtitle: '✨ ¿QUÉ LOS ATRAE?',
+      description: 'Define qué hooks, historias o ofertas irresistibles captan su atención inmediatamente',
       placeholder: 'Ejemplo: Historias de transformación empresarial, casos de estudio de crecimiento de ventas, ofertas de consultoría gratuita, plantillas y herramientas automatizadas, testimonios de clientes que triplicaron sus ingresos...',
       icon: Star,
       key: 'bait' as keyof ICPData
@@ -71,7 +74,8 @@ const ICPOnboarding: React.FC = () => {
     {
       id: 'result',
       title: '¿QUÉ resultado buscan obtener?',
-      subtitle: 'Transformación específica y medible que desean lograr',
+      subtitle: '🎯 ¿QUÉ BUSCAN?',
+      description: 'Especifica la transformación exacta y medible que tu cliente ideal desea lograr',
       placeholder: 'Ejemplo: El resultado deseado es duplicar sus ventas en 6 meses, automatizar al menos 50% de sus procesos operativos, generar leads calificados de forma consistente, tener más tiempo libre para enfocarse en estrategia...',
       icon: Target,
       key: 'result' as keyof ICPData
@@ -226,10 +230,10 @@ Responde en formato JSON exactamente así:
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10">
+      <div className="max-w-4xl mx-auto px-4 py-4 sm:py-8">
         {/* Progress Bar */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-muted-foreground">
               Paso {currentStep} de {totalSteps}
@@ -238,9 +242,9 @@ Responde en formato JSON exactamente así:
               {Math.round((currentStep / totalSteps) * 100)}%
             </span>
           </div>
-          <div className="w-full bg-muted rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-3">
             <div 
-              className="bg-primary h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
           </div>
@@ -248,34 +252,39 @@ Responde en formato JSON exactamente así:
 
         {/* Step Content */}
         {currentStep <= 4 && (
-          <Card className="shadow-lg">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="text-center pb-4 sm:pb-6">
+              <div className="mx-auto mb-4 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center border border-primary/20">
                 {React.createElement(questions[currentStep - 1].icon, { 
-                  className: "h-8 w-8 text-primary" 
+                  className: "h-8 w-8 sm:h-10 sm:w-10 text-primary" 
                 })}
               </div>
-              <CardTitle className="text-2xl font-bold text-center">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-center mb-2 text-foreground">
                 {questions[currentStep - 1].title}
               </CardTitle>
-              <p className="text-muted-foreground">
-                {questions[currentStep - 1].subtitle}
-              </p>
+              <div className="space-y-2">
+                <p className="text-lg font-semibold text-primary">
+                  {questions[currentStep - 1].subtitle}
+                </p>
+                <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+                  {questions[currentStep - 1].description}
+                </p>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 px-4 sm:px-6">
               <Textarea
                 placeholder={questions[currentStep - 1].placeholder}
                 value={icpData[questions[currentStep - 1].key]}
                 onChange={(e) => handleInputChange(questions[currentStep - 1].key, e.target.value)}
-                className="min-h-[150px] text-base"
+                className="min-h-[150px] sm:min-h-[180px] text-base resize-none border-primary/20 focus:border-primary focus:ring-primary/20"
               />
               
-              <div className="flex justify-between">
+              <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
                 <Button
                   onClick={handleBack}
                   variant="outline"
                   disabled={currentStep === 1}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5 order-2 sm:order-1"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Anterior
@@ -283,7 +292,7 @@ Responde en formato JSON exactamente así:
                 
                 <Button
                   onClick={handleNext}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg order-1 sm:order-2"
                 >
                   Siguiente
                   <ArrowRight className="h-4 w-4" />
@@ -304,35 +313,35 @@ Responde en formato JSON exactamente así:
 
         {/* Completion Step */}
         {currentStep === 6 && (
-          <Card className="shadow-lg text-center">
-            <CardContent className="pt-8 space-y-6">
-              <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-10 w-10 text-green-600" />
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm text-center">
+            <CardContent className="pt-8 space-y-6 px-4 sm:px-6">
+              <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-success/20 to-success/10 rounded-full flex items-center justify-center border border-success/20">
+                <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-success" />
               </div>
               
               <div>
-                <h2 className="text-3xl font-bold text-green-600 mb-2">
+                <h2 className="text-2xl sm:text-3xl font-bold text-success mb-2">
                   ¡Onboarding Completado!
                 </h2>
-                <p className="text-muted-foreground text-lg">
+                <p className="text-muted-foreground text-base sm:text-lg">
                   Tu cliente ideal ha sido definido y tu configuración está lista.
                 </p>
               </div>
 
-              <div className="bg-muted/50 p-6 rounded-lg">
-                <h3 className="font-semibold mb-3">¿Qué sigue?</h3>
+              <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 rounded-lg border border-primary/10">
+                <h3 className="font-semibold mb-3 text-primary">¿Qué sigue?</h3>
                 <ul className="text-sm space-y-2 text-left max-w-md mx-auto">
                   <li className="flex items-center gap-2">
-                    <Gift className="h-4 w-4 text-primary" />
-                    Accede a tu dashboard de prospección
+                    <Gift className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span>Accede a tu dashboard de prospección</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-primary" />
-                    Podrás editar tu ICP cuando quieras
+                    <Target className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span>Podrás editar tu ICP cuando quieras</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    Recibe notificaciones de WhatsApp automáticas
+                    <Users className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span>Recibe notificaciones de WhatsApp automáticas</span>
                   </li>
                 </ul>
               </div>
@@ -340,7 +349,7 @@ Responde en formato JSON exactamente así:
               <Button
                 onClick={handleFinish}
                 size="lg"
-                className="text-lg px-8"
+                className="text-lg px-8 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg"
               >
                 Ir al Dashboard
               </Button>
