@@ -54,83 +54,68 @@ const HowerAuth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
-      <div className="max-w-md w-full mx-4">
-        <Card className="bg-white/90 backdrop-blur-lg border border-white/20 shadow-xl">
-          <CardHeader className="text-center pb-4">
-            <div className="mb-4">
-              <img
-                src="https://i.ibb.co/bMLhkc7G/Hower-logo.png"
-                alt="Hower"
-                className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4 shadow-lg"
-              />
-            </div>
-            <CardTitle className="text-2xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Inicia sesión en Hower
-            </CardTitle>
-            <p className="text-gray-600 mt-2">
-              Ingresa tus credenciales de Hower para acceder al CRM
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="max-w-sm w-full">
+        <div className="text-center space-y-8">
+          {/* Logo */}
+          <div className="flex justify-center">
+            <img
+              src="https://i.ibb.co/bMLhkc7G/Hower-logo.png"
+              alt="Hower"
+              className="w-16 h-16 rounded-2xl object-cover shadow-lg"
+            />
+          </div>
+          
+          {/* Title */}
+          <h1 className="text-4xl font-bold text-primary">Hower</h1>
+          
+          {/* Form */}
+          <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm font-medium text-gray-700">
-                Username de Hower
+              <Label htmlFor="username" className="text-primary text-base font-medium block text-left">
+                Username:
               </Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="andresquiroz"
+                placeholder="andresquival"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full"
+                className="w-full h-12 text-base rounded-lg border-2 border-muted-foreground/20"
                 disabled={isLoading}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="token" className="text-sm font-medium text-gray-700">
-                Token de Hower
+            <div className="space-y-4">
+              <Label htmlFor="token" className="text-primary text-base font-medium block text-left">
+                Contraseña:
               </Label>
               <Input
                 id="token"
                 type="password"
-                placeholder="mi_token_secreto_123"
+                placeholder="testhower"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                className="w-full"
+                className="w-full h-12 text-base rounded-lg border-2 border-muted-foreground/20"
                 disabled={isLoading}
               />
+              
+              <div className="text-center">
+                <button className="text-blue-600 underline hover:text-blue-700 transition-colors">
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
             </div>
             
-            <div className="space-y-3">
-              <Button
-                onClick={handleLogin}
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 border-0"
-              >
-                {isLoading ? (
-                  "Guardando..."
-                ) : (
-                  <>
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Acceder al CRM
-                  </>
-                )}
-              </Button>
-              
-              <Button
-                onClick={handleBack}
-                variant="outline"
-                className="w-full"
-                disabled={isLoading}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            <Button
+              onClick={handleLogin}
+              disabled={isLoading}
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium text-base rounded-lg transition-all duration-300"
+            >
+              {isLoading ? "Validando..." : "Validar contraseña"}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
