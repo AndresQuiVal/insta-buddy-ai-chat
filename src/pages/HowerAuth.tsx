@@ -32,17 +32,36 @@ const HowerAuth = () => {
       localStorage.setItem('hower_username', username.trim());
       localStorage.setItem('hower_token', token.trim());
       
+      // También guardar en la base de datos para las funciones del servidor
+      // y verificar si el usuario ha completado el onboarding
+      const instagramUserDataStr = localStorage.getItem('hower-instagram-user');
+      
       toast({
         title: "Credenciales guardadas",
         description: "Bienvenido al CRM de Hower",
       });
       
       // Check if user has completed onboarding
-      const instagramUserData = localStorage.getItem('hower-instagram-user');
-      if (instagramUserData) {
+      if (instagramUserDataStr) {
+        // Guardar credenciales en la base de datos
+        const userData = JSON.parse(instagramUserDataStr);
+        const instagramUserId = userData.instagram?.id || userData.facebook?.id;
+        
+        if (instagramUserId) {
+          const { error: dbError } = await supabase
+            .from('instagram_users')
+            .update({
+              hower_username: username.trim(),
+              hower_token: token.trim()
+            })
+            .eq('instagram_user_id', instagramUserId);
+          
+          if (dbError) {
+            console.error('Error saving Hower credentials to DB:', dbError);
+            // No bloqueamos el flujo, solo logueamos el error
+          }
+        }
         // User exists, check if they have completed ICP onboarding
-        const instagramUser = JSON.parse(instagramUserData);
-        const instagramUserId = instagramUser.instagram?.id || instagramUser.facebook?.id;
         
         if (instagramUserId) {
           // Check if ICP exists

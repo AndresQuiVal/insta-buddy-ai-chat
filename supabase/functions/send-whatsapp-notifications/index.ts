@@ -259,16 +259,28 @@ async function searchAndSaveProspects(instagramUserId: string) {
 
 async function getUserStats(instagramUserId: string) {
   try {
-    // Get stats using the existing function
+    // Get stats using the NEW filtered function that considers Hower users only
     const { data: stats, error } = await supabase
-      .rpc('grok_get_stats', {
+      .rpc('grok_get_stats_filtered_by_hower_users', {
         p_instagram_user_id: instagramUserId,
         p_period: 'today'
       });
       
     if (error) {
-      console.error('Error getting user stats:', error);
-      return { abiertas: 0, seguimientos: 0, agendados: 0 };
+      console.error('Error getting filtered user stats:', error);
+      // Fallback to regular stats if filtered version fails
+      const { data: fallbackStats, error: fallbackError } = await supabase
+        .rpc('grok_get_stats', {
+          p_instagram_user_id: instagramUserId,
+          p_period: 'today'
+        });
+      
+      if (fallbackError) {
+        console.error('Error getting fallback stats:', fallbackError);
+        return { abiertas: 0, seguimientos: 0, agendados: 0 };
+      }
+      
+      return fallbackStats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
     }
     
     return stats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
