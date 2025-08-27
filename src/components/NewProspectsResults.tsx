@@ -252,56 +252,77 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
 
       {/* Dialog for contact instructions */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200/50 shadow-xl">
-          {/* Notebook styling with lines */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-b from-red-400 to-red-500 opacity-20"></div>
-          <div className="absolute left-8 top-0 bottom-0 w-px bg-blue-300 opacity-40"></div>
-          
-          <DialogHeader className="relative z-10 ml-12">
-            <DialogTitle className="flex items-center gap-2 font-['Poppins'] text-lg font-semibold text-slate-800">
-              {selectedResult?.result_type === 'post' ? (
-                <MessageCircle className="h-5 w-5 text-primary" />
-              ) : (
-                <Users className="h-5 w-5 text-green-600" />
-              )}
-              {selectedResult && getDialogTitle(selectedResult)}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 relative z-10 ml-12 font-['Poppins']">
-            <p className="text-sm text-slate-700 leading-relaxed">
-              {selectedResult && getDialogContent(selectedResult)}
-            </p>
+        <DialogContent className="max-w-lg">
+          <div 
+            className="bg-white rounded-2xl shadow-xl border-t-8 p-6"
+            style={{
+              borderTopColor: selectedResult?.result_type === 'post' ? '#7a60ff' : '#22c55e',
+              backgroundImage: `
+                linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                linear-gradient(#f9fafb 0%, #ffffff 100%)
+              `,
+              backgroundSize: '24px 1px, 100% 100%',
+              backgroundPosition: '0 40px, 0 0'
+            }}
+          >
+            {/* Spiral binding holes */}
+            <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
+              {Array.from({length: 6}).map((_, i) => (
+                <div 
+                  key={i} 
+                  className="w-3 h-3 rounded-full shadow-inner" 
+                  style={{backgroundColor: selectedResult?.result_type === 'post' ? '#7a60ff' : '#22c55e'}} 
+                />
+              ))}
+            </div>
             
-            {selectedResult && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-800">Enlace de Instagram:</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="w-full border-slate-300 hover:bg-slate-50 font-['Poppins']"
-                >
-                  <a href={selectedResult.instagram_url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Abrir en Instagram
-                  </a>
-                </Button>
-              </div>
-            )}
+            <DialogHeader className="ml-6">
+              <DialogTitle className="flex items-center gap-2 font-['Poppins'] text-lg font-semibold text-slate-800">
+                {selectedResult?.result_type === 'post' ? (
+                  <MessageCircle className="h-5 w-5" style={{color: '#7a60ff'}} />
+                ) : (
+                  <Users className="h-5 w-5 text-green-600" />
+                )}
+                {selectedResult && getDialogTitle(selectedResult)}
+              </DialogTitle>
+            </DialogHeader>
             
-            <div className="bg-amber-100/70 p-3 rounded-lg border border-amber-200/50">
-              <p className="text-xs text-slate-600 font-['Poppins']">
-                💡 <strong>Tip:</strong> Los mejores momentos para contactar son entre las 10 AM y 4 PM, 
-                cuando las personas están más activas en redes sociales.
+            <div className="space-y-4 ml-6 font-['Poppins']">
+              <p className="text-sm text-slate-700 leading-relaxed">
+                {selectedResult && getDialogContent(selectedResult)}
               </p>
+              
+              {selectedResult && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-slate-800">Enlace de Instagram:</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="w-full border-slate-300 hover:bg-slate-50 font-['Poppins']"
+                  >
+                    <a href={selectedResult.instagram_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Abrir en Instagram
+                    </a>
+                  </Button>
+                </div>
+              )}
+              
+              <div 
+                className="p-3 rounded-lg border-l-4"
+                style={{
+                  borderLeftColor: selectedResult?.result_type === 'post' ? '#7a60ff' : '#22c55e',
+                  background: 'linear-gradient(to right, #fefefe 0%, #f8fafc 100%)'
+                }}
+              >
+                <p className="text-xs text-slate-600 font-['Poppins']">
+                  💡 <strong>Tip:</strong> Los mejores momentos para contactar son entre las 10 AM y 4 PM, 
+                  cuando las personas están más activas en redes sociales.
+                </p>
+              </div>
             </div>
           </div>
-          
-          {/* Notebook holes */}
-          <div className="absolute left-2 top-6 w-2 h-2 bg-white rounded-full border border-slate-300"></div>
-          <div className="absolute left-2 top-16 w-2 h-2 bg-white rounded-full border border-slate-300"></div>
-          <div className="absolute left-2 top-26 w-2 h-2 bg-white rounded-full border border-slate-300"></div>
         </DialogContent>
       </Dialog>
     </div>
