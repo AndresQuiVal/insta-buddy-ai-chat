@@ -9,7 +9,6 @@ interface HowerResponse {
     message: string;
     data: {
       hower_username: string;
-      limited_to_500: boolean;
       total_available: number;
       total_count: number;
       usernames: string[];

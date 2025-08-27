@@ -140,10 +140,9 @@ const TasksToDo: React.FC = () => {
       if (response.success && response.data && response.data.data && response.data.data.usernames) {
         console.log('📊 Estructura de datos de Hower:', response.data.data);
         console.log('📊 Total disponible:', response.data.data.total_count);
-        console.log('📊 Limitado a 500:', response.data.data.limited_to_500);
         
-        // Extraer directamente el array de usernames
-        const usernames = response.data.data.usernames.slice(0, 500);
+        // Usar todos los usernames sin límite
+        const usernames = response.data.data.usernames;
         
         setHowerUsernames(usernames);
         console.log('✅ Usuarios de Hower cargados:', usernames.length, 'total. Primeros 5:', usernames.slice(0, 5));
