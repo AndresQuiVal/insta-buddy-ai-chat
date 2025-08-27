@@ -22,9 +22,10 @@ interface ProspectResult {
 
 interface NewProspectsResultsProps {
   instagramUserId: string;
+  onCountChange?: (count: number) => void;
 }
 
-const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUserId }) => {
+const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUserId, onCountChange }) => {
   const [results, setResults] = useState<ProspectResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedResult, setSelectedResult] = useState<ProspectResult | null>(null);
@@ -56,6 +57,11 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
       }
 
       setResults((data || []) as ProspectResult[]);
+      
+      // Notificar el cambio de count al componente padre
+      if (onCountChange) {
+        onCountChange((data || []).length);
+      }
     } catch (error) {
       console.error('Error in loadResults:', error);
     } finally {

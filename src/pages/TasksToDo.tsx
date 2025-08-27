@@ -121,6 +121,7 @@ const TasksToDo: React.FC = () => {
   const [isEditingListName, setIsEditingListName] = useState(false);
   const [tempListName, setTempListName] = useState('');
   const [motivationalQuote, setMotivationalQuote] = useState('');
+  const [newProspectsCount, setNewProspectsCount] = useState(0);
 
   // Función para cargar los usuarios de Hower
   const loadHowerUsers = useCallback(async () => {
@@ -1217,6 +1218,9 @@ const TasksToDo: React.FC = () => {
     const allProspectsCompleted = prospects.every(p => completedTasks[`${taskType}-${p.id}`]);
     const tipKey = `tip-${taskType}`;
     const isTipExpanded = expandedTips[tipKey];
+    
+    // Para "new", si hay resultados automáticos (newProspectsCount > 0), mostramos solo customContent
+    const showOnlyCustomContent = taskType === 'new' && customContent && newProspectsCount > 0;
 
     const toggleTip = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -1316,114 +1320,123 @@ const TasksToDo: React.FC = () => {
                 </div>
               )}
               
-               {/* Tabs para divisiones por tipo */}
-               <div className="bg-white rounded-xl p-4 border border-gray-100">
-                 <Tabs 
-                    value={taskType === 'yesterday' ? activeYesterdayTab : taskType === 'week' ? activeWeekTab : 'dms'} 
-                    onValueChange={(value) => {
-                      if (taskType === 'yesterday') setActiveYesterdayTab(value);
-                      else if (taskType === 'week') setActiveWeekTab(value);
-                      // Para otros casos, no hacemos nada ya que el valor por defecto es 'dms'
-                    }}
-                   className="w-full"
-                 >
-                   <div className="overflow-x-auto pb-2">
-                      <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
-                        <TabsTrigger value="dms" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white whitespace-nowrap">
-                          <span className="block sm:hidden">💬</span>
-                          <span className="hidden sm:block">💬 DM's</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
-                          <span className="block sm:hidden">💭</span>
-                          <span className="hidden sm:block">💭 Comentarios</span>
-                        </TabsTrigger>
-                      </TabsList>
+               {/* Mostrar solo contenido personalizado para nuevos prospectos con resultados automáticos */}
+               {showOnlyCustomContent ? (
+                 <div className="bg-white rounded-xl p-4 border border-gray-100">
+                   {customContent}
+                 </div>
+               ) : (
+                 <>
+                   {/* Tabs para divisiones por tipo */}
+                   <div className="bg-white rounded-xl p-4 border border-gray-100">
+                     <Tabs 
+                        value={taskType === 'yesterday' ? activeYesterdayTab : taskType === 'week' ? activeWeekTab : 'dms'} 
+                        onValueChange={(value) => {
+                          if (taskType === 'yesterday') setActiveYesterdayTab(value);
+                          else if (taskType === 'week') setActiveWeekTab(value);
+                          // Para otros casos, no hacemos nada ya que el valor por defecto es 'dms'
+                        }}
+                       className="w-full"
+                     >
+                       <div className="overflow-x-auto pb-2">
+                          <TabsList className="flex w-full min-w-fit gap-2 mb-4 bg-gray-100 p-2 rounded-xl">
+                            <TabsTrigger value="dms" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-green-500 data-[state=active]:text-white whitespace-nowrap">
+                              <span className="block sm:hidden">💬</span>
+                              <span className="hidden sm:block">💬 DM's</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="comments" className="font-mono text-xs px-3 py-2 rounded-lg bg-white shadow-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white whitespace-nowrap">
+                              <span className="block sm:hidden">💭</span>
+                              <span className="hidden sm:block">💭 Comentarios</span>
+                            </TabsTrigger>
+                          </TabsList>
+                       </div>
+                      
+                       
+                        <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                          {(() => {
+                            // Obtener prospectos de DM según el tipo de tarea
+                            let dmProspects = [];
+                            if (taskType === 'yesterday') {
+                              dmProspects = prospectsClassification.noResponseYesterday.dm;
+                            } else if (taskType === 'week') {
+                              dmProspects = prospectsClassification.noResponse7Days.dm;
+                            } else if (taskType === 'pending') {
+                              dmProspects = prospectsClassification.pendingResponses.dm;
+                            } else if (taskType === 'new') {
+                              dmProspects = prospectsClassification.newProspects.dm;
+                            } else {
+                              dmProspects = prospects.filter((_, i) => i % 4 === 1); // Fallback para otros casos
+                            }
+                            
+                            return dmProspects.length === 0 ? (
+                              <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                                <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                                <p className="text-sm sm:text-base">¡Excelente! No hay DM's en seguimiento.</p>
+                              </div>
+                            ) : (
+                              dmProspects.map((prospect) => (
+                                <div key={prospect.id} className="mb-5">
+                                  <ProspectCard prospect={prospect} taskType={taskType} />
+                                </div>
+                              ))
+                            );
+                          })()}
+                        </TabsContent>
+                        
+                        <TabsContent value="comments" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                          {(() => {
+                            // Obtener prospectos de Comentarios según el tipo de tarea
+                            let commentProspects = [];
+                            if (taskType === 'yesterday') {
+                              commentProspects = prospectsClassification.noResponseYesterday.comment;
+                            } else if (taskType === 'week') {
+                              commentProspects = prospectsClassification.noResponse7Days.comment;
+                            } else if (taskType === 'pending') {
+                              commentProspects = prospectsClassification.pendingResponses.comment;
+                            } else if (taskType === 'new') {
+                              commentProspects = prospectsClassification.newProspects.comment;
+                            } else {
+                              commentProspects = prospects.filter((_, i) => i % 4 === 2); // Fallback para otros casos
+                            }
+                            
+                            return commentProspects.length === 0 ? (
+                              <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                                <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                                <p className="text-sm sm:text-base">¡Excelente! No hay comentarios en seguimiento.</p>
+                              </div>
+                            ) : (
+                              commentProspects.map((prospect) => (
+                                <div key={prospect.id} className="mb-5">
+                                  <ProspectCard prospect={prospect} taskType={taskType} />
+                                </div>
+                              ))
+                            );
+                          })()}
+                        </TabsContent>
+                       
+                        <TabsContent value="ads" className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                          {(() => {
+                            // Los anuncios están incluidos en la clasificación de DMs
+                            // Por ahora mostramos mensaje vacío ya que se manejan junto con DMs
+                            return (
+                              <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                                <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
+                                <p className="text-sm sm:text-base">Los anuncios se muestran en la tab de DM's.</p>
+                              </div>
+                            );
+                          })()}
+                        </TabsContent>
+                     </Tabs>
                    </div>
-                  
                    
-                    <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                      {(() => {
-                        // Obtener prospectos de DM según el tipo de tarea
-                        let dmProspects = [];
-                        if (taskType === 'yesterday') {
-                          dmProspects = prospectsClassification.noResponseYesterday.dm;
-                        } else if (taskType === 'week') {
-                          dmProspects = prospectsClassification.noResponse7Days.dm;
-                        } else if (taskType === 'pending') {
-                          dmProspects = prospectsClassification.pendingResponses.dm;
-                        } else if (taskType === 'new') {
-                          dmProspects = prospectsClassification.newProspects.dm;
-                        } else {
-                          dmProspects = prospects.filter((_, i) => i % 4 === 1); // Fallback para otros casos
-                        }
-                        
-                        return dmProspects.length === 0 ? (
-                          <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                            <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                            <p className="text-sm sm:text-base">¡Excelente! No hay DM's en seguimiento.</p>
-                          </div>
-                        ) : (
-                          dmProspects.map((prospect) => (
-                            <div key={prospect.id} className="mb-5">
-                              <ProspectCard prospect={prospect} taskType={taskType} />
-                            </div>
-                          ))
-                        );
-                      })()}
-                    </TabsContent>
-                    
-                    <TabsContent value="comments" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                      {(() => {
-                        // Obtener prospectos de Comentarios según el tipo de tarea
-                        let commentProspects = [];
-                        if (taskType === 'yesterday') {
-                          commentProspects = prospectsClassification.noResponseYesterday.comment;
-                        } else if (taskType === 'week') {
-                          commentProspects = prospectsClassification.noResponse7Days.comment;
-                        } else if (taskType === 'pending') {
-                          commentProspects = prospectsClassification.pendingResponses.comment;
-                        } else if (taskType === 'new') {
-                          commentProspects = prospectsClassification.newProspects.comment;
-                        } else {
-                          commentProspects = prospects.filter((_, i) => i % 4 === 2); // Fallback para otros casos
-                        }
-                        
-                        return commentProspects.length === 0 ? (
-                          <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                            <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                            <p className="text-sm sm:text-base">¡Excelente! No hay comentarios en seguimiento.</p>
-                          </div>
-                        ) : (
-                          commentProspects.map((prospect) => (
-                            <div key={prospect.id} className="mb-5">
-                              <ProspectCard prospect={prospect} taskType={taskType} />
-                            </div>
-                          ))
-                        );
-                      })()}
-                    </TabsContent>
-                   
-                    <TabsContent value="ads" className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                      {(() => {
-                        // Los anuncios están incluidos en la clasificación de DMs
-                        // Por ahora mostramos mensaje vacío ya que se manejan junto con DMs
-                        return (
-                          <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                            <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                            <p className="text-sm sm:text-base">Los anuncios se muestran en la tab de DM's.</p>
-                          </div>
-                        );
-                      })()}
-                    </TabsContent>
-                  </Tabs>
-                </div>
-                
-                {/* Custom Content */}
-                {customContent && (
-                  <div className="mt-6">
-                    {customContent}
-                  </div>
-                )}
+                   {/* Custom Content para otros casos */}
+                   {customContent && !showOnlyCustomContent && (
+                     <div className="mt-6">
+                       {customContent}
+                     </div>
+                   )}
+                 </>
+               )}
             </CardContent>
           )}
         </Card>
@@ -2115,8 +2128,8 @@ const TasksToDo: React.FC = () => {
           <div className="mt-8 sm:mt-12">
           <TaskSection
             title="Nuevos prospectos"
-            count={prospectsClassification.newProspects.dm.length + 
-                   prospectsClassification.newProspects.comment.length}
+            count={(prospectsClassification.newProspects.dm.length + 
+                   prospectsClassification.newProspects.comment.length) + newProspectsCount}
             onClick={() => setActiveSection(activeSection === 'new' ? null : 'new')}
             isActive={activeSection === 'new'}
             icon={MessageCircle}
@@ -2135,7 +2148,10 @@ const TasksToDo: React.FC = () => {
                     Haz clic en cada card para ver instrucciones de cómo contactarlos.
                   </p>
                 </div>
-                <NewProspectsResults instagramUserId={currentUser?.instagram_user_id || ''} />
+                <NewProspectsResults 
+                  instagramUserId={currentUser?.instagram_user_id || ''} 
+                  onCountChange={setNewProspectsCount}
+                />
               </div>
             }
           />
