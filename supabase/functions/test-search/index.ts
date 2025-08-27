@@ -80,7 +80,7 @@ serve(async (req) => {
       .from('instagram_users')
       .select('instagram_user_id')
       .eq('username', howerUsername)
-      .single();
+      .maybeSingle();
 
     if (userError || !userData) {
       console.error('❌ No se pudo encontrar el usuario:', userError);
