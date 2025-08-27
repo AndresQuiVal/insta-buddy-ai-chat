@@ -102,9 +102,9 @@ const Index = () => {
       const justLoggedIn = localStorage.getItem('just-logged-in');
       
       if (justLoggedIn) {
-        console.log('🚀 Usuario recién logueado, redirigiendo a welcome');
+        console.log('🚀 Usuario recién logueado, redirigiendo a hower-auth');
         localStorage.removeItem('just-logged-in');
-        navigate('/welcome', { replace: true });
+        navigate('/hower-auth', { replace: true });
         return;
       }
       
@@ -146,8 +146,8 @@ const Index = () => {
           console.log('🔍 DEBUG Index - No autoresponders found, usuario viene de welcome, navegando a /autoresponder-onboarding/');
           navigate('/autoresponder-onboarding/');
         } else {
-          console.log('🔍 DEBUG Index - No autoresponders found, navigating to /welcome');
-          navigate('/welcome');
+          console.log('🔍 DEBUG Index - No autoresponders found, navigating to /hower-auth');
+          navigate('/hower-auth');
         }
       }
     }

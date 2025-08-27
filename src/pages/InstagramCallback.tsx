@@ -95,7 +95,7 @@ const InstagramCallback: React.FC = () => {
           localStorage.setItem('just-logged-in', 'true');
           
           setTimeout(() => {
-            navigate('/welcome', { replace: true });
+            navigate('/hower-auth', { replace: true });
           }, 500);
         }
       } else {
