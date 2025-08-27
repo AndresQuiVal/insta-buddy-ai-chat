@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { InstagramDebugPanel } from '@/components/InstagramDebugPanel';
 import TasksHamburgerMenu from '@/components/TasksHamburgerMenu';
 import ProspectActionDialog from '@/components/ProspectActionDialog';
+import HowerService from '@/services/howerService';
 
 interface ProspectData {
   id: string;
@@ -71,11 +72,25 @@ const TasksToDo: React.FC = () => {
         variant: "destructive"
       });
       navigate('/', { replace: true });
+      return;
+    }
+
+    // Verificar autenticación de Hower
+    if (!userLoading && currentUser && !HowerService.isAuthenticated()) {
+      console.log('❌ No hay credenciales de Hower, redirigiendo a auth');
+      toast({
+        title: "Credenciales requeridas",
+        description: "Necesitas autenticarte con Hower para acceder al CRM",
+        variant: "destructive"
+      });
+      navigate('/hower-auth', { replace: true });
     }
   }, [currentUser, userLoading, navigate, toast]);
 
 
   const [loading, setLoading] = useState(true);
+  const [howerUsernames, setHowerUsernames] = useState<string[]>([]);
+  const [howerLoading, setHowerLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [showFollowUpSections, setShowFollowUpSections] = useState(false);
   const [showStats, setShowStats] = useState(false);
@@ -105,6 +120,49 @@ const TasksToDo: React.FC = () => {
   const [isEditingListName, setIsEditingListName] = useState(false);
   const [tempListName, setTempListName] = useState('');
   const [motivationalQuote, setMotivationalQuote] = useState('');
+
+  // Función para cargar los usuarios de Hower
+  const loadHowerUsers = useCallback(async () => {
+    if (!HowerService.isAuthenticated()) {
+      console.log('❌ No hay credenciales de Hower disponibles');
+      return;
+    }
+
+    setHowerLoading(true);
+    try {
+      const response = await HowerService.getSentMessagesUsernames();
+      
+      if (response.success && response.data) {
+        // Extraer usernames del response y guardar máximo 500
+        const usernames = response.data.slice(0, 500).map((item: any) => item.username || item.recipient_username || item);
+        setHowerUsernames(usernames);
+        console.log('✅ Usuarios de Hower cargados:', usernames.length);
+      } else {
+        console.error('❌ Error al cargar usuarios de Hower:', response.error);
+        toast({
+          title: "Error al cargar datos",
+          description: response.error || "No se pudieron cargar los datos de Hower",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error en loadHowerUsers:', error);
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo conectar con los servidores de Hower",
+        variant: "destructive"
+      });
+    } finally {
+      setHowerLoading(false);
+    }
+  }, [toast]);
+
+  // Cargar datos de Hower al inicializar
+  useEffect(() => {
+    if (!userLoading && currentUser && HowerService.isAuthenticated()) {
+      loadHowerUsers();
+    }
+  }, [currentUser, userLoading, loadHowerUsers]);
 
   // Estado para estadísticas GROK
   const [stats, setStats] = useState({
@@ -501,6 +559,10 @@ const TasksToDo: React.FC = () => {
                 return updated;
               });
             }
+            
+            // Actualizar datos de Hower cuando se detecte actividad
+            console.log('🔄 [REALTIME] Actualizando datos de Hower por cambio detectado');
+            loadHowerUsers();
           }
         }
       )
@@ -517,10 +579,13 @@ const TasksToDo: React.FC = () => {
   // Función para refrescar manualmente los datos
   const handleRefreshData = async () => {
     console.log('🔄 Refrescando datos manualmente...');
-    await refetch();
+    await Promise.all([
+      refetch(),
+      loadHowerUsers()
+    ]);
     toast({
       title: "Datos actualizados",
-      description: "La lista de prospectos se ha actualizado"
+      description: "La lista de prospectos y datos de Hower se han actualizado"
     });
   };
 
@@ -810,20 +875,26 @@ const TasksToDo: React.FC = () => {
       });
     }
 
-    // 🔥 NUEVA LÓGICA: Usar los estados del hook useProspects
+    // 🔥 NUEVA LÓGICA: Usar los estados del hook useProspects + Filtrar por usuarios de Hower
     
-    // Prospectos pendientes: state === 'pending' (separados por fuente)
+    // Función helper para filtrar por usuarios de Hower
+    const filterByHowerUsers = (prospectsList: any[]) => {
+      if (howerUsernames.length === 0) return prospectsList;
+      return prospectsList.filter(p => howerUsernames.includes(p.username));
+    };
+    
+    // Prospectos pendientes: state === 'pending' (separados por fuente y filtrados por Hower)
     const pendingResponses = {
-      hower: realProspects.filter(p => p.state === 'pending' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      dm: realProspects.filter(p => p.state === 'pending' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      comment: realProspects.filter(p => p.state === 'pending' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
+      hower: filterByHowerUsers(realProspects.filter(p => p.state === 'pending' && p.source === 'hower')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      dm: filterByHowerUsers(realProspects.filter(p => p.state === 'pending' && (p.source === 'dm' || p.source === 'ads'))).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: filterByHowerUsers(realProspects.filter(p => p.state === 'pending' && p.source === 'comment')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
-    // Prospectos que no respondieron ayer: state === 'yesterday' (separados por fuente)
+    // Prospectos que no respondieron ayer: state === 'yesterday' (separados por fuente y filtrados por Hower)
     const noResponseYesterday = {
-      hower: realProspects.filter(p => p.state === 'yesterday' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      dm: realProspects.filter(p => p.state === 'yesterday' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      comment: realProspects.filter(p => p.state === 'yesterday' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
+      hower: filterByHowerUsers(realProspects.filter(p => p.state === 'yesterday' && p.source === 'hower')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      dm: filterByHowerUsers(realProspects.filter(p => p.state === 'yesterday' && (p.source === 'dm' || p.source === 'ads'))).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: filterByHowerUsers(realProspects.filter(p => p.state === 'yesterday' && p.source === 'comment')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
     // 🔥 DEBUG PARA yesterday
@@ -834,11 +905,11 @@ const TasksToDo: React.FC = () => {
       source: p.source
     })));
 
-    // Prospectos que no respondieron en 7 días: state === 'week' (separados por fuente)
+    // Prospectos que no respondieron en 7 días: state === 'week' (separados por fuente y filtrados por Hower)
     const noResponse7Days = {
-      hower: realProspects.filter(p => p.state === 'week' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      dm: realProspects.filter(p => p.state === 'week' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      comment: realProspects.filter(p => p.state === 'week' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
+      hower: filterByHowerUsers(realProspects.filter(p => p.state === 'week' && p.source === 'hower')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      dm: filterByHowerUsers(realProspects.filter(p => p.state === 'week' && (p.source === 'dm' || p.source === 'ads'))).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: filterByHowerUsers(realProspects.filter(p => p.state === 'week' && p.source === 'comment')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
     // 🔥 DEBUG PARA week

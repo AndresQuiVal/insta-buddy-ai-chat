@@ -25,7 +25,7 @@ const WelcomeDashboard = () => {
       navigate('/');
       return;
     }
-    navigate('/tasks-to-do');
+    navigate('/hower-auth');
   };
 
   return (

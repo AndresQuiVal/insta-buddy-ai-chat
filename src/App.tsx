@@ -30,6 +30,7 @@ import ThreeMonthPlan from "./pages/ThreeMonthPlan";
 import WelcomeDashboard from "./pages/WelcomeDashboard";
 import WhatsAppConfig from "./pages/WhatsAppConfig";
 import HowerPresentation from "./pages/HowerPresentation";
+import HowerAuth from "./pages/HowerAuth";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/welcome" element={<WelcomeDashboard />} />
+          <Route path="/hower-auth" element={<HowerAuth />} />
           <Route path="/autoresponder-onboarding" element={<AutoresponderOnboarding />} />
             <Route path="/guides" element={<Guides />} />
             <Route path="/settings" element={<Settings />} />
