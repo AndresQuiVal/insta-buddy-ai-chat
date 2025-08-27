@@ -93,7 +93,7 @@ const Index = () => {
         console.log('🎯 Usuario viene de welcome queriendo usar autoresponder, verificando autoresponders...');
         // Limpiar el parámetro de la URL
         setSearchParams({});
-        // Verificar si tiene autoresponders configurados
+        // Verificar si tiene autoresponders configurados y redirigir a onboarding si no los tiene
         checkAutoresponderOnboardingStatus(true); // Pasar true para indicar que viene de welcome
         return;
       }
@@ -108,8 +108,9 @@ const Index = () => {
         return;
       }
       
-      // Si no es recién logueado, verificar autoresponders
-      checkAutoresponderOnboardingStatus();
+      // REMOVIDO: No verificar autoresponders automáticamente aquí
+      // Esto causaba bucles de redirección
+      // checkAutoresponderOnboardingStatus();
     }
   }, [currentUser, userLoading, navigate, searchParams, setSearchParams]);
 
