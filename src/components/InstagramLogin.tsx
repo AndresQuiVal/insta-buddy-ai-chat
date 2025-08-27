@@ -98,7 +98,7 @@ const InstagramLogin = () => {
               className="w-20 h-20 rounded-3xl object-cover mx-auto mb-6"
             />
             <h1 className="text-2xl font-light bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Hower
+              Hower <span className="font-bold">AI</span>
             </h1>
           </div>
 
