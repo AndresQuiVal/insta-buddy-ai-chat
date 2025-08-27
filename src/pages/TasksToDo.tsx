@@ -1221,6 +1221,9 @@ const TasksToDo: React.FC = () => {
     
     // Para "new", si hay resultados automáticos (newProspectsCount > 0), mostramos solo customContent
     const showOnlyCustomContent = taskType === 'new' && customContent && newProspectsCount > 0;
+    
+    // Para "new", nunca mostrar como completado/tachado
+    const shouldShowCompleted = taskType !== 'new' && (sectionCompleted || allProspectsCompleted);
 
     const toggleTip = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -1266,7 +1269,7 @@ const TasksToDo: React.FC = () => {
     return (
       <div className="mb-4 sm:mb-6">
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-md border-l-4 ${isActive ? 'ring-2 ring-primary border-l-primary' : 'border-l-gray-300'} ${sectionCompleted || allProspectsCompleted ? 'opacity-60' : ''}`}
+          className={`cursor-pointer transition-all hover:shadow-md border-l-4 ${isActive ? 'ring-2 ring-primary border-l-primary' : 'border-l-gray-300'} ${shouldShowCompleted ? 'opacity-60' : ''}`}
           style={{
             background: 'linear-gradient(to right, #fefefe 0%, #f8fafc 100%)',
             boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
@@ -1276,7 +1279,7 @@ const TasksToDo: React.FC = () => {
             <CardTitle className="flex items-center justify-between text-base sm:text-lg">
               <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
                 <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 hidden" />
-                <span className={`${sectionCompleted || allProspectsCompleted ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>{title}</span>
+                <span className={`${shouldShowCompleted ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>{title}</span>
               </div>
               <div className="flex items-center space-x-2 flex-shrink-0">
                 <Badge variant="secondary" className="text-xs">{count}</Badge>
