@@ -286,10 +286,14 @@ Responde en formato JSON exactamente así:
               </div>
 
               <div className="ml-4 sm:ml-6 pt-8 space-y-8">
-                {/* Animación del asistente */}
+                {/* Logo Hower con animación */}
                 <div className="relative">
-                  <div className="mx-auto w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center border-4 border-primary/20 animate-pulse">
-                    <div className="text-4xl sm:text-5xl">🤖</div>
+                  <div className="mx-auto w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center border-4 border-primary/20 bg-white/90 backdrop-blur-sm animate-pulse shadow-lg hover:shadow-xl transition-all duration-300">
+                    <img 
+                      src={howerLogo} 
+                      alt="Hower Logo" 
+                      className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
+                    />
                   </div>
                   <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full animate-bounce"></div>
                 </div>
@@ -297,11 +301,9 @@ Responde en formato JSON exactamente así:
                 {/* Título principal */}
                 <div className="space-y-4">
                   <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                    ¡Bienvenido al Asistente de Hower! 🚀
+                    Bienvenid@ a{' '}
+                    <span className="font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Hower Assistant</span>
                   </h1>
-                  <p className="text-xl sm:text-2xl text-primary font-semibold font-mono">
-                    Vamos a configurar tu prospección automatizada
-                  </p>
                 </div>
 
                 {/* Explicación del proceso */}
@@ -315,7 +317,7 @@ Responde en formato JSON exactamente así:
                       <div>
                         <h4 className="font-semibold text-foreground mb-1">Definir tu Cliente Ideal</h4>
                         <p className="text-sm text-muted-foreground font-mono">
-                          El asistente de IA necesita conocer exactamente quién es tu cliente perfecto para encontrar prospectos similares
+                          Define quién es tu cliente perfecto para encontrar prospectos similares
                         </p>
                       </div>
                     </div>
@@ -327,41 +329,11 @@ Responde en formato JSON exactamente así:
                       <div>
                         <h4 className="font-semibold text-foreground mb-1">Configurar WhatsApp</h4>
                         <p className="text-sm text-muted-foreground font-mono">
-                          Conectaremos tu número para que recibas notificaciones automáticas cuando encontremos prospectos perfectos
+                          Recibe notificaciones automáticas de nuevos prospectos
                         </p>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Beneficios */}
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
-                  <h3 className="text-lg font-bold mb-3 text-green-700 font-mono text-center">🎯 Al terminar tendrás:</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span className="text-green-800 font-mono">Prospección 100% automatizada</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span className="text-green-800 font-mono">Notificaciones inteligentes</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span className="text-green-800 font-mono">Prospectos de alta calidad</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span className="text-green-800 font-mono">Control total del proceso</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tiempo estimado */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-blue-800 font-mono text-sm">
-                    ⏱️ Tiempo estimado: <strong>5-8 minutos</strong>
-                  </p>
                 </div>
 
                 {/* Botón para empezar */}
@@ -371,7 +343,7 @@ Responde en formato JSON exactamente así:
                     size="lg"
                     className="w-full sm:w-auto px-8 py-4 text-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg font-mono"
                   >
-                    ¡Empezar configuración! 🚀
+                    Empezar configuración
                     <ArrowRight className="h-5 w-5 ml-2" />
                   </Button>
                 </div>
