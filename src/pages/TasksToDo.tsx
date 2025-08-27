@@ -132,6 +132,11 @@ const TasksToDo: React.FC = () => {
     try {
       const response = await HowerService.getSentMessagesUsernames();
       
+      console.log('🔍 Response completo:', response);
+      console.log('🔍 response.success:', response.success);
+      console.log('🔍 response.data:', response.data);
+      console.log('🔍 response.data?.usernames existe:', response.data?.usernames ? 'SI' : 'NO');
+      
       if (response.success && response.data && response.data.usernames) {
         console.log('📊 Estructura de datos de Hower:', response.data);
         console.log('📊 Total disponible:', response.data.total_count);
