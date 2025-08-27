@@ -325,11 +325,10 @@ Responde en formato JSON exactamente así:
                 onClick={() => navigate('/tasks-to-do')}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                className="flex items-center justify-center w-10 h-10 border-primary/20 text-primary hover:bg-primary/5"
                 style={{ fontFamily: 'Poppins, sans-serif' }}
               >
                 <ArrowLeft className="h-4 w-4" />
-                Volver al Dashboard
               </Button>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-800" style={{ fontFamily: 'Poppins, sans-serif' }}>
