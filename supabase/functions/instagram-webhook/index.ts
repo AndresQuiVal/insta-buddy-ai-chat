@@ -781,9 +781,10 @@ serve(async (req) => {
                           message_text: autoresponderActivado.message_text,
                           autoresponder_id: autoresponderActivado.id,
                           use_button: autoresponderActivado.use_buttons || false,
-                          button_text: autoresponderActivado.button_text || null,
-                          button_url: autoresponderActivado.button_url || null,
-                          button_type: autoresponderActivado.button_type || 'web_url'
+                          button_text: autoresponderActivado.buttons?.[0]?.text || null,
+                          button_url: autoresponderActivado.buttons?.[0]?.url || null,
+                          button_type: autoresponderActivado.buttons?.[0]?.type || 'web_url',
+                          postback_payload: autoresponderActivado.buttons?.[0]?.payload || null
                         }
                       })
                       
