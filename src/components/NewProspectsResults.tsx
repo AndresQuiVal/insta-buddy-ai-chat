@@ -98,7 +98,10 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
     if (result.result_type === 'post') {
       return 'Contacta a los que comentaron así...';
     } else {
-      return 'Contacta a los que siguen una cuenta así...';
+      // Extraer el username de la URL de Instagram
+      const match = result.instagram_url.match(/instagram\.com\/([^\/\?]+)/);
+      const username = match ? match[1] : 'USERNAME';
+      return `Contacta a los seguidores de @${username} asi`;
     }
   };
 
@@ -249,9 +252,13 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
 
       {/* Dialog for contact instructions */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="max-w-lg bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200/50 shadow-xl">
+          {/* Notebook styling with lines */}
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-b from-red-400 to-red-500 opacity-20"></div>
+          <div className="absolute left-8 top-0 bottom-0 w-px bg-blue-300 opacity-40"></div>
+          
+          <DialogHeader className="relative z-10 ml-12">
+            <DialogTitle className="flex items-center gap-2 font-['Poppins'] text-lg font-semibold text-slate-800">
               {selectedResult?.result_type === 'post' ? (
                 <MessageCircle className="h-5 w-5 text-primary" />
               ) : (
@@ -261,19 +268,19 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+          <div className="space-y-4 relative z-10 ml-12 font-['Poppins']">
+            <p className="text-sm text-slate-700 leading-relaxed">
               {selectedResult && getDialogContent(selectedResult)}
             </p>
             
             {selectedResult && (
               <div className="space-y-2">
-                <p className="text-sm font-medium">Enlace de Instagram:</p>
+                <p className="text-sm font-medium text-slate-800">Enlace de Instagram:</p>
                 <Button
                   variant="outline"
                   size="sm"
                   asChild
-                  className="w-full"
+                  className="w-full border-slate-300 hover:bg-slate-50 font-['Poppins']"
                 >
                   <a href={selectedResult.instagram_url} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4 mr-2" />
@@ -283,13 +290,18 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
               </div>
             )}
             
-            <div className="bg-muted p-3 rounded-lg">
-              <p className="text-xs text-muted-foreground">
+            <div className="bg-amber-100/70 p-3 rounded-lg border border-amber-200/50">
+              <p className="text-xs text-slate-600 font-['Poppins']">
                 💡 <strong>Tip:</strong> Los mejores momentos para contactar son entre las 10 AM y 4 PM, 
                 cuando las personas están más activas en redes sociales.
               </p>
             </div>
           </div>
+          
+          {/* Notebook holes */}
+          <div className="absolute left-2 top-6 w-2 h-2 bg-white rounded-full border border-slate-300"></div>
+          <div className="absolute left-2 top-16 w-2 h-2 bg-white rounded-full border border-slate-300"></div>
+          <div className="absolute left-2 top-26 w-2 h-2 bg-white rounded-full border border-slate-300"></div>
         </DialogContent>
       </Dialog>
     </div>
