@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, CheckCircle, Target, Users, Globe, Star, Gift } 
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import howerLogo from '@/assets/hower-logo.png';
 import WhatsAppConfigStep from '@/components/WhatsAppConfigStep';
 
 interface ICPData {
@@ -232,6 +233,15 @@ Responde en formato JSON exactamente así:
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10">
       <div className="max-w-4xl mx-auto px-4 py-4 sm:py-8">
+        {/* Logo Hower centrado */}
+        <div className="text-center mb-6 sm:mb-8">
+          <img 
+            src={howerLogo} 
+            alt="Hower Logo" 
+            className="h-12 sm:h-16 mx-auto"
+          />
+        </div>
+
         {/* Progress Bar */}
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-2">
@@ -279,7 +289,7 @@ Responde en formato JSON exactamente así:
                       className: "h-8 w-8 sm:h-10 sm:w-10 text-primary" 
                     })}
                   </div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-center mb-2 text-foreground font-mono">
+                  <h1 className="text-xl sm:text-2xl font-bold text-center mb-2 text-foreground" style={{ fontFamily: 'Poppins, sans-serif' }}>
                     {questions[currentStep - 1].title}
                   </h1>
                   <div className="space-y-2">
@@ -361,7 +371,7 @@ Responde en formato JSON exactamente así:
                 </div>
                 
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-success mb-2 font-mono">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-success mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
                     ¡A prospectar!
                   </h2>
                   <p className="text-muted-foreground text-base sm:text-lg font-mono">
