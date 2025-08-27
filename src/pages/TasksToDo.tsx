@@ -2151,13 +2151,20 @@ const TasksToDo: React.FC = () => {
                     Haz clic en cada card para ver instrucciones de cómo contactarlos.
                   </p>
                 </div>
-                <NewProspectsResults 
-                  instagramUserId={currentUser?.instagram_user_id || ''} 
-                  onCountChange={setNewProspectsCount}
-                />
+                <div style={{ display: activeSection === 'new' ? 'block' : 'none' }}>
+                  <NewProspectsResults instagramUserId={currentUser?.instagram_user_id || ''} />
+                </div>
               </div>
             }
           />
+          
+          {/* Componente invisible para cargar datos y actualizar count */}
+          <div style={{ display: 'none' }}>
+            <NewProspectsResults 
+              instagramUserId={currentUser?.instagram_user_id || ''} 
+              onCountChange={setNewProspectsCount}
+            />
+          </div>
           </div>
         </div>
 
