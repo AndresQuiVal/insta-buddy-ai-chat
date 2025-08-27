@@ -146,7 +146,7 @@ const Beta: React.FC = () => {
             <img 
               src={howerLogo} 
               alt="Hower Logo" 
-              className="w-12 h-12 rounded-2xl object-cover"
+              className="w-8 h-8 rounded-xl object-cover"
             />
             <h1 className="text-2xl font-light text-white">
               Hower <span className="font-bold text-purple-400">AI</span>
