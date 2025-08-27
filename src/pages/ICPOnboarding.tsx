@@ -235,10 +235,10 @@ Responde en formato JSON exactamente así:
         {/* Progress Bar */}
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="text-sm font-medium text-muted-foreground font-mono">
               Paso {currentStep} de {totalSteps}
             </span>
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="text-sm font-medium text-muted-foreground font-mono">
               {Math.round((currentStep / totalSteps) * 100)}%
             </span>
           </div>
@@ -252,54 +252,76 @@ Responde en formato JSON exactamente así:
 
         {/* Step Content */}
         {currentStep <= 4 && (
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="text-center pb-4 sm:pb-6">
-              <div className="mx-auto mb-4 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center border border-primary/20">
-                {React.createElement(questions[currentStep - 1].icon, { 
-                  className: "h-8 w-8 sm:h-10 sm:w-10 text-primary" 
-                })}
+          <div className="relative">
+            <div 
+              className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8"
+              style={{
+                borderTopColor: '#7a60ff',
+                backgroundImage: `
+                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                  linear-gradient(#f9fafb 0%, #ffffff 100%)
+                `,
+                backgroundSize: '24px 1px, 100% 100%',
+                backgroundPosition: '0 60px, 0 0'
+              }}
+            >
+              {/* Spiral binding holes */}
+              <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
+                {Array.from({length: 12}).map((_, i) => (
+                  <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
+                ))}
               </div>
-              <CardTitle className="text-xl sm:text-2xl font-bold text-center mb-2 text-foreground">
-                {questions[currentStep - 1].title}
-              </CardTitle>
-              <div className="space-y-2">
-                <p className="text-lg font-semibold text-primary">
-                  {questions[currentStep - 1].subtitle}
-                </p>
-                <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
-                  {questions[currentStep - 1].description}
-                </p>
+
+              <div className="ml-4 sm:ml-6">
+                <div className="text-center pb-4 sm:pb-6">
+                  <div className="mx-auto mb-4 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center border border-primary/20">
+                    {React.createElement(questions[currentStep - 1].icon, { 
+                      className: "h-8 w-8 sm:h-10 sm:w-10 text-primary" 
+                    })}
+                  </div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-center mb-2 text-foreground font-mono">
+                    {questions[currentStep - 1].title}
+                  </h1>
+                  <div className="space-y-2">
+                    <p className="text-lg font-semibold text-primary font-mono">
+                      {questions[currentStep - 1].subtitle}
+                    </p>
+                    <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto font-mono">
+                      {questions[currentStep - 1].description}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-6 px-4 sm:px-6">
+                  <Textarea
+                    placeholder={questions[currentStep - 1].placeholder}
+                    value={icpData[questions[currentStep - 1].key]}
+                    onChange={(e) => handleInputChange(questions[currentStep - 1].key, e.target.value)}
+                    className="min-h-[150px] sm:min-h-[180px] text-base resize-none border-primary/20 focus:border-primary focus:ring-primary/20 font-mono bg-white/80"
+                  />
+                  
+                  <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
+                    <Button
+                      onClick={handleBack}
+                      variant="outline"
+                      disabled={currentStep === 1}
+                      className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5 order-2 sm:order-1 font-mono"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    
+                    <Button
+                      onClick={handleNext}
+                      className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg order-1 sm:order-2 font-mono"
+                    >
+                      Siguiente
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-6 px-4 sm:px-6">
-              <Textarea
-                placeholder={questions[currentStep - 1].placeholder}
-                value={icpData[questions[currentStep - 1].key]}
-                onChange={(e) => handleInputChange(questions[currentStep - 1].key, e.target.value)}
-                className="min-h-[150px] sm:min-h-[180px] text-base resize-none border-primary/20 focus:border-primary focus:ring-primary/20"
-              />
-              
-              <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
-                <Button
-                  onClick={handleBack}
-                  variant="outline"
-                  disabled={currentStep === 1}
-                  className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5 order-2 sm:order-1"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Anterior
-                </Button>
-                
-                <Button
-                  onClick={handleNext}
-                  className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg order-1 sm:order-2"
-                >
-                  Siguiente
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* WhatsApp Configuration Step */}
@@ -313,48 +335,68 @@ Responde en formato JSON exactamente así:
 
         {/* Completion Step */}
         {currentStep === 6 && (
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm text-center">
-            <CardContent className="pt-8 space-y-6 px-4 sm:px-6">
-              <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-success/20 to-success/10 rounded-full flex items-center justify-center border border-success/20">
-                <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-success" />
-              </div>
-              
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-success mb-2">
-                  ¡A prospectar!
-                </h2>
-                <p className="text-muted-foreground text-base sm:text-lg">
-                  Tu cliente ideal ha sido definido y tu configuración está lista.
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 rounded-lg border border-primary/10">
-                <h3 className="font-semibold mb-3 text-primary">¿Qué sigue?</h3>
-                <ul className="text-sm space-y-2 text-left max-w-md mx-auto">
-                  <li className="flex items-center gap-2">
-                    <Gift className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span>Accede a tu dashboard de prospección</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span>Podrás editar tu ICP cuando quieras</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span>Recibe notificaciones de WhatsApp automáticas</span>
-                  </li>
-                </ul>
+          <div className="relative">
+            <div 
+              className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8 text-center"
+              style={{
+                borderTopColor: '#7a60ff',
+                backgroundImage: `
+                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                  linear-gradient(#f9fafb 0%, #ffffff 100%)
+                `,
+                backgroundSize: '24px 1px, 100% 100%',
+                backgroundPosition: '0 60px, 0 0'
+              }}
+            >
+              {/* Spiral binding holes */}
+              <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
+                {Array.from({length: 10}).map((_, i) => (
+                  <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
+                ))}
               </div>
 
-              <Button
-                onClick={handleFinish}
-                size="lg"
-                className="text-lg px-8 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg"
-              >
-                Ir al Dashboard
-              </Button>
-            </CardContent>
-          </Card>
+              <div className="ml-4 sm:ml-6 pt-8 space-y-6 px-4 sm:px-6">
+                <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-success/20 to-success/10 rounded-full flex items-center justify-center border border-success/20">
+                  <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-success" />
+                </div>
+                
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-success mb-2 font-mono">
+                    ¡A prospectar!
+                  </h2>
+                  <p className="text-muted-foreground text-base sm:text-lg font-mono">
+                    Tu cliente ideal ha sido definido y tu configuración está lista.
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 rounded-lg border border-primary/10">
+                  <h3 className="font-semibold mb-3 text-primary font-mono">¿Qué sigue?</h3>
+                  <ul className="text-sm space-y-2 text-left max-w-md mx-auto font-mono">
+                    <li className="flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-primary flex-shrink-0" />
+                      <span>Accede a tu dashboard de prospección</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary flex-shrink-0" />
+                      <span>Podrás editar tu ICP cuando quieras</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary flex-shrink-0" />
+                      <span>Recibe notificaciones de WhatsApp automáticas</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <Button
+                  onClick={handleFinish}
+                  size="lg"
+                  className="text-lg px-8 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg font-mono"
+                >
+                  Ir al Dashboard
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

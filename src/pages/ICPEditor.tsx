@@ -303,10 +303,10 @@ Responde en formato JSON exactamente así:
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Cargando ICP...</p>
+          <p className="text-muted-foreground font-mono">Cargando ICP...</p>
         </div>
       </div>
     );
@@ -315,84 +315,149 @@ Responde en formato JSON exactamente así:
   const bullseyeStatus = getBullseyeStatus(icpData.bullseyeScore);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10">
+      <div className="max-w-4xl mx-auto px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => navigate('/tasks-to-do')}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Volver al Dashboard
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Editar Cliente Ideal (ICP)</h1>
-              <p className="text-muted-foreground">Mejora tu ICP para obtener mejores resultados</p>
-            </div>
+        <div 
+          className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8 mb-6"
+          style={{
+            borderTopColor: '#7a60ff',
+            backgroundImage: `
+              linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+              linear-gradient(#f9fafb 0%, #ffffff 100%)
+            `,
+            backgroundSize: '24px 1px, 100% 100%',
+            backgroundPosition: '0 60px, 0 0'
+          }}
+        >
+          {/* Spiral binding holes */}
+          <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
+            {Array.from({length: 8}).map((_, i) => (
+              <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
+            ))}
           </div>
-          
-          <div className="text-center">
-            <Badge className={`${bullseyeStatus.color} text-white mb-2`}>
-              {bullseyeStatus.label}
-            </Badge>
-            <p className="text-sm text-muted-foreground">
-              {bullseyeStatus.description}
-            </p>
+
+          <div className="ml-4 sm:ml-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={() => navigate('/tasks-to-do')}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5 font-mono"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Volver al Dashboard
+                </Button>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold font-mono text-gray-800">📝 Editar Cliente Ideal (ICP)</h1>
+                  <p className="text-muted-foreground font-mono">Mejora tu ICP para obtener mejores resultados</p>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <Badge className={`${bullseyeStatus.color} text-white mb-2 font-mono`}>
+                  {bullseyeStatus.label}
+                </Badge>
+                <p className="text-sm text-muted-foreground font-mono">
+                  {bullseyeStatus.description}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* ICP Questions */}
         <div className="space-y-6">
           {questions.map((question, index) => (
-            <Card key={question.id} className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    {React.createElement(question.icon, { className: "h-5 w-5 text-primary" })}
+            <div 
+              key={question.id}
+              className="relative"
+            >
+              <div 
+                className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8"
+                style={{
+                  borderTopColor: '#7a60ff',
+                  backgroundImage: `
+                    linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                    linear-gradient(#f9fafb 0%, #ffffff 100%)
+                  `,
+                  backgroundSize: '24px 1px, 100% 100%',
+                  backgroundPosition: '0 60px, 0 0'
+                }}
+              >
+                {/* Spiral binding holes */}
+                <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
+                  {Array.from({length: 6}).map((_, i) => (
+                    <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
+                  ))}
+                </div>
+
+                <div className="ml-4 sm:ml-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center border border-primary/20">
+                      {React.createElement(question.icon, { className: "h-5 w-5 text-primary" })}
+                    </div>
+                    <h2 className="text-xl font-bold font-mono text-gray-800">{question.title}</h2>
                   </div>
-                  {question.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder={question.placeholder}
-                  value={icpData[question.key]}
-                  onChange={(e) => handleInputChange(question.key, e.target.value)}
-                  className="min-h-[120px] text-base"
-                />
-              </CardContent>
-            </Card>
+                  
+                  <Textarea
+                    placeholder={question.placeholder}
+                    value={icpData[question.key]}
+                    onChange={(e) => handleInputChange(question.key, e.target.value)}
+                    className="min-h-[120px] text-base font-mono bg-white/80 border-primary/20 focus:border-primary focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
 
         {/* Search Keywords */}
         {icpData.searchKeywords.length > 0 && (
-          <Card className="shadow-lg mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-green-600" />
-                </div>
-                Palabras Clave de Búsqueda
-              </CardTitle>
-              <p className="text-muted-foreground">
-                Estas palabras clave se generaron automáticamente para tu ICP
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {icpData.searchKeywords.map((keyword, index) => (
-                  <Badge key={index} variant="secondary" className="text-sm">
-                    {keyword}
-                  </Badge>
+          <div className="relative mt-6">
+            <div 
+              className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8"
+              style={{
+                borderTopColor: '#10b981',
+                backgroundImage: `
+                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                  linear-gradient(#f9fafb 0%, #ffffff 100%)
+                `,
+                backgroundSize: '24px 1px, 100% 100%',
+                backgroundPosition: '0 60px, 0 0'
+              }}
+            >
+              {/* Spiral binding holes */}
+              <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
+                {Array.from({length: 6}).map((_, i) => (
+                  <div key={i} className="w-3 h-3 rounded-full shadow-inner bg-green-500" />
                 ))}
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="ml-4 sm:ml-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold font-mono text-gray-800">🔍 Palabras Clave de Búsqueda</h2>
+                    <p className="text-muted-foreground font-mono text-sm">
+                      Estas palabras clave se generaron automáticamente para tu ICP
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  {icpData.searchKeywords.map((keyword, index) => (
+                    <Badge key={index} variant="secondary" className="text-sm font-mono bg-green-100 text-green-800">
+                      {keyword}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Save Button */}
@@ -401,7 +466,7 @@ Responde en formato JSON exactamente así:
             onClick={handleSaveICP}
             disabled={saving || analyzing}
             size="lg"
-            className="flex items-center gap-2 text-lg px-8"
+            className="flex items-center gap-2 text-lg px-8 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg font-mono"
           >
             {saving || analyzing ? (
               <>
@@ -419,21 +484,41 @@ Responde en formato JSON exactamente así:
 
         {/* Info Message */}
         {icpData.bullseyeScore < 4 && (
-          <Card className="mt-6 border-yellow-200 bg-yellow-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <RefreshCw className="h-5 w-5 text-yellow-600" />
-                <div>
-                  <p className="font-medium text-yellow-800">
-                    ICP Incompleto ({icpData.bullseyeScore}/4)
-                  </p>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Completa las respuestas para alcanzar BULLSEYE y desbloquear las palabras clave de búsqueda automática.
-                  </p>
+          <div className="relative mt-6">
+            <div 
+              className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8"
+              style={{
+                borderTopColor: '#eab308',
+                backgroundImage: `
+                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                  linear-gradient(#f9fafb 0%, #ffffff 100%)
+                `,
+                backgroundSize: '24px 1px, 100% 100%',
+                backgroundPosition: '0 60px, 0 0'
+              }}
+            >
+              {/* Spiral binding holes */}
+              <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
+                {Array.from({length: 4}).map((_, i) => (
+                  <div key={i} className="w-3 h-3 rounded-full shadow-inner bg-yellow-500" />
+                ))}
+              </div>
+
+              <div className="ml-4 sm:ml-6">
+                <div className="flex items-center gap-3">
+                  <RefreshCw className="h-5 w-5 text-yellow-600" />
+                  <div>
+                    <p className="font-medium text-yellow-800 font-mono">
+                      🎯 ICP Incompleto ({icpData.bullseyeScore}/4)
+                    </p>
+                    <p className="text-sm text-yellow-700 mt-1 font-mono">
+                      Completa las respuestas para alcanzar BULLSEYE y desbloquear las palabras clave de búsqueda automática.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
     </div>
