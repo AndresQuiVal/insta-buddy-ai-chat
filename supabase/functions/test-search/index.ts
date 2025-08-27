@@ -18,6 +18,7 @@ serve(async (req) => {
     const { howerUsername, howerToken, query } = await req.json();
 
     if (!howerUsername || !howerToken) {
+      console.error('❌ Faltan credenciales:', { howerUsername, howerToken });
       return new Response(JSON.stringify({ 
         error: 'Credenciales de Hower requeridas',
         success: false
@@ -30,6 +31,10 @@ serve(async (req) => {
     console.log(`🔍 Probando API de Hower con usuario: ${howerUsername}`);
     console.log(`🎯 Query de prueba: ${query}`);
 
+    // Usar ID fijo para test (el del usuario @pruebahower)
+    const instagramUserId = '17841476656827421';
+    console.log(`📋 Usando instagram_user_id de prueba: ${instagramUserId}`);
+
     // Preparar payload para la API de Hower
     const payload = {
       howerUsername,
@@ -41,6 +46,7 @@ serve(async (req) => {
     };
 
     console.log('📤 Enviando request a Hower API...');
+    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
 
     // Llamar a la API de Hower
     const response = await fetch('https://www.howersoftware.io/clients/perplexity_instagram_search_2/', {
@@ -61,7 +67,7 @@ serve(async (req) => {
         details: errorText,
         success: false
       }), {
-        status: 200,
+        status: 200, // Devolver 200 para que no sea error de edge function
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
@@ -72,29 +78,8 @@ serve(async (req) => {
     const accounts = data.accounts || [];
     console.log(`✅ Resultados obtenidos: ${accounts.length} cuentas`);
 
-    // Procesar y guardar algunos resultados para testing usando el ID real del usuario
+    // Procesar y guardar algunos resultados para testing
     const resultsToInsert = [];
-
-    // Buscar el usuario en la base de datos usando las credenciales de Hower
-    const { data: userData, error: userError } = await supabase
-      .from('instagram_users')
-      .select('instagram_user_id')
-      .eq('username', howerUsername)
-      .maybeSingle();
-
-    if (userError || !userData) {
-      console.error('❌ No se pudo encontrar el usuario:', userError);
-      return new Response(JSON.stringify({ 
-        error: 'No se pudo encontrar el usuario con esas credenciales de Hower',
-        success: false
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const instagramUserId = userData.instagram_user_id;
-    console.log(`📋 Usando instagram_user_id: ${instagramUserId} para usuario: ${howerUsername}`);
 
     // Tomar hasta 5 resultados para insertar
     const limitedResults = accounts.slice(0, 5);
@@ -116,6 +101,8 @@ serve(async (req) => {
       });
     }
 
+    console.log(`📝 Preparados ${resultsToInsert.length} resultados para insertar`);
+
     // Limpiar resultados anteriores
     const { error: deleteError } = await supabase
       .from('prospect_search_results')
@@ -124,6 +111,8 @@ serve(async (req) => {
 
     if (deleteError) {
       console.error('❌ Error limpiando resultados anteriores:', deleteError);
+    } else {
+      console.log('🧹 Resultados anteriores limpiados');
     }
 
     // Insertar nuevos resultados
@@ -134,6 +123,14 @@ serve(async (req) => {
 
       if (insertError) {
         console.error('❌ Error insertando resultados:', insertError);
+        return new Response(JSON.stringify({ 
+          error: 'Error guardando resultados en BD',
+          details: insertError.message,
+          success: false
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       } else {
         console.log(`✅ ${resultsToInsert.length} resultados guardados en la base de datos`);
       }
@@ -155,7 +152,7 @@ serve(async (req) => {
       details: error.message,
       success: false
     }), {
-      status: 500,
+      status: 200, // Devolver 200 para que no sea error de edge function
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
