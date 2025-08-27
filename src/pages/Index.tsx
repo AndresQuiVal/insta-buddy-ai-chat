@@ -223,8 +223,8 @@ const Index = () => {
               className="w-12 h-12 rounded-2xl object-cover"
             />
             <div>
-              <h1 className="text-4xl font-light bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Hower <span className="font-bold">Assistant</span>
+              <h1 className="text-2xl md:text-3xl font-light bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Hower <span className="font-bold text-purple-400">Assistant</span>
               </h1>
               {currentUser && (
                 <p className="text-sm text-gray-600">
@@ -254,13 +254,14 @@ const Index = () => {
                   handleLogout();
                   return;
                 }
-                navigate('/tasks-to-do');
+                navigate('/');
+                setActiveTab("crm");
               }} 
               variant="default" 
               size="sm" 
-              className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-light shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
-              📋 Mis Tareas
+              <span className="font-bold text-purple-100">Hower</span> CRM
             </Button>
             <div className="hidden">
               <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
