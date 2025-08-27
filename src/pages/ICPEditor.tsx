@@ -330,11 +330,9 @@ Responde en formato JSON exactamente así:
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                  Editar Cliente Ideal (ICP)
-                </h1>
-              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                Editar Cliente Ideal (ICP)
+              </h1>
             </div>
             
             <div className="text-center">
