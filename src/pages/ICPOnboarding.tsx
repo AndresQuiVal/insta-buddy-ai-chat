@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import howerLogo from '@/assets/hower-logo.png';
 import WhatsAppConfigStep from '@/components/WhatsAppConfigStep';
+import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 
 interface ICPData {
   who: string;
@@ -19,6 +20,7 @@ interface ICPData {
 const ICPOnboarding: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentUser } = useInstagramUsers();
   const [currentStep, setCurrentStep] = useState(0); // Empezar en 0 para pantalla de bienvenida
   const [loading, setSaving] = useState(false);
   const [icpData, setIcpData] = useState<ICPData>({
@@ -29,6 +31,31 @@ const ICPOnboarding: React.FC = () => {
   });
 
   const totalSteps = 7; // pantalla bienvenida + 4 preguntas ICP + WhatsApp config + completado
+
+  // Verificar si el usuario ya tiene ICP configurado y redirigir
+  useEffect(() => {
+    const checkICPStatus = async () => {
+      if (!currentUser?.instagram_user_id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_icp')
+          .select('is_complete')
+          .eq('instagram_user_id', currentUser.instagram_user_id)
+          .single();
+          
+        // Si ya tiene ICP configurado, redirigir a tasks-to-do
+        if (data?.is_complete) {
+          navigate('/tasks-to-do');
+          return;
+        }
+      } catch (error) {
+        console.log('No ICP found, continuing with onboarding');
+      }
+    };
+    
+    checkICPStatus();
+  }, [currentUser, navigate]);
 
   useEffect(() => {
     // SEO
