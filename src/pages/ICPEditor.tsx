@@ -398,14 +398,8 @@ Responde en formato JSON exactamente así:
                   backgroundPosition: '0 60px, 0 0'
                 }}
               >
-                {/* Spiral binding holes */}
-                <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
-                  {Array.from({length: 6}).map((_, i) => (
-                    <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
-                  ))}
-                </div>
 
-                <div className="ml-4 sm:ml-6">
+                <div className="p-6 sm:p-8">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center border border-primary/20">
                       {React.createElement(question.icon, { className: "h-5 w-5 text-primary" })}
@@ -463,14 +457,8 @@ Responde en formato JSON exactamente así:
                 backgroundPosition: '0 60px, 0 0'
               }}
             >
-              {/* Spiral binding holes */}
-              <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
-                {Array.from({length: 4}).map((_, i) => (
-                  <div key={i} className="w-3 h-3 rounded-full shadow-inner bg-yellow-500" />
-                ))}
-              </div>
 
-              <div className="ml-4 sm:ml-6">
+              <div className="p-6 sm:p-8">
                 <div className="flex items-center gap-3">
                   <RefreshCw className="h-5 w-5 text-yellow-600" />
                   <div>
