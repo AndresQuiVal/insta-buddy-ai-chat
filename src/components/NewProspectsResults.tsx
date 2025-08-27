@@ -107,9 +107,9 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
 
   const getDialogContent = (result: ProspectResult) => {
     if (result.result_type === 'post') {
-      return `Ve al enlace, revisa los comentarios y contacta directamente a las personas que comentaron.`;
+      return `Revisa los comentarios y contacta directamente a quienes comentaron.`;
     } else {
-      return `Ve al perfil, revisa sus seguidores y contacta directamente a las personas que siguen esta cuenta.`;
+      return `Revisa sus seguidores y contacta directamente a quienes los siguen.`;
     }
   };
 
