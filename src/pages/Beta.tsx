@@ -159,7 +159,7 @@ const Beta: React.FC = () => {
       <section className="py-20 px-4 text-center">
         <div className="container mx-auto max-w-6xl">
           <h1 className="text-4xl md:text-6xl font-light text-white mb-8 leading-tight">
-            Tu Máquina de Ventas con Instagram usando <span className="text-purple-400 font-bold">I.A.</span>
+            Tu Máquina de Prospectos con Instagram usando <span className="text-purple-400 font-bold">I.A.</span>
           </h1>
           
           <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
