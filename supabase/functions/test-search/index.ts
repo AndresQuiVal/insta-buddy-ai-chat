@@ -31,9 +31,39 @@ serve(async (req) => {
     console.log(`🔍 Probando API de Hower con usuario: ${howerUsername}`);
     console.log(`🎯 Query de prueba: ${query}`);
 
-    // Usar ID fijo para test (el del usuario @pruebahower)
-    const instagramUserId = '17841476656827421';
-    console.log(`📋 Usando instagram_user_id de prueba: ${instagramUserId}`);
+    // Buscar el usuario en la base de datos usando las credenciales de Hower
+    console.log(`🔍 Buscando usuario con username: ${howerUsername}`);
+    const { data: userData, error: userError } = await supabase
+      .from('instagram_users')
+      .select('instagram_user_id')
+      .eq('username', howerUsername)
+      .maybeSingle();
+
+    if (userError) {
+      console.error('❌ Error buscando usuario:', userError);
+      return new Response(JSON.stringify({ 
+        error: 'Error buscando usuario en la base de datos',
+        details: userError.message,
+        success: false
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!userData) {
+      console.error('❌ Usuario no encontrado con username:', howerUsername);
+      return new Response(JSON.stringify({ 
+        error: `Usuario no encontrado con username: ${howerUsername}. Asegúrate de que tu cuenta esté registrada en el sistema.`,
+        success: false
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const instagramUserId = userData.instagram_user_id;
+    console.log(`📋 Usuario encontrado - usando instagram_user_id: ${instagramUserId}`);
 
     // Preparar payload para la API de Hower
     const payload = {
