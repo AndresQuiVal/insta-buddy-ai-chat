@@ -12,7 +12,7 @@ const WelcomeDashboard = () => {
   const { toast } = useToast();
 
   const handleAutoresponder = () => {
-    navigate('/');
+    navigate('/?tab=autoresponder');
   };
 
   const handleCRM = () => {

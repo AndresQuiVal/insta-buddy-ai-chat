@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import InstagramLogin from "@/components/InstagramLogin";
 import InstagramAccountDiagnostic from "@/components/InstagramAccountDiagnostic";
@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("autoresponder");
   const [accessToken, setAccessToken] = useState("");
   const [isTokenSaved, setIsTokenSaved] = useState(false);
@@ -86,6 +87,15 @@ const Index = () => {
     if (!userLoading && currentUser) {
       console.log('🎯 Usuario detectado, verificando si debe redirigir...');
       
+      // Verificar si viene del welcome con intención específica de usar autoresponder
+      const tabParam = searchParams.get('tab');
+      if (tabParam === 'autoresponder') {
+        console.log('🎯 Usuario viene de welcome queriendo usar autoresponder, limpiando URL...');
+        // Limpiar el parámetro de la URL
+        setSearchParams({});
+        return; // No redirigir, quedarse en autoresponder
+      }
+      
       // Verificar si viene de login reciente
       const justLoggedIn = localStorage.getItem('just-logged-in');
       
@@ -99,7 +109,7 @@ const Index = () => {
       // Si no es recién logueado, verificar autoresponders
       checkAutoresponderOnboardingStatus();
     }
-  }, [currentUser, userLoading, navigate]);
+  }, [currentUser, userLoading, navigate, searchParams, setSearchParams]);
 
   // Verificar si debe mostrar autoresponder onboarding
   const checkAutoresponderOnboardingStatus = async () => {
