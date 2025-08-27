@@ -61,33 +61,67 @@ const Beta: React.FC = () => {
   const plans3Meses = {
     price: 88,
     features: [
-      "Hower Assistant - Autorespuestas inteligentes",
-      "Hower Prospector - Búsqueda automática de clientes",
-      "Hower CRM - Gestión completa de prospectos",
-      "Mensajes ilimitados con I.A.",
-      "Buscador inteligente de cuentas", 
-      "Seguimiento automático de prospectos",
-      "Optimizado para cuentas sin riesgo de ban"
+      "I.A. de Prospección completa:",
+      "• Mensajes ilimitados al mes con IA",
+      "• Lista de cuentas/publicaciones directo a WhatsApp cada 2 días",
+      "• Buscador inteligente con IA para tu nicho",
+      "• IA de seguimiento: sugerencias cuando no sabes qué responder",
+      "• IA de prospección: mensajes adaptados a tu nicho",
+      "• IA motivacional: tips, recursos y libros diarios",
+      "• Segmentación por ubicación",
+      "• Optimizado para PCs lentas",
+      "",
+      "Comunidad de Hower:",
+      "• Acceso a comunidad privada con +250 networkers",
+      "• Grupos separados por empresa (Fuxion, 4Life, etc.)",
+      "• Llamadas semanales en vivo con tips de prospección",
+      "• Acceso a networkers top 1% (Curtis Harding, Mihail Millet)",
+      "• Tips diarios por correo con estrategias prácticas"
     ],
     bonuses: [
-      "Academia Hower - Cursos exclusivos",
-      "Comunidad privada VIP",
-      "Llamadas semanales en vivo",
-      "Plantillas probadas de mensajería",
-      "Soporte prioritario 24/7"
+      "📝 Recursos Pro:",
+      "• 50+ Plantillas de Mihail Millet probadas",
+      "• Guía 9 pasos para agendar llamadas (infalible)",
+      "• Guía Anti-Baneos Instagram",
+      "• PDF + Video: Bio magnética que atrae prospectos",
+      "",
+      "🎯 Sesiones Exclusivas:",
+      "• Llamada 1-a-1 de configuración completa (45 min)",
+      "• Masterclass con Mihail: Mejores prospectos Instagram",
+      "• Masterclass: Marca Personal de Top 1%",
+      "• Lista de objeciones + IA para resolverlas",
+      "",
+      "⭐ BONUS ESPECIAL:",
+      "• Rutina '5 minutos al día': Sistema de Top 1% para +30 prospectos diarios"
     ],
-    guarantee: "Garantía de 30 días o tu dinero de vuelta"
+    guarantee: {
+      title: "Garantía Total",
+      subtitle: "Estamos tan seguros de lo que obtendrás que:",
+      points: [
+        "Si no consigues una respuesta en 7 días, tienes Full Money Back Guarantee",
+        "Además, te damos 3 meses gratuitos de software con acceso a todos los bonuses"
+      ],
+      note: "(aplican condiciones)"
+    }
   };
 
   const plans1Mes = {
     price: 27.99,
     features: [
-      "Hower Assistant - Autorespuestas inteligentes", 
-      "Hower Prospector - Búsqueda automática de clientes",
-      "Hower CRM - Gestión completa de prospectos",
-      "Mensajes limitados con I.A.",
-      "Buscador básico de cuentas",
-      "Seguimiento manual de prospectos"
+      "I.A. de Prospección básica:",
+      "• Mensajes limitados al mes con IA",
+      "• Lista de cuentas/publicaciones semanal",
+      "• Buscador básico para tu nicho",
+      "• Seguimiento manual de prospectos",
+      "• Mensajes básicos de prospección",
+      "• Segmentación por ubicación",
+      "• Optimizado para PCs lentas",
+      "",
+      "Comunidad de Hower:",
+      "• Acceso básico a comunidad privada",
+      "• Grupos generales (sin separación por empresa)",
+      "• Llamadas mensuales en vivo",
+      "• Tips semanales por correo"
     ]
   };
 
@@ -286,10 +320,33 @@ const Beta: React.FC = () => {
                   </div>
 
                   {/* Garantía */}
-                  <div className="bg-green-900/30 p-4 rounded-lg border border-green-600">
-                    <div className="flex items-center gap-2 text-green-400">
-                      <Shield className="h-5 w-5" />
-                      <span className="font-semibold">{plans3Meses.guarantee}</span>
+                  <div className="bg-gradient-to-r from-green-900 to-emerald-900 p-6 rounded-xl border-2 border-green-500 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-20 h-20 opacity-10">
+                      <img 
+                        src="/lovable-uploads/12bad9e9-7b65-43a6-bb60-7e47ae0390c7.png" 
+                        alt="Warranty Badge" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                          <Shield className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h5 className="text-xl font-bold text-green-400">{plans3Meses.guarantee.title}</h5>
+                          <p className="text-green-300 text-sm">{plans3Meses.guarantee.subtitle}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2 mb-3">
+                        {plans3Meses.guarantee.points.map((point, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <Check className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
+                            <span className="text-green-100 text-sm">{point}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-green-300 text-xs italic text-center">{plans3Meses.guarantee.note}</p>
                     </div>
                   </div>
                 </CardContent>
