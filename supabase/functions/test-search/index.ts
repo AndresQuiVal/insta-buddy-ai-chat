@@ -72,9 +72,29 @@ serve(async (req) => {
     const accounts = data.accounts || [];
     console.log(`✅ Resultados obtenidos: ${accounts.length} cuentas`);
 
-    // Procesar y guardar algunos resultados para testing
-    const instagramUserId = '17841476656827421'; // @pruebahower
+    // Procesar y guardar algunos resultados para testing usando el ID real del usuario
     const resultsToInsert = [];
+
+    // Buscar el usuario en la base de datos usando las credenciales de Hower
+    const { data: userData, error: userError } = await supabase
+      .from('instagram_users')
+      .select('instagram_user_id')
+      .eq('username', howerUsername)
+      .single();
+
+    if (userError || !userData) {
+      console.error('❌ No se pudo encontrar el usuario:', userError);
+      return new Response(JSON.stringify({ 
+        error: 'No se pudo encontrar el usuario con esas credenciales de Hower',
+        success: false
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const instagramUserId = userData.instagram_user_id;
+    console.log(`📋 Usando instagram_user_id: ${instagramUserId} para usuario: ${howerUsername}`);
 
     // Tomar hasta 5 resultados para insertar
     const limitedResults = accounts.slice(0, 5);
