@@ -19,7 +19,7 @@ interface ICPData {
 const ICPOnboarding: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // Empezar en 0 para pantalla de bienvenida
   const [loading, setSaving] = useState(false);
   const [icpData, setIcpData] = useState<ICPData>({
     who: '',
@@ -28,7 +28,7 @@ const ICPOnboarding: React.FC = () => {
     result: ''
   });
 
-  const totalSteps = 6; // 4 preguntas ICP + WhatsApp config + completado
+  const totalSteps = 7; // pantalla bienvenida + 4 preguntas ICP + WhatsApp config + completado
 
   useEffect(() => {
     // SEO
@@ -84,7 +84,7 @@ const ICPOnboarding: React.FC = () => {
   ];
 
   const handleNext = () => {
-    if (currentStep <= 4) {
+    if (currentStep >= 1 && currentStep <= 4) {
       const currentQuestion = questions[currentStep - 1];
       const currentAnswer = icpData[currentQuestion.key];
       
@@ -102,7 +102,7 @@ const ICPOnboarding: React.FC = () => {
   };
 
   const handleBack = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
   const handleInputChange = (key: keyof ICPData, value: string) => {
@@ -214,7 +214,7 @@ Responde en formato JSON exactamente así:
       });
 
       // Move to next step
-      setCurrentStep(6); // Go to completion step
+      setCurrentStep(7); // Go to completion step
       
     } catch (error) {
       console.error('Error saving ICP:', error);
@@ -263,8 +263,125 @@ Responde en formato JSON exactamente así:
           </div>
         </div>
 
-        {/* Step Content */}
-        {currentStep <= 4 && (
+        {/* Pantalla de Bienvenida */}
+        {currentStep === 0 && (
+          <div className="relative">
+            <div 
+              className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8 text-center"
+              style={{
+                borderTopColor: '#7a60ff',
+                backgroundImage: `
+                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                  linear-gradient(#f9fafb 0%, #ffffff 100%)
+                `,
+                backgroundSize: '24px 1px, 100% 100%',
+                backgroundPosition: '0 60px, 0 0'
+              }}
+            >
+              {/* Spiral binding holes */}
+              <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
+                {Array.from({length: 12}).map((_, i) => (
+                  <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
+                ))}
+              </div>
+
+              <div className="ml-4 sm:ml-6 pt-8 space-y-8">
+                {/* Animación del asistente */}
+                <div className="relative">
+                  <div className="mx-auto w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center border-4 border-primary/20 animate-pulse">
+                    <div className="text-4xl sm:text-5xl">🤖</div>
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full animate-bounce"></div>
+                </div>
+
+                {/* Título principal */}
+                <div className="space-y-4">
+                  <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                    ¡Bienvenido al Asistente de Hower! 🚀
+                  </h1>
+                  <p className="text-xl sm:text-2xl text-primary font-semibold font-mono">
+                    Vamos a configurar tu prospección automatizada
+                  </p>
+                </div>
+
+                {/* Explicación del proceso */}
+                <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 rounded-xl border border-primary/10 text-left max-w-2xl mx-auto">
+                  <h3 className="text-lg font-bold mb-4 text-primary font-mono text-center">¿Qué vamos a hacer?</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-primary font-bold text-sm">1</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">Definir tu Cliente Ideal</h4>
+                        <p className="text-sm text-muted-foreground font-mono">
+                          El asistente de IA necesita conocer exactamente quién es tu cliente perfecto para encontrar prospectos similares
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-primary font-bold text-sm">2</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">Configurar WhatsApp</h4>
+                        <p className="text-sm text-muted-foreground font-mono">
+                          Conectaremos tu número para que recibas notificaciones automáticas cuando encontremos prospectos perfectos
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Beneficios */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                  <h3 className="text-lg font-bold mb-3 text-green-700 font-mono text-center">🎯 Al terminar tendrás:</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span className="text-green-800 font-mono">Prospección 100% automatizada</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span className="text-green-800 font-mono">Notificaciones inteligentes</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span className="text-green-800 font-mono">Prospectos de alta calidad</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <span className="text-green-800 font-mono">Control total del proceso</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tiempo estimado */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 font-mono text-sm">
+                    ⏱️ Tiempo estimado: <strong>5-8 minutos</strong>
+                  </p>
+                </div>
+
+                {/* Botón para empezar */}
+                <div className="pt-4">
+                  <Button
+                    onClick={handleNext}
+                    size="lg"
+                    className="w-full sm:w-auto px-8 py-4 text-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg font-mono"
+                  >
+                    ¡Empezar configuración! 🚀
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step Content ICP Questions */}
+        {currentStep >= 1 && currentStep <= 4 && (
           <div className="relative">
             <div 
               className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8"
@@ -316,7 +433,7 @@ Responde en formato JSON exactamente así:
                     <Button
                       onClick={handleBack}
                       variant="outline"
-                      disabled={currentStep === 1}
+                      disabled={currentStep === 0}
                       className="flex items-center gap-2 border-primary/20 text-primary hover:bg-primary/5 order-2 sm:order-1 font-mono"
                     >
                       <ArrowLeft className="h-4 w-4" />
