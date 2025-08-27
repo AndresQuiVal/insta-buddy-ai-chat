@@ -303,15 +303,7 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                     className="w-full border-slate-300 hover:bg-slate-50 font-['Poppins']"
                   >
                     <a 
-                      href={
-                        selectedResult.result_type === 'post' 
-                          ? (() => {
-                              const match = selectedResult.instagram_url.match(/instagram\.com\/([^\/\?]+)/);
-                              const username = match ? match[1] : '';
-                              return username ? `https://www.instagram.com/${username}/followers/` : selectedResult.instagram_url;
-                            })()
-                          : selectedResult.instagram_url
-                      } 
+                      href={selectedResult.instagram_url} 
                       target="_blank" 
                       rel="noopener noreferrer"
                     >
