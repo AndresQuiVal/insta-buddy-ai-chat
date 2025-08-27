@@ -323,7 +323,7 @@ Responde en formato JSON exactamente así:
               <div className="ml-4 sm:ml-6 pt-8 space-y-8">
                 {/* Logo Hower redondo con shadow */}
                 <div className="relative">
-                  <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center bg-white shadow-xl overflow-hidden">
+                  <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-white shadow-xl overflow-hidden">
                     <img 
                       src={howerLogo} 
                       alt="Hower Logo" 
