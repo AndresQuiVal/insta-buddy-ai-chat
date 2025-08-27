@@ -21,26 +21,34 @@ const ManualProspectSearch: React.FC<ManualProspectSearchProps> = ({
     setIsSearching(true);
     
     try {
+      console.log('🔍 Iniciando búsqueda manual de prospectos...');
+      
       // Obtener credenciales de Hower desde localStorage
       const credentials = HowerService.getStoredCredentials();
       
-      if (!credentials) {
-        toast({
-          title: "❌ Credenciales requeridas",
-          description: "Necesitas estar autenticado en Hower para buscar prospectos",
-          variant: "destructive"
-        });
-        return;
-      }
+      console.log('🔑 Estado de credenciales:', {
+        hasCredentials: !!credentials,
+        username: credentials?.hower_username || 'NO FOUND',
+        hasToken: !!credentials?.hower_token
+      });
+      
+      // Si no hay credenciales, usar credenciales de prueba hardcodeadas
+      const searchCredentials = credentials || {
+        hower_username: "andresquival",
+        hower_token: "testhower"
+      };
 
-      console.log('🔍 Iniciando búsqueda manual de prospectos...');
+      console.log('🔍 Usando credenciales:', {
+        username: searchCredentials.hower_username,
+        hasToken: !!searchCredentials.hower_token
+      });
 
       // Llamar a la función search-prospects con las credenciales
       const { data, error } = await supabase.functions.invoke('search-prospects', {
         body: { 
           instagramUserId,
-          howerUsername: credentials.hower_username,
-          howerToken: credentials.hower_token
+          howerUsername: searchCredentials.hower_username,
+          howerToken: searchCredentials.hower_token
         }
       });
 

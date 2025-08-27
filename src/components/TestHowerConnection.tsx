@@ -13,25 +13,33 @@ const TestHowerConnection: React.FC = () => {
     setIsTesting(true);
     
     try {
+      console.log('🧪 Iniciando test de Hower API...');
+      
       // Obtener credenciales de Hower desde localStorage
       const credentials = HowerService.getStoredCredentials();
       
-      if (!credentials) {
-        toast({
-          title: "❌ Sin credenciales",
-          description: "No hay credenciales de Hower guardadas",
-          variant: "destructive"
-        });
-        return;
-      }
+      console.log('🔑 Estado de credenciales:', {
+        hasCredentials: !!credentials,
+        username: credentials?.hower_username || 'NO FOUND',
+        hasToken: !!credentials?.hower_token
+      });
+      
+      // Si no hay credenciales, usar credenciales de prueba hardcodeadas
+      const testCredentials = credentials || {
+        hower_username: "andresquival",
+        hower_token: "testhower"
+      };
 
-      console.log('🧪 Probando conexión con Hower API...');
+      console.log('🧪 Usando credenciales:', {
+        username: testCredentials.hower_username,
+        hasToken: !!testCredentials.hower_token
+      });
 
       // Llamar a la función de test
       const { data, error } = await supabase.functions.invoke('test-search', {
         body: { 
-          howerUsername: credentials.hower_username,
-          howerToken: credentials.hower_token,
+          howerUsername: testCredentials.hower_username,
+          howerToken: testCredentials.hower_token,
           query: "emprendedores jóvenes"
         }
       });
