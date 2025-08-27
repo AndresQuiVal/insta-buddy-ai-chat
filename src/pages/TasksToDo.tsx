@@ -23,6 +23,7 @@ import ProspectActionDialog from '@/components/ProspectActionDialog';
 import HowerService from '@/services/howerService';
 import { useProspectSearchResults } from '@/hooks/useProspectSearchResults';
 import ProspectSearchResultsDisplay from '@/components/ProspectSearchResultsDisplay';
+import ManualProspectSearch from '@/components/ManualProspectSearch';
 
 interface ProspectData {
   id: string;
@@ -1862,7 +1863,18 @@ const TasksToDo: React.FC = () => {
           </div>
         </div>
 
-        {/* Nuevos Prospectos - Mostrar resultados de búsqueda */}
+        {/* Nuevos Prospectos - Header con búsqueda manual */}
+        <div className="mb-4 flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Nuevos Prospectos</h3>
+          {currentUser && (
+            <ManualProspectSearch 
+              instagramUserId={currentUser.instagram_user_id}
+              onSearchComplete={refreshSearchResults}
+            />
+          )}
+        </div>
+        
+        {/* Resultados de búsqueda */}
         <ProspectSearchResultsDisplay
           posts={searchPosts}
           accounts={searchAccounts}
