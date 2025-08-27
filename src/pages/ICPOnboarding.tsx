@@ -320,7 +320,19 @@ Responde en formato JSON exactamente así:
                       <div>
                         <h4 className="font-semibold text-foreground mb-1">Configurar WhatsApp</h4>
                         <p className="text-sm text-muted-foreground font-mono">
-                          Recibe notificaciones automáticas de nuevos prospectos
+                          Recibe notificaciones de tu asistente con nuevos prospectos, prospectos pendientes, y en seguimiento por contactar!
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-primary font-bold text-sm">3</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">Deja que la I.A. haga el resto!</h4>
+                        <p className="text-sm text-muted-foreground font-mono">
+                          La I.A. se encargará de que no pierdas ningún prospecto y que puedas tener todo SUPER registrado!
                         </p>
                       </div>
                     </div>
