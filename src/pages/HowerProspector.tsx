@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ArrowLeft, ArrowRight, Chrome, CheckCircle, Target, MessageSquare, UserCheck, Clock, Shield, Zap, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import howerLogo from '@/assets/hower-logo.png';
 
 const HowerProspector = () => {
   const navigate = useNavigate();
+  const [showInstallDialog, setShowInstallDialog] = useState(false);
 
   const handleDownloadExtension = () => {
     window.open('https://chromewebstore.google.com/detail/hower-social-media-assist/fmjcnabglbobncbckgclmhnffljmjppi?authuser=0&hl=es-419&pli=1', '_blank');
@@ -58,11 +60,8 @@ const HowerProspector = () => {
           <h1 className="text-4xl md:text-6xl font-light text-white mb-6">
             Hower <span className="font-bold text-purple-400">Prospector</span>
           </h1>
-          <p className="text-xl text-gray-300 mb-4">
+          <p className="text-xl text-gray-300 mb-8">
             Prospecta en frío por Instagram
-          </p>
-          <p className="text-lg text-gray-400 mb-8">
-            Mira cómo trabaja por ti 👇
           </p>
 
           {/* Video */}
@@ -82,11 +81,21 @@ const HowerProspector = () => {
           <Button 
             onClick={handleDownloadExtension}
             size="lg"
-            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 mb-16 flex items-center gap-3 mx-auto"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 mb-4 flex items-center gap-3 mx-auto"
           >
             <Chrome className="w-6 h-6" />
             Descargar Prospector
           </Button>
+
+          {/* Ayuda para instalación */}
+          <div className="mb-16">
+            <button
+              onClick={() => setShowInstallDialog(true)}
+              className="text-gray-400 hover:text-purple-400 text-sm underline transition-colors"
+            >
+              ¿No sabes instalarlo? da click
+            </button>
+          </div>
 
           {/* Descripción simplificada */}
           <div className="bg-gray-800 rounded-lg p-8 mb-16 max-w-4xl mx-auto">
@@ -199,6 +208,27 @@ const HowerProspector = () => {
           </div>
         </div>
       </div>
+
+      {/* Dialog para instalación */}
+      <Dialog open={showInstallDialog} onOpenChange={setShowInstallDialog}>
+        <DialogContent className="max-w-4xl w-full">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center mb-2">
+              Instala Hower Prospector (extensión de Chrome)
+            </DialogTitle>
+            <p className="text-gray-600 text-center">Solo funciona en computadores</p>
+          </DialogHeader>
+          <div className="relative" style={{ paddingBottom: '63.64172068355922%', height: 0 }}>
+            <iframe
+              src="https://www.loom.com/embed/0ecb36895a864814803dcec9ec798f33?sid=290e64f8-995e-4063-80eb-4546faf9e753"
+              frameBorder="0"
+              allowFullScreen
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+              title="Cómo instalar Hower Prospector"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
