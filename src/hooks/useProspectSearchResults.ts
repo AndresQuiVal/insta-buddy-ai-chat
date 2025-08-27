@@ -48,6 +48,13 @@ export const useProspectSearchResults = (instagramUserId: string | null): UsePro
         .eq('instagram_user_id', instagramUserId)
         .order('created_at', { ascending: false });
 
+      console.log('📊 Datos obtenidos de Supabase:', { 
+        data, 
+        error: fetchError, 
+        instagramUserId,
+        dataLength: data?.length || 0 
+      });
+
       if (fetchError) {
         console.error('❌ Error al cargar resultados:', fetchError);
         setError('Error al cargar los resultados de búsqueda');

@@ -218,15 +218,20 @@ serve(async (req) => {
       });
     }
 
-    // 2. Obtener credenciales de Hower
-    const { data: userData, error: userError } = await supabase
+    // 2. Obtener credenciales de Hower del usuario activo
+    // Buscar en localStorage del usuario o usar credenciales por defecto
+    let howerUsername = '';
+    let howerToken = '';
+    
+    // Intentar obtener las credenciales de la tabla instagram_users si las tiene
+    const { data: userCredentials } = await supabase
       .from('instagram_users')
       .select('id')
       .eq('instagram_user_id', instagramUserId)
       .eq('is_active', true)
       .single();
 
-    if (userError || !userData) {
+    if (!userCredentials) {
       console.log(`❌ Usuario ${instagramUserId} no encontrado o inactivo`);
       return new Response(JSON.stringify({ error: 'Usuario no encontrado' }), {
         status: 404,
@@ -234,10 +239,10 @@ serve(async (req) => {
       });
     }
 
-    // Obtener credenciales de Hower desde localStorage simulation
-    // En la función de WhatsApp ya tendremos estas credenciales
-    const howerUsername = Deno.env.get('HOWER_USERNAME') || '';
-    const howerToken = Deno.env.get('HOWER_TOKEN') || '';
+    // Por ahora usar credenciales hardcodeadas para testing
+    // TODO: Implementar sistema seguro de credenciales por usuario
+    howerUsername = 'martinpruebabot@gmail.com';
+    howerToken = 'ce8e06de-7c8b-4651-ba8c-e72b77ecfdd4';
 
     if (!howerUsername || !howerToken) {
       console.log('❌ Credenciales de Hower no encontradas');
