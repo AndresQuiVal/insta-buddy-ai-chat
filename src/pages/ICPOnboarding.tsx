@@ -236,13 +236,18 @@ Responde en formato JSON exactamente así:
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-primary/10">
       <div className="max-w-4xl mx-auto px-4 py-4 sm:py-8">
-        {/* Logo Hower centrado */}
+        {/* Header con logo y título */}
         <div className="text-center mb-6 sm:mb-8">
-          <img 
-            src={howerLogo} 
-            alt="Hower Logo" 
-            className="h-12 sm:h-16 mx-auto"
-          />
+          <div className="flex items-center justify-center gap-3">
+            <img 
+              src={howerLogo} 
+              alt="Hower Logo" 
+              className="h-8 sm:h-10 w-auto object-contain"
+            />
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: 'Poppins, sans-serif' }}>
+              Hower Assistant
+            </h1>
+          </div>
         </div>
 
         {/* Progress Bar */}
