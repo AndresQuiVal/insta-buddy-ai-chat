@@ -70,7 +70,7 @@ const ICPOnboarding: React.FC = () => {
 
   useEffect(() => {
     // SEO
-    document.title = 'Onboarding - Define tu Cliente Ideal | Hower Assistant';
+    document.title = 'Onboarding - Define tu Cliente Ideal | Hower AI';
     const metaDesc = document.querySelector('meta[name="description"]');
     if (!metaDesc) {
       const m = document.createElement('meta');
@@ -283,7 +283,7 @@ Responde en formato JSON exactamente así:
               className="h-8 sm:h-10 w-auto object-contain"
             />
             <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: 'Poppins, sans-serif' }}>
-              Hower Assistant
+              Hower AI
             </h1>
           </div>
         </div>
@@ -336,7 +336,7 @@ Responde en formato JSON exactamente así:
                 <div className="space-y-4">
                   <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
                     Bienvenid@ a{' '}
-                    <span className="font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Hower Assistant</span>
+                    <span className="font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Hower AI</span>
                   </h1>
                 </div>
 
