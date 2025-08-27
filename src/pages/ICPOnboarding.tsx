@@ -278,16 +278,15 @@ Responde en formato JSON exactamente así:
               </div>
 
               <div className="ml-4 sm:ml-6 pt-8 space-y-8">
-                {/* Logo Hower con animación */}
+                {/* Logo Hower redondo con shadow */}
                 <div className="relative">
-                  <div className="mx-auto w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center border-4 border-primary/20 bg-white/90 backdrop-blur-sm animate-pulse shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="mx-auto w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center bg-white shadow-xl overflow-hidden">
                     <img 
                       src={howerLogo} 
                       alt="Hower Logo" 
-                      className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
+                      className="w-full h-full object-cover scale-150"
                     />
                   </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full animate-bounce"></div>
                 </div>
 
                 {/* Título principal */}
