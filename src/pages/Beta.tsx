@@ -169,20 +169,13 @@ const Beta: React.FC = () => {
           {/* Video explicativo */}
           <div className="bg-gray-800 rounded-2xl p-8 mb-16">
             <div className="flex justify-center">
-              <div style={{ width: '640px', maxWidth: '100%' }}>
-                <script src="https://fast.wistia.com/player.js" async></script>
-                <script src="https://fast.wistia.com/embed/gcks3zv7lu.js" async type="module"></script>
-                <style>{`
-                  wistia-player[media-id='gcks3zv7lu']:not(:defined) { 
-                    background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/gcks3zv7lu/swatch'); 
-                    display: block; 
-                    filter: blur(5px); 
-                  }
-                `}</style>
-                <wistia-player 
-                  media-id="gcks3zv7lu" 
-                  aspect="1.6" 
-                  style={{ width: '640px', height: '400px', maxWidth: '100%' }}
+              <div className="aspect-video w-full max-w-4xl rounded-lg overflow-hidden">
+                <iframe
+                  src="https://fast.wistia.net/embed/iframe/gcks3zv7lu?autoplay=0&wmode=transparent"
+                  title="Video explicativo de Hower AI"
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allowFullScreen
                 />
               </div>
             </div>
