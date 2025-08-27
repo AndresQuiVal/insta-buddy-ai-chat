@@ -431,6 +431,10 @@ const Beta: React.FC = () => {
             <Phone className="h-6 w-6 mr-3" />
             Contactar Soporte WhatsApp
           </Button>
+          
+          <p className="text-gray-400 mt-4">
+            +1 (555) 123-4567
+          </p>
         </div>
       </section>
 
