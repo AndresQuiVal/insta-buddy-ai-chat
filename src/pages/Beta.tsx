@@ -104,7 +104,7 @@ const Beta: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-hower-light/10 to-hower-primary/10">
+    <div className="min-h-screen bg-gray-900">
       {/* Header */}
       <header className="py-6 px-4">
         <div className="container mx-auto flex justify-end items-center">
@@ -112,10 +112,10 @@ const Beta: React.FC = () => {
             <img 
               src={howerLogo} 
               alt="Hower Logo" 
-              className="h-12 w-auto"
+              className="w-12 h-12 rounded-2xl object-cover"
             />
-            <h1 className="text-2xl font-light text-primary">
-              Hower <span className="font-bold">AI</span>
+            <h1 className="text-2xl font-light text-white">
+              Hower <span className="font-bold text-purple-400">AI</span>
             </h1>
           </div>
         </div>
@@ -124,44 +124,44 @@ const Beta: React.FC = () => {
       {/* Hero Section */}
       <section className="py-20 px-4 text-center">
         <div className="container mx-auto max-w-6xl">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-8 leading-tight">
-            Tu Máquina de Ventas con Instagram usando <span className="text-primary">I.A.</span>
+          <h1 className="text-4xl md:text-6xl font-light text-white mb-8 leading-tight">
+            Tu Máquina de Ventas con Instagram usando <span className="text-purple-400 font-bold">I.A.</span>
           </h1>
           
-          <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
             Combina autorespuestas inteligentes, prospección en frío sin baneo y CRM completo en una sola plataforma
           </p>
 
           {/* Iconos explicativos */}
           <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <div className="flex flex-col items-center p-6">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-4 mb-4">
+            <div className="flex flex-col items-center p-6 bg-gray-800 rounded-lg">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full flex items-center justify-center mb-4">
                 <Bot className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Hower Assistant</h3>
-              <p className="text-gray-600">Autorespuestas tipo ManyChat pero más inteligentes</p>
+              <h3 className="text-xl font-semibold mb-2 text-white">Hower Assistant</h3>
+              <p className="text-gray-300">Autorespuestas tipo ManyChat pero más inteligentes</p>
             </div>
             
-            <div className="flex flex-col items-center p-6">
-              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full p-4 mb-4">
-                <Search className="h-8 w-8 text-white" />
+            <div className="flex flex-col items-center p-6 bg-gray-800 rounded-lg">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-purple-500 rounded-full flex items-center justify-center mb-4">
+                <Target className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Hower Prospector</h3>
-              <p className="text-gray-600">Prospección en frío sin banear tu cuenta</p>
+              <h3 className="text-xl font-semibold mb-2 text-white">Hower Prospector</h3>
+              <p className="text-gray-300">Prospección en frío sin banear tu cuenta</p>
             </div>
             
-            <div className="flex flex-col items-center p-6">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-full p-4 mb-4">
+            <div className="flex flex-col items-center p-6 bg-gray-800 rounded-lg">
+              <div className="w-16 h-16 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full flex items-center justify-center mb-4">
                 <Users className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Hower CRM</h3>
-              <p className="text-gray-600">Gestión completa de todos tus prospectos</p>
+              <h3 className="text-xl font-semibold mb-2 text-white">Hower CRM</h3>
+              <p className="text-gray-300">Gestión completa de todos tus prospectos</p>
             </div>
           </div>
 
           {/* Espacio para video explicativo */}
-          <div className="bg-gray-100 rounded-2xl p-16 mb-16">
-            <div className="text-gray-500 text-lg">
+          <div className="bg-gray-800 rounded-2xl p-16 mb-16">
+            <div className="text-gray-400 text-lg">
               📹 Video explicativo próximamente
             </div>
           </div>
@@ -169,9 +169,9 @@ const Beta: React.FC = () => {
       </section>
 
       {/* Testimonios */}
-      <section className="py-20 px-4 bg-gradient-to-r from-purple-100 to-blue-100">
+      <section className="py-20 px-4 bg-gray-800">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-gray-900">
+          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-white">
             Resultados Reales de Nuestros Usuarios
           </h2>
           
@@ -190,17 +190,17 @@ const Beta: React.FC = () => {
                 </div>
                 
                 {/* Información del testimonial */}
-                <Card className="p-6 bg-white/90 backdrop-blur-sm">
+                <Card className="p-6 bg-gray-700">
                   <CardContent className="space-y-4">
                     <div className="text-center">
-                      <h4 className="font-semibold text-lg mb-2">{testimonial.name}</h4>
+                      <h4 className="font-semibold text-lg mb-2 text-white">{testimonial.name}</h4>
                       <div className="flex justify-center space-x-1 mb-4">
                         {[...Array(5)].map((_, i) => (
                           <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                         ))}
                       </div>
                     </div>
-                    <p className="text-gray-700 italic text-center">"{testimonial.quote}"</p>
+                    <p className="text-gray-300 italic text-center">"{testimonial.quote}"</p>
                   </CardContent>
                 </Card>
               </div>
@@ -209,10 +209,10 @@ const Beta: React.FC = () => {
 
           {/* Imágenes de testimonios */}
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-gray-800 mb-8">Más testimonios de nuestros usuarios</h3>
+            <h3 className="text-2xl font-bold text-white mb-8">Más testimonios de nuestros usuarios</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {testimonialImages.map((image, index) => (
-                <div key={index} className="aspect-square rounded-lg overflow-hidden">
+                <div key={index} className="aspect-square rounded-lg overflow-hidden border border-gray-600">
                   <img 
                     src={image} 
                     alt={`Testimonio ${index + 1}`}
@@ -226,44 +226,44 @@ const Beta: React.FC = () => {
       </section>
 
       {/* Planes de precios */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 bg-gray-900">
         <div className="container mx-auto max-w-4xl">
-          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-gray-900">
+          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-white">
             Elige tu Plan
           </h2>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="3-meses" className="text-lg py-3">3 Meses</TabsTrigger>
-              <TabsTrigger value="1-mes" className="text-lg py-3">1 Mes</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-800 border-gray-700">
+              <TabsTrigger value="3-meses" className="text-lg py-3 data-[state=active]:bg-purple-600 data-[state=active]:text-white">3 Meses</TabsTrigger>
+              <TabsTrigger value="1-mes" className="text-lg py-3 data-[state=active]:bg-purple-600 data-[state=active]:text-white">1 Mes</TabsTrigger>
             </TabsList>
 
             <TabsContent value="3-meses">
-              <Card className="relative overflow-hidden border-2 border-primary">
-                <Badge className="absolute top-4 right-4 bg-primary text-white">
+              <Card className="relative overflow-hidden border-2 border-purple-600 bg-gray-800">
+                <Badge className="absolute top-4 right-4 bg-purple-600 text-white">
                   MÁS POPULAR
                 </Badge>
                 <CardHeader className="text-center pb-8">
-                  <CardTitle className="text-3xl mb-2">Plan 3 Meses</CardTitle>
-                  <div className="text-5xl font-bold text-primary mb-2">
+                  <CardTitle className="text-3xl mb-2 text-white">Plan 3 Meses</CardTitle>
+                  <div className="text-5xl font-bold text-purple-400 mb-2">
                     ${plans3Meses.price}
-                    <span className="text-lg text-gray-500 font-normal"> USD</span>
+                    <span className="text-lg text-gray-400 font-normal"> USD</span>
                   </div>
-                  <CardDescription className="text-lg">La mejor opción para resultados consistentes</CardDescription>
+                  <CardDescription className="text-lg text-gray-300">La mejor opción para resultados consistentes</CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-8">
                   {/* Lo que recibes */}
                   <div>
-                    <h4 className="font-semibold text-lg mb-4 flex items-center">
-                      <Target className="h-5 w-5 mr-2 text-primary" />
+                    <h4 className="font-semibold text-lg mb-4 flex items-center text-white">
+                      <Target className="h-5 w-5 mr-2 text-purple-400" />
                       Lo que recibes:
                     </h4>
                     <ul className="space-y-3">
                       {plans3Meses.features.map((feature, i) => (
                         <li key={i} className="flex items-start gap-3">
-                          <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                          <span>{feature}</span>
+                          <Check className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                          <span className="text-gray-300">{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -271,23 +271,23 @@ const Beta: React.FC = () => {
 
                   {/* Bonuses */}
                   <div>
-                    <h4 className="font-semibold text-lg mb-4 flex items-center">
-                      <Star className="h-5 w-5 mr-2 text-yellow-500" />
+                    <h4 className="font-semibold text-lg mb-4 flex items-center text-white">
+                      <Star className="h-5 w-5 mr-2 text-yellow-400" />
                       Bonuses:
                     </h4>
                     <ul className="space-y-3">
                       {plans3Meses.bonuses.map((bonus, i) => (
                         <li key={i} className="flex items-start gap-3">
-                          <Check className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
-                          <span className="font-medium text-yellow-700">{bonus}</span>
+                          <Check className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
+                          <span className="font-medium text-yellow-300">{bonus}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
                   {/* Garantía */}
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <div className="flex items-center gap-2 text-green-700">
+                  <div className="bg-green-900/30 p-4 rounded-lg border border-green-600">
+                    <div className="flex items-center gap-2 text-green-400">
                       <Shield className="h-5 w-5" />
                       <span className="font-semibold">{plans3Meses.guarantee}</span>
                     </div>
@@ -297,7 +297,7 @@ const Beta: React.FC = () => {
                 <CardFooter>
                   <Button 
                     onClick={() => handlePurchase("3-meses")}
-                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-semibold py-6 text-lg"
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-6 text-lg"
                     size="lg"
                   >
                     Obtener Plan 3 Meses
@@ -307,28 +307,28 @@ const Beta: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="1-mes">
-              <Card className="border border-gray-200">
+              <Card className="border border-gray-600 bg-gray-800">
                 <CardHeader className="text-center pb-8">
-                  <CardTitle className="text-3xl mb-2">Plan 1 Mes</CardTitle>
-                  <div className="text-5xl font-bold text-primary mb-2">
+                  <CardTitle className="text-3xl mb-2 text-white">Plan 1 Mes</CardTitle>
+                  <div className="text-5xl font-bold text-purple-400 mb-2">
                     ${plans1Mes.price}
-                    <span className="text-lg text-gray-500 font-normal"> USD</span>
+                    <span className="text-lg text-gray-400 font-normal"> USD</span>
                   </div>
-                  <CardDescription className="text-lg">Perfecto para probar la plataforma</CardDescription>
+                  <CardDescription className="text-lg text-gray-300">Perfecto para probar la plataforma</CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-8">
                   {/* Lo que recibes */}
                   <div>
-                    <h4 className="font-semibold text-lg mb-4 flex items-center">
-                      <Target className="h-5 w-5 mr-2 text-primary" />
+                    <h4 className="font-semibold text-lg mb-4 flex items-center text-white">
+                      <Target className="h-5 w-5 mr-2 text-purple-400" />
                       Lo que recibes:
                     </h4>
                     <ul className="space-y-3">
                       {plans1Mes.features.map((feature, i) => (
                         <li key={i} className="flex items-start gap-3">
-                          <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                          <span>{feature}</span>
+                          <Check className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                          <span className="text-gray-300">{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -338,7 +338,7 @@ const Beta: React.FC = () => {
                 <CardFooter>
                   <Button 
                     onClick={() => handlePurchase("1-mes")}
-                    className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 text-lg"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-6 text-lg"
                     size="lg"
                   >
                     Obtener Plan 1 Mes
@@ -351,18 +351,18 @@ const Beta: React.FC = () => {
       </section>
 
       {/* Soporte */}
-      <section className="py-20 px-4 bg-gradient-to-r from-hower-light/20 to-hower-primary/20">
+      <section className="py-20 px-4 bg-gray-800">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl md:text-5xl font-bold mb-8 text-gray-900">
+          <h2 className="text-3xl md:text-5xl font-bold mb-8 text-white">
             ¿Necesitas Ayuda?
           </h2>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-xl text-gray-300 mb-8">
             Nuestro equipo de soporte está disponible 24/7 para ayudarte
           </p>
           
           <Button
             onClick={() => window.open('https://wa.me/15551234567?text=Hola,%20necesito%20ayuda%20con%20Hower%20AI', '_blank')}
-            className="bg-green-500 hover:bg-green-600 text-white font-semibold py-6 px-8 text-lg rounded-2xl transition-all duration-300 hover:scale-105 shadow-lg"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-6 px-8 text-lg rounded-2xl transition-all duration-300 hover:scale-105 shadow-lg"
             size="lg"
           >
             <Phone className="h-6 w-6 mr-3" />
@@ -372,9 +372,9 @@ const Beta: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 border-t border-gray-200">
+      <footer className="py-12 px-4 border-t border-gray-700 bg-gray-900">
         <div className="container mx-auto text-center">
-          <p className="text-gray-500">
+          <p className="text-gray-400">
             © 2025 Hower AI. Todos los derechos reservados.
           </p>
         </div>
