@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, Bot, Search, Users, Shield, Star, MessageSquare, Target, Zap, Phone } from 'lucide-react';
+import howerLogo from '@/assets/hower-logo.png';
 
 const Beta: React.FC = () => {
   const [activeTab, setActiveTab] = useState("3-meses");
@@ -58,7 +59,7 @@ const Beta: React.FC = () => {
 
   // Planes de precios
   const plans3Meses = {
-    price: 247,
+    price: 88,
     features: [
       "Hower Assistant - Autorespuestas inteligentes",
       "Hower Prospector - Búsqueda automática de clientes",
@@ -79,7 +80,7 @@ const Beta: React.FC = () => {
   };
 
   const plans1Mes = {
-    price: 97,
+    price: 27.99,
     features: [
       "Hower Assistant - Autorespuestas inteligentes", 
       "Hower Prospector - Búsqueda automática de clientes",
@@ -98,14 +99,42 @@ const Beta: React.FC = () => {
     window.open(links[planType as keyof typeof links], '_blank');
   };
 
+  useEffect(() => {
+    // Scripts para los videos de testimonios
+    const videoScripts = [
+      'https://fast.wistia.com/embed/hs4dh7si13.js',
+      'https://fast.wistia.com/embed/wmbuq3prqd.js', 
+      'https://fast.wistia.com/embed/ip41h9ax0x.js',
+      'https://fast.wistia.com/embed/hpx53mcnod.js',
+      'https://fast.wistia.com/embed/r9deud5rs0.js'
+    ];
+
+    const scriptElements = videoScripts.map(src => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.type = 'module';
+      document.head.appendChild(script);
+      return script;
+    });
+
+    return () => {
+      scriptElements.forEach(script => {
+        if (document.head.contains(script)) {
+          document.head.removeChild(script);
+        }
+      });
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-white via-hower-light/10 to-hower-primary/10">
       {/* Header */}
       <header className="py-6 px-4">
         <div className="container mx-auto flex justify-end items-center">
           <div className="flex items-center space-x-3">
             <img 
-              src="/lovable-uploads/c0b3827b-3db7-4c68-b4ed-7745f1a18c28.png" 
+              src={howerLogo} 
               alt="Hower Logo" 
               className="h-12 w-auto"
             />
@@ -174,22 +203,25 @@ const Beta: React.FC = () => {
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="p-6 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all">
                 <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <img 
-                      src={testimonial.image} 
-                      alt={testimonial.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                    <div>
-                      <h4 className="font-semibold">{testimonial.name}</h4>
-                      <div className="flex space-x-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </div>
+                  <div className="text-center">
+                    <h4 className="font-semibold mb-2">{testimonial.name}</h4>
+                    <div className="flex justify-center space-x-1 mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      ))}
                     </div>
                   </div>
-                  <p className="text-gray-700 italic">"{testimonial.quote}"</p>
+                  
+                  {/* Video testimonial */}
+                  <div className="aspect-video rounded-lg overflow-hidden bg-gray-100">
+                    <wistia-player 
+                      media-id={testimonial.video}
+                      aspect="16:9"
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  </div>
+                  
+                  <p className="text-gray-700 italic text-center">"{testimonial.quote}"</p>
                 </CardContent>
               </Card>
             ))}
@@ -339,7 +371,7 @@ const Beta: React.FC = () => {
       </section>
 
       {/* Soporte */}
-      <section className="py-20 px-4 bg-gradient-to-r from-gray-50 to-purple-50">
+      <section className="py-20 px-4 bg-gradient-to-r from-hower-light/20 to-hower-primary/20">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl md:text-5xl font-bold mb-8 text-gray-900">
             ¿Necesitas Ayuda?
@@ -348,17 +380,14 @@ const Beta: React.FC = () => {
             Nuestro equipo de soporte está disponible 24/7 para ayudarte
           </p>
           
-          <Card className="inline-block p-8 bg-white/80 backdrop-blur-sm">
-            <div className="flex items-center justify-center space-x-4">
-              <div className="bg-green-500 rounded-full p-3">
-                <Phone className="h-6 w-6 text-white" />
-              </div>
-              <div className="text-left">
-                <h3 className="font-semibold text-lg">Soporte WhatsApp</h3>
-                <p className="text-green-600 font-mono text-lg">+1 (555) 123-4567</p>
-              </div>
-            </div>
-          </Card>
+          <Button
+            onClick={() => window.open('https://wa.me/15551234567?text=Hola,%20necesito%20ayuda%20con%20Hower%20AI', '_blank')}
+            className="bg-green-500 hover:bg-green-600 text-white font-semibold py-6 px-8 text-lg rounded-2xl transition-all duration-300 hover:scale-105 shadow-lg"
+            size="lg"
+          >
+            <Phone className="h-6 w-6 mr-3" />
+            Contactar Soporte WhatsApp
+          </Button>
         </div>
       </section>
 
@@ -366,7 +395,7 @@ const Beta: React.FC = () => {
       <footer className="py-12 px-4 border-t border-gray-200">
         <div className="container mx-auto text-center">
           <p className="text-gray-500">
-            © 2024 Hower AI. Todos los derechos reservados.
+            © 2025 Hower AI. Todos los derechos reservados.
           </p>
         </div>
       </footer>
