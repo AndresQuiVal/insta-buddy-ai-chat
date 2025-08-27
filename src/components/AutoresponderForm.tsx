@@ -22,6 +22,9 @@ interface AutoresponderMessage {
   send_only_first_message?: boolean;
   use_keywords?: boolean;
   keywords?: string[];
+  use_buttons?: boolean;
+  button_text?: string;
+  button_url?: string;
   followups?: FollowUp[];
 }
 
@@ -58,6 +61,9 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setUseKeywords(message.use_keywords || false);
       setKeywords(message.keywords || []);
       setFollowUps(message.followups || []);
+      setUseButtons(message.use_buttons || false);
+      setButtonText(message.button_text || '');
+      setButtonUrl(message.button_url || '');
     } else {
       setName('');
       setMessageText('');
@@ -66,6 +72,9 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
       setUseKeywords(false);
       setKeywords([]);
       setFollowUps([]);
+      setUseButtons(false);
+      setButtonText('');
+      setButtonUrl('');
     }
   }, [message]);
 
@@ -129,6 +138,9 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         send_only_first_message: sendOnlyFirstMessage,
         use_keywords: useKeywords,
         keywords: useKeywords ? keywords : null,
+        use_buttons: useButtons,
+        button_text: useButtons ? buttonText.trim() : null,
+        button_url: useButtons ? buttonUrl.trim() : null,
         instagram_user_id_ref: currentUser.instagram_user_id, // Usar el ID del usuario actual
         instagram_user_id: currentUser.id // Mantener referencia al UUID por compatibilidad
       };
