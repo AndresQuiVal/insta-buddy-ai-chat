@@ -31,6 +31,8 @@ import WelcomeDashboard from "./pages/WelcomeDashboard";
 import WhatsAppConfig from "./pages/WhatsAppConfig";
 import HowerPresentation from "./pages/HowerPresentation";
 import HowerAuth from "./pages/HowerAuth";
+import ICPOnboarding from "./pages/ICPOnboarding";
+import ICPEditor from "./pages/ICPEditor";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +68,8 @@ const App = () => (
           <Route path="/3-month-plan" element={<ThreeMonthPlan />} />
           <Route path="/whatsapp-config" element={<WhatsAppConfig />} />
           <Route path="/presentation" element={<HowerPresentation />} />
+          <Route path="/icp-onboarding" element={<ICPOnboarding />} />
+          <Route path="/icp-editor" element={<ICPEditor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1170,6 +1170,48 @@ export type Database = {
           },
         ]
       }
+      user_icp: {
+        Row: {
+          bait_answer: string | null
+          bullseye_score: number | null
+          created_at: string
+          id: string
+          instagram_user_id: string
+          is_complete: boolean | null
+          result_answer: string | null
+          search_keywords: string[] | null
+          updated_at: string
+          where_answer: string | null
+          who_answer: string | null
+        }
+        Insert: {
+          bait_answer?: string | null
+          bullseye_score?: number | null
+          created_at?: string
+          id?: string
+          instagram_user_id: string
+          is_complete?: boolean | null
+          result_answer?: string | null
+          search_keywords?: string[] | null
+          updated_at?: string
+          where_answer?: string | null
+          who_answer?: string | null
+        }
+        Update: {
+          bait_answer?: string | null
+          bullseye_score?: number | null
+          created_at?: string
+          id?: string
+          instagram_user_id?: string
+          is_complete?: boolean | null
+          result_answer?: string | null
+          search_keywords?: string[] | null
+          updated_at?: string
+          where_answer?: string | null
+          who_answer?: string | null
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           ai_delay: number | null

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, LogIn } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const HowerAuth = () => {
   const navigate = useNavigate();
@@ -36,8 +37,34 @@ const HowerAuth = () => {
         description: "Bienvenido al CRM de Hower",
       });
       
-      // Navegar al CRM
-      navigate('/tasks-to-do');
+      // Check if user has completed onboarding
+      const instagramUserData = localStorage.getItem('hower-instagram-user');
+      if (instagramUserData) {
+        // User exists, check if they have completed ICP onboarding
+        const instagramUser = JSON.parse(instagramUserData);
+        const instagramUserId = instagramUser.instagram?.id || instagramUser.facebook?.id;
+        
+        if (instagramUserId) {
+          // Check if ICP exists
+          const { data: existingICP } = await supabase
+            .from('user_icp')
+            .select('id')
+            .eq('instagram_user_id', instagramUserId)
+            .maybeSingle();
+            
+          if (existingICP) {
+            // ICP exists, go to dashboard
+            navigate('/tasks-to-do');
+          } else {
+            // No ICP, start onboarding
+            navigate('/icp-onboarding');
+          }
+          return;
+        }
+      }
+      
+      // No user data or invalid data, start onboarding
+      navigate('/icp-onboarding');
     } catch (error) {
       toast({
         title: "Error",

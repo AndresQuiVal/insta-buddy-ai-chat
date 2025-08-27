@@ -1475,14 +1475,22 @@ const TasksToDo: React.FC = () => {
               </div>
               
               <div className="text-center ml-4 sm:ml-6">
-                {/* Botón para mostrar estadísticas - ARRIBA del título */}
-                <div className="mb-8">
+                {/* Botones en el header */}
+                <div className="mb-8 flex flex-col sm:flex-row gap-3 justify-center items-center">
                   <Button
                     onClick={() => setShowStats(!showStats)}
                     variant="outline"
                     className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600 font-mono text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
                   >
                     {showStats ? '📊 Ocultar mis números' : '🚀 Mis números'}
+                  </Button>
+                  
+                  <Button
+                    onClick={() => navigate('/icp-editor')}
+                    variant="outline"
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 hover:from-blue-600 hover:to-cyan-600 font-mono text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                  >
+                    🎯 Editar mi ICP
                   </Button>
                 </div>
                 
