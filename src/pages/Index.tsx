@@ -254,9 +254,8 @@ const Index = () => {
                   handleLogout();
                   return;
                 }
-                navigate('/');
-                setActiveTab("crm");
-              }} 
+                navigate('/tasks-to-do');
+              }}
               variant="default" 
               size="sm" 
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-light shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
