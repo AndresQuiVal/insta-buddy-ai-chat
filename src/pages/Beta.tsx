@@ -193,10 +193,16 @@ const Beta: React.FC = () => {
             </div>
           </div>
 
-          {/* Espacio para video explicativo */}
-          <div className="bg-gray-800 rounded-2xl p-16 mb-16">
-            <div className="text-gray-400 text-lg">
-              📹 Video explicativo próximamente
+          {/* Video explicativo */}
+          <div className="bg-gray-800 rounded-2xl p-8 mb-16">
+            <div className="aspect-video rounded-lg overflow-hidden">
+              <iframe 
+                src="https://www.loom.com/embed/f7ed0f4d02d34cc692b48b8be08302fe?sid=088bd30c-4bb8-410b-9798-4b3dc27023fa" 
+                frameBorder="0" 
+                allowFullScreen
+                className="w-full h-full"
+                title="Video explicativo de Hower AI"
+              />
             </div>
           </div>
         </div>
