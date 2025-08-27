@@ -72,11 +72,58 @@ serve(async (req) => {
     const accounts = data.accounts || [];
     console.log(`✅ Resultados obtenidos: ${accounts.length} cuentas`);
 
+    // Procesar y guardar algunos resultados para testing
+    const instagramUserId = '17841476656827421'; // @pruebahower
+    const resultsToInsert = [];
+
+    // Tomar hasta 5 resultados para insertar
+    const limitedResults = accounts.slice(0, 5);
+    
+    for (const account of limitedResults) {
+      const isPost = account.profile.includes('/reel/') || account.profile.includes('/p/');
+      
+      resultsToInsert.push({
+        instagram_user_id: instagramUserId,
+        result_type: isPost ? 'post' : 'account',
+        instagram_url: account.profile,
+        title: isPost ? 'Post de Instagram' : `@${account.profile.split('/').pop()?.replace('?locale=es_LA', '') || 'account'}`,
+        description: account.description?.substring(0, 75) + '...' || 'Sin descripción',
+        comments_count: isPost ? Math.floor(Math.random() * 100) : 0,
+        publish_date: isPost ? 'Agosto 27, 2025' : '',
+        is_recent: isPost,
+        has_keywords: true,
+        search_keywords: [query || "emprendedores jóvenes"]
+      });
+    }
+
+    // Limpiar resultados anteriores
+    const { error: deleteError } = await supabase
+      .from('prospect_search_results')
+      .delete()
+      .eq('instagram_user_id', instagramUserId);
+
+    if (deleteError) {
+      console.error('❌ Error limpiando resultados anteriores:', deleteError);
+    }
+
+    // Insertar nuevos resultados
+    if (resultsToInsert.length > 0) {
+      const { error: insertError } = await supabase
+        .from('prospect_search_results')
+        .insert(resultsToInsert);
+
+      if (insertError) {
+        console.error('❌ Error insertando resultados:', insertError);
+      } else {
+        console.log(`✅ ${resultsToInsert.length} resultados guardados en la base de datos`);
+      }
+    }
+
     return new Response(JSON.stringify({ 
       success: true,
-      message: `API funciona correctamente: ${accounts.length} resultados`,
+      message: `Test completado: ${accounts.length} resultados encontrados, ${resultsToInsert.length} guardados`,
       results: accounts,
-      rawResponse: data
+      savedResults: resultsToInsert.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
