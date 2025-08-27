@@ -185,10 +185,11 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                       size="sm"
                       asChild
                       onClick={(e) => e.stopPropagation()}
+                      className="md:w-auto w-10 md:px-3 px-2"
                     >
                       <a href={post.instagram_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Ver Instagram
+                        <ExternalLink className="h-4 w-4 md:mr-2" />
+                        <span className="hidden md:inline">Ver Instagram</span>
                       </a>
                     </Button>
                   </div>
@@ -236,10 +237,11 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                       size="sm"
                       asChild
                       onClick={(e) => e.stopPropagation()}
+                      className="md:w-auto w-10 md:px-3 px-2"
                     >
                       <a href={account.instagram_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Ver Instagram
+                        <ExternalLink className="h-4 w-4 md:mr-2" />
+                        <span className="hidden md:inline">Ver Instagram</span>
                       </a>
                     </Button>
                   </div>

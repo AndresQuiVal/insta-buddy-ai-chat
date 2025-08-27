@@ -105,7 +105,7 @@ const HowerAuth = () => {
               <Input
                 id="username"
                 type="text"
-                placeholder="andresquival"
+                placeholder="usuario_ejemplo"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full h-12 text-base rounded-lg border-2 border-muted-foreground/20"
@@ -120,7 +120,7 @@ const HowerAuth = () => {
               <Input
                 id="token"
                 type="password"
-                placeholder="testhower"
+                placeholder="tu_contraseña"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 className="w-full h-12 text-base rounded-lg border-2 border-muted-foreground/20"
