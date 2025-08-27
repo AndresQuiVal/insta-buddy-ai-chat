@@ -157,6 +157,9 @@ Responde en formato JSON exactamente así:
         throw new Error('Formato de respuesta inválido');
       }
 
+      console.log('🔍 ICP Analysis Result:', parsedResult);
+      console.log('🎯 Search Keywords Generated:', parsedResult.searchKeywords);
+      
       return {
         score: parsedResult.score || 0,
         searchKeywords: parsedResult.searchKeywords || []
