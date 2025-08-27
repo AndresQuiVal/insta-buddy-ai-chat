@@ -229,7 +229,7 @@ Responde en formato JSON exactamente así:
       }));
 
       toast({
-        title: score === 4 ? "🎯 ¡BULLSEYE!" : "✅ ICP Actualizado",
+        title: score === 4 ? "🎯 ¡PERFECTO!" : "✅ ICP Actualizado",
         description: score === 4 ? 
           "ICP perfecto. Palabras clave regeneradas." :
           `ICP actualizado (${score}/4). ${score < 4 ? 'Sigue completando para desbloquear palabras clave.' : ''}`
@@ -254,7 +254,7 @@ Responde en formato JSON exactamente así:
 
   const getBullseyeStatus = (score: number) => {
     if (score === 4) return { 
-      label: '🎯 BULLSEYE', 
+      label: '🎯 PERFECTO', 
       color: 'bg-green-500', 
       description: 'ICP perfectamente definido' 
     };
@@ -460,7 +460,7 @@ Responde en formato JSON exactamente así:
                       🎯 ICP Incompleto ({icpData.bullseyeScore}/4)
                     </p>
                     <p className="text-sm text-yellow-700 mt-1 font-mono">
-                      Completa las respuestas para alcanzar BULLSEYE y desbloquear las palabras clave de búsqueda automática.
+                      Completa las respuestas para alcanzar PERFECTO y desbloquear las palabras clave de búsqueda automática.
                     </p>
                   </div>
                 </div>
