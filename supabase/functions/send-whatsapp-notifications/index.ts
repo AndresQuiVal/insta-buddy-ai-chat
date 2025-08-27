@@ -222,6 +222,25 @@ serve(async (req) => {
         
         console.log(`✅ Processing user: ${notification.instagram_user_id} at ${userCurrentTime} in ${userTimezone}`);
         
+        // 🚀 NUEVO: Buscar prospectos ANTES de enviar notificación
+        console.log(`🔍 Iniciando búsqueda de prospectos para usuario ${notification.instagram_user_id}...`);
+        
+        try {
+          const { data: searchResponse, error: searchError } = await supabase.functions.invoke('search-prospects', {
+            body: { instagramUserId: notification.instagram_user_id }
+          });
+          
+          if (searchError) {
+            console.log(`⚠️ Error en búsqueda de prospectos para ${notification.instagram_user_id}:`, searchError);
+          } else if (searchResponse?.success) {
+            console.log(`✅ Búsqueda de prospectos completada para ${notification.instagram_user_id}:`, searchResponse.message);
+          } else if (searchResponse?.hasICP === false) {
+            console.log(`ℹ️ Usuario ${notification.instagram_user_id} no tiene ICP configurado, saltando búsqueda de prospectos`);
+          }
+        } catch (prospectError) {
+          console.log(`❌ Error general en búsqueda de prospectos para ${notification.instagram_user_id}:`, prospectError);
+        }
+        
         // Get user stats
         const stats = await getUserStats(notification.instagram_user_id);
         console.log(`User stats:`, stats);

@@ -21,6 +21,8 @@ import { InstagramDebugPanel } from '@/components/InstagramDebugPanel';
 import TasksHamburgerMenu from '@/components/TasksHamburgerMenu';
 import ProspectActionDialog from '@/components/ProspectActionDialog';
 import HowerService from '@/services/howerService';
+import { useProspectSearchResults } from '@/hooks/useProspectSearchResults';
+import ProspectSearchResultsDisplay from '@/components/ProspectSearchResultsDisplay';
 
 interface ProspectData {
   id: string;
@@ -41,6 +43,15 @@ const TasksToDo: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, loading: userLoading } = useInstagramUsers();
   const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
+  
+  // Hook para cargar resultados de búsqueda de prospectos
+  const { 
+    posts: searchPosts, 
+    accounts: searchAccounts, 
+    isLoading: searchLoading, 
+    error: searchError,
+    refresh: refreshSearchResults 
+  } = useProspectSearchResults(currentUser?.instagram_user_id);
 
   // Debug adicional para verificar la carga de prospectos
   useEffect(() => {
@@ -1850,6 +1861,14 @@ const TasksToDo: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Nuevos Prospectos - Mostrar resultados de búsqueda */}
+        <ProspectSearchResultsDisplay
+          posts={searchPosts}
+          accounts={searchAccounts}
+          isLoading={searchLoading}
+          error={searchError}
+        />
 
         {/* Tasks List - Notebook Style */}
         <div className="space-y-3 sm:space-y-4 mt-12 sm:mt-16">
