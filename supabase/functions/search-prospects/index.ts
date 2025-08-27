@@ -176,11 +176,19 @@ serve(async (req) => {
   }
 
   try {
-    const { instagramUserId } = await req.json();
+    const { instagramUserId, howerUsername, howerToken } = await req.json();
     
     if (!instagramUserId) {
       console.log('❌ No se proporcionó instagramUserId');
       return new Response(JSON.stringify({ error: 'instagramUserId es requerido' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!howerUsername || !howerToken) {
+      console.log('❌ No se proporcionaron credenciales de Hower');
+      return new Response(JSON.stringify({ error: 'Credenciales de Hower son requeridas' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -218,12 +226,7 @@ serve(async (req) => {
       });
     }
 
-    // 2. Obtener credenciales de Hower del usuario activo
-    // Buscar en localStorage del usuario o usar credenciales por defecto
-    let howerUsername = '';
-    let howerToken = '';
-    
-    // Intentar obtener las credenciales de la tabla instagram_users si las tiene
+    // 2. Verificar que el usuario exista
     const { data: userCredentials } = await supabase
       .from('instagram_users')
       .select('id')
@@ -239,18 +242,8 @@ serve(async (req) => {
       });
     }
 
-    // Por ahora usar credenciales hardcodeadas para testing
-    // TODO: Implementar sistema seguro de credenciales por usuario
-    howerUsername = 'martinpruebabot@gmail.com';
-    howerToken = 'ce8e06de-7c8b-4651-ba8c-e72b77ecfdd4';
-
-    if (!howerUsername || !howerToken) {
-      console.log('❌ Credenciales de Hower no encontradas');
-      return new Response(JSON.stringify({ error: 'Credenciales de Hower no configuradas' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    console.log(`🔑 Usando credenciales de Hower: ${howerUsername}`);
+    console.log(`🔍 Buscando prospectos para usuario: ${instagramUserId}`);
 
     // 3. Seleccionar 3 palabras clave aleatorias
     const keywords = icpData.search_keywords || [];
