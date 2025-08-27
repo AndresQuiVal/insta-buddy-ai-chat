@@ -65,26 +65,27 @@ serve(async (req) => {
     const instagramUserId = userData.instagram_user_id;
     console.log(`📋 Usuario encontrado - usando instagram_user_id: ${instagramUserId}`);
 
-    // Preparar payload para la API de Hower con credenciales hardcodeadas para testing
+    // Preparar payload para la API de Hower - HARDCODEADAS LAS CREDENCIALES PARA TESTING
     const payload = {
-      howerUsername: "andresquival", // Hardcodeado para testing
-      howerToken: "testhower", // Hardcodeado para testing
+      howerUsername: "andresquival", // HARDCODEADO - NO USAR DEL REQUEST
+      howerToken: "testhower", // HARDCODEADO - NO USAR DEL REQUEST  
       query: query || "emprendedores jóvenes",
       location: "",
       followers_from: "1000",
       followers_to: "100000"
     };
 
-    console.log('📤 Enviando request a Hower API...');
-    console.log('📦 Payload:', JSON.stringify(payload, null, 2));
+    console.log('📤 Enviando request a Hower API con credenciales hardcodeadas...');
+    console.log('🔑 Credenciales: andresquival / testhower');
+    console.log('📦 Payload completo:', JSON.stringify(payload, null, 2));
 
-    // Llamar a la API de Hower
+    // Llamar a la API de Hower con las credenciales hardcodeadas
     const response = await fetch('https://www.howersoftware.io/clients/perplexity_instagram_search_2/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(JSON.stringify(payload)) // Doble JSON.stringify
+      body: JSON.stringify(payload) // Un solo JSON.stringify, no doble
     });
 
     console.log(`📡 Respuesta de Hower: ${response.status} ${response.statusText}`);
