@@ -276,9 +276,29 @@ serve(async (req) => {
               }
             }
             
-            // 3. Enviar DM si encontramos autoresponder
+            // 3. Verificar si ya se respondió a este comentario antes de enviar
             if (autoresponderEncontrado) {
-              console.log(`🚀 Enviando DM automático por comentario`)
+              console.log(`🚀 Verificando si ya se respondió a este comentario...`)
+              
+              // ✅ VERIFICAR DUPLICACIÓN: Buscar si ya existe una respuesta a este comentario
+              const { data: existingResponse, error: logCheckError } = await supabase
+                .from('comment_autoresponder_log')
+                .select('id')
+                .eq('commenter_instagram_id', commenterId)
+                .eq('comment_autoresponder_id', autoresponderEncontrado.ic || autoresponderEncontrado.id)
+                .eq('comment_text', commentText)
+                .limit(1)
+              
+              if (logCheckError) {
+                console.error('❌ Error verificando duplicación:', logCheckError)
+              }
+              
+              if (existingResponse && existingResponse.length > 0) {
+                console.log('⚠️ YA SE RESPONDIÓ A ESTE COMENTARIO ANTERIORMENTE - Saltando para evitar duplicación')
+                continue // Saltar este comentario para evitar respuesta duplicada
+              }
+              
+              console.log(`✅ Es la primera respuesta a este comentario - Enviando DM automático`)
               
               try {
                 // 🔥 ENVIAR RESPUESTA PÚBLICA AL COMENTARIO PRIMERO
@@ -339,7 +359,7 @@ serve(async (req) => {
                 } else {
                   console.log('✅ DM por comentario enviado exitosamente')
                   
-                  // Registrar en log de comentarios
+                  // ✅ REGISTRAR EN LOG PARA EVITAR DUPLICACIONES FUTURAS
                   const { error: logError } = await supabase
                     .from('comment_autoresponder_log')
                     .insert({

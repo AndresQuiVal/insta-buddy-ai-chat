@@ -43,6 +43,9 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
   const [isLoading, setIsLoading] = useState(false);
   const [isFlowEditorOpen, setIsFlowEditorOpen] = useState(false);
   const [flowData, setFlowData] = useState(null);
+  const [useButtons, setUseButtons] = useState(false);
+  const [buttonText, setButtonText] = useState('');
+  const [buttonUrl, setButtonUrl] = useState('');
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
 
@@ -360,6 +363,66 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+
+              {/* Configuración de Botones */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-start space-x-3 mb-4">
+                  <Switch
+                    id="useButtons"
+                    checked={useButtons}
+                    onCheckedChange={setUseButtons}
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="useButtons" className="text-sm font-medium text-blue-900 cursor-pointer flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                      </svg>
+                      Incluir Botones en Mensaje
+                    </label>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Agregar botones interactivos al mensaje automático
+                    </p>
+                  </div>
+                </div>
+
+                {useButtons && (
+                  <div className="space-y-4 pl-6 border-l-2 border-blue-300">
+                    <div>
+                      <Label htmlFor="buttonText" className="text-sm font-medium text-gray-700">
+                        Texto del Botón
+                      </Label>
+                      <Input
+                        id="buttonText"
+                        value={buttonText}
+                        onChange={(e) => setButtonText(e.target.value)}
+                        placeholder="Ej: Ver más información"
+                        className="mt-1"
+                        maxLength={20}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Máximo 20 caracteres
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="buttonUrl" className="text-sm font-medium text-gray-700">
+                        URL del Botón
+                      </Label>
+                      <Input
+                        id="buttonUrl"
+                        type="url"
+                        value={buttonUrl}
+                        onChange={(e) => setButtonUrl(e.target.value)}
+                        placeholder="https://ejemplo.com"
+                        className="mt-1"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        URL completa incluyendo https://
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
