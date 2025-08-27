@@ -1451,8 +1451,8 @@ export type Database = {
           seguimientos: number
         }[]
       }
-      grok_get_stats_filtered_by_hower_users: {
-        Args: { p_instagram_user_id: string; p_period: string }
+      grok_get_stats_with_usernames_filter: {
+        Args: { p_hower_usernames: string[]; p_instagram_user_id: string }
         Returns: {
           abiertas: number
           agendados: number

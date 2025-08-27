@@ -259,31 +259,54 @@ async function searchAndSaveProspects(instagramUserId: string) {
 
 async function getUserStats(instagramUserId: string) {
   try {
-    // Get stats using the NEW filtered function that considers Hower users only
-    const { data: stats, error } = await supabase
-      .rpc('grok_get_stats_filtered_by_hower_users', {
+    console.log('🔍 Getting Hower usernames for user:', instagramUserId);
+    
+    // Llamar al edge function para obtener usernames de Hower
+    const { data: howerResponse, error: howerError } = await supabase.functions.invoke(
+      'get-hower-usernames',
+      {
+        body: { instagram_user_id: instagramUserId }
+      }
+    );
+
+    if (!howerError && howerResponse?.success && howerResponse?.data?.usernames) {
+      console.log('📞 Got Hower usernames, using filtered stats:', { 
+        usernameCount: howerResponse.data.usernames.length 
+      });
+      
+      // Usar la función que acepta usernames como parámetro
+      const { data: howerStats, error: howerStatsError } = await supabase.rpc(
+        'grok_get_stats_with_usernames_filter',
+        {
+          p_instagram_user_id: instagramUserId,
+          p_hower_usernames: howerResponse.data.usernames
+        }
+      );
+
+      if (!howerStatsError && howerStats) {
+        console.log('📊 Using Hower-filtered stats:', howerStats[0]);
+        return howerStats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
+      }
+
+      console.log('⚠️ Hower-filtered stats failed:', howerStatsError?.message);
+    } else {
+      console.log('⚠️ No Hower credentials or error getting usernames:', howerError?.message || 'No credentials');
+    }
+
+    // Fallback a estadísticas generales
+    const { data: fallbackStats, error: fallbackError } = await supabase
+      .rpc('grok_get_stats', {
         p_instagram_user_id: instagramUserId,
         p_period: 'today'
       });
-      
-    if (error) {
-      console.error('Error getting filtered user stats:', error);
-      // Fallback to regular stats if filtered version fails
-      const { data: fallbackStats, error: fallbackError } = await supabase
-        .rpc('grok_get_stats', {
-          p_instagram_user_id: instagramUserId,
-          p_period: 'today'
-        });
-      
-      if (fallbackError) {
-        console.error('Error getting fallback stats:', fallbackError);
-        return { abiertas: 0, seguimientos: 0, agendados: 0 };
-      }
-      
-      return fallbackStats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
+    
+    if (fallbackError) {
+      console.error('Error getting fallback stats:', fallbackError);
+      return { abiertas: 0, seguimientos: 0, agendados: 0 };
     }
     
-    return stats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
+    console.log('📊 Using general stats:', fallbackStats[0]);
+    return fallbackStats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
     
   } catch (error) {
     console.error('Error in getUserStats:', error);
