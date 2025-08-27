@@ -42,16 +42,28 @@ export class HowerService {
     }
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch(`${this.baseUrl}/clients/api/get-sent-messages-usernames/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials)
+        body: JSON.stringify(credentials),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.status === 401) {
+          throw new Error('Credenciales de Hower inválidas. Verifica tu username y token.');
+        } else if (response.status >= 500) {
+          throw new Error('Error de servidor de Hower. Inténtalo de nuevo más tarde.');
+        } else {
+          throw new Error(`Error en la API de Hower (${response.status}). Contacta soporte.`);
+        }
       }
 
       const data = await response.json();
@@ -62,9 +74,29 @@ export class HowerService {
       };
     } catch (error) {
       console.error('Error calling Hower API:', error);
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          return {
+            success: false,
+            error: 'Tiempo de conexión agotado. Verifica tu conexión a internet e inténtalo de nuevo.'
+          };
+        } else if (error.message.includes('fetch')) {
+          return {
+            success: false,
+            error: 'Error de conexión. No se pudo conectar con los servidores de Hower. Verifica tu conexión a internet.'
+          };
+        }
+        
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+      
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        error: 'Error desconocido al conectar con Hower'
       };
     }
   }
