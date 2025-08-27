@@ -1,569 +1,372 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Users, Brain, TrendingUp, MessageSquare, Zap, RefreshCw, ArrowDown, Target, X, Check, DollarSign, Clock, AlertTriangle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Check, Bot, Search, Users, Shield, Star, MessageSquare, Target, Zap, Phone } from 'lucide-react';
 
 const Beta: React.FC = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    business: ''
-  });
+  const [activeTab, setActiveTab] = useState("3-meses");
 
-  useEffect(() => {
-    // Script principal de Wistia para el video principal
-    const wistiaScript = document.createElement('script');
-    wistiaScript.src = 'https://fast.wistia.com/embed/medias/sxdw3ixmlk.jsonp';
-    wistiaScript.async = true;
-    document.head.appendChild(wistiaScript);
-
-    // Script del player
-    const playerScript = document.createElement('script');
-    playerScript.src = 'https://fast.wistia.com/assets/external/E-v1.js';
-    playerScript.async = true;
-    document.head.appendChild(playerScript);
-
-    // Scripts para los nuevos videos
-    const wistiaPlayerScript = document.createElement('script');
-    wistiaPlayerScript.src = 'https://fast.wistia.com/player.js';
-    wistiaPlayerScript.async = true;
-    document.head.appendChild(wistiaPlayerScript);
-
-    // Scripts específicos para cada video
-    const videoScripts = [
-      'https://fast.wistia.com/embed/sxdw3ixmlk.js',
-      'https://fast.wistia.com/embed/f9mwa4wrl9.js',
-      'https://fast.wistia.com/embed/fe270kwf7n.js', 
-      'https://fast.wistia.com/embed/x6zybq0h5n.js',
-      'https://fast.wistia.com/embed/ihs01ndhd7.js'
-    ];
-
-    const scriptElements = videoScripts.map(src => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.async = true;
-      script.type = 'module';
-      document.head.appendChild(script);
-      return script;
-    });
-
-    // Styles para los videos
-    const style = document.createElement('style');
-    style.textContent = `
-      wistia-player[media-id='sxdw3ixmlk']:not(:defined) { 
-        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/sxdw3ixmlk/swatch'); 
-        display: block; 
-        filter: blur(5px); 
-        padding-top: 135.83%; 
-      }
-      wistia-player[media-id='f9mwa4wrl9']:not(:defined) { 
-        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/f9mwa4wrl9/swatch'); 
-        display: block; 
-        filter: blur(5px); 
-        padding-top: 135.83%; 
-      }
-      wistia-player[media-id='fe270kwf7n']:not(:defined) { 
-        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/fe270kwf7n/swatch'); 
-        display: block; 
-        filter: blur(5px); 
-        padding-top: 135.83%; 
-      }
-      wistia-player[media-id='x6zybq0h5n']:not(:defined) { 
-        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/x6zybq0h5n/swatch'); 
-        display: block; 
-        filter: blur(5px); 
-        padding-top: 162.5%; 
-      }
-      wistia-player[media-id='ihs01ndhd7']:not(:defined) { 
-        background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/ihs01ndhd7/swatch'); 
-        display: block; 
-        filter: blur(5px); 
-        padding-top: 162.5%; 
-      }
-    `;
-    document.head.appendChild(style);
-
-    // Intersection Observer para animaciones
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animate-fade-in');
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    // Observar todos los elementos con clase 'scroll-animate'
-    const animateElements = document.querySelectorAll('.scroll-animate');
-    animateElements.forEach((el) => observer.observe(el));
-
-    return () => {
-      // Cleanup
-      if (document.head.contains(wistiaScript)) {
-        document.head.removeChild(wistiaScript);
-      }
-      if (document.head.contains(playerScript)) {
-        document.head.removeChild(playerScript);
-      }
-      if (document.head.contains(wistiaPlayerScript)) {
-        document.head.removeChild(wistiaPlayerScript);
-      }
-      scriptElements.forEach(script => {
-        if (document.head.contains(script)) {
-          document.head.removeChild(script);
-        }
-      });
-      if (document.head.contains(style)) {
-        document.head.removeChild(style);
-      }
-      observer.disconnect();
-    };
-  }, []);
-
-  const navigate = useNavigate();
-
-  const handleRegister = () => {
-    navigate('/signup');
-  };
-
-  const painPoints = [
+  // Testimonios de video (sin logos de empresas)
+  const testimonials = [
     {
-      icon: "⏰",
-      text: "Paso horas respondiendo mensajes en Instagram"
+      name: "Noemi",
+      quote: "soy mamá, emprendo un negocio, y esta I.A. me ha cambiado la vida",
+      video: "hs4dh7si13",
+      image: "https://iili.io/3MhMget.png"
     },
     {
-      icon: "💸",
-      text: "Pierdo ventas porque no respondo a tiempo"
+      name: "Deisy", 
+      quote: "ya NO pierdo 2 o 3 horas prospectando en frio, ahora la I.A. lo hace por mi, mientras yo paso tiempo con mis hijos",
+      video: "wmbuq3prqd",
+      image: "https://iili.io/3MhEsun.png"
     },
     {
-      icon: "😤",
-      text: "Quiero dedicarme a vender, no a chatear todo el día"
+      name: "Pedro",
+      quote: "tengo un retorno increible de contactos... y todo gracias a esta I.A.",
+      video: "ip41h9ax0x", 
+      image: "https://iili.io/3MhEsun.png"
+    },
+    {
+      name: "Elisa",
+      quote: "tengo un retorno increible de contactos... y todo gracias a esta I.A.",
+      video: "hpx53mcnod",
+      image: "https://iili.io/3MhGPKQ.png"
+    },
+    {
+      name: "Luisa",
+      quote: "estoy teniendo llamadas todos los días gracias a la I.A.",
+      video: "r9deud5rs0",
+      image: "https://iili.io/3MhGPKQ.png"
     }
   ];
 
+  // Imágenes de testimonios
+  const testimonialImages = [
+    "https://i.ibb.co/fdBgbQrW/63b516ddd517da655ffb5362a71ae209-7.jpg",
+    "https://i.ibb.co/Xx4dpMHw/6ae7cf04523bb72ff4f1d311d2ce7d6c-5.jpg", 
+    "https://iili.io/3MXDwMu.md.jpg",
+    "https://iili.io/3MXDN6b.md.jpg",
+    "https://iili.io/3MhHeKF.jpg",
+    "https://iili.io/3MhHkcg.jpg",
+    "https://iili.io/3MhHNP1.jpg",
+    "https://iili.io/3MhKCMl.jpg",
+    "https://iili.io/3MhKnP2.jpg",
+    "https://iili.io/3MhKBn4.jpg"
+  ];
+
+  // Planes de precios
+  const plans3Meses = {
+    price: 247,
+    features: [
+      "Hower Assistant - Autorespuestas inteligentes",
+      "Hower Prospector - Búsqueda automática de clientes",
+      "Hower CRM - Gestión completa de prospectos",
+      "Mensajes ilimitados con I.A.",
+      "Buscador inteligente de cuentas", 
+      "Seguimiento automático de prospectos",
+      "Optimizado para cuentas sin riesgo de ban"
+    ],
+    bonuses: [
+      "Academia Hower - Cursos exclusivos",
+      "Comunidad privada VIP",
+      "Llamadas semanales en vivo",
+      "Plantillas probadas de mensajería",
+      "Soporte prioritario 24/7"
+    ],
+    guarantee: "Garantía de 30 días o tu dinero de vuelta"
+  };
+
+  const plans1Mes = {
+    price: 97,
+    features: [
+      "Hower Assistant - Autorespuestas inteligentes", 
+      "Hower Prospector - Búsqueda automática de clientes",
+      "Hower CRM - Gestión completa de prospectos",
+      "Mensajes limitados con I.A.",
+      "Buscador básico de cuentas",
+      "Seguimiento manual de prospectos"
+    ]
+  };
+
+  const handlePurchase = (planType: string) => {
+    const links = {
+      "3-meses": "https://buy.stripe.com/bJe6oG9gYbJA2eV9p63wQ0A",
+      "1-mes": "https://buy.stripe.com/00w7sK1Ow9BsaLr44M3wQ0D"
+    };
+    window.open(links[planType as keyof typeof links], '_blank');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
-      {/* Header fijo */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <h1 className="text-xl font-light text-primary">Hower <span className="font-bold">Assistant</span></h1>
-              <img 
-                src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
-                alt="Manychat"
-                className="h-8 rounded-lg transform rotate-3"
-              />
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      {/* Header */}
+      <header className="py-6 px-4">
+        <div className="container mx-auto flex justify-end items-center">
+          <div className="flex items-center space-x-3">
+            <img 
+              src="/lovable-uploads/c0b3827b-3db7-4c68-b4ed-7745f1a18c28.png" 
+              alt="Hower Logo" 
+              className="h-12 w-auto"
+            />
+            <h1 className="text-2xl font-light text-primary">
+              Hower <span className="font-bold">AI</span>
+            </h1>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Hero Section - Problem + Filter */}
-      <section className="min-h-screen flex items-center justify-center pt-20">
-        <div className="container mx-auto px-4 text-center">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000 max-w-6xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-              <span className="block mb-4 text-red-600">
-                Si recibes más de 20 mensajes al día en Instagram,
-              </span>
-              <span className="block mb-4">
-                este mensaje es para ti.
-              </span>
-              <span className="block text-2xl sm:text-3xl lg:text-4xl text-gray-600 font-normal">
-                Si no... puedes cerrar esta página ahora.
-              </span>
-            </h1>
+      {/* Hero Section */}
+      <section className="py-20 px-4 text-center">
+        <div className="container mx-auto max-w-6xl">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-8 leading-tight">
+            Tu Máquina de Ventas con Instagram usando <span className="text-primary">I.A.</span>
+          </h1>
+          
+          <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
+            Combina autorespuestas inteligentes, prospección en frío sin baneo y CRM completo en una sola plataforma
+          </p>
 
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-3xl p-8 mt-12 mb-8">
-              <p className="text-xl sm:text-2xl lg:text-3xl text-gray-800 leading-relaxed">
-                🎯 <strong>Para dueños de e-commerce, negocios locales y coaches online</strong> que ya venden por Instagram y quieren dejar de perder tiempo respondiendo manualmente.
-              </p>
-            </div>
-
-            {/* Video corto en loop */}
-            <div className="relative max-w-lg mx-auto mb-8">
-              <div className="rounded-2xl overflow-hidden shadow-2xl bg-black">
-                <div 
-                  className="wistia_responsive_padding" 
-                  style={{ padding: '56.25% 0 0 0', position: 'relative' }}
-                >
-                  <div 
-                    className="wistia_responsive_wrapper" 
-                    style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}
-                  >
-                    <div 
-                      className="wistia_embed wistia_async_sxdw3ixmlk videoFoam=true autoPlay=true loop=true muted=true" 
-                      style={{ height: '100%', position: 'relative', width: '100%' }}
-                    >
-                      <div 
-                        className="wistia_swatch" 
-                        style={{
-                          height: '100%',
-                          left: 0,
-                          opacity: 0,
-                          overflow: 'hidden',
-                          position: 'absolute',
-                          top: 0,
-                          transition: 'opacity 200ms',
-                          width: '100%'
-                        }}
-                      >
-                        <img 
-                          src="https://fast.wistia.com/embed/medias/sxdw3ixmlk/swatch" 
-                          style={{ filter: 'blur(5px)', height: '100%', objectFit: 'contain', width: '100%' }} 
-                          alt=""
-                          aria-hidden="true"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          {/* Iconos explicativos */}
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
+            <div className="flex flex-col items-center p-6">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-4 mb-4">
+                <Bot className="h-8 w-8 text-white" />
               </div>
+              <h3 className="text-xl font-semibold mb-2">Hower Assistant</h3>
+              <p className="text-gray-600">Autorespuestas tipo ManyChat pero más inteligentes</p>
+            </div>
+            
+            <div className="flex flex-col items-center p-6">
+              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full p-4 mb-4">
+                <Search className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Hower Prospector</h3>
+              <p className="text-gray-600">Prospección en frío sin banear tu cuenta</p>
+            </div>
+            
+            <div className="flex flex-col items-center p-6">
+              <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-full p-4 mb-4">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Hower CRM</h3>
+              <p className="text-gray-600">Gestión completa de todos tus prospectos</p>
+            </div>
+          </div>
+
+          {/* Espacio para video explicativo */}
+          <div className="bg-gray-100 rounded-2xl p-16 mb-16">
+            <div className="text-gray-500 text-lg">
+              📹 Video explicativo próximamente
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pain Points Section */}
-      <section className="py-32 bg-gradient-to-r from-red-50 to-red-100">
-        <div className="container mx-auto px-4">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <h2 className="text-4xl lg:text-6xl font-bold text-center mb-16 text-gray-900">
-              ¿Te pasa esto?
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {painPoints.map((pain, index) => (
-                <Card key={index} className="p-8 border-0 bg-white shadow-xl text-center">
-                  <div className="text-6xl mb-4">{pain.icon}</div>
-                  <div className="flex items-center justify-center mb-4">
-                    <X className="w-8 h-8 text-red-500 mr-2" />
-                    <span className="text-2xl font-bold text-red-600">❌</span>
+      {/* Testimonios */}
+      <section className="py-20 px-4 bg-gradient-to-r from-purple-100 to-blue-100">
+        <div className="container mx-auto max-w-6xl">
+          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-gray-900">
+            Resultados Reales de Nuestros Usuarios
+          </h2>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="p-6 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all">
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <img 
+                      src={testimonial.image} 
+                      alt={testimonial.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div>
+                      <h4 className="font-semibold">{testimonial.name}</h4>
+                      <div className="flex space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xl font-semibold text-gray-800 leading-relaxed">
-                    {pain.text}
-                  </p>
-                </Card>
+                  <p className="text-gray-700 italic">"{testimonial.quote}"</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Imágenes de testimonios */}
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-8">Más testimonios de nuestros usuarios</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {testimonialImages.map((image, index) => (
+                <div key={index} className="aspect-square rounded-lg overflow-hidden">
+                  <img 
+                    src={image} 
+                    alt={`Testimonio ${index + 1}`}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform"
+                  />
+                </div>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Solution Introduction */}
-      <section className="py-32 bg-gradient-to-r from-purple-900 to-pink-900">
-        <div className="container mx-auto px-4">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <div className="max-w-5xl mx-auto text-center space-y-12">
-              <h2 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-tight">
-                Hower Assistant responde por ti en Instagram, 24/7, para que cierres más ventas sin contratar más personal.
-              </h2>
-              
-              <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20">
-                <p className="text-2xl sm:text-3xl lg:text-4xl text-white font-bold leading-relaxed">
-                  Usuarios como tú ahorran hasta <span className="text-yellow-400">4 horas al día</span> y aumentan sus ventas un <span className="text-green-400">30%</span> en dos semanas.
-                </p>
-              </div>
+      {/* Planes de precios */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-gray-900">
+            Elige tu Plan
+          </h2>
 
-              <Button
-                onClick={handleRegister}
-                className="bg-white text-purple-900 hover:bg-gray-100 font-bold py-6 px-12 text-2xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
-              >
-                Sí, recibo mensajes diarios. Quiero automatizar ya.
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="3-meses" className="text-lg py-3">3 Meses</TabsTrigger>
+              <TabsTrigger value="1-mes" className="text-lg py-3">1 Mes</TabsTrigger>
+            </TabsList>
 
-      {/* Feature Messaging - 3 pasos */}
-      <section className="py-32">
-        <div className="container mx-auto px-4">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <div className="max-w-6xl mx-auto text-center">
-              <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-4">
-                Automatiza tu Instagram en 3 pasos
-              </h2>
-              <p className="text-xl text-gray-600 mb-16">
-                (solo si ya recibes mensajes diarios)
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-                {[
-                  { number: "1", title: "Seleccionar plantilla", description: "Elige el tipo de respuesta automática que necesitas" },
-                  { number: "2", title: "Personalizar mensajes", description: "Adapta las respuestas a tu negocio y estilo" },
-                  { number: "3", title: "Activar bot", description: "Tu asistente comienza a trabajar inmediatamente" }
-                ].map((step, index) => (
-                  <Card key={index} className="p-8 border-0 bg-gradient-to-br from-purple-50 to-pink-50 text-center">
-                    <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold">
-                      {step.number}
+            <TabsContent value="3-meses">
+              <Card className="relative overflow-hidden border-2 border-primary">
+                <Badge className="absolute top-4 right-4 bg-primary text-white">
+                  MÁS POPULAR
+                </Badge>
+                <CardHeader className="text-center pb-8">
+                  <CardTitle className="text-3xl mb-2">Plan 3 Meses</CardTitle>
+                  <div className="text-5xl font-bold text-primary mb-2">
+                    ${plans3Meses.price}
+                    <span className="text-lg text-gray-500 font-normal"> USD</span>
+                  </div>
+                  <CardDescription className="text-lg">La mejor opción para resultados consistentes</CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-8">
+                  {/* Lo que recibes */}
+                  <div>
+                    <h4 className="font-semibold text-lg mb-4 flex items-center">
+                      <Target className="h-5 w-5 mr-2 text-primary" />
+                      Lo que recibes:
+                    </h4>
+                    <ul className="space-y-3">
+                      {plans3Meses.features.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Bonuses */}
+                  <div>
+                    <h4 className="font-semibold text-lg mb-4 flex items-center">
+                      <Star className="h-5 w-5 mr-2 text-yellow-500" />
+                      Bonuses:
+                    </h4>
+                    <ul className="space-y-3">
+                      {plans3Meses.bonuses.map((bonus, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+                          <span className="font-medium text-yellow-700">{bonus}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Garantía */}
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <Shield className="h-5 w-5" />
+                      <span className="font-semibold">{plans3Meses.guarantee}</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4">{step.title}</h3>
-                    <p className="text-lg text-gray-600">{step.description}</p>
-                  </Card>
-                ))}
-              </div>
+                  </div>
+                </CardContent>
 
-              {/* Mini video mostrando los pasos */}
-              <div className="relative max-w-2xl mx-auto">
-                <div className="rounded-2xl overflow-hidden shadow-2xl bg-black">
-                  <div 
-                    className="wistia_responsive_padding" 
-                    style={{ padding: '56.25% 0 0 0', position: 'relative' }}
+                <CardFooter>
+                  <Button 
+                    onClick={() => handlePurchase("3-meses")}
+                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-semibold py-6 text-lg"
+                    size="lg"
                   >
-                    <div 
-                      className="wistia_responsive_wrapper" 
-                      style={{ height: '100%', left: 0, position: 'absolute', top: 0, width: '100%' }}
-                    >
-                      <div 
-                        className="wistia_embed wistia_async_f9mwa4wrl9 videoFoam=true" 
-                        style={{ height: '100%', position: 'relative', width: '100%' }}
-                      >
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison - 3 Columnas */}
-      <section className="py-32 bg-gradient-to-br from-gray-50 via-white to-purple-50">
-        <div className="container mx-auto px-4">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <div className="max-w-7xl mx-auto">
-              <h2 className="text-4xl lg:text-6xl font-bold text-center mb-16 text-gray-900">
-                Comparación Real
-              </h2>
-              
-              <div className="overflow-x-auto">
-                <table className="w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-gray-100 to-gray-200">
-                      <th className="p-6 text-left text-xl font-bold text-gray-800"></th>
-                      <th className="p-6 text-center text-xl font-bold text-red-600">
-                        <div className="flex flex-col items-center">
-                          <span>Responder</span>
-                          <span>manualmente</span>
-                        </div>
-                      </th>
-                      <th className="p-6 text-center text-xl font-bold text-orange-600">
-                        <img 
-                          src="/lovable-uploads/155c9911-22bb-47fc-916f-0f563768a779.png" 
-                          alt="Manychat"
-                          className="h-8 mx-auto mb-2"
-                        />
-                        ManyChat
-                      </th>
-                      <th className="p-6 text-center text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                        Hower Assistant
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-lg">
-                    <tr className="border-b border-gray-200">
-                      <td className="p-6 font-semibold text-gray-800">Tiempo invertido</td>
-                      <td className="p-6 text-center text-red-600 font-bold">4-5 horas/día</td>
-                      <td className="p-6 text-center text-orange-600 font-bold">2-3 horas/día</td>
-                      <td className="p-6 text-center font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">10 minutos/día</td>
-                    </tr>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <td className="p-6 font-semibold text-gray-800">Contactos</td>
-                      <td className="p-6 text-center text-red-600">Ilimitados (pero manual)</td>
-                      <td className="p-6 text-center text-orange-600">500 por $15/mes</td>
-                      <td className="p-6 text-center font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Ilimitados por $13/mes</td>
-                    </tr>
-                    <tr className="border-b border-gray-200">
-                      <td className="p-6 font-semibold text-gray-800">Dificultad</td>
-                      <td className="p-6 text-center text-red-600 font-bold">Alta</td>
-                      <td className="p-6 text-center text-orange-600 font-bold">Media-Alta</td>
-                      <td className="p-6 text-center font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Muy fácil</td>
-                    </tr>
-                    <tr>
-                      <td className="p-6 font-semibold text-gray-800">Costo al escalar</td>
-                      <td className="p-6 text-center text-red-600 font-bold">Tu tiempo</td>
-                      <td className="p-6 text-center text-orange-600 font-bold">Más caro por más contactos</td>
-                      <td className="p-6 text-center font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Mismo precio siempre</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex justify-center mt-12">
-                <Card className="p-8 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex space-x-1">
-                      {[...Array(3)].map((_, i) => (
-                        <X key={i} className="w-6 h-6 text-red-500" />
-                      ))}
-                    </div>
-                    <span className="text-2xl">➡️</span>
-                    <div className="flex space-x-1">
-                      {[...Array(3)].map((_, i) => (
-                        <Check key={i} className="w-6 h-6 text-green-500" />
-                      ))}
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Social Proof & Trust */}
-      <section className="py-32 bg-gradient-to-r from-purple-100 to-pink-100">
-        <div className="container mx-auto px-4">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <div className="max-w-6xl mx-auto">
-              <h2 className="text-4xl lg:text-5xl font-bold text-center mb-16 text-gray-900">
-                Caso Real
-              </h2>
-              
-              <Card className="p-12 border-0 bg-white shadow-2xl mb-12">
-                <div className="text-center space-y-6">
-                  <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto text-4xl text-white">
-                    👩‍💼
-                  </div>
-                  <blockquote className="text-2xl lg:text-3xl text-gray-800 font-medium leading-relaxed">
-                    "Carla, dueña de tienda online, recibía 50 mensajes diarios. Con Hower, ahorra 3 horas al día y duplicó sus ventas en 2 semanas."
-                  </blockquote>
-                  <div className="text-lg text-purple-600 font-semibold">
-                    — Carla Martínez, E-commerce de Moda
-                  </div>
-                </div>
+                    Obtener Plan 3 Meses
+                  </Button>
+                </CardFooter>
               </Card>
+            </TabsContent>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <Card className="p-6 bg-white border-2 border-green-200 text-center">
-                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">Migración gratuita desde ManyChat o Chatfuel</h3>
-                  <p className="text-gray-600">Te ayudamos a migrar sin costo adicional</p>
-                </Card>
-                
-                <Card className="p-6 bg-white border-2 border-blue-200 text-center">
-                  <Zap className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">Prueba gratuita de 7 días</h3>
-                  <p className="text-gray-600">Sin tarjeta requerida</p>
-                </Card>
-                
-                <Card className="p-6 bg-white border-2 border-purple-200 text-center">
-                  <Target className="w-12 h-12 text-purple-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">Configuración personalizada</h3>
-                  <p className="text-gray-600">Adaptamos el sistema a tu negocio</p>
-                </Card>
-              </div>
-            </div>
-          </div>
+            <TabsContent value="1-mes">
+              <Card className="border border-gray-200">
+                <CardHeader className="text-center pb-8">
+                  <CardTitle className="text-3xl mb-2">Plan 1 Mes</CardTitle>
+                  <div className="text-5xl font-bold text-primary mb-2">
+                    ${plans1Mes.price}
+                    <span className="text-lg text-gray-500 font-normal"> USD</span>
+                  </div>
+                  <CardDescription className="text-lg">Perfecto para probar la plataforma</CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-8">
+                  {/* Lo que recibes */}
+                  <div>
+                    <h4 className="font-semibold text-lg mb-4 flex items-center">
+                      <Target className="h-5 w-5 mr-2 text-primary" />
+                      Lo que recibes:
+                    </h4>
+                    <ul className="space-y-3">
+                      {plans1Mes.features.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+
+                <CardFooter>
+                  <Button 
+                    onClick={() => handlePurchase("1-mes")}
+                    className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 text-lg"
+                    size="lg"
+                  >
+                    Obtener Plan 1 Mes
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 
-      {/* CTA Reforzada con Urgencia */}
-      <section className="py-32 bg-gradient-to-r from-purple-900 to-pink-900 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-black/20"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <div className="max-w-5xl mx-auto text-center space-y-12">
-              <div className="bg-red-600 text-white px-6 py-3 rounded-full inline-flex items-center space-x-2 animate-pulse">
-                <AlertTriangle className="w-5 h-5" />
-                <span className="font-bold">🚨 Cupos limitados para migración gratuita y configuración personalizada</span>
+      {/* Soporte */}
+      <section className="py-20 px-4 bg-gradient-to-r from-gray-50 to-purple-50">
+        <div className="container mx-auto max-w-4xl text-center">
+          <h2 className="text-3xl md:text-5xl font-bold mb-8 text-gray-900">
+            ¿Necesitas Ayuda?
+          </h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Nuestro equipo de soporte está disponible 24/7 para ayudarte
+          </p>
+          
+          <Card className="inline-block p-8 bg-white/80 backdrop-blur-sm">
+            <div className="flex items-center justify-center space-x-4">
+              <div className="bg-green-500 rounded-full p-3">
+                <Phone className="h-6 w-6 text-white" />
               </div>
-              
-              <h2 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-tight">
-                ¿Listo para dejar de perder tiempo y ventas?
-              </h2>
-              
-              <p className="text-xl text-purple-100 mb-8">
-                Disponible solo este mes
-              </p>
-
-              <div className="flex flex-col space-y-4 max-w-2xl mx-auto">
-                <Button
-                  onClick={handleRegister}
-                  className="w-full bg-white text-purple-900 hover:bg-gray-100 font-bold py-6 px-8 text-xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
-                >
-                  Quiero mi bot respondiendo hoy
-                </Button>
-                
-                <Button
-                  onClick={handleRegister}
-                  className="w-full bg-yellow-400 text-purple-900 hover:bg-yellow-300 font-bold py-6 px-8 text-xl rounded-2xl transition-all duration-300 hover:scale-105 shadow-2xl"
-                >
-                  Quiero ahorrar horas de responder mensajes
-                </Button>
-              </div>
-
-              <div className="flex justify-center space-x-4 text-purple-200 text-lg">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span>Prueba gratuita 7 días</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span>Sin tarjeta requerida</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span>Configúralo hoy mismo</span>
-                </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-lg">Soporte WhatsApp</h3>
+                <p className="text-green-600 font-mono text-lg">+1 (555) 123-4567</p>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ - Objeciones Clave */}
-      <section className="py-32">
-        <div className="container mx-auto px-4">
-          <div className="scroll-animate opacity-0 translate-y-10 transition-all duration-1000">
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-4xl font-bold text-center mb-16 text-gray-800">Preguntas Frecuentes</h2>
-              
-              <div className="space-y-8">
-                {[
-                  {
-                    question: "¿Funciona si no tengo ManyChat?",
-                    answer: "Sí, perfectamente. Hower Assistant funciona desde cero. No necesitas tener experiencia previa con bots o automatización. Te guiamos paso a paso."
-                  },
-                  {
-                    question: "¿Necesito tarjeta para la prueba?",
-                    answer: "No. Accedes inmediatamente a los 7 días de prueba gratuita sin proporcionar datos de tarjeta. Solo tu email para crear la cuenta."
-                  },
-                  {
-                    question: "¿Puedo cancelar cuando quiera?",
-                    answer: "Sí, en un clic. No hay permanencia ni penalizaciones. Si decides cancelar, lo haces desde tu panel de control inmediatamente."
-                  },
-                  {
-                    question: "¿Realmente funciona las 24 horas?",
-                    answer: "Sí. Tu bot trabaja automáticamente sin que tengas que estar presente. Responde a mensajes y comentarios las 24 horas, los 7 días de la semana."
-                  }
-                ].map((faq, index) => (
-                  <Card key={index} className="p-8 border-0 bg-white/80 backdrop-blur-sm shadow-lg">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4">{faq.question}</h3>
-                    <p className="text-lg text-gray-600 leading-relaxed">{faq.answer}</p>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
+          </Card>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-purple-50">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-500 text-lg mb-4">
-            © 2025 Hower Assistant. La IA será tu mejor aliado en Instagram.
-          </p>
-          <p className="text-gray-400 text-sm">
-            Solo para negocios que reciben mensajes diarios en Instagram
+      <footer className="py-12 px-4 border-t border-gray-200">
+        <div className="container mx-auto text-center">
+          <p className="text-gray-500">
+            © 2024 Hower AI. Todos los derechos reservados.
           </p>
         </div>
       </footer>
