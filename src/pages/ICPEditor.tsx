@@ -333,11 +333,8 @@ Responde en formato JSON exactamente así:
               </Button>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-800" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                  📝 Editar Cliente Ideal (ICP)
+                  Editar Cliente Ideal (ICP)
                 </h1>
-                <p className="text-muted-foreground" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                  Mejora tu ICP para obtener mejores resultados
-                </p>
               </div>
             </div>
             
