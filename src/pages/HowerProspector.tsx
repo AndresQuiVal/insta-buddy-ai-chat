@@ -69,11 +69,11 @@ const HowerProspector = () => {
             <div className="w-full max-w-4xl mx-auto mb-12 animate-scale-in">
               <div className="relative w-full h-0 pb-[56.25%] rounded-lg overflow-hidden shadow-2xl">
                 <iframe
-                  src="https://www.loom.com/embed/1863bb5dd56a4fcb919ece8d74043298?sid=4ed2cc61-1c74-4270-afe8-c7d39b1c55b1"
+                  src="https://www.loom.com/embed/d6880eba31af4f53ad8158a3b2b9faa5?source=embed_watch_on_loom_cta"
                   frameBorder="0"
                   allowFullScreen
                   className="absolute top-0 left-0 w-full h-full"
-                  title="Hower Prospector Demo"
+                  title="Cómo usar Hower | Tutorial (Super) Rápido"
                 ></iframe>
               </div>
             </div>
@@ -85,176 +85,73 @@ const HowerProspector = () => {
               className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-4 px-8 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 mb-16 flex items-center gap-3 mx-auto"
             >
               <Chrome className="w-6 h-6" />
-              Quiero activarlo
+              Descargar Prospector
             </Button>
           </div>
 
-          {/* What is Hower Prospector */}
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-              <CardContent className="p-8">
-                <h2 className="text-2xl font-bold text-white mb-6">¿Qué es Hower Prospector?</h2>
-                <p className="text-white/90 mb-6">
-                  Una extensión de Chrome que te permite hacer prospección automatizada en Instagram. 
-                  Detecta perfiles ideales, envía mensajes personalizados y califica leads automáticamente.
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                    <span className="text-white/90">Detecta automáticamente perfiles de tu cliente ideal</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                    <span className="text-white/90">Envía mensajes personalizados usando tu embudo probado</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                    <span className="text-white/90">Califica leads automáticamente según sus respuestas</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                    <span className="text-white/90">Funciona mientras navegas Instagram normalmente</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Embudo de 8 Pasos */}
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-              <CardContent className="p-8">
-                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                  <Target className="w-6 h-6 text-purple-400" />
-                  Embudo Probado de 8 Pasos
-                </h2>
-                <p className="text-white/90 mb-6">
-                  Incluimos nuestro sistema de prospección probado que compartimos con todos los nuevos usuarios:
-                </p>
-                <div className="space-y-3">
-                  {steps.map((step, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5">
-                        {index + 1}
-                      </div>
-                      <span className="text-white/90 text-sm">{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mb-16">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-                    <Zap className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">Automatización Inteligente</h3>
-                <p className="text-white/90 text-sm">
-                  Detecta automáticamente perfiles que coinciden con tu cliente ideal y envía mensajes personalizados
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                    <MessageSquare className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">Mensajes Probados</h3>
-                <p className="text-white/90 text-sm">
-                  Utiliza nuestro embudo de 8 pasos con mensajes que han generado miles de clientes
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
-                    <UserCheck className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3">Calificación Automática</h3>
-                <p className="text-white/90 text-sm">
-                  Identifica automáticamente leads calientes y los organiza por nivel de interés
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Benefits */}
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-16">
+          {/* What is Hower Prospector - Simplified */}
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-16 max-w-4xl mx-auto">
             <CardContent className="p-8">
-              <h2 className="text-3xl font-bold text-white mb-8 text-center">
-                ¿Por qué usar Hower Prospector?
-              </h2>
-              <div className="grid md:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-                    <Clock className="w-6 h-6 text-blue-400" />
-                    Ahorra Tiempo
-                  </h3>
-                  <p className="text-white/90 mb-6">
-                    En lugar de buscar manualmente perfiles y escribir mensajes desde cero, 
-                    Hower Prospector automatiza todo el proceso de prospección.
-                  </p>
+              <h2 className="text-3xl font-bold text-white mb-6 text-center">¿Qué es Hower Prospector?</h2>
+              <p className="text-white/90 text-lg mb-8 text-center">
+                Una extensión de Chrome que prospecta automáticamente en Instagram por ti. 
+                Detecta tu cliente ideal, envía mensajes personalizados y se conecta con tu CRM en /tasks-to-do
+              </p>
+              
+              {/* Integration Flow */}
+              <div className="bg-white/5 rounded-lg p-6 mb-8">
+                <h3 className="text-xl font-bold text-white mb-6 text-center">Cómo se integra con tu CRM</h3>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="text-center flex-1">
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Chrome className="w-8 h-8 text-white" />
+                    </div>
+                    <h4 className="text-white font-semibold mb-2">1. Prospector encuentra leads</h4>
+                    <p className="text-white/80 text-sm">La extensión detecta y contacta prospectos en Instagram</p>
+                  </div>
                   
-                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-                    <Shield className="w-6 h-6 text-green-400" />
-                    Seguro y Confiable
-                  </h3>
-                  <p className="text-white/90">
-                    Funciona completamente en tu navegador. No almacenamos tus credenciales 
-                    ni tenemos acceso a tu cuenta de Instagram.
-                  </p>
+                  <ArrowRight className="w-8 h-8 text-white/60 hidden md:block" />
+                  
+                  <div className="text-center flex-1">
+                    <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Users className="w-8 h-8 text-white" />
+                    </div>
+                    <h4 className="text-white font-semibold mb-2">2. Aparecen en /tasks-to-do</h4>
+                    <p className="text-white/80 text-sm">Los prospectos interesados se sincronizan automáticamente</p>
+                  </div>
+                  
+                  <ArrowRight className="w-8 h-8 text-white/60 hidden md:block" />
+                  
+                  <div className="text-center flex-1">
+                    <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle className="w-8 h-8 text-white" />
+                    </div>
+                    <h4 className="text-white font-semibold mb-2">3. Gestionas y cierras</h4>
+                    <p className="text-white/80 text-sm">Usas el CRM para dar seguimiento y cerrar ventas</p>
+                  </div>
                 </div>
-                
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-                    <Users className="w-6 h-6 text-purple-400" />
-                    Más Clientes
-                  </h3>
-                  <p className="text-white/90 mb-6">
-                    Con nuestro embudo probado y la automatización inteligente, 
-                    puedes contactar 10x más prospectos en el mismo tiempo.
-                  </p>
-                  
-                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-                    <Target className="w-6 h-6 text-pink-400" />
-                    Targeting Preciso
-                  </h3>
-                  <p className="text-white/90">
-                    Encuentra exactamente el tipo de cliente que necesitas usando 
-                    nuestros algoritmos de detección avanzados.
-                  </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-white/90">Detecta automáticamente tu cliente ideal</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-white/90">Envía mensajes con embudo probado</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-white/90">Se sincroniza con tu CRM automáticamente</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                  <span className="text-white/90">Funciona mientras haces otras cosas</span>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Final CTA */}
-          <div className="text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Empieza a conseguir clientes hoy mismo
-            </h2>
-            <p className="text-xl text-white/90 mb-8">
-              Miles de emprendedores ya están usando Hower Prospector para hacer crecer sus negocios
-            </p>
-            <Button 
-              onClick={handleDownloadExtension}
-              size="lg"
-              className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-6 px-12 text-xl rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto"
-            >
-              <Chrome className="w-7 h-7" />
-              ACTIVAR HOWER PROSPECTOR AHORA
-            </Button>
-          </div>
         </div>
       </div>
     </div>
