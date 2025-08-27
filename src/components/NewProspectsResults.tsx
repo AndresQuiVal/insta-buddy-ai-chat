@@ -302,7 +302,19 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                     asChild
                     className="w-full border-slate-300 hover:bg-slate-50 font-['Poppins']"
                   >
-                    <a href={selectedResult.instagram_url} target="_blank" rel="noopener noreferrer">
+                    <a 
+                      href={
+                        selectedResult.result_type === 'post' 
+                          ? (() => {
+                              const match = selectedResult.instagram_url.match(/instagram\.com\/([^\/\?]+)/);
+                              const username = match ? match[1] : '';
+                              return username ? `https://www.instagram.com/${username}/followers/` : selectedResult.instagram_url;
+                            })()
+                          : selectedResult.instagram_url
+                      } 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       Abrir en Instagram
                     </a>
