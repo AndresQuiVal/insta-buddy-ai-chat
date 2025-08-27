@@ -350,7 +350,11 @@ serve(async (req) => {
                     instagram_user_id: entry.id,
                     recipient_id: commenterId,
                     message_text: autoresponderEncontrado.dm_message,
-                    comment_id: commentData.id
+                    comment_id: commentData.id,
+                    use_button: autoresponderEncontrado.use_buttons || false,
+                    button_text: autoresponderEncontrado.button_text || null,
+                    button_url: autoresponderEncontrado.button_url || null,
+                    button_type: autoresponderEncontrado.button_type || 'web_url'
                   }
                 })
                 
@@ -775,7 +779,11 @@ serve(async (req) => {
                           instagram_user_id: recipientId,
                           recipient_id: senderId,
                           message_text: autoresponderActivado.message_text,
-                          autoresponder_id: autoresponderActivado.id
+                          autoresponder_id: autoresponderActivado.id,
+                          use_button: autoresponderActivado.use_buttons || false,
+                          button_text: autoresponderActivado.button_text || null,
+                          button_url: autoresponderActivado.button_url || null,
+                          button_type: autoresponderActivado.button_type || 'web_url'
                         }
                       })
                       
