@@ -10,7 +10,7 @@ interface HowerResponse {
 }
 
 export class HowerService {
-  private static baseUrl = 'http://localhost:8000';
+  private static baseUrl = 'https://hower-api.com'; // Cambiar por la URL correcta de producción
 
   static getStoredCredentials(): HowerUserData | null {
     const username = localStorage.getItem('hower_username');
