@@ -24,6 +24,7 @@ import HowerService from '@/services/howerService';
 import { useProspectSearchResults } from '@/hooks/useProspectSearchResults';
 import ProspectSearchResultsDisplay from '@/components/ProspectSearchResultsDisplay';
 import ManualProspectSearch from '@/components/ManualProspectSearch';
+import TestHowerConnection from '@/components/TestHowerConnection';
 
 interface ProspectData {
   id: string;
@@ -1866,12 +1867,15 @@ const TasksToDo: React.FC = () => {
         {/* Nuevos Prospectos - Header con búsqueda manual */}
         <div className="mb-4 flex justify-between items-center">
           <h3 className="text-lg font-semibold">Nuevos Prospectos</h3>
-          {currentUser && (
-            <ManualProspectSearch 
-              instagramUserId={currentUser.instagram_user_id}
-              onSearchComplete={refreshSearchResults}
-            />
-          )}
+          <div className="flex gap-2">
+            <TestHowerConnection />
+            {currentUser && (
+              <ManualProspectSearch 
+                instagramUserId={currentUser.instagram_user_id}
+                onSearchComplete={refreshSearchResults}
+              />
+            )}
+          </div>
         </div>
         
         {/* Resultados de búsqueda */}

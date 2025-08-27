@@ -8,116 +8,75 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('🧪 Test de búsqueda de prospectos iniciado');
+  console.log('🧪 Test de conexión con Hower API iniciado');
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const instagramUserId = '17841476656827421'; // @pruebahower
+    const { howerUsername, howerToken, query } = await req.json();
 
-    console.log(`🔍 Testing búsqueda para usuario: ${instagramUserId}`);
-
-    // 1. Verificar ICP
-    const { data: icpData, error: icpError } = await supabase
-      .from('user_icp')
-      .select('search_keywords, is_complete, bullseye_score')
-      .eq('instagram_user_id', instagramUserId)
-      .single();
-
-    console.log('📊 ICP Data:', icpData);
-
-    if (icpError || !icpData) {
-      console.log(`❌ Usuario no tiene ICP configurado:`, icpError);
+    if (!howerUsername || !howerToken) {
       return new Response(JSON.stringify({ 
-        error: 'Usuario no tiene ICP configurado',
-        icpError 
+        error: 'Credenciales de Hower requeridas',
+        success: false
       }), {
-        status: 200,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // 2. Verificar keywords
-    const keywords = icpData.search_keywords || [];
-    if (keywords.length === 0) {
-      console.log(`❌ No hay keywords en el ICP`);
-      return new Response(JSON.stringify({ 
-        error: 'No hay palabras clave en el ICP' 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    console.log(`🔍 Probando API de Hower con usuario: ${howerUsername}`);
+    console.log(`🎯 Query de prueba: ${query}`);
 
-    // 3. Seleccionar 3 palabras aleatorias
-    const shuffledKeywords = keywords.sort(() => 0.5 - Math.random());
-    const selectedKeywords = shuffledKeywords.slice(0, Math.min(3, keywords.length));
-    
-    console.log(`🎯 Keywords seleccionadas:`, selectedKeywords);
+    // Preparar payload para la API de Hower
+    const payload = {
+      howerUsername,
+      howerToken,
+      query: query || "emprendedores jóvenes",
+      location: "",
+      followers_from: "1000",
+      followers_to: "100000"
+    };
 
-    // 4. Simular resultados de búsqueda (para testing)
-    const mockResults = [
-      {
-        instagram_user_id: instagramUserId,
-        result_type: 'post',
-        instagram_url: 'https://www.instagram.com/p/test123/',
-        title: 'Post de Instagram',
-        description: 'Post de prueba sobre emprendimiento y desarrollo personal',
-        comments_count: 45,
-        publish_date: 'Agosto 25, 2025',
-        is_recent: true,
-        has_keywords: true,
-        search_keywords: selectedKeywords
+    console.log('📤 Enviando request a Hower API...');
+
+    // Llamar a la API de Hower
+    const response = await fetch('https://www.howersoftware.io/clients/perplexity_instagram_search_2/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      {
-        instagram_user_id: instagramUserId,
-        result_type: 'account',
-        instagram_url: 'https://www.instagram.com/testaccount/',
-        title: '@testaccount',
-        description: 'Cuenta enfocada en emprendimiento y desarrollo personal',
-        comments_count: 0,
-        publish_date: '',
-        is_recent: false,
-        has_keywords: true,
-        search_keywords: selectedKeywords
-      }
-    ];
+      body: JSON.stringify(JSON.stringify(payload)) // Doble JSON.stringify
+    });
 
-    // 5. Limpiar resultados anteriores
-    const { error: deleteError } = await supabase
-      .from('prospect_search_results')
-      .delete()
-      .eq('instagram_user_id', instagramUserId);
+    console.log(`📡 Respuesta de Hower: ${response.status} ${response.statusText}`);
 
-    if (deleteError) {
-      console.error('❌ Error limpiando resultados anteriores:', deleteError);
-    }
-
-    // 6. Insertar resultados de prueba
-    const { error: insertError } = await supabase
-      .from('prospect_search_results')
-      .insert(mockResults);
-
-    if (insertError) {
-      console.error('❌ Error insertando resultados:', insertError);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error de la API de Hower:', errorText);
       return new Response(JSON.stringify({ 
-        error: 'Error guardando resultados',
-        details: insertError 
+        error: `Error ${response.status}: ${response.statusText}`,
+        details: errorText,
+        success: false
       }), {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log(`✅ Test completado: ${mockResults.length} resultados insertados`);
+    const data = await response.json();
+    console.log('📊 Datos recibidos de Hower:', JSON.stringify(data, null, 2));
+
+    const accounts = data.accounts || [];
+    console.log(`✅ Resultados obtenidos: ${accounts.length} cuentas`);
 
     return new Response(JSON.stringify({ 
       success: true,
-      message: `Test completado: ${mockResults.length} resultados insertados`,
-      keywords: selectedKeywords,
-      results: mockResults
+      message: `API funciona correctamente: ${accounts.length} resultados`,
+      results: accounts,
+      rawResponse: data
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -126,7 +85,8 @@ serve(async (req) => {
     console.error('❌ Error en test-search:', error);
     return new Response(JSON.stringify({ 
       error: 'Error interno del servidor',
-      details: error.message 
+      details: error.message,
+      success: false
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
