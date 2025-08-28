@@ -227,21 +227,66 @@ Responde en formato JSON exactamente así:
       const { score, searchKeywords } = await analyzeICP();
       setAnalyzing(false);
       
-      // Update ICP in database
-      const { error } = await supabase
+      console.log('💾 Guardando ICP para usuario:', instagramUserId);
+      console.log('📊 Datos a guardar:', { score, searchKeywordsCount: searchKeywords.length });
+      
+      // Check if ICP already exists
+      const { data: existingICP, error: checkError } = await supabase
         .from('user_icp')
-        .upsert({
-          instagram_user_id: instagramUserId,
-          who_answer: icpData.who,
-          where_answer: icpData.where,
-          bait_answer: icpData.bait,
-          result_answer: icpData.result,
-          search_keywords: searchKeywords,
-          bullseye_score: score,
-          is_complete: score === 4
-        });
+        .select('id')
+        .eq('instagram_user_id', instagramUserId)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (checkError) {
+        console.error('❌ Error checking existing ICP:', checkError);
+        throw new Error('Error verificando ICP existente');
+      }
+
+      let updateError;
+      
+      if (existingICP) {
+        // Update existing ICP
+        console.log('📝 Actualizando ICP existente con ID:', existingICP.id);
+        const { error } = await supabase
+          .from('user_icp')
+          .update({
+            who_answer: icpData.who,
+            where_answer: icpData.where,
+            bait_answer: icpData.bait,
+            result_answer: icpData.result,
+            search_keywords: searchKeywords,
+            bullseye_score: score,
+            is_complete: score === 4,
+            updated_at: new Date().toISOString()
+          })
+          .eq('instagram_user_id', instagramUserId);
+        
+        updateError = error;
+      } else {
+        // Insert new ICP
+        console.log('➕ Creando nuevo ICP');
+        const { error } = await supabase
+          .from('user_icp')
+          .insert({
+            instagram_user_id: instagramUserId,
+            who_answer: icpData.who,
+            where_answer: icpData.where,
+            bait_answer: icpData.bait,
+            result_answer: icpData.result,
+            search_keywords: searchKeywords,
+            bullseye_score: score,
+            is_complete: score === 4
+          });
+        
+        updateError = error;
+      }
+
+      if (updateError) {
+        console.error('❌ Error guardando ICP:', updateError);
+        throw new Error(`Error guardando ICP: ${updateError.message}`);
+      }
+
+      console.log('✅ ICP guardado exitosamente');
 
       // Update local state
       setIcpData(prev => ({
@@ -258,10 +303,10 @@ Responde en formato JSON exactamente así:
       });
       
     } catch (error) {
-      console.error('Error saving ICP:', error);
+      console.error('❌ Error saving ICP:', error);
       toast({
         title: "Error",
-        description: "No se pudo guardar el ICP. Intenta de nuevo.",
+        description: error instanceof Error ? error.message : "No se pudo guardar el ICP. Intenta de nuevo.",
         variant: "destructive"
       });
     } finally {
