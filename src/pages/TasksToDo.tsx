@@ -213,9 +213,11 @@ const TasksToDo: React.FC = () => {
     }
   }, []);
 
-  // Validar acceso y configuración inicial
+  // TEMPORAL: Validación comentada para debug
   useEffect(() => {
     if (!userLoading) {
+      // COMENTADO TEMPORALMENTE PARA DEBUG
+      /*
       if (!currentUser) {
         toast({
           title: "Acceso restringido",
@@ -225,6 +227,7 @@ const TasksToDo: React.FC = () => {
         navigate('/');
         return;
       }
+      */
       
       // Usuario autenticado, generar frase motivacional
       const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
