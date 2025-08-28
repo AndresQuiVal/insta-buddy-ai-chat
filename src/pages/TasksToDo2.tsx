@@ -532,14 +532,93 @@ const TasksToDo2: React.FC = () => {
     loadTaskStatusFromDB();
   }, [currentUser]);
 
-  // 🚨 CULPABLE IDENTIFICADO: Suscripción Supabase Realtime bloquea renderizado en móvil
-  // TEMPORALMENTE DESHABILITADO para móvil hasta encontrar solución
-  // useEffect(() => {
-  //   if (!currentUser) return;
-  //   console.log('🔴 [REALTIME] Configurando suscripción...');
-  //   const channel = supabase.channel('prospect-task-status-changes')...
-  //   return () => supabase.removeChannel(channel);
-  // }, [currentUser, loadHowerUsers]);
+  // 🚀 SOLUCIÓN HÍBRIDA: Realtime inteligente con detección de dispositivo
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Detectar si es móvil
+    const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      console.log('📱 [REALTIME] Dispositivo móvil detectado - usando polling en su lugar');
+      
+      // En móvil: usar polling cada 30 segundos en lugar de WebSocket
+      const pollInterval = setInterval(async () => {
+        try {
+          console.log('🔄 [POLLING] Actualizando datos en móvil...');
+          // Recargar datos de Hower cuando sea necesario
+          if (HowerService.isAuthenticated()) {
+            loadHowerUsers();
+          }
+        } catch (error) {
+          console.error('❌ [POLLING] Error:', error);
+        }
+      }, 30000); // Cada 30 segundos
+
+      return () => {
+        console.log('📱 [POLLING] Limpiando polling de móvil');
+        clearInterval(pollInterval);
+      };
+    } else {
+      console.log('💻 [REALTIME] Desktop detectado - usando WebSocket con carga lazy');
+      
+      // En desktop: usar realtime pero con carga lazy (después de 2 segundos)
+      const realtimeTimeout = setTimeout(() => {
+        console.log('🔴 [REALTIME] Configurando suscripción a prospect_task_status...');
+        
+        const channel = supabase
+          .channel('prospect-task-status-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'prospect_task_status',
+              filter: `instagram_user_id=eq.${currentUser.instagram_user_id}`
+            },
+            (payload) => {
+              console.log('🔴 [REALTIME] Cambio detectado:', payload);
+              
+              if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                const newData = payload.new;
+                if (newData && newData.is_completed) {
+                  console.log(`🔴 [REALTIME] Marcando como completado: ${newData.prospect_sender_id}`);
+                  setCompletedTasks(prev => ({
+                    ...prev,
+                    [`${newData.task_type}-${newData.prospect_sender_id}`]: true
+                  }));
+                } else if (newData && !newData.is_completed) {
+                  console.log(`🔴 [REALTIME] Marcando como no completado: ${newData.prospect_sender_id}`);
+                  setCompletedTasks(prev => {
+                    const updated = { ...prev };
+                    delete updated[`${newData.task_type}-${newData.prospect_sender_id}`];
+                    return updated;
+                  });
+                }
+                
+                // Actualizar datos de Hower cuando se detecte actividad
+                console.log('🔄 [REALTIME] Actualizando datos de Hower por cambio detectado');
+                loadHowerUsers();
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('🔴 [REALTIME] Estado de suscripción:', status);
+          });
+
+        // Cleanup function para desktop
+        return () => {
+          console.log('🔴 [REALTIME] Cerrando suscripción de desktop...');
+          supabase.removeChannel(channel);
+        };
+      }, 2000); // Esperar 2 segundos para que la página esté completamente cargada
+
+      return () => {
+        console.log('💻 [REALTIME] Limpiando timeout de desktop');
+        clearTimeout(realtimeTimeout);
+      };
+    }
+  }, [currentUser, loadHowerUsers]);
 
   // Función para refrescar manualmente los datos
   const handleRefreshData = async () => {
@@ -1429,7 +1508,7 @@ const TasksToDo2: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* DEBUG LABEL - Cambio actual */}
       <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
-        🔍 TASKS-TO-DO-2 | ✅ CULPABLE CONFIRMADO: Suscripción Supabase Realtime
+        🔍 TASKS-TO-DO-2 | ✅ SOLUCIÓN HÍBRIDA: Realtime inteligente (móvil + desktop)
       </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
