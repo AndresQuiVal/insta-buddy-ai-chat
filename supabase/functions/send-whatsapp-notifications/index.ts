@@ -343,9 +343,10 @@ URGENTES de contestar: ${stats.abiertas}
 Prospectos en seguimiento: ${stats.seguimientos}
 Nuevos prospectos de hoy: ${stats.agendados}
 
-👆 *Accede aquí:*
-
+Accede a este link:
 https://preview--insta-buddy-ai-chat.lovable.app/tasks-to-do
+
+y limpia esos prospectos
 
 ${randomPhrase}`;
 }
