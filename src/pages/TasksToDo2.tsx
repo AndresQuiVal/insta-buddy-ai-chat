@@ -47,48 +47,48 @@ const TasksToDo2: React.FC = () => {
   const prospectsLoading = false;
   const refetch = () => {};
 
-  // Debug adicional para verificar la carga de prospectos
-  useEffect(() => {
-    console.log('🔍 [PROSPECTS-DEBUG] Estado de carga de prospectos:', {
-      currentUserExists: !!currentUser,
-      instagram_user_id: currentUser?.instagram_user_id,
-      prospectsLoading,
-      prospectsCount: realProspects.length,
-      prospectStates: realProspects.map(p => `${p.username}:${p.state}`).slice(0, 5)
-    });
-  }, [currentUser, prospectsLoading, realProspects]);
+  // TEMPORALMENTE DESHABILITADO: Debug adicional para verificar la carga de prospectos
+  // useEffect(() => {
+  //   console.log('🔍 [PROSPECTS-DEBUG] Estado de carga de prospectos:', {
+  //     currentUserExists: !!currentUser,
+  //     instagram_user_id: currentUser?.instagram_user_id,
+  //     prospectsLoading,
+  //     prospectsCount: realProspects.length,
+  //     prospectStates: realProspects.map(p => `${p.username}:${p.state}`).slice(0, 5)
+  //   });
+  // }, [currentUser, prospectsLoading, realProspects]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Validación de autenticación - sin simulación
 
-  // Validación de autenticación sin redirects automáticos
-  useEffect(() => {
-    console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
-      userLoading,
-      currentUser: currentUser ? currentUser.instagram_user_id : 'null',
-      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
-    });
-    
-    // Solo mostrar mensaje informativo si no hay usuario, pero NO redirigir
-    if (!userLoading && !currentUser) {
-      console.log('ℹ️ No hay usuario autenticado - mostrando mensaje informativo');
-      toast({
-        title: "Información",
-        description: "Para usar esta función necesitas conectar tu cuenta de Instagram",
-        variant: "default"
-      });
-    }
-
-    // Solo mostrar mensaje si no hay credenciales de Hower, pero NO redirigir
-    if (!userLoading && currentUser && !HowerService.isAuthenticated()) {
-      console.log('ℹ️ No hay credenciales de Hower - mostrando mensaje informativo');
-      toast({
-        title: "Información",
-        description: "Para acceder al CRM necesitas autenticarte con Hower",
-        variant: "default"
-      });
-    }
-  }, [currentUser, userLoading, toast]);
+  // TEMPORALMENTE DESHABILITADO: Validación de autenticación sin redirects automáticos
+  // useEffect(() => {
+  //   console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
+  //     userLoading,
+  //     currentUser: currentUser ? currentUser.instagram_user_id : 'null',
+  //     localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
+  //   });
+  //   
+  //   // Solo mostrar mensaje informativo si no hay usuario, pero NO redirigir
+  //   if (!userLoading && !currentUser) {
+  //     console.log('ℹ️ No hay usuario autenticado - mostrando mensaje informativo');
+  //     toast({
+  //       title: "Información",
+  //       description: "Para usar esta función necesitas conectar tu cuenta de Instagram",
+  //       variant: "default"
+  //     });
+  //   }
+  //
+  //   // Solo mostrar mensaje si no hay credenciales de Hower, pero NO redirigir
+  //   if (!userLoading && currentUser && !HowerService.isAuthenticated()) {
+  //     console.log('ℹ️ No hay credenciales de Hower - mostrando mensaje informativo');
+  //     toast({
+  //       title: "Información",
+  //       description: "Para acceder al CRM necesitas autenticarte con Hower",
+  //       variant: "default"
+  //     });
+  //   }
+  // }, [currentUser, userLoading, toast]);
 
 
   const [loading, setLoading] = useState(true);
@@ -166,38 +166,44 @@ const TasksToDo2: React.FC = () => {
     "El mejor momento para prospectar es ahora."
   ];
 
-  // SEO
+  // TEMPORALMENTE DESHABILITADO: SEO
+  // useEffect(() => {
+  //   document.title = 'Tareas de Hoy v2 | Hower Assistant';
+  //   const metaDesc = document.querySelector('meta[name="description"]');
+  //   if (!metaDesc) {
+  //     const m = document.createElement('meta');
+  //     m.name = 'description';
+  //     m.content = 'Lista de tareas diarias para prospectos v2: responder pendientes, dar seguimientos y prospectar nuevos.';
+  //     document.head.appendChild(m);
+  //   } else {
+  //     metaDesc.setAttribute('content', 'Lista de tareas diarias para prospectos v2: responder pendientes, dar seguimientos y prospectar nuevos.');
+  //   }
+  // }, []);
+
+  // TEMPORALMENTE DESHABILITADO: Configuración inicial sin redirects automáticos
+  // useEffect(() => {
+  //   if (!userLoading) {
+  //     if (currentUser) {
+  //       // Usuario autenticado, generar frase motivacional
+  //       const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+  //       setMotivationalQuote(randomQuote);
+  //     }
+  //     setLoading(false);
+  //   }
+  // }, [currentUser, userLoading]);
+
+  // Configuración simplificada
   useEffect(() => {
-    document.title = 'Tareas de Hoy v2 | Hower Assistant';
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (!metaDesc) {
-      const m = document.createElement('meta');
-      m.name = 'description';
-      m.content = 'Lista de tareas diarias para prospectos v2: responder pendientes, dar seguimientos y prospectar nuevos.';
-      document.head.appendChild(m);
-    } else {
-      metaDesc.setAttribute('content', 'Lista de tareas diarias para prospectos v2: responder pendientes, dar seguimientos y prospectar nuevos.');
-    }
+    setLoading(false);
+    setMotivationalQuote("Versión de prueba simplificada");
   }, []);
 
-  // Configuración inicial sin redirects automáticos
-  useEffect(() => {
-    if (!userLoading) {
-      if (currentUser) {
-        // Usuario autenticado, generar frase motivacional
-        const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-        setMotivationalQuote(randomQuote);
-      }
-      setLoading(false);
-    }
-  }, [currentUser, userLoading]);
-
-  // Cargar nombre de lista cuando hay usuario
-  useEffect(() => {
-    if (currentUser) {
-      loadListName();
-    }
-  }, [currentUser]);
+  // TEMPORALMENTE DESHABILITADO: Cargar nombre de lista cuando hay usuario
+  // useEffect(() => {
+  //   if (currentUser) {
+  //     loadListName();
+  //   }
+  // }, [currentUser]);
 
   // TEMPORALMENTE DESHABILITADO: Estadísticas GROK
   // const loadStats = useCallback(async () => {
@@ -464,57 +470,19 @@ const TasksToDo2: React.FC = () => {
     loadTaskStatusFromDB();
   }, [currentUser]);
 
-  // 🔥 Suscripción en tiempo real para actualizaciones de prospect_task_status
-  useEffect(() => {
-    if (!currentUser) return;
-
-    console.log('🔴 [REALTIME] Configurando suscripción a prospect_task_status...');
-    
-    const channel = supabase
-      .channel('prospect-task-status-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Escuchar INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: 'prospect_task_status',
-          filter: `instagram_user_id=eq.${currentUser.instagram_user_id}`
-        },
-        (payload) => {
-          console.log('🔴 [REALTIME] Cambio detectado en prospect_task_status:', payload);
-          
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const newData = payload.new;
-            if (newData && newData.is_completed) {
-              console.log(`🔴 [REALTIME] Marcando como completado: ${newData.prospect_sender_id}`);
-              setCompletedTasks(prev => ({
-                ...prev,
-                [`${newData.task_type}-${newData.prospect_sender_id}`]: true
-              }));
-            } else if (newData && !newData.is_completed) {
-              console.log(`🔴 [REALTIME] Marcando como no completado: ${newData.prospect_sender_id}`);
-              setCompletedTasks(prev => {
-                const updated = { ...prev };
-                delete updated[`${newData.task_type}-${newData.prospect_sender_id}`];
-                return updated;
-              });
-            }
-            
-            // Actualizar datos de Hower cuando se detecte actividad
-            console.log('🔄 [REALTIME] Actualizando datos de Hower por cambio detectado');
-            loadHowerUsers();
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('🔴 [REALTIME] Estado de suscripción:', status);
-      });
-
-    return () => {
-      console.log('🔴 [REALTIME] Cerrando suscripción...');
-      supabase.removeChannel(channel);
-    };
-  }, [currentUser]);
+  // TEMPORALMENTE DESHABILITADO: 🔥 Suscripción en tiempo real para actualizaciones de prospect_task_status
+  // useEffect(() => {
+  //   if (!currentUser) return;
+  //   console.log('🔴 [REALTIME] Configurando suscripción a prospect_task_status...');
+  //   const channel = supabase
+  //     .channel('prospect-task-status-changes')
+  //     .on('postgres_changes', {...}, (payload) => {...})
+  //     .subscribe((status) => {...});
+  //   return () => {
+  //     console.log('🔴 [REALTIME] Cerrando suscripción...');
+  //     supabase.removeChannel(channel);
+  //   };
+  // }, [currentUser]);
 
   // Función para refrescar manualmente los datos
   const handleRefreshData = async () => {
@@ -1404,7 +1372,7 @@ const TasksToDo2: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* DEBUG LABEL - Cambio actual */}
       <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
-        🔍 TASKS-TO-DO-2 | CAMBIO: Sin useProspects + Sin GROK + Sin componentes + Sin HowerService (Sospechoso #4)
+        🔍 TASKS-TO-DO-2 | CAMBIO: Sin useProspects + Sin GROK + Sin componentes + Sin Hower + Sin useEffect (Sospechoso #5)
       </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
