@@ -57,7 +57,7 @@ const TasksToDo: React.FC = () => {
 
   // Validación de autenticación - sin simulación
 
-  // Validación estricta de autenticación
+  // Validación de autenticación sin redirects automáticos
   useEffect(() => {
     console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
       userLoading,
@@ -65,28 +65,26 @@ const TasksToDo: React.FC = () => {
       localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
     });
     
+    // Solo mostrar mensaje informativo si no hay usuario, pero NO redirigir
     if (!userLoading && !currentUser) {
-      console.log('❌ No hay usuario autenticado, redirigiendo a home');
+      console.log('ℹ️ No hay usuario autenticado - mostrando mensaje informativo');
       toast({
-        title: "Acceso restringido",
-        description: "Necesitas conectar tu cuenta de Instagram para acceder",
-        variant: "destructive"
+        title: "Información",
+        description: "Para usar esta función necesitas conectar tu cuenta de Instagram",
+        variant: "default"
       });
-      navigate('/', { replace: true });
-      return;
     }
 
-    // Verificar autenticación de Hower
+    // Solo mostrar mensaje si no hay credenciales de Hower, pero NO redirigir
     if (!userLoading && currentUser && !HowerService.isAuthenticated()) {
-      console.log('❌ No hay credenciales de Hower, redirigiendo a auth');
+      console.log('ℹ️ No hay credenciales de Hower - mostrando mensaje informativo');
       toast({
-        title: "Credenciales requeridas",
-        description: "Necesitas autenticarte con Hower para acceder al CRM",
-        variant: "destructive"
+        title: "Información",
+        description: "Para acceder al CRM necesitas autenticarte con Hower",
+        variant: "default"
       });
-      navigate('/hower-auth', { replace: true });
     }
-  }, [currentUser, userLoading, navigate, toast]);
+  }, [currentUser, userLoading, toast]);
 
 
   const [loading, setLoading] = useState(true);
@@ -210,25 +208,17 @@ const TasksToDo: React.FC = () => {
     }
   }, []);
 
-  // Validar acceso y configuración inicial
+  // Configuración inicial sin redirects automáticos
   useEffect(() => {
     if (!userLoading) {
-      if (!currentUser) {
-        toast({
-          title: "Acceso restringido",
-          description: "Necesitas conectar tu cuenta de Instagram primero",
-          variant: "destructive"
-        });
-        navigate('/');
-        return;
+      if (currentUser) {
+        // Usuario autenticado, generar frase motivacional
+        const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+        setMotivationalQuote(randomQuote);
       }
-      
-      // Usuario autenticado, generar frase motivacional
-      const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-      setMotivationalQuote(randomQuote);
       setLoading(false);
     }
-  }, [currentUser, userLoading, navigate, toast]);
+  }, [currentUser, userLoading]);
 
   // Cargar nombre de lista cuando hay usuario
   useEffect(() => {
