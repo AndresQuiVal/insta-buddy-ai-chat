@@ -1467,6 +1467,10 @@ const TasksToDo2: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* DEBUG LABEL - Cambio actual */}
+      <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
+        🔍 TASKS-TO-DO-2 | CAMBIO: Sin useProspects hook (Sospechoso #1)
+      </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
         <div className="mb-6 sm:mb-8 relative">
