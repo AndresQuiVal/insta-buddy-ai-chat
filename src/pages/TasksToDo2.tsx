@@ -41,22 +41,18 @@ const TasksToDo2: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { currentUser, loading: userLoading } = useInstagramUsers();
-  // TEMPORALMENTE DESHABILITADO: useProspects hook
-  // const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
-  const realProspects: any[] = [];
-  const prospectsLoading = false;
-  const refetch = () => {};
+  const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
 
-  // TEMPORALMENTE DESHABILITADO: Debug adicional para verificar la carga de prospectos
-  // useEffect(() => {
-  //   console.log('🔍 [PROSPECTS-DEBUG] Estado de carga de prospectos:', {
-  //     currentUserExists: !!currentUser,
-  //     instagram_user_id: currentUser?.instagram_user_id,
-  //     prospectsLoading,
-  //     prospectsCount: realProspects.length,
-  //     prospectStates: realProspects.map(p => `${p.username}:${p.state}`).slice(0, 5)
-  //   });
-  // }, [currentUser, prospectsLoading, realProspects]);
+  // Debug adicional para verificar la carga de prospectos - RESTAURADO
+  useEffect(() => {
+    console.log('🔍 [PROSPECTS-DEBUG] Estado de carga de prospectos:', {
+      currentUserExists: !!currentUser,
+      instagram_user_id: currentUser?.instagram_user_id,
+      prospectsLoading,
+      prospectsCount: realProspects.length,
+      prospectStates: realProspects.map(p => `${p.username}:${p.state}`).slice(0, 5)
+    });
+  }, [currentUser, prospectsLoading, realProspects]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Validación de autenticación - sin simulación
@@ -1398,7 +1394,7 @@ const TasksToDo2: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* DEBUG LABEL - Cambio actual */}
       <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
-        🔍 TASKS-TO-DO-2 | RESTAURANDO: Básicos + HowerService + Componentes pesados
+        🔍 TASKS-TO-DO-2 | RESTAURANDO: Básicos + Componentes + useProspects hook
       </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
