@@ -43,55 +43,97 @@ const TasksToDo: React.FC = () => {
   const { currentUser, loading: userLoading } = useInstagramUsers();
   const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
 
-  // Debug adicional para verificar la carga de prospectos
-  useEffect(() => {
-    console.log('🔍 [PROSPECTS-DEBUG] Estado de carga de prospectos:', {
-      currentUserExists: !!currentUser,
-      instagram_user_id: currentUser?.instagram_user_id,
-      prospectsLoading,
-      prospectsCount: realProspects.length,
-      prospectStates: realProspects.map(p => `${p.username}:${p.state}`).slice(0, 5)
-    });
-  }, [currentUser, prospectsLoading, realProspects]);
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  // Estados básicos
+  const [pageReady, setPageReady] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
-  // Validación estricta de autenticación
+  // Función para agregar debug info
+  const addDebug = (message: string) => {
+    console.log(`🔍 [DEBUG] ${message}`);
+    setDebugInfo(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
+  };
+
+  // Debug inicial
   useEffect(() => {
-    console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
-      userLoading,
-      currentUser: currentUser ? currentUser.instagram_user_id : 'null',
-      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
-    });
+    addDebug('TasksToDo montado');
+    addDebug(`userLoading: ${userLoading}`);
+    addDebug(`currentUser: ${currentUser ? 'existe' : 'null'}`);
+    addDebug(`HowerService.isAuthenticated(): ${HowerService.isAuthenticated()}`);
+  }, []);
+
+  // Manejo de autenticación simplificado
+  useEffect(() => {
+    addDebug('Verificando autenticación...');
     
-    if (!userLoading) {
-      if (!currentUser) {
-        console.log('❌ No hay usuario autenticado, redirigiendo a home');
-        toast({
-          title: "Acceso restringido",
-          description: "Necesitas conectar tu cuenta de Instagram para acceder",
-          variant: "destructive"
-        });
-        navigate('/', { replace: true });
-        return;
-      }
-
-      // Si hay usuario de Instagram pero no credenciales de Hower, redirigir
-      if (!HowerService.isAuthenticated()) {
-        console.log('❌ No hay credenciales de Hower, redirigiendo a auth');
-        toast({
-          title: "Credenciales requeridas",
-          description: "Necesitas autenticarte con Hower para acceder al CRM",
-          variant: "destructive"
-        });
-        navigate('/hower-auth', { replace: true });
-        return;
-      }
-
-      // Si llegamos aquí, todo está bien - setear loading a false
-      console.log('✅ Usuario autenticado correctamente');
-      setLoading(false);
+    if (userLoading) {
+      addDebug('Esperando carga de usuario...');
+      return;
     }
-  }, [currentUser, userLoading, navigate, toast]);
+
+    if (!currentUser) {
+      addDebug('No hay usuario - redirigiendo a home');
+      toast({
+        title: "Acceso restringido",
+        description: "Necesitas conectar tu cuenta de Instagram",
+        variant: "destructive"
+      });
+      navigate('/', { replace: true });
+      return;
+    }
+
+    if (!HowerService.isAuthenticated()) {
+      addDebug('No hay credenciales Hower - redirigiendo a auth');
+      toast({
+        title: "Credenciales requeridas",
+        description: "Necesitas autenticarte con Hower",
+        variant: "destructive"
+      });
+      navigate('/hower-auth', { replace: true });
+      return;
+    }
+
+    addDebug('Todo OK - página lista');
+    setPageReady(true);
+  }, [userLoading, currentUser, navigate, toast]);
+
+  // Si está cargando usuario
+  if (userLoading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Validando acceso...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si la página no está lista, mostrar debug
+  if (!pageReady) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Configurando página...</p>
+          
+          {/* Debug info para móvil */}
+          <div className="mt-8 p-4 bg-gray-100 rounded-lg text-left text-xs">
+            <h3 className="font-bold mb-2">DEBUG INFO:</h3>
+            {debugInfo.map((info, i) => (
+              <div key={i} className="mb-1">{info}</div>
+            ))}
+            
+            <div className="mt-4 p-2 bg-white rounded border">
+              <div>userLoading: {userLoading.toString()}</div>
+              <div>currentUser: {currentUser ? currentUser.username : 'null'}</div>
+              <div>pageReady: {pageReady.toString()}</div>
+              <div>localStorage: {localStorage.getItem('hower-instagram-user') ? 'existe' : 'no existe'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
 
   const [loading, setLoading] = useState(true);
