@@ -125,57 +125,25 @@ const TasksToDo2: React.FC = () => {
   const [motivationalQuote, setMotivationalQuote] = useState('');
   const [newProspectsCount, setNewProspectsCount] = useState(0);
 
-  // Función para cargar los usuarios de Hower
+  // TEMPORALMENTE DESHABILITADO: Función para cargar los usuarios de Hower
+  // const loadHowerUsers = useCallback(async () => {
+  //   if (!HowerService.isAuthenticated()) {
+  //     console.log('❌ No hay credenciales de Hower disponibles');
+  //     return;
+  //   }
+  //   ...lógica compleja...
+  // }, [toast]);
   const loadHowerUsers = useCallback(async () => {
-    if (!HowerService.isAuthenticated()) {
-      console.log('❌ No hay credenciales de Hower disponibles');
-      return;
-    }
+    console.log('🔇 loadHowerUsers deshabilitado temporalmente');
+    setHowerUsernames(['usuario_test']); // Mock data
+  }, []);
 
-    setHowerLoading(true);
-    try {
-      const response = await HowerService.getSentMessagesUsernames();
-      
-      console.log('🔍 Response completo:', response);
-      console.log('🔍 response.success:', response.success);
-      console.log('🔍 response.data:', response.data);
-      console.log('🔍 response.data?.data?.usernames existe:', response.data?.data?.usernames ? 'SI' : 'NO');
-      
-      if (response.success && response.data && response.data.data && response.data.data.usernames) {
-        console.log('📊 Estructura de datos de Hower:', response.data.data);
-        console.log('📊 Total disponible:', response.data.data.total_count);
-        
-        // Usar todos los usernames sin límite
-        const usernames = response.data.data.usernames;
-        
-        setHowerUsernames(usernames);
-        console.log('✅ Usuarios de Hower cargados:', usernames.length, 'total. Primeros 5:', usernames.slice(0, 5));
-      } else {
-        console.error('❌ Error al cargar usuarios de Hower:', response.error);
-        toast({
-          title: "Error al cargar datos",
-          description: response.error || "No se pudieron cargar los datos de Hower",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('❌ Error en loadHowerUsers:', error);
-      toast({
-        title: "Error de conexión",
-        description: "No se pudo conectar con los servidores de Hower",
-        variant: "destructive"
-      });
-    } finally {
-      setHowerLoading(false);
-    }
-  }, [toast]);
-
-  // Cargar datos de Hower al inicializar
-  useEffect(() => {
-    if (!userLoading && currentUser && HowerService.isAuthenticated()) {
-      loadHowerUsers();
-    }
-  }, [currentUser, userLoading, loadHowerUsers]);
+  // TEMPORALMENTE DESHABILITADO: Cargar datos de Hower al inicializar
+  // useEffect(() => {
+  //   if (!userLoading && currentUser && HowerService.isAuthenticated()) {
+  //     loadHowerUsers();
+  //   }
+  // }, [currentUser, userLoading, loadHowerUsers]);
 
   // Estado para estadísticas GROK
   const [stats, setStats] = useState({
@@ -1436,7 +1404,7 @@ const TasksToDo2: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* DEBUG LABEL - Cambio actual */}
       <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
-        🔍 TASKS-TO-DO-2 | CAMBIO: Sin useProspects + Sin GROK + Sin componentes pesados (Sospechoso #3)
+        🔍 TASKS-TO-DO-2 | CAMBIO: Sin useProspects + Sin GROK + Sin componentes + Sin HowerService (Sospechoso #4)
       </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
