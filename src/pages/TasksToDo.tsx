@@ -1053,7 +1053,7 @@ const TasksToDo: React.FC = () => {
 
   const handleViewConversation = () => {
     if (selectedProspectUsername) {
-      window.open(`https://www.instagram.com/direct/t/${selectedProspectUsername}`, '_blank');
+      window.open(`https://www.instagram.com/${selectedProspectUsername}`, '_blank');
       setShowActionDialog(false);
       setSelectedProspectUsername('');
     }
@@ -2303,7 +2303,7 @@ const TasksToDo: React.FC = () => {
                   </div>
                   <Button 
                     onClick={() => {
-                      window.open(`https://www.instagram.com/m/${dialogUser}/`, '_blank');
+                      window.open(`https://www.instagram.com/${dialogUser}`, '_blank');
                       setInstagramOpened(true);
                     }}
                     className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
@@ -2314,17 +2314,17 @@ const TasksToDo: React.FC = () => {
                   
                   <div className="mt-3 pt-3 border-t border-pink-200">
                     <p className="text-xs text-gray-500 text-center mb-2">
-                      ¿No se abrió el chat? Copia este enlace y pégalo en tu navegador:
+                      ¿No se abrió el perfil? Copia este enlace y pégalo en tu navegador:
                     </p>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const url = `https://www.instagram.com/m/${dialogUser}/`;
+                        const url = `https://www.instagram.com/${dialogUser}`;
                         navigator.clipboard.writeText(url);
                         toast({
                           title: "Enlace copiado",
-                          description: `Pega el enlace en tu navegador para ir al chat de @${dialogUser}`,
+                          description: `Pega el enlace en tu navegador para ir al perfil de @${dialogUser}`,
                         });
                       }}
                       className="w-full text-xs border-pink-200 text-pink-600 hover:bg-pink-50"
@@ -2343,10 +2343,9 @@ const TasksToDo: React.FC = () => {
                     handleMessageSent(dialogUser);
                     setInstagramOpened(false);
                   }}
-                  disabled={!instagramOpened}
-                  className={`w-full ${!instagramOpened ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className="w-full"
                 >
-                  {instagramOpened ? '✅ Mensaje enviado' : 'Abre Instagram primero'}
+                  ✅ Mensaje enviado
                 </Button>
               </DialogFooter>
             </div>
