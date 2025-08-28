@@ -11,6 +11,7 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
   const navigate = useNavigate();
 
   const menuItems = [
+    { id: 'config', label: 'Configuración' },
     { id: 'icp', label: 'Editar mi ICP' },
     { id: 'autoresponder', label: 'Autoresponder' },
     { id: 'whatsapp', label: 'Configurar WhatsApp' },
@@ -36,7 +37,9 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
           <button
             key={item.id}
             onClick={() => {
-              if (item.id === 'icp') {
+              if (item.id === 'config') {
+                navigate('/?tab=settings');
+              } else if (item.id === 'icp') {
                 navigate('/icp-editor');
               } else if (item.id === 'autoresponder') {
                 navigate('/');

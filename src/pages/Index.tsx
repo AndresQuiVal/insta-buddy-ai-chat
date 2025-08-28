@@ -47,7 +47,15 @@ const Index = () => {
   useEffect(() => {
     console.log('🚀 Inicializando Index, verificando usuario...');
     checkCurrentUser();
-  }, []);
+    
+    // Verificar si se debe abrir configuración automáticamente
+    const tab = searchParams.get('tab');
+    if (tab === 'settings') {
+      setActiveTab('settings');
+      // Limpiar el parámetro de la URL
+      setSearchParams({});
+    }
+  }, [searchParams]);
 
   // Escuchar evento de autenticación exitosa
   useEffect(() => {
