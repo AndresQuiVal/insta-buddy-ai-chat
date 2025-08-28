@@ -311,7 +311,7 @@ const ProspectCRM = () => {
 
   const handleViewConversation = () => {
     if (selectedProspect) {
-      window.open(`https://www.instagram.com/${selectedProspect.username}`, '_blank');
+      window.open(`https://www.instagram.com/direct/t/${selectedProspect.username}`, '_blank');
       setShowActionDialog(false);
       setSelectedProspect(null);
     }

@@ -13,8 +13,6 @@ interface InstagramUser {
   nuevos_prospectos_contactados: number;
   openai_api_key?: string;
   ia_persona?: string;
-  hower_username?: string;
-  hower_token?: string;
   created_at: string;
   updated_at: string;
 }
