@@ -57,16 +57,26 @@ const TasksToDo: React.FC = () => {
 
   // Validación de autenticación - sin simulación
 
-  // Validación estricta de autenticación
+  // Validación estricta de autenticación - CON DEBUG DETALLADO
   useEffect(() => {
-    console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
+    console.log('🔍 [AUTH-DEBUG] Estado detallado de autenticación:', {
       userLoading,
-      currentUser: currentUser ? currentUser.instagram_user_id : 'null',
-      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
+      currentUser: currentUser ? {
+        id: currentUser.id,
+        instagram_user_id: currentUser.instagram_user_id,
+        username: currentUser.username
+      } : 'null',
+      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente',
+      howerAuthenticated: HowerService.isAuthenticated(),
+      howerCredentials: {
+        hasUsername: !!localStorage.getItem('hower-username'),
+        hasPassword: !!localStorage.getItem('hower-password')
+      }
     });
     
+    // DEBUG: Verificar si se está ejecutando el redirect
     if (!userLoading && !currentUser) {
-      console.log('❌ No hay usuario autenticado, redirigiendo a home');
+      console.log('❌ REDIRECT TRIGGER: No hay usuario autenticado, redirigiendo a home');
       toast({
         title: "Acceso restringido",
         description: "Necesitas conectar tu cuenta de Instagram para acceder",
@@ -76,9 +86,10 @@ const TasksToDo: React.FC = () => {
       return;
     }
 
-    // Verificar autenticación de Hower
+    // DEBUG: Verificar autenticación de Hower
     if (!userLoading && currentUser && !HowerService.isAuthenticated()) {
-      console.log('❌ No hay credenciales de Hower, redirigiendo a auth');
+      console.log('❌ REDIRECT TRIGGER: No hay credenciales de Hower, redirigiendo a auth');
+      console.log('🔍 HowerService.isAuthenticated():', HowerService.isAuthenticated());
       toast({
         title: "Credenciales requeridas",
         description: "Necesitas autenticarte con Hower para acceder al CRM",
@@ -86,6 +97,8 @@ const TasksToDo: React.FC = () => {
       });
       navigate('/hower-auth', { replace: true });
     }
+    
+    console.log('✅ [AUTH-DEBUG] Validaciones pasadas, componente debe renderizar');
   }, [currentUser, userLoading, navigate, toast]);
 
 
@@ -1447,8 +1460,9 @@ const TasksToDo: React.FC = () => {
     );
   };
 
-  // Pantalla de carga mientras se valida el usuario
+  // Pantalla de carga mientras se valida el usuario - CON DEBUG
   if (userLoading) {
+    console.log('🔄 [RENDER-DEBUG] Mostrando pantalla de carga - userLoading:', userLoading);
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center">
@@ -1459,8 +1473,9 @@ const TasksToDo: React.FC = () => {
     );
   }
 
-  // Pantalla de carga para datos
+  // Pantalla de carga para datos - CON DEBUG
   if (loading) {
+    console.log('🔄 [RENDER-DEBUG] Mostrando pantalla de carga - loading:', loading);
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center">
@@ -1470,6 +1485,8 @@ const TasksToDo: React.FC = () => {
       </div>
     );
   }
+
+  console.log('🎯 [RENDER-DEBUG] Renderizando componente principal TasksToDo');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
