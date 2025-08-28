@@ -153,16 +153,8 @@ const TasksToDo2: React.FC = () => {
         if (response.error && (response.error.includes('401') || response.error.includes('Credenciales inválidas') || response.error.includes('Username o token incorrecto'))) {
           toast({
             title: "Credenciales de Hower inválidas",
-            description: "Verifica tu username y token en configuración.",
-            variant: "destructive",
-            action: (
-              <a 
-                href="/?tab=settings" 
-                className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-muted-foreground/20 hover:border-border"
-              >
-                Ir a Configuración
-              </a>
-            )
+            description: "Ve al menú hamburguesa → Configuración → Hower para actualizar tus credenciales",
+            variant: "destructive"
           });
         } else {
           toast({
