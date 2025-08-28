@@ -134,6 +134,7 @@ RESULT: ${icpData.result}
     `.trim();
 
     try {
+      console.log('🤖 Analizando ICP con AI...');
       const { data, error } = await supabase.functions.invoke('chatgpt-response', {
         body: {
           prompt: `Analiza esta descripción de cliente ideal y evalúa qué tan completa está según estos 4 bloques:
@@ -160,25 +161,46 @@ Responde en formato JSON exactamente así:
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error llamando chatgpt-response:', error);
+        throw new Error(`Error de AI: ${error.message || 'Servicio no disponible'}`);
+      }
 
+      if (!data) {
+        throw new Error('No se recibió respuesta del servicio de AI');
+      }
+
+      console.log('✅ Respuesta AI recibida:', data);
       const response = data?.response;
       let parsedResult;
       
       if (typeof response === 'string') {
-        parsedResult = JSON.parse(response);
+        try {
+          parsedResult = JSON.parse(response);
+        } catch (parseError) {
+          console.error('❌ Error parseando respuesta JSON:', parseError);
+          throw new Error('Error procesando respuesta de AI');
+        }
       } else if (typeof response === 'object') {
         parsedResult = response;
       } else {
-        throw new Error('Formato de respuesta inválido');
+        throw new Error('Formato de respuesta inválido de AI');
       }
 
+      console.log('✅ Resultado parseado:', parsedResult);
+      
       return {
         score: parsedResult.score || 0,
         searchKeywords: parsedResult.searchKeywords || []
       };
     } catch (error) {
-      console.error('Error analyzing ICP:', error);
+      console.error('❌ Error analyzing ICP:', error);
+      // Mostrar error específico al usuario
+      toast({
+        title: "Error de análisis",
+        description: error instanceof Error ? error.message : "Error desconocido al analizar ICP",
+        variant: "destructive"
+      });
       return { score: 0, searchKeywords: [] };
     }
   };

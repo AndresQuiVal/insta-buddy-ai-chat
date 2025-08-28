@@ -41,51 +41,50 @@ export class HowerService {
   }
 
   static async getSentMessagesUsernames(retryCount = 0): Promise<HowerResponse> {
-    const credentials = this.getStoredCredentials();
-    
-    if (!credentials) {
-      return {
-        success: false,
-        error: 'No hay credenciales de Hower guardadas'
-      };
-    }
-
     try {
-      console.log('Intentando conectar con Hower API:', this.baseUrl);
-      console.log('Credenciales:', { username: credentials.hower_username, hasToken: !!credentials.hower_token });
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-      const response = await fetch(`${this.baseUrl}/clients/api/get-sent-messages-usernames/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        mode: 'cors',
-        body: JSON.stringify(credentials),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-      console.log('Respuesta recibida:', response.status, response.statusText);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Credenciales de Hower inválidas. Verifica tu username y token.');
-        } else if (response.status >= 500) {
-          throw new Error('Error de servidor de Hower. Inténtalo de nuevo más tarde.');
-        } else {
-          throw new Error(`Error en la API de Hower (${response.status}). Contacta soporte.`);
-        }
+      // Obtener el instagram user ID desde localStorage
+      const instagramUserData = localStorage.getItem('hower-instagram-user');
+      if (!instagramUserData) {
+        return {
+          success: false,
+          error: 'No hay usuario de Instagram autenticado'
+        };
       }
 
-      const data = await response.json();
-      console.log('Datos recibidos de Hower:', data);
+      const instagramUser = JSON.parse(instagramUserData);
+      const instagramUserId = instagramUser.instagram?.id || instagramUser.facebook?.id;
+      
+      if (!instagramUserId) {
+        return {
+          success: false,
+          error: 'No se pudo obtener el ID de Instagram'
+        };
+      }
+
+      console.log('🔄 Llamando edge function get-hower-usernames para usuario:', instagramUserId);
+
+      // Usar la edge function en lugar de llamada directa
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase.functions.invoke('get-hower-usernames', {
+        body: { instagram_user_id: instagramUserId }
+      });
+
+      if (error) {
+        console.error('❌ Error en edge function:', error);
+        throw new Error('Error al obtener datos de Hower. Verifica tu configuración.');
+      }
+
+      if (!data.success) {
+        console.error('❌ Error en respuesta:', data.error);
+        throw new Error(data.error || 'Error desconocido en Hower');
+      }
+
+      console.log('✅ Datos recibidos de edge function:', data);
       
       return {
         success: true,
-        data: data
+        data: data.data
       };
     } catch (error) {
       console.error('Error calling Hower API:', error);
