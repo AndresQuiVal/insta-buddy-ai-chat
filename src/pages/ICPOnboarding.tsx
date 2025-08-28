@@ -351,7 +351,7 @@ Responde en formato JSON exactamente así:
                       <div>
                         <h4 className="font-semibold text-foreground mb-1">Definir tu Cliente Ideal</h4>
                         <p className="text-sm text-muted-foreground font-mono">
-                          Define quién es tu cliente perfecto para encontrar prospectos similares
+                          Define tu cliente ideal para encontrar prospectos
                         </p>
                       </div>
                     </div>
@@ -363,7 +363,7 @@ Responde en formato JSON exactamente así:
                       <div>
                         <h4 className="font-semibold text-foreground mb-1">Configurar WhatsApp</h4>
                         <p className="text-sm text-muted-foreground font-mono">
-                          Recibe notificaciones de tu asistente con nuevos prospectos, prospectos pendientes, y en seguimiento por contactar!
+                          Recibe notificaciones de nuevos prospectos
                         </p>
                       </div>
                     </div>
@@ -375,7 +375,7 @@ Responde en formato JSON exactamente así:
                       <div>
                         <h4 className="font-semibold text-foreground mb-1">Deja que la I.A. haga el resto!</h4>
                         <p className="text-sm text-muted-foreground font-mono">
-                          La I.A. se encargará de que no pierdas ningún prospecto y que puedas tener todo SUPER registrado!
+                          La I.A. registra automáticamente tus prospectos
                         </p>
                       </div>
                     </div>
