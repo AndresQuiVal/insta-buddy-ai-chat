@@ -30,7 +30,7 @@ const ICPOnboarding: React.FC = () => {
     result: ''
   });
 
-  const totalSteps = 7; // pantalla bienvenida + 4 preguntas ICP + WhatsApp config + completado
+  const totalSteps = 6; // pantalla bienvenida + 4 preguntas ICP + WhatsApp config + completado
 
   // Verificar si el usuario ya tiene ICP configurado y redirigir
   useEffect(() => {
@@ -264,7 +264,7 @@ Responde en formato JSON exactamente así:
       });
 
       // Move to next step
-      setCurrentStep(7); // Go to completion step
+      setCurrentStep(6); // Go to completion step
       
     } catch (error) {
       console.error('Error saving ICP:', error);
