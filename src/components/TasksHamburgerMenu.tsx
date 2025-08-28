@@ -38,7 +38,7 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
             key={item.id}
             onClick={() => {
               if (item.id === 'config') {
-                navigate('/?tab=settings');
+                navigate('/hower-config');
               } else if (item.id === 'icp') {
                 navigate('/icp-editor');
               } else if (item.id === 'autoresponder') {
