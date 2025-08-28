@@ -64,8 +64,7 @@ const App = () => (
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
           <Route path="/prospects" element={<Prospects />} />
           <Route path="/hower-lite-onboarding" element={<HowerLiteOnboarding />} />
-          <Route path="/tasks-to-do" element={<TasksToDo />} />
-          <Route path="/tasks-to-do-2" element={<TasksToDo2 />} />
+          <Route path="/tasks-to-do" element={<TasksToDo2 />} />
           <Route path="/dream-customer-radar-guide" element={<DreamCustomerRadarGuide />} />
           <Route path="/dream-customer-radar" element={<DreamCustomerRadarGame />} />
           <Route path="/3-month-plan" element={<ThreeMonthPlan />} />
