@@ -212,23 +212,35 @@ Responde en formato JSON exactamente así:
     try {
       setSaving(true);
       
-      // Get Instagram user ID
+      // Get Instagram user ID from localStorage
       const instagramUserData = localStorage.getItem('hower-instagram-user');
       if (!instagramUserData) {
         throw new Error('No se encontró usuario de Instagram');
       }
       
       const instagramUser = JSON.parse(instagramUserData);
-      const instagramUserId = instagramUser.instagram?.id || instagramUser.facebook?.id;
+      console.log('📱 Instagram User Data:', instagramUser);
+      
+      // Try different possible ID fields
+      const instagramUserId = instagramUser.id || 
+                             instagramUser.instagram_user_id || 
+                             instagramUser.instagram?.id || 
+                             instagramUser.facebook?.id;
+      
+      console.log('🔑 Instagram User ID:', instagramUserId);
       
       if (!instagramUserId) {
+        console.error('❌ No Instagram User ID found in:', instagramUser);
         throw new Error('No se encontró ID de Instagram');
       }
 
       // Analyze ICP to get score and keywords
+      console.log('🔍 Starting ICP analysis...');
       const { score, searchKeywords } = await analyzeICP();
+      console.log('✅ Analysis complete:', { score, searchKeywords });
       
       // Save ICP to database
+      console.log('💾 Saving ICP to database...');
       const { error } = await supabase
         .from('user_icp')
         .upsert({
