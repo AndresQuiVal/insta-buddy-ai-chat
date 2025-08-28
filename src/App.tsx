@@ -34,7 +34,6 @@ import HowerAuth from "./pages/HowerAuth";
 import ICPOnboarding from "./pages/ICPOnboarding";
 import ICPEditor from "./pages/ICPEditor";
 import HowerProspector from "./pages/HowerProspector";
-import Configuracion from "./pages/Configuracion";
 
 const queryClient = new QueryClient();
 
@@ -73,7 +72,6 @@ const App = () => (
           <Route path="/icp-onboarding" element={<ICPOnboarding />} />
           <Route path="/icp-editor" element={<ICPEditor />} />
           <Route path="/hower-prospector" element={<HowerProspector />} />
-          <Route path="/configuracion" element={<Configuracion />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -15,7 +15,6 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
     { id: 'autoresponder', label: 'Autoresponder' },
     { id: 'whatsapp', label: 'Configurar WhatsApp' },
     { id: 'prospector', label: 'Prospector' },
-    { id: 'configuracion', label: 'Configuración' },
   ];
 
   return (
@@ -45,8 +44,6 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
                 navigate('/whatsapp-config');
               } else if (item.id === 'prospector') {
                 navigate('/hower-prospector');
-              } else if (item.id === 'configuracion') {
-                navigate('/configuracion');
               }
               setIsOpen(false);
             }}
