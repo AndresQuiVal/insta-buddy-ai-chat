@@ -532,57 +532,14 @@ const TasksToDo2: React.FC = () => {
     loadTaskStatusFromDB();
   }, [currentUser]);
 
-  // 🔥 Suscripción en tiempo real para actualizaciones de prospect_task_status - RESTAURADO
-  useEffect(() => {
-    if (!currentUser) return;
-
-    console.log('🔴 [REALTIME] Configurando suscripción a prospect_task_status...');
-    
-    const channel = supabase
-      .channel('prospect-task-status-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Escuchar INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: 'prospect_task_status',
-          filter: `instagram_user_id=eq.${currentUser.instagram_user_id}`
-        },
-        (payload) => {
-          console.log('🔴 [REALTIME] Cambio detectado en prospect_task_status:', payload);
-          
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const newData = payload.new;
-            if (newData && newData.is_completed) {
-              console.log(`🔴 [REALTIME] Marcando como completado: ${newData.prospect_sender_id}`);
-              setCompletedTasks(prev => ({
-                ...prev,
-                [`${newData.task_type}-${newData.prospect_sender_id}`]: true
-              }));
-            } else if (newData && !newData.is_completed) {
-              console.log(`🔴 [REALTIME] Marcando como no completado: ${newData.prospect_sender_id}`);
-              setCompletedTasks(prev => {
-                const updated = { ...prev };
-                delete updated[`${newData.task_type}-${newData.prospect_sender_id}`];
-                return updated;
-              });
-            }
-            
-            // Actualizar datos de Hower cuando se detecte actividad
-            console.log('🔄 [REALTIME] Actualizando datos de Hower por cambio detectado');
-            loadHowerUsers();
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('🔴 [REALTIME] Estado de suscripción:', status);
-      });
-
-    return () => {
-      console.log('🔴 [REALTIME] Cerrando suscripción...');  
-      supabase.removeChannel(channel);
-    };
-  }, [currentUser, loadHowerUsers]);
+  // 🚨 CULPABLE IDENTIFICADO: Suscripción Supabase Realtime bloquea renderizado en móvil
+  // TEMPORALMENTE DESHABILITADO para móvil hasta encontrar solución
+  // useEffect(() => {
+  //   if (!currentUser) return;
+  //   console.log('🔴 [REALTIME] Configurando suscripción...');
+  //   const channel = supabase.channel('prospect-task-status-changes')...
+  //   return () => supabase.removeChannel(channel);
+  // }, [currentUser, loadHowerUsers]);
 
   // Función para refrescar manualmente los datos
   const handleRefreshData = async () => {
@@ -1472,7 +1429,7 @@ const TasksToDo2: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* DEBUG LABEL - Cambio actual */}
       <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
-        🔍 TASKS-TO-DO-2 | PRUEBA FINAL: ¿Es la suscripción REALTIME el culpable?
+        🔍 TASKS-TO-DO-2 | ✅ CULPABLE CONFIRMADO: Suscripción Supabase Realtime
       </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
