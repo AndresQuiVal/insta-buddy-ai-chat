@@ -61,34 +61,34 @@ const TasksToDo2: React.FC = () => {
 
   // Validación de autenticación - sin simulación
 
-  // TEMPORALMENTE DESHABILITADO: Validación de autenticación sin redirects automáticos
-  // useEffect(() => {
-  //   console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
-  //     userLoading,
-  //     currentUser: currentUser ? currentUser.instagram_user_id : 'null',
-  //     localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
-  //   });
-  //   
-  //   // Solo mostrar mensaje informativo si no hay usuario, pero NO redirigir
-  //   if (!userLoading && !currentUser) {
-  //     console.log('ℹ️ No hay usuario autenticado - mostrando mensaje informativo');
-  //     toast({
-  //       title: "Información",
-  //       description: "Para usar esta función necesitas conectar tu cuenta de Instagram",
-  //       variant: "default"
-  //     });
-  //   }
-  //
-  //   // Solo mostrar mensaje si no hay credenciales de Hower, pero NO redirigir
-  //   if (!userLoading && currentUser && !HowerService.isAuthenticated()) {
-  //     console.log('ℹ️ No hay credenciales de Hower - mostrando mensaje informativo');
-  //     toast({
-  //       title: "Información",
-  //       description: "Para acceder al CRM necesitas autenticarte con Hower",
-  //       variant: "default"
-  //     });
-  //   }
-  // }, [currentUser, userLoading, toast]);
+  // Validación de autenticación sin redirects automáticos - RESTAURADO (es seguro)
+  useEffect(() => {
+    console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
+      userLoading,
+      currentUser: currentUser ? currentUser.instagram_user_id : 'null',
+      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
+    });
+    
+    // Solo mostrar mensaje informativo si no hay usuario, pero NO redirigir
+    if (!userLoading && !currentUser) {
+      console.log('ℹ️ No hay usuario autenticado - mostrando mensaje informativo');
+      toast({
+        title: "Información",
+        description: "Para usar esta función necesitas conectar tu cuenta de Instagram",
+        variant: "default"
+      });
+    }
+
+    // Solo mostrar mensaje si no hay credenciales de Hower, pero NO redirigir
+    if (!userLoading && currentUser && !HowerService.isAuthenticated()) {
+      console.log('ℹ️ No hay credenciales de Hower - mostrando mensaje informativo');
+      toast({
+        title: "Información",
+        description: "Para acceder al CRM necesitas autenticarte con Hower",
+        variant: "default"
+      });
+    }
+  }, [currentUser, userLoading, toast]);
 
 
   const [loading, setLoading] = useState(true);
@@ -1366,7 +1366,7 @@ const TasksToDo2: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* DEBUG LABEL - Cambio actual */}
       <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
-        🔍 TASKS-TO-DO-2 | RESTAURANDO: SEO + Configuración básica (Funciona en móvil)
+        🔍 TASKS-TO-DO-2 | RESTAURANDO: SEO + Config + Auth (sin redirects)
       </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
