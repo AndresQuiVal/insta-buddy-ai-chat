@@ -43,6 +43,15 @@ const TasksToDo: React.FC = () => {
   const { currentUser, loading: userLoading } = useInstagramUsers();
   const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
 
+  // Debug visual en pantalla para móvil
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const isMobileDevice = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  const addDebugInfo = (message: string) => {
+    console.log(message);
+    setDebugInfo(prev => [...prev.slice(-10), `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
+
   // Debug adicional para verificar la carga de prospectos
   useEffect(() => {
     console.log('🔍 [PROSPECTS-DEBUG] Estado de carga de prospectos:', {
@@ -59,27 +68,30 @@ const TasksToDo: React.FC = () => {
 
   // Debug para móvil específico
   useEffect(() => {
-    console.log('📱 [MOBILE-DEBUG] Info del dispositivo:', {
+    const deviceInfo = {
       userAgent: navigator.userAgent,
       isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
       screenWidth: window.screen.width,
       innerWidth: window.innerWidth,
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       devicePixelRatio: window.devicePixelRatio
-    });
+    };
+    addDebugInfo(`📱 MOBILE-DEBUG: ${JSON.stringify(deviceInfo)}`);
   }, []);
 
   // Validación estricta de autenticación - con debug extra para móvil
   useEffect(() => {
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
-    console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
+    const authInfo = {
       userLoading,
       currentUser: currentUser ? currentUser.instagram_user_id : 'null',
       localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente',
       isMobile,
       howerAuth: HowerService.isAuthenticated() ? 'autenticado' : 'no autenticado'
-    });
+    };
+    
+    addDebugInfo(`🔍 AUTH-DEBUG: ${JSON.stringify(authInfo)}`);
     
     // TEMPORALMENTE comentado para debug en móvil
     /*
@@ -231,11 +243,13 @@ const TasksToDo: React.FC = () => {
 
   // Validar acceso y configuración inicial - con debug para móvil
   useEffect(() => {
-    console.log('🔍 [INIT-DEBUG] Configuración inicial:', {
+    const initInfo = {
       userLoading,
       currentUser: currentUser ? 'presente' : 'ausente',
       loadingState: loading
-    });
+    };
+    
+    addDebugInfo(`🔍 INIT-DEBUG: ${JSON.stringify(initInfo)}`);
     
     if (!userLoading) {
       // TEMPORALMENTE comentado para debug
@@ -255,7 +269,7 @@ const TasksToDo: React.FC = () => {
       const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
       setMotivationalQuote(randomQuote);
       setLoading(false);
-      console.log('✅ [INIT-DEBUG] Configuración completada, loading = false');
+      addDebugInfo('✅ INIT-DEBUG: Configuración completada, loading = false');
     }
   }, [currentUser, userLoading, navigate, toast]);
 
@@ -1488,14 +1502,24 @@ const TasksToDo: React.FC = () => {
     );
   }
 
-  // Pantalla de carga para datos
+  // Pantalla de carga para datos con debug visual
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center">
+        <div className="text-center mb-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Cargando tareas...</p>
         </div>
+        
+        {/* Debug info visible solo en móvil */}
+        {isMobileDevice && debugInfo.length > 0 && (
+          <div className="bg-black/80 text-white p-4 rounded-lg max-w-sm mx-auto overflow-auto max-h-60 text-xs">
+            <h4 className="font-bold mb-2 text-green-400">DEBUG MÓVIL:</h4>
+            {debugInfo.map((info, index) => (
+              <div key={index} className="mb-1 break-words">{info}</div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
