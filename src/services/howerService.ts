@@ -77,19 +77,26 @@ export class HowerService {
           body: { instagram_user_id: instagramUserId }
         });
 
-        console.log('📊 Respuesta de edge function - data:', data, 'error:', error);
+        console.log('📊 [DEBUG] Respuesta de edge function - data:', data, 'error:', error);
 
         if (error) {
+          console.error('❌ [DEBUG] Edge function error:', error);
           throw new Error(`Edge function error: ${error.message}`);
         }
 
         if (data && data.success) {
-          console.log('✅ Datos obtenidos exitosamente via edge function');
+          console.log('✅ [DEBUG] Datos obtenidos exitosamente via edge function');
+          console.log('🔍 [DEBUG] data.data:', data.data);
           return {
             success: true,
-            data: data.data
+            data: { 
+              success: true, 
+              message: 'Datos obtenidos via edge function',
+              data: data.data 
+            }
           };
         } else {
+          console.error('❌ [DEBUG] Edge function returned unsuccessful response:', data);
           throw new Error(data?.error || 'Edge function returned unsuccessful response');
         }
 

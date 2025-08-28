@@ -130,32 +130,63 @@ const TasksToDo2: React.FC = () => {
 
     setHowerLoading(true);
     try {
+      console.log('🔄 [DEBUG] Iniciando loadHowerUsers...');
       const response = await HowerService.getSentMessagesUsernames();
       
-      console.log('🔍 Response completo:', response);
-      console.log('🔍 response.success:', response.success);
-      console.log('🔍 response.data:', response.data);
-      console.log('🔍 response.data?.data?.usernames existe:', response.data?.data?.usernames ? 'SI' : 'NO');
+      console.log('🔍 [DEBUG] Response completo:', response);
+      console.log('🔍 [DEBUG] response.success:', response.success);
+      console.log('🔍 [DEBUG] response.data:', response.data);
+      console.log('🔍 [DEBUG] response.error:', response.error);
       
       if (response.success && response.data && response.data.data && response.data.data.usernames) {
-        console.log('📊 Estructura de datos de Hower:', response.data.data);
-        console.log('📊 Total disponible:', response.data.data.total_count);
+        console.log('📊 [DEBUG] Estructura de datos de Hower:', response.data.data);
+        console.log('📊 [DEBUG] Total disponible:', response.data.data.total_count);
         
         // Usar todos los usernames sin límite
         const usernames = response.data.data.usernames;
         
         setHowerUsernames(usernames);
-        console.log('✅ Usuarios de Hower cargados:', usernames.length, 'total. Primeros 5:', usernames.slice(0, 5));
+        console.log('✅ [DEBUG] Usuarios de Hower cargados:', usernames.length, 'total. Primeros 5:', usernames.slice(0, 5));
       } else {
-        console.error('❌ Error al cargar usuarios de Hower:', response.error);
+        console.error('❌ [DEBUG] Error al cargar usuarios de Hower:', response.error);
+        console.error('❌ [DEBUG] Response completo que causó el error:', JSON.stringify(response, null, 2));
+        
+        let errorMessage = response.error || "No se pudieron cargar los datos de Hower";
+        
+        // Si el error es de credenciales inválidas, mostrar enlace a configuración
+        if (response.error && response.error.includes('inválidas')) {
+          errorMessage = response.error;
+          toast({
+            title: "Error de Credenciales",
+            description: (
+              <div>
+                {errorMessage}
+                <br />
+                <a 
+                  href="/hower-config" 
+                  className="text-blue-600 hover:text-blue-800 underline font-medium"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.href = '/hower-config';
+                  }}
+                >
+                  Ir a Configuración
+                </a>
+              </div>
+            ),
+            variant: "destructive"
+          });
+          return;
+        }
+        
         toast({
           title: "Error al cargar datos",
-          description: response.error || "No se pudieron cargar los datos de Hower",
+          description: errorMessage,
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('❌ Error en loadHowerUsers:', error);
+      console.error('❌ [DEBUG] Error en loadHowerUsers:', error);
       toast({
         title: "Error de conexión",
         description: "No se pudo conectar con los servidores de Hower",
