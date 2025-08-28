@@ -252,6 +252,8 @@ Responde en formato JSON exactamente así:
           search_keywords: searchKeywords,
           bullseye_score: score,
           is_complete: score === 4
+        }, {
+          onConflict: 'instagram_user_id'
         });
 
       if (error) throw error;
