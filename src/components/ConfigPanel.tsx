@@ -2,18 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Bot, Target, Clock, Wand2 } from 'lucide-react';
+import { Settings, Bot, Target, Clock, Wand2, BookOpen } from 'lucide-react';
 import PersonalityEditor from './PersonalityEditor';
 import IdealClientTraits from './IdealClientTraits';
 import AutoResetConfig from './AutoResetConfig';
 import OpenAIKeyManager from './OpenAIKeyManager';
+import HowerConfig from './HowerConfig';
 import { MessageGenerator } from './MessageGenerator';
 
 const ConfigPanel = () => {
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="traits" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs defaultValue="hower" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="hower" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Hower
+          </TabsTrigger>
           <TabsTrigger value="traits" className="flex items-center gap-2">
             <Target className="w-4 h-4" />
             Cliente Ideal
@@ -35,6 +40,10 @@ const ConfigPanel = () => {
             API Keys
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="hower" className="space-y-4">
+          <HowerConfig />
+        </TabsContent>
 
         <TabsContent value="traits" className="space-y-4">
           <Card>

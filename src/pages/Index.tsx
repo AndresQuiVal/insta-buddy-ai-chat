@@ -253,9 +253,7 @@ const Index = () => {
             >
               <span className="font-bold text-purple-100">Volver a</span> CRM
             </Button>
-            <div className="hidden">
-              <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
-            </div>
+            <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
         </div>
 
