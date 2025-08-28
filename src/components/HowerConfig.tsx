@@ -134,48 +134,30 @@ const HowerConfig = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header estilo notebook */}
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 p-6 rounded-r-lg shadow-sm">
-        <div className="flex items-start gap-4">
-          <div className="bg-amber-100 p-3 rounded-full">
-            <BookOpen className="w-6 h-6 text-amber-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-amber-800 mb-2">Configuración de Hower</h2>
-            <p className="text-amber-700 leading-relaxed">
-              Conecta tu cuenta de Hower Software para sincronizar automáticamente los usuarios 
-              que han recibido mensajes. Esto te permitirá obtener estadísticas precisas y 
-              gestionar mejor tus prospectos.
-            </p>
-          </div>
-        </div>
+    <div className="max-w-md mx-auto space-y-4">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-semibold mb-2">Configuración de Hower</h2>
+        <p className="text-sm text-muted-foreground">
+          Conecta tu cuenta para sincronizar datos
+        </p>
       </div>
 
-      {/* Status card */}
       {isConnected ? (
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              Conexión Establecida
-            </CardTitle>
-            <CardDescription className="text-green-700">
-              Tu cuenta de Hower está conectada correctamente
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Usuario:</Label>
-                <p className="text-lg font-mono text-gray-800">{username}</p>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <div className="flex justify-center">
+                <CheckCircle className="w-12 h-12 text-green-500" />
               </div>
-              <div className="flex gap-2">
+              <div>
+                <p className="font-medium">Conectado como:</p>
+                <p className="text-sm text-muted-foreground font-mono">{username}</p>
+              </div>
+              <div className="flex gap-2 justify-center">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={handleEditCredentials}
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
                 >
                   Editar
                 </Button>
@@ -183,7 +165,7 @@ const HowerConfig = () => {
                   variant="outline" 
                   size="sm"
                   onClick={handleDisconnect}
-                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700"
                 >
                   Desconectar
                 </Button>
@@ -192,83 +174,49 @@ const HowerConfig = () => {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <AlertCircle className="w-5 h-5 text-orange-600" />
-              Configurar Conexión
-            </CardTitle>
-            <CardDescription className="text-orange-700">
-              Ingresa tus credenciales de Hower Software para establecer la conexión
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username" className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Usuario de Hower
-                </Label>
+                <Label htmlFor="username">Usuario</Label>
                 <Input
                   id="username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Tu usuario de Hower Software"
-                  className="font-mono"
+                  placeholder="Tu usuario de Hower"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="token" className="flex items-center gap-2">
-                  <Key className="w-4 h-4" />
-                  Token/Contraseña
-                </Label>
+                <Label htmlFor="token">Token</Label>
                 <Input
                   id="token"
                   type="password"
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
-                  placeholder="Tu token o contraseña de Hower"
-                  className="font-mono"
+                  placeholder="Tu token de Hower"
                 />
               </div>
-            </div>
 
-            <Button 
-              onClick={handleSave}
-              disabled={isLoading || !username.trim() || !token.trim()}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
-                  Conectando...
-                </div>
-              ) : (
-                'Guardar y Conectar'
-              )}
-            </Button>
+              <Button 
+                onClick={handleSave}
+                disabled={isLoading || !username.trim() || !token.trim()}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
+                    Conectando...
+                  </div>
+                ) : (
+                  'Conectar'
+                )}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
-
-      {/* Información adicional */}
-      <Alert className="border-blue-200 bg-blue-50">
-        <AlertCircle className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-800">
-          <strong>¿Dónde encontrar mis credenciales?</strong>
-          <br />
-          Puedes obtener tus credenciales de Hower Software desde tu panel de control. 
-          Si no tienes acceso, contacta con el soporte de Hower.
-          <Button variant="link" className="h-auto p-0 ml-2 text-blue-600" asChild>
-            <a href="https://howersoftware.io" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-3 h-3 mr-1" />
-              Ir a Hower Software
-            </a>
-          </Button>
-        </AlertDescription>
-      </Alert>
     </div>
   );
 };
