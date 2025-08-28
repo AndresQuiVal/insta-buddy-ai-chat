@@ -231,54 +231,21 @@ const TasksToDo2: React.FC = () => {
     }
   }, [currentUser]);
 
-  // Función para cargar estadísticas usando GROK
+  // TEMPORALMENTE DESHABILITADO: Estadísticas GROK
+  // const loadStats = useCallback(async () => {
+  //   if (!currentUser?.instagram_user_id) return;
+  //   ...múltiples consultas...
+  // }, [currentUser?.instagram_user_id]);
   const loadStats = useCallback(async () => {
-    if (!currentUser?.instagram_user_id) return;
+    console.log('📊 [GROK] Estadísticas deshabilitadas temporalmente');
+  }, []);
 
-    try {
-      // Usar las funciones GROK para obtener estadísticas
-      const [todayData, yesterdayData, weekData] = await Promise.all([
-        supabase.rpc('grok_get_stats', {
-          p_instagram_user_id: currentUser.instagram_user_id,
-          p_period: 'today'
-        }),
-        supabase.rpc('grok_get_stats', {
-          p_instagram_user_id: currentUser.instagram_user_id,
-          p_period: 'yesterday'
-        }),
-        supabase.rpc('grok_get_stats', {
-          p_instagram_user_id: currentUser.instagram_user_id,
-          p_period: 'week'
-        })
-      ]);
-
-      console.log('📊 [GROK] Estadísticas cargadas:', {
-        today: todayData.data?.[0],
-        yesterday: yesterdayData.data?.[0],
-        week: weekData.data?.[0]
-      });
-
-      setStats({
-        today: {
-          abiertas: todayData.data?.[0]?.abiertas || 0,
-          seguimientos: todayData.data?.[0]?.seguimientos || 0,
-          agendados: todayData.data?.[0]?.agendados || 0
-        },
-        yesterday: {
-          abiertas: yesterdayData.data?.[0]?.abiertas || 0,
-          seguimientos: yesterdayData.data?.[0]?.seguimientos || 0,
-          agendados: yesterdayData.data?.[0]?.agendados || 0
-        },
-        week: {
-          abiertas: weekData.data?.[0]?.abiertas || 0,
-          seguimientos: weekData.data?.[0]?.seguimientos || 0,
-          agendados: weekData.data?.[0]?.agendados || 0
-        }
-      });
-    } catch (error) {
-      console.error('Error cargando estadísticas GROK:', error);
-    }
-  }, [currentUser?.instagram_user_id]);
+  // Cargar estadísticas - DESHABILITADO
+  // useEffect(() => {
+  //   if (!userLoading && currentUser && HowerService.isAuthenticated()) {
+  //     loadStats();
+  //   }
+  // }, [currentUser, userLoading, loadStats]);
 
   // Función para compartir estadísticas como imagen
   const shareStats = async () => {
@@ -476,12 +443,12 @@ const TasksToDo2: React.FC = () => {
     }
   };
 
-  // Cargar estadísticas cuando hay usuario
-  useEffect(() => {
-    if (currentUser) {
-      loadStats();
-    }
-  }, [currentUser, loadStats]);
+  // Cargar estadísticas cuando hay usuario - DESHABILITADO
+  // useEffect(() => {
+  //   if (currentUser) {
+  //     loadStats();
+  //   }
+  // }, [currentUser, loadStats]);
 
   // ✅ DESHABILITADO - El webhook ya maneja perfectamente el estado de las tareas
   // No necesitamos sincronizar manualmente porque el webhook de Instagram
@@ -1469,7 +1436,7 @@ const TasksToDo2: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* DEBUG LABEL - Cambio actual */}
       <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
-        🔍 TASKS-TO-DO-2 | CAMBIO: Sin useProspects hook (Sospechoso #1)
+        🔍 TASKS-TO-DO-2 | CAMBIO: Sin useProspects + Sin estadísticas GROK (Sospechoso #2)
       </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
