@@ -11,9 +11,8 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ activeTab, onTabChange })
   const [isOpen, setIsOpen] = useState(false);
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    
-    { id: 'prospect', label: 'Prospecta', icon: Users },
+    { id: 'autoresponder', label: 'Autorespondedor', icon: MessageCircle },
+    { id: 'prospecta', label: 'Prospecta', icon: Users },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
