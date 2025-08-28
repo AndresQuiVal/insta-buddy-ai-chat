@@ -196,26 +196,26 @@ const WhatsAppConfigStep: React.FC<WhatsAppConfigStepProps> = ({ onBack, onNext,
 
   return (
     <Card className="shadow-lg">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-          <Phone className="h-8 w-8 text-green-600" />
+      <CardHeader className="text-center px-4 py-6">
+        <div className="mx-auto mb-4 w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center">
+          <Phone className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
         </div>
-        <CardTitle className="text-2xl font-bold">
+        <CardTitle className="text-xl sm:text-2xl font-bold px-2">
           Configura notificaciones WhatsApp
         </CardTitle>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm px-2">
           Nunca más olvides hacer seguimiento a tus prospectos
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
         {/* WhatsApp Number */}
         <div>
           <Label htmlFor="whatsapp-number" className="text-sm font-medium mb-2 block">
             📞 Número de WhatsApp
           </Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Select value={countryCode} onValueChange={setCountryCode}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-full sm:w-32">
                 <SelectValue placeholder="País" />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-auto">
@@ -246,7 +246,7 @@ const WhatsAppConfigStep: React.FC<WhatsAppConfigStepProps> = ({ onBack, onNext,
             🌍 Zona Horaria
           </Label>
           <Select value={timezone} onValueChange={setTimezone}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecciona tu zona horaria" />
             </SelectTrigger>
             <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-auto">
@@ -269,10 +269,10 @@ const WhatsAppConfigStep: React.FC<WhatsAppConfigStepProps> = ({ onBack, onNext,
           <Label className="text-sm font-medium mb-3 block">
             📅 Horarios de notificación
           </Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-3 sm:space-y-0">
             {Object.entries(weekSchedule).map(([day, config]) => (
-              <div key={day} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center space-x-3">
+              <div key={day} className="flex items-center justify-between p-2 sm:p-3 border rounded-lg">
+                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                   <input
                     type="checkbox"
                     id={day}
@@ -281,9 +281,9 @@ const WhatsAppConfigStep: React.FC<WhatsAppConfigStepProps> = ({ onBack, onNext,
                       ...prev,
                       [day]: { ...prev[day as keyof typeof prev], enabled: e.target.checked }
                     }))}
-                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded flex-shrink-0"
                   />
-                  <label htmlFor={day} className="text-sm font-medium capitalize">
+                  <label htmlFor={day} className="text-xs sm:text-sm font-medium truncate">
                     {day === 'monday' ? 'Lunes' :
                      day === 'tuesday' ? 'Martes' :
                      day === 'wednesday' ? 'Miércoles' :
@@ -300,7 +300,7 @@ const WhatsAppConfigStep: React.FC<WhatsAppConfigStepProps> = ({ onBack, onNext,
                     [day]: { ...prev[day as keyof typeof prev], time: e.target.value }
                   }))}
                   disabled={!config.enabled}
-                  className="w-20 text-xs"
+                  className="w-16 sm:w-20 text-xs flex-shrink-0"
                 />
               </div>
             ))}
@@ -308,38 +308,41 @@ const WhatsAppConfigStep: React.FC<WhatsAppConfigStepProps> = ({ onBack, onNext,
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-between pt-4">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4">
           <Button
             onClick={onBack}
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2 order-2 sm:order-1"
           >
             <ArrowLeft className="h-4 w-4" />
             Anterior
           </Button>
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 order-1 sm:order-2">
             <Button
               onClick={handleSkip}
               variant="ghost"
               disabled={saving || loading}
+              className="text-sm"
             >
               Saltar por ahora
             </Button>
             <Button
               onClick={handleSaveWhatsApp}
               disabled={saving || loading}
-              className="flex items-center gap-2"
+              className="flex items-center justify-center gap-2 text-sm"
             >
               {saving || loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Guardando...
+                  <span className="hidden sm:inline">Guardando...</span>
+                  <span className="sm:hidden">Guardando</span>
                 </>
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4" />
-                  Configurar y Continuar
+                  <span className="hidden sm:inline">Configurar y Continuar</span>
+                  <span className="sm:hidden">Configurar</span>
                 </>
               )}
             </Button>
