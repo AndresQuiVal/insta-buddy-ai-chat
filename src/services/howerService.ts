@@ -44,7 +44,10 @@ export class HowerService {
     try {
       // Obtener el instagram user ID desde localStorage
       const instagramUserData = localStorage.getItem('hower-instagram-user');
+      console.log('📱 Instagram user data from localStorage:', instagramUserData ? 'found' : 'not found');
+      
       if (!instagramUserData) {
+        console.error('❌ No hay usuario de Instagram en localStorage');
         return {
           success: false,
           error: 'No hay usuario de Instagram autenticado'
@@ -54,38 +57,137 @@ export class HowerService {
       const instagramUser = JSON.parse(instagramUserData);
       const instagramUserId = instagramUser.instagram?.id || instagramUser.facebook?.id;
       
+      console.log('🆔 Instagram user ID obtenido:', instagramUserId);
+      
       if (!instagramUserId) {
+        console.error('❌ No se pudo obtener el ID de Instagram del objeto:', instagramUser);
         return {
           success: false,
           error: 'No se pudo obtener el ID de Instagram'
         };
       }
 
-      console.log('🔄 Llamando edge function get-hower-usernames para usuario:', instagramUserId);
+      console.log('🔄 Intentando obtener datos de Hower para usuario:', instagramUserId);
 
-      // Usar la edge function en lugar de llamada directa
-      const { supabase } = await import('@/integrations/supabase/client');
-      
-      const { data, error } = await supabase.functions.invoke('get-hower-usernames', {
-        body: { instagram_user_id: instagramUserId }
-      });
+      // Primero intentar con la edge function (base de datos)
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        
+        const { data, error } = await supabase.functions.invoke('get-hower-usernames', {
+          body: { instagram_user_id: instagramUserId }
+        });
 
-      if (error) {
-        console.error('❌ Error en edge function:', error);
-        throw new Error('Error al obtener datos de Hower. Verifica tu configuración.');
+        console.log('📊 Respuesta de edge function - data:', data, 'error:', error);
+
+        if (error) {
+          throw new Error(`Edge function error: ${error.message}`);
+        }
+
+        if (data && data.success) {
+          console.log('✅ Datos obtenidos exitosamente via edge function');
+          return {
+            success: true,
+            data: data.data
+          };
+        } else {
+          throw new Error(data?.error || 'Edge function returned unsuccessful response');
+        }
+
+      } catch (edgeFunctionError) {
+        console.log('⚠️ Edge function falló, intentando método directo:', edgeFunctionError);
+
+        // FALLBACK: Usar credenciales de localStorage y llamada directa
+        const localCredentials = this.getStoredCredentials();
+        
+        if (!localCredentials) {
+          console.error('❌ Tampoco hay credenciales en localStorage');
+          return {
+            success: false,
+            error: 'No hay credenciales de Hower disponibles. Ve a configuración para agregarlas.'
+          };
+        }
+
+        console.log('🔄 Usando credenciales de localStorage como fallback:', {
+          username: localCredentials.hower_username,
+          hasToken: !!localCredentials.hower_token
+        });
+
+        // Migrar credenciales a la base de datos para la próxima vez
+        try {
+          const { supabase } = await import('@/integrations/supabase/client');
+          await supabase
+            .from('instagram_users')
+            .update({
+              hower_username: localCredentials.hower_username,
+              hower_token: localCredentials.hower_token
+            })
+            .eq('instagram_user_id', instagramUserId);
+          console.log('✅ Credenciales migradas a la base de datos');
+        } catch (migrationError) {
+          console.warn('⚠️ No se pudieron migrar las credenciales:', migrationError);
+        }
+
+        // Llamada directa a Hower API
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        try {
+          const response = await fetch(`${this.baseUrl}/clients/api/get-sent-messages-usernames/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            mode: 'cors',
+            body: JSON.stringify(localCredentials),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+          console.log('🌐 Respuesta directa de Hower API:', response.status, response.statusText);
+
+          if (!response.ok) {
+            if (response.status === 401) {
+              throw new Error('Credenciales de Hower inválidas. Verifica tu username y token en configuración.');
+            } else if (response.status >= 500) {
+              throw new Error('Error de servidor de Hower. Inténtalo de nuevo más tarde.');
+            } else {
+              throw new Error(`Error en la API de Hower (${response.status}). Contacta soporte.`);
+            }
+          }
+
+          const howerData = await response.json();
+          console.log('✅ Datos obtenidos exitosamente via API directa:', {
+            success: howerData.success,
+            usernamesCount: howerData.data?.usernames?.length || 0
+          });
+          
+          return {
+            success: true,
+            data: howerData
+          };
+
+        } catch (directApiError) {
+          clearTimeout(timeoutId);
+          console.error('❌ Error en API directa:', directApiError);
+          
+          if (directApiError instanceof Error) {
+            if (directApiError.name === 'AbortError') {
+              throw new Error('Tiempo de conexión agotado. Verifica tu conexión a internet e inténtalo de nuevo.');
+            } else if (directApiError.message.includes('Failed to fetch') || directApiError.message.includes('Network Error')) {
+              if (retryCount < 1) {
+                console.log('🔄 Reintentando conexión con Hower...');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                return this.getSentMessagesUsernames(retryCount + 1);
+              }
+              throw new Error('Error de conexión. No se pudo conectar con los servidores de Hower. Verifica que www.howersoftware.io esté disponible.');
+            }
+            throw directApiError;
+          }
+          
+          throw new Error('Error desconocido al conectar con Hower');
+        }
       }
 
-      if (!data.success) {
-        console.error('❌ Error en respuesta:', data.error);
-        throw new Error(data.error || 'Error desconocido en Hower');
-      }
-
-      console.log('✅ Datos recibidos de edge function:', data);
-      
-      return {
-        success: true,
-        data: data.data
-      };
     } catch (error) {
       console.error('Error calling Hower API:', error);
       console.error('Error details:', {
