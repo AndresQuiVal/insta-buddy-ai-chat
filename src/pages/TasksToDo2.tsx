@@ -41,7 +41,11 @@ const TasksToDo2: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { currentUser, loading: userLoading } = useInstagramUsers();
-  const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
+  // TEMPORALMENTE DESHABILITADO: useProspects hook
+  // const { prospects: realProspects, loading: prospectsLoading, refetch } = useProspects(currentUser?.instagram_user_id);
+  const realProspects: any[] = [];
+  const prospectsLoading = false;
+  const refetch = () => {};
 
   // Debug adicional para verificar la carga de prospectos
   useEffect(() => {
