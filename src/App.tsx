@@ -23,6 +23,7 @@ import AdminTable from "./pages/AdminTable";
 import Analytics from "./pages/Analytics";
 import Prospects from "./pages/Prospects";
 import TasksToDo from "./pages/TasksToDo";
+import TasksToDo2 from "./pages/TasksToDo2";
 import HowerLiteOnboarding from "./pages/HowerLiteOnboarding";
 import DreamCustomerRadarGuide from "./pages/DreamCustomerRadarGuide";
 import DreamCustomerRadarGame from "./pages/DreamCustomerRadarGame";
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/prospects" element={<Prospects />} />
           <Route path="/hower-lite-onboarding" element={<HowerLiteOnboarding />} />
           <Route path="/tasks-to-do" element={<TasksToDo />} />
+          <Route path="/tasks-to-do-2" element={<TasksToDo2 />} />
           <Route path="/dream-customer-radar-guide" element={<DreamCustomerRadarGuide />} />
           <Route path="/dream-customer-radar" element={<DreamCustomerRadarGame />} />
           <Route path="/3-month-plan" element={<ThreeMonthPlan />} />
