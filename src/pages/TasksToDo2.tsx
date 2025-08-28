@@ -168,10 +168,71 @@ const TasksToDo2: React.FC = () => {
 
   // Cargar datos de Hower al inicializar - RESTAURADO
   useEffect(() => {
-    if (!userLoading && currentUser && HowerService.isAuthenticated()) {
-      loadHowerUsers();
+    console.log('🔍 Verificando condiciones para cargar Hower:', {
+      userLoading,
+      hasCurrentUser: !!currentUser,
+      isHowerAuthenticated: HowerService.isAuthenticated()
+    });
+
+    if (!userLoading && currentUser) {
+      console.log('✅ Usuario disponible, verificando autenticación de Hower...');
+      
+      if (HowerService.isAuthenticated()) {
+        console.log('🔑 Credenciales de Hower encontradas, cargando usuarios...');
+        loadHowerUsers();
+      } else {
+        console.log('⚠️ No hay credenciales de Hower disponibles');
+        // Verificar si hay credenciales en la base de datos
+        checkDatabaseCredentials();
+      }
     }
   }, [currentUser, userLoading, loadHowerUsers]);
+
+  // Nueva función para verificar credenciales en la base de datos
+  const checkDatabaseCredentials = async () => {
+    try {
+      const instagramUserData = localStorage.getItem('hower-instagram-user');
+      if (!instagramUserData) {
+        console.log('❌ No hay datos de usuario de Instagram en localStorage');
+        return;
+      }
+
+      const instagramUser = JSON.parse(instagramUserData);
+      const instagramUserId = instagramUser.instagram?.id || instagramUser.facebook?.id;
+      
+      if (!instagramUserId) {
+        console.log('❌ No se pudo obtener ID de Instagram');
+        return;
+      }
+
+      console.log('🔍 Verificando credenciales en BD para usuario:', instagramUserId);
+
+      const { data: userData, error } = await supabase
+        .from('instagram_users')
+        .select('hower_username, hower_token')
+        .eq('instagram_user_id', instagramUserId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ Error verificando credenciales en BD:', error);
+        return;
+      }
+
+      if (userData && userData.hower_username && userData.hower_token) {
+        console.log('✅ Credenciales encontradas en BD, migrando a localStorage...');
+        // Migrar credenciales a localStorage
+        localStorage.setItem('hower_username', userData.hower_username);
+        localStorage.setItem('hower_token', userData.hower_token);
+        
+        // Ahora cargar los usuarios
+        loadHowerUsers();
+      } else {
+        console.log('⚠️ No hay credenciales en BD tampoco');
+      }
+    } catch (error) {
+      console.error('❌ Error en checkDatabaseCredentials:', error);
+    }
+  };
 
   // Estado para estadísticas GROK
   const [stats, setStats] = useState({
