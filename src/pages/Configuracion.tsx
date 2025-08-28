@@ -142,7 +142,7 @@ const Configuracion = () => {
             
             <div className="ml-4 sm:ml-6 space-y-8">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Datos del Perfil</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Usuario y Token de Hower</h2>
                 <p className="text-gray-600">Configura tu información de usuario de la plataforma</p>
               </div>
 
