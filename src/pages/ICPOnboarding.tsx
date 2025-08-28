@@ -483,66 +483,54 @@ Responde en formato JSON exactamente así:
 
         {/* Completion Step */}
         {currentStep === 6 && (
-          <div className="relative">
-            <div 
-              className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8 text-center"
-              style={{
-                borderTopColor: '#7a60ff',
-                backgroundImage: `
-                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
-                  linear-gradient(#f9fafb 0%, #ffffff 100%)
-                `,
-                backgroundSize: '24px 1px, 100% 100%',
-                backgroundPosition: '0 60px, 0 0'
-              }}
-            >
-              {/* Spiral binding holes */}
-              <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
-                {Array.from({length: 10}).map((_, i) => (
-                  <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
-                ))}
-              </div>
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="w-full max-w-md">
+              <Card className="shadow-xl border-t-4 border-primary">
+                <CardContent className="pt-8 pb-8 px-6 text-center space-y-6">
+                  {/* Success Icon */}
+                  <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-12 w-12 text-green-600" />
+                  </div>
+                  
+                  {/* Title and Description */}
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-bold text-green-600">
+                      ¡A prospectar!
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Tu cliente ideal ha sido definido y tu configuración está lista.
+                    </p>
+                  </div>
 
-              <div className="ml-4 sm:ml-6 pt-8 space-y-6 px-4 sm:px-6">
-                <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-success/20 to-success/10 rounded-full flex items-center justify-center border border-success/20">
-                  <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-success" />
-                </div>
-                
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-success mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                    ¡A prospectar!
-                  </h2>
-                  <p className="text-muted-foreground text-base sm:text-lg font-mono">
-                    Tu cliente ideal ha sido definido y tu configuración está lista.
-                  </p>
-                </div>
+                  {/* Next Steps */}
+                  <div className="bg-primary/5 p-4 rounded-lg border border-primary/10">
+                    <h3 className="font-semibold mb-3 text-primary">¿Qué sigue?</h3>
+                    <ul className="text-sm space-y-2 text-left">
+                      <li className="flex items-center gap-2">
+                        <Gift className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span>Accede a tu dashboard</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span>Edita tu ICP cuando quieras</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span>Recibe notificaciones automáticas</span>
+                      </li>
+                    </ul>
+                  </div>
 
-                <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 rounded-lg border border-primary/10">
-                  <h3 className="font-semibold mb-3 text-primary font-mono">¿Qué sigue?</h3>
-                  <ul className="text-sm space-y-2 text-left max-w-md mx-auto font-mono">
-                    <li className="flex items-center gap-2">
-                      <Gift className="h-4 w-4 text-primary flex-shrink-0" />
-                      <span>Accede a tu dashboard de prospección</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-primary flex-shrink-0" />
-                      <span>Podrás editar tu ICP cuando quieras</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary flex-shrink-0" />
-                      <span>Recibe notificaciones de WhatsApp automáticas</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <Button
-                  onClick={handleFinish}
-                  size="lg"
-                  className="text-lg px-8 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg font-mono"
-                >
-                  Ir al Dashboard
-                </Button>
-              </div>
+                  {/* Action Button */}
+                  <Button
+                    onClick={handleFinish}
+                    size="lg"
+                    className="w-full text-lg"
+                  >
+                    Ir al Dashboard
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}
