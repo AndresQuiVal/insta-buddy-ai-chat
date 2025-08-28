@@ -57,9 +57,11 @@ const TasksToDo: React.FC = () => {
 
   // Validación de autenticación - sin simulación
 
-  // Validación estricta de autenticación - CON DEBUG DETALLADO
+  // TEMPORAL: Sin redirects, solo mostrar estado en pantalla
+  const [debugInfo, setDebugInfo] = useState('');
+  
   useEffect(() => {
-    console.log('🔍 [AUTH-DEBUG] Estado detallado de autenticación:', {
+    const info = {
       userLoading,
       currentUser: currentUser ? {
         id: currentUser.id,
@@ -69,36 +71,24 @@ const TasksToDo: React.FC = () => {
       localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente',
       howerAuthenticated: HowerService.isAuthenticated(),
       howerCredentials: {
-        hasUsername: !!localStorage.getItem('hower-username'),
-        hasPassword: !!localStorage.getItem('hower-password')
+        hasUsername: !!localStorage.getItem('hower_username'),
+        hasPassword: !!localStorage.getItem('hower_token')
       }
-    });
+    };
     
-    // DEBUG: Verificar si se está ejecutando el redirect
+    setDebugInfo(JSON.stringify(info, null, 2));
+    
+    // COMENTADO TEMPORALMENTE - NO REDIRECTS
+    /*
     if (!userLoading && !currentUser) {
-      console.log('❌ REDIRECT TRIGGER: No hay usuario autenticado, redirigiendo a home');
-      toast({
-        title: "Acceso restringido",
-        description: "Necesitas conectar tu cuenta de Instagram para acceder",
-        variant: "destructive"
-      });
       navigate('/', { replace: true });
       return;
     }
 
-    // DEBUG: Verificar autenticación de Hower
     if (!userLoading && currentUser && !HowerService.isAuthenticated()) {
-      console.log('❌ REDIRECT TRIGGER: No hay credenciales de Hower, redirigiendo a auth');
-      console.log('🔍 HowerService.isAuthenticated():', HowerService.isAuthenticated());
-      toast({
-        title: "Credenciales requeridas",
-        description: "Necesitas autenticarte con Hower para acceder al CRM",
-        variant: "destructive"
-      });
       navigate('/hower-auth', { replace: true });
     }
-    
-    console.log('✅ [AUTH-DEBUG] Validaciones pasadas, componente debe renderizar');
+    */
   }, [currentUser, userLoading, navigate, toast]);
 
 
@@ -1460,33 +1450,52 @@ const TasksToDo: React.FC = () => {
     );
   };
 
-  // Pantalla de carga mientras se valida el usuario - CON DEBUG
-  if (userLoading) {
-    console.log('🔄 [RENDER-DEBUG] Mostrando pantalla de carga - userLoading:', userLoading);
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Validando acceso...</p>
+  // TEMPORAL: Mostrar info de debug en pantalla
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+      <div className="max-w-4xl mx-auto">
+        
+        {/* DEBUG INFO VISIBLE */}
+        <div className="bg-white rounded-lg p-4 mb-4 border-2 border-red-500">
+          <h2 className="text-lg font-bold mb-2">🔍 DEBUG INFO (temporal)</h2>
+          <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">
+            {debugInfo}
+          </pre>
+          <div className="mt-2 space-y-1 text-sm">
+            <div>userLoading: {String(userLoading)}</div>
+            <div>loading: {String(loading)}</div>
+            <div>currentUser exists: {String(!!currentUser)}</div>
+            <div>HowerService.isAuthenticated(): {String(HowerService.isAuthenticated())}</div>
+          </div>
         </div>
-      </div>
-    );
-  }
 
-  // Pantalla de carga para datos - CON DEBUG
-  if (loading) {
-    console.log('🔄 [RENDER-DEBUG] Mostrando pantalla de carga - loading:', loading);
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Cargando tareas...</p>
-        </div>
-      </div>
-    );
-  }
+        {userLoading && (
+          <div className="bg-yellow-100 p-4 rounded-lg mb-4">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Validando acceso...</p>
+            </div>
+          </div>
+        )}
 
-  console.log('🎯 [RENDER-DEBUG] Renderizando componente principal TasksToDo');
+        {loading && (
+          <div className="bg-blue-100 p-4 rounded-lg mb-4">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Cargando tareas...</p>
+            </div>
+          </div>
+        )}
+
+        {!userLoading && !loading && (
+          <div className="bg-green-100 p-4 rounded-lg">
+            <p className="text-green-800">✅ Debería mostrar el componente principal aquí</p>
+            <p className="text-sm mt-2">Si ves esto, el problema está en otra parte del renderizado</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
