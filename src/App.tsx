@@ -32,6 +32,7 @@ import WelcomeDashboard from "./pages/WelcomeDashboard";
 import WhatsAppConfig from "./pages/WhatsAppConfig";
 import HowerPresentation from "./pages/HowerPresentation";
 import HowerAuth from "./pages/HowerAuth";
+import HowerConfigPage from "./pages/HowerConfig";
 import ICPOnboarding from "./pages/ICPOnboarding";
 import ICPEditor from "./pages/ICPEditor";
 import HowerProspector from "./pages/HowerProspector";
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/welcome" element={<WelcomeDashboard />} />
           <Route path="/hower-auth" element={<HowerAuth />} />
+          <Route path="/hower-config" element={<HowerConfigPage />} />
           <Route path="/autoresponder-onboarding" element={<AutoresponderOnboarding />} />
             <Route path="/guides" element={<Guides />} />
             <Route path="/settings" element={<Settings />} />
