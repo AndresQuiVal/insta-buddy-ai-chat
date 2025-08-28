@@ -1372,7 +1372,7 @@ const TasksToDo: React.FC = () => {
                             }
                             
                             return dmProspects.length === 0 ? (
-                              <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                              <div className="text-center py-6 sm:py-8 text-muted-foreground" style={{ display: 'none' }}>
                                 <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
                                 <p className="text-sm sm:text-base">¡Excelente! No hay DM's en seguimiento.</p>
                               </div>
@@ -1994,7 +1994,7 @@ const TasksToDo: React.FC = () => {
                         
                         <TabsContent value="dms" className="space-y-4 max-h-96 overflow-y-auto pr-2">
                           {prospectsClassification.pendingResponses.dm.length === 0 ? (
-                            <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                            <div className="text-center py-6 sm:py-8 text-muted-foreground" style={{ display: 'none' }}>
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
                               <p className="text-sm sm:text-base">¡Excelente! No hay DM's pendientes.</p>
                             </div>
