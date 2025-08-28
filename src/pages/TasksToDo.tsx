@@ -57,14 +57,32 @@ const TasksToDo: React.FC = () => {
 
   // Validación de autenticación - sin simulación
 
-  // Validación estricta de autenticación
+  // Debug para móvil específico
   useEffect(() => {
+    console.log('📱 [MOBILE-DEBUG] Info del dispositivo:', {
+      userAgent: navigator.userAgent,
+      isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+      screenWidth: window.screen.width,
+      innerWidth: window.innerWidth,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      devicePixelRatio: window.devicePixelRatio
+    });
+  }, []);
+
+  // Validación estricta de autenticación - con debug extra para móvil
+  useEffect(() => {
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
       userLoading,
       currentUser: currentUser ? currentUser.instagram_user_id : 'null',
-      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
+      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente',
+      isMobile,
+      howerAuth: HowerService.isAuthenticated() ? 'autenticado' : 'no autenticado'
     });
     
+    // TEMPORALMENTE comentado para debug en móvil
+    /*
     if (!userLoading && !currentUser) {
       console.log('❌ No hay usuario autenticado, redirigiendo a home');
       toast({
@@ -86,6 +104,7 @@ const TasksToDo: React.FC = () => {
       });
       navigate('/hower-auth', { replace: true });
     }
+    */
   }, [currentUser, userLoading, navigate, toast]);
 
 
@@ -210,9 +229,17 @@ const TasksToDo: React.FC = () => {
     }
   }, []);
 
-  // Validar acceso y configuración inicial
+  // Validar acceso y configuración inicial - con debug para móvil
   useEffect(() => {
+    console.log('🔍 [INIT-DEBUG] Configuración inicial:', {
+      userLoading,
+      currentUser: currentUser ? 'presente' : 'ausente',
+      loadingState: loading
+    });
+    
     if (!userLoading) {
+      // TEMPORALMENTE comentado para debug
+      /*
       if (!currentUser) {
         toast({
           title: "Acceso restringido",
@@ -222,11 +249,13 @@ const TasksToDo: React.FC = () => {
         navigate('/');
         return;
       }
+      */
       
       // Usuario autenticado, generar frase motivacional
       const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
       setMotivationalQuote(randomQuote);
       setLoading(false);
+      console.log('✅ [INIT-DEBUG] Configuración completada, loading = false');
     }
   }, [currentUser, userLoading, navigate, toast]);
 
