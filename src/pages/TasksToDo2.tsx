@@ -18,10 +18,10 @@ import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { useProspects } from '@/hooks/useProspects';
 import { useNavigate } from 'react-router-dom';
 import { InstagramDebugPanel } from '@/components/InstagramDebugPanel';
-// TEMPORALMENTE DESHABILITADO: import TasksHamburgerMenu from '@/components/TasksHamburgerMenu';
-// TEMPORALMENTE DESHABILITADO: import ProspectActionDialog from '@/components/ProspectActionDialog';
+import TasksHamburgerMenu from '@/components/TasksHamburgerMenu';
+import ProspectActionDialog from '@/components/ProspectActionDialog';
 import HowerService from '@/services/howerService';
-// TEMPORALMENTE DESHABILITADO: import NewProspectsResults from '@/components/NewProspectsResults';
+import NewProspectsResults from '@/components/NewProspectsResults';
 
 interface ProspectData {
   id: string;
@@ -1398,16 +1398,13 @@ const TasksToDo2: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* DEBUG LABEL - Cambio actual */}
       <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
-        🔍 TASKS-TO-DO-2 | RESTAURANDO: SEO + Config + Auth + Lista + HowerService
+        🔍 TASKS-TO-DO-2 | RESTAURANDO: Básicos + HowerService + Componentes pesados
       </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
         <div className="mb-6 sm:mb-8 relative">
           <div className="absolute top-4 right-4 z-10">
-            {/* TEMPORALMENTE DESHABILITADO: <TasksHamburgerMenu /> */}
-            <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
-              Menu deshabilitado
-            </div>
+            <TasksHamburgerMenu />
           </div>
           {/* Notebook Style Header */}
           <div className="relative">
@@ -2073,21 +2070,18 @@ const TasksToDo2: React.FC = () => {
             customContent={
               <div className="mt-6">
                 <div style={{ display: activeSection === 'new' ? 'block' : 'none' }}>
-                  {/* TEMPORALMENTE DESHABILITADO: <NewProspectsResults instagramUserId={currentUser?.instagram_user_id || ''} /> */}
-                  <div className="text-center py-4 text-gray-500">
-                    NewProspectsResults deshabilitado temporalmente
-                  </div>
+                  <NewProspectsResults instagramUserId={currentUser?.instagram_user_id || ''} />
                 </div>
               </div>
             }
           />
           
-          {/* Componente invisible para cargar datos y actualizar count - DESHABILITADO */}
+          {/* Componente invisible para cargar datos y actualizar count */}
           <div style={{ display: 'none' }}>
-            {/* TEMPORALMENTE DESHABILITADO: <NewProspectsResults 
+            <NewProspectsResults 
               instagramUserId={currentUser?.instagram_user_id || ''} 
               onCountChange={setNewProspectsCount}
-            /> */}
+            />
           </div>
           </div>
         </div>
@@ -2288,8 +2282,7 @@ const TasksToDo2: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* ProspectActionDialog - DESHABILITADO */}
-      {/* TEMPORALMENTE DESHABILITADO:
+      {/* ProspectActionDialog */}
       <ProspectActionDialog
         isOpen={showActionDialog}
         onClose={() => {
@@ -2300,7 +2293,6 @@ const TasksToDo2: React.FC = () => {
         onViewConversation={handleViewConversation}
         onAISuggestion={handleAISuggestion}
       />
-      */}
     </div>
   );
 };
