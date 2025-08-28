@@ -166,37 +166,31 @@ const TasksToDo2: React.FC = () => {
     "El mejor momento para prospectar es ahora."
   ];
 
-  // TEMPORALMENTE DESHABILITADO: SEO
-  // useEffect(() => {
-  //   document.title = 'Tareas de Hoy v2 | Hower Assistant';
-  //   const metaDesc = document.querySelector('meta[name="description"]');
-  //   if (!metaDesc) {
-  //     const m = document.createElement('meta');
-  //     m.name = 'description';
-  //     m.content = 'Lista de tareas diarias para prospectos v2: responder pendientes, dar seguimientos y prospectar nuevos.';
-  //     document.head.appendChild(m);
-  //   } else {
-  //     metaDesc.setAttribute('content', 'Lista de tareas diarias para prospectos v2: responder pendientes, dar seguimientos y prospectar nuevos.');
-  //   }
-  // }, []);
-
-  // TEMPORALMENTE DESHABILITADO: Configuración inicial sin redirects automáticos
-  // useEffect(() => {
-  //   if (!userLoading) {
-  //     if (currentUser) {
-  //       // Usuario autenticado, generar frase motivacional
-  //       const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-  //       setMotivationalQuote(randomQuote);
-  //     }
-  //     setLoading(false);
-  //   }
-  // }, [currentUser, userLoading]);
-
-  // Configuración simplificada
+  // SEO - RESTAURADO (es seguro)
   useEffect(() => {
-    setLoading(false);
-    setMotivationalQuote("Versión de prueba simplificada");
+    document.title = 'Tareas de Hoy v2 | Hower Assistant';
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      const m = document.createElement('meta');
+      m.name = 'description';
+      m.content = 'Lista de tareas diarias para prospectos v2: responder pendientes, dar seguimientos y prospectar nuevos.';
+      document.head.appendChild(m);
+    } else {
+      metaDesc.setAttribute('content', 'Lista de tareas diarias para prospectos v2: responder pendientes, dar seguimientos y prospectar nuevos.');
+    }
   }, []);
+
+  // Configuración inicial sin redirects automáticos - RESTAURADO (es seguro)
+  useEffect(() => {
+    if (!userLoading) {
+      if (currentUser) {
+        // Usuario autenticado, generar frase motivacional
+        const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+        setMotivationalQuote(randomQuote);
+      }
+      setLoading(false);
+    }
+  }, [currentUser, userLoading]);
 
   // TEMPORALMENTE DESHABILITADO: Cargar nombre de lista cuando hay usuario
   // useEffect(() => {
@@ -1372,7 +1366,7 @@ const TasksToDo2: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* DEBUG LABEL - Cambio actual */}
       <div className="bg-red-500 text-white text-center py-2 px-4 text-sm font-bold">
-        🔍 TASKS-TO-DO-2 | CAMBIO: Sin useProspects + Sin GROK + Sin componentes + Sin Hower + Sin useEffect (Sospechoso #5)
+        🔍 TASKS-TO-DO-2 | RESTAURANDO: SEO + Configuración básica (Funciona en móvil)
       </div>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header con menú hamburguesa */}
