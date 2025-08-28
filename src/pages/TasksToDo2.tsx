@@ -148,21 +148,11 @@ const TasksToDo2: React.FC = () => {
         console.log('✅ Usuarios de Hower cargados:', usernames.length, 'total. Primeros 5:', usernames.slice(0, 5));
       } else {
         console.error('❌ Error al cargar usuarios de Hower:', response.error);
-        
-        // Detectar si es error de credenciales inválidas
-        if (response.error && (response.error.includes('401') || response.error.includes('Credenciales inválidas') || response.error.includes('Username o token incorrecto'))) {
-          toast({
-            title: "Credenciales de Hower inválidas",
-            description: "Ve al menú hamburguesa → Configuración → Hower para actualizar tus credenciales",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Error al cargar datos",
-            description: response.error || "No se pudieron cargar los datos de Hower",
-            variant: "destructive"
-          });
-        }
+        toast({
+          title: "Error al cargar datos",
+          description: response.error || "No se pudieron cargar los datos de Hower",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('❌ Error en loadHowerUsers:', error);
