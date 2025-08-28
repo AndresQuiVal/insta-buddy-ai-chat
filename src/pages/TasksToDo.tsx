@@ -119,115 +119,143 @@ const TasksToDo: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
-        {/* Header con menú hamburguesa */}
-        <div className="mb-6 sm:mb-8 relative">
-          <div className="absolute top-4 right-4 z-10">
-            <TasksHamburgerMenu />
-          </div>
-          
-          {/* Notebook Style Header */}
-          <div className="relative">
-            <div 
-              className="bg-white rounded-2xl shadow-xl border-t-8 p-6 sm:p-8"
-              style={{
-                borderTopColor: '#7a60ff',
-                backgroundImage: `
-                  linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
-                  linear-gradient(#f9fafb 0%, #ffffff 100%)
-                `,
-                backgroundSize: '24px 1px, 100% 100%',
-                backgroundPosition: '0 40px, 0 0'
-              }}
-            >
-              {/* Spiral binding holes */}
-              <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
-                {Array.from({length: 8}).map((_, i) => (
-                  <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
-                ))}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-md mx-auto">
+        {/* Notebook Style Header */}
+        <div className="relative">
+          <div 
+            className="bg-white rounded-t-2xl shadow-lg p-6"
+            style={{
+              backgroundImage: `
+                linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
+                linear-gradient(#f9fafb 0%, #ffffff 100%)
+              `,
+              backgroundSize: '24px 1px, 100% 100%',
+              backgroundPosition: '0 40px, 0 0'
+            }}
+          >
+            {/* Spiral binding holes */}
+            <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-evenly items-center">
+              {Array.from({length: 8}).map((_, i) => (
+                <div key={i} className="w-4 h-4 rounded-full bg-blue-500 shadow-inner" />
+              ))}
+            </div>
+
+            {/* Header content */}
+            <div className="ml-8">
+              {/* Top row with hamburger menu */}
+              <div className="flex justify-between items-start mb-6">
+                <div></div>
+                <TasksHamburgerMenu />
               </div>
 
-              <div className="flex items-center justify-between mb-4 ml-8">
-                <div className="flex items-center space-x-3">
-                  <img src={howerLogo} alt="Hower" className="h-8 w-8" />
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Tareas de Hoy</h1>
-                    <p className="text-gray-600 text-sm sm:text-base">
-                      {currentUser?.username && `@${currentUser.username}`}
-                    </p>
-                  </div>
+              {/* Mis números button */}
+              <div className="flex justify-end mb-6">
+                <Button 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm"
+                  onClick={() => navigate('/analytics')}
+                >
+                  📊 Mis números
+                </Button>
+              </div>
+
+              {/* Main title */}
+              <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">Mi Lista de Prospectos</h1>
+                <p className="text-gray-600 text-sm italic">
+                  Cada 'no' te acerca más a un 'sí'. ¡Sigue prospectando!
+                </p>
+              </div>
+
+              {/* Time estimate box */}
+              <div className="bg-yellow-100 border-2 border-dashed border-yellow-400 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-yellow-600 mr-2" />
+                  <span className="text-yellow-800 font-medium">
+                    Te demorarás: 1 minutos (Como servirse un café ☕)
+                  </span>
                 </div>
-              </div>
-
-              {/* Estadísticas básicas */}
-              <div className="grid grid-cols-3 gap-4 ml-8">
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-red-600">{stats.today.abiertas}</div>
-                    <div className="text-sm text-gray-600">Urgentes</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-yellow-600">{stats.today.seguimientos}</div>
-                    <div className="text-sm text-gray-600">Seguimientos</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600">{stats.today.agendados}</div>
-                    <div className="text-sm text-gray-600">Agendados</div>
-                  </CardContent>
-                </Card>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Contenido principal */}
-        <div className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <MessageCircle className="h-5 w-5" />
-                <span>Lista de Prospectos</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {prospectsLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-gray-500">Cargando prospectos...</p>
-                </div>
-              ) : realProspects.length === 0 ? (
-                <div className="text-center py-8">
-                  <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No hay prospectos disponibles</p>
-                  <p className="text-sm text-gray-400">Conecta tus mensajes para ver tus prospectos aquí</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {realProspects.slice(0, 10).map((prospect) => (
-                    <div key={prospect.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback>{prospect.username?.charAt(0)?.toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">@{prospect.username}</div>
-                          <div className="text-sm text-gray-500">
-                            {prospect.lastMessageType === 'received' ? 'Te respondió' : 'Esperando respuesta'}
-                          </div>
-                        </div>
-                      </div>
-                      <Badge variant="outline">{prospect.state}</Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Main content sections */}
+        <div className="bg-white shadow-lg">
+          {/* Prospectos pendientes */}
+          <div className="border-l-4 border-blue-400 p-4 hover:bg-gray-50 cursor-pointer">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700 font-medium">Prospectos pendientes</span>
+              <div className="flex items-center">
+                <span className="text-lg font-bold text-gray-800 mr-2">
+                  {stats.today.abiertas}
+                </span>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Prospectos en seguimiento */}
+          <div className="border-l-4 border-orange-400 p-4 hover:bg-gray-50 cursor-pointer">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700 font-medium">Prospectos en seguimiento</span>
+              <div className="flex items-center">
+                <span className="text-lg font-bold text-gray-800 mr-2">
+                  {stats.today.seguimientos}
+                </span>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Nuevos prospectos */}
+          <div className="border-l-4 border-green-400 p-4 hover:bg-gray-50 cursor-pointer">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700 font-medium">Nuevos prospectos</span>
+              <div className="flex items-center">
+                <span className="text-lg font-bold text-gray-800 mr-2">
+                  {stats.today.agendados}
+                </span>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Tip Pro del Día */}
+          <div className="border-l-4 border-green-500 p-4 hover:bg-gray-50 cursor-pointer">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center">
+                <Heart className="h-5 w-5 text-green-500 mr-2" />
+                <span className="text-gray-700 font-medium">🚀 Tip Pro del Día</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="bg-white rounded-b-2xl shadow-lg p-6 text-center">
+          {/* Hower logo */}
+          <div className="mb-4">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full">
+              Hower
+            </Button>
+          </div>
+
+          {/* Made with love */}
+          <p className="text-gray-500 text-sm mb-4">
+            Hecho con 💜 por Hower
+          </p>
+
+          {/* Action buttons */}
+          <div className="flex justify-center space-x-4">
+            <Button variant="outline" className="text-blue-600 border-blue-600">
+              ⚙️ Otras opciones
+            </Button>
+            <Button variant="outline" className="text-red-600 border-red-600">
+              📤 Salir
+            </Button>
+          </div>
         </div>
       </div>
     </div>
