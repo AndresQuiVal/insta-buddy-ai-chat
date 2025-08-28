@@ -57,17 +57,14 @@ const TasksToDo: React.FC = () => {
 
   // Validación de autenticación - sin simulación
 
-  // Validación estricta de autenticación - TEMPORALMENTE DESHABILITADA PARA DEBUG
+  // Validación estricta de autenticación
   useEffect(() => {
     console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
       userLoading,
       currentUser: currentUser ? currentUser.instagram_user_id : 'null',
-      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente',
-      howerAuthenticated: HowerService.isAuthenticated()
+      localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
     });
     
-    // TEMPORALMENTE COMENTADO PARA DEBUG
-    /*
     if (!userLoading && !currentUser) {
       console.log('❌ No hay usuario autenticado, redirigiendo a home');
       toast({
@@ -89,7 +86,6 @@ const TasksToDo: React.FC = () => {
       });
       navigate('/hower-auth', { replace: true });
     }
-    */
   }, [currentUser, userLoading, navigate, toast]);
 
 
