@@ -1894,11 +1894,11 @@ const TasksToDo2: React.FC = () => {
                       </div>
                     ) : (
                       <h1 
-                        className="text-2xl sm:text-3xl font-poppins font-bold mb-2 text-gray-800 cursor-pointer hover:text-primary inline-flex items-center gap-2"
+                        className="text-2xl sm:text-3xl font-poppins font-bold mb-2 text-gray-800 cursor-pointer hover:text-primary inline-flex flex-wrap items-center gap-2"
                         onClick={handleEditListName}
                         data-onboarding="main-title"
                       >
-                        Mi Lista de <span className="bg-[#724bff] text-white px-3 py-1 rounded-lg">Prospectos</span>
+                        <span className="whitespace-nowrap">Mi Lista de</span> <span className="bg-[#724bff] text-white px-3 py-1 rounded-lg whitespace-nowrap">Prospectos</span>
                         <Edit2 className="w-4 h-4 opacity-50" style={{ display: 'none' }} />
                       </h1>
                     )}
