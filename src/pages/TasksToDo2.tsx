@@ -1510,8 +1510,6 @@ const TasksToDo2: React.FC = () => {
     );
   }
 
-  console.log('🎨 RENDERIZANDO TasksToDo2 - debería verse morado #724bff');
-  
   return (
     <div 
       className="min-h-screen" 
@@ -1521,20 +1519,13 @@ const TasksToDo2: React.FC = () => {
         width: '100%'
       }}
     >
-      {/* DEBUG: Área visible morada */}
-      <div style={{ height: '100px', backgroundColor: '#724bff', width: '100%' }}>
-        <p style={{ color: 'white', padding: '20px', fontSize: '18px' }}>
-          🔥 FONDO MORADO #724bff - Si ves esto, el color funciona
-        </p>
-      </div>
-      
-      {/* Hamburger Menu - positioned at top left */}
-      <div className="absolute top-6 left-6 z-50">
+      {/* Hamburger Menu - positioned at top right */}
+      <div className="absolute top-6 right-6 z-50">
         <TasksHamburgerMenu />
       </div>
       
-      {/* White Content Container with rounded top */}
-      <div className="bg-white rounded-t-[32px] mt-0 min-h-[calc(100vh-100px)] px-6 py-8">
+      {/* White Content Container with rounded top and margin */}
+      <div className="bg-white rounded-t-[32px] mt-20 min-h-[calc(100vh-5rem)] px-6 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header content */}
           <div className="mb-6 sm:mb-8 relative">
