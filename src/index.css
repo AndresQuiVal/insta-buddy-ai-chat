@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 253 100% 15%;
 
-    --primary: 263 73% 65%; /* #6C4DFE */
+    --primary: 253 100% 65%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 253 50% 95%;
@@ -35,13 +35,12 @@
 
     --radius: 0.5rem;
     
-    /* Hower Brand Colors - Nueva paleta */
-    --hower-purple: 263 73% 65%; /* #6C4DFE */
-    --hower-purple-dark: 263 73% 55%;
-    --hower-purple-light: 263 73% 85%;
-    --hower-orange: 30 100% 66%; /* #FFB347 */
-    --hower-orange-light: 30 100% 90%;
-    --gradient-hower: linear-gradient(135deg, hsl(var(--hower-purple)), hsl(var(--hower-purple-dark)));
+    /* Hower Brand Colors - Monochromatic Purple */
+    --hower-primary: 253 100% 65%;
+    --hower-dark: 253 100% 30%;
+    --hower-light: 253 100% 85%;
+    --hower-medium: 253 100% 55%;
+    --gradient-hower: linear-gradient(135deg, hsl(var(--hower-primary)), hsl(var(--hower-medium)));
 
     --sidebar-background: 253 50% 98%;
 
