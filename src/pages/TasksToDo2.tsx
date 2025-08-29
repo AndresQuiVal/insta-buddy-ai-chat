@@ -2232,7 +2232,7 @@ const TasksToDo2: React.FC = () => {
             className="h-8 mx-auto"
           />
           <br />
-          <p className="text-xs text-gray-400 mt-2 font-mono">Hecho con 💜 por Hower</p>
+          
           <br />
           
           {/* Botones de opciones */}
