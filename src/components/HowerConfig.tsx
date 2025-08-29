@@ -115,25 +115,25 @@ const HowerConfig = () => {
           alt="Hower" 
           className="w-16 h-16 mx-auto mb-4"
         />
-        <h2 className="text-2xl font-semibold mb-2">Hower - Panel de Control</h2>
+        <h2 className="text-2xl font-semibold mb-2">Configuración</h2>
         <p className="text-muted-foreground">
-          Gestiona tu configuración y exporta tus datos
+          Gestiona tu token y exporta tus datos
         </p>
       </div>
 
-      <Tabs defaultValue="config" className="w-full">
+      <Tabs defaultValue="token" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="config" className="flex items-center gap-2">
+          <TabsTrigger value="token" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
-            Configuración
+            Token
           </TabsTrigger>
           <TabsTrigger value="export" className="flex items-center gap-2">
             <Download className="w-4 h-4" />
-            Exportar Datos
+            Exportar
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="config" className="space-y-4">
+        <TabsContent value="token" className="space-y-4">
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-4">

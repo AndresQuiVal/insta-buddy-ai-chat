@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Download, FileText, Database, Users, MessageSquare } from 'lucide-react';
+import { Download, FileText, Users, Clock, MessageSquare, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
@@ -11,23 +11,36 @@ import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 const ExportPanel = () => {
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [exportFormat, setExportFormat] = useState<string>('');
-  const [includeNumbers, setIncludeNumbers] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
 
   const availableSections = [
     {
-      id: 'new_prospects_posts',
-      label: 'Gente que comentó un post',
-      description: 'Usuarios que han comentado en posts específicos',
-      icon: MessageSquare
+      id: 'prospectos_pendientes',
+      label: 'Prospectos pendientes',
+      description: 'Prospectos esperando respuesta',
+      icon: Clock
     },
     {
-      id: 'new_prospects_accounts',
-      label: 'Gente que sigue una cuenta',
-      description: 'Usuarios que siguen cuentas específicas',
+      id: 'prospectos_seguimiento',
+      label: 'Prospectos en seguimiento',
+      description: 'Prospectos con seguimientos programados',
       icon: Users
+    },
+    {
+      id: 'nuevos_prospectos_posts',
+      label: 'Gente que comentó un post',
+      description: 'Nuevos prospectos encontrados en comentarios de posts',
+      icon: MessageSquare,
+      isSubcategory: true
+    },
+    {
+      id: 'nuevos_prospectos_accounts',
+      label: 'Gente que sigue a una cuenta',
+      description: 'Nuevos prospectos que siguen cuentas específicas',
+      icon: UserPlus,
+      isSubcategory: true
     }
   ];
 
@@ -81,7 +94,7 @@ const ExportPanel = () => {
     if (!selectedSections.length) {
       toast({
         title: "Error",
-        description: "Selecciona al menos una sección para exportar.",
+        description: "Selecciona al menos una categoría para exportar.",
         variant: "destructive",
       });
       return;
@@ -112,49 +125,109 @@ const ExportPanel = () => {
       let exportName = '';
 
       for (const sectionId of selectedSections) {
-        let query = supabase
-          .from('prospect_search_results')
-          .select('*')
-          .eq('instagram_user_id', currentUser.instagram_user_id);
-
-        if (sectionId === 'new_prospects_posts') {
-          query = query.not('post_url', 'is', null);
-          exportName += exportName ? '_posts' : 'posts';
-        } else if (sectionId === 'new_prospects_accounts') {
-          query = query.is('post_url', null);
-          exportName += exportName ? '_accounts' : 'accounts';
+        let sectionData: any[] = [];
+        
+        if (sectionId === 'prospectos_pendientes') {
+          try {
+            const { data, error } = await supabase
+              .from('prospects')
+              .select('username, prospect_instagram_id, status, followers_count, biography, created_at')
+              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .eq('status', 'esperando_respuesta');
+            
+            if (!error && data) {
+              sectionData = data.map(item => ({ ...item, categoria: 'Prospectos Pendientes' }));
+              exportName += exportName ? '_pendientes' : 'pendientes';
+            }
+          } catch (err) {
+            console.error('Error fetching pending prospects:', err);
+          }
+        } 
+        else if (sectionId === 'prospectos_seguimiento') {
+          try {
+            // Buscar followups por instagram_user_id indirectamente
+            const { data: prospects } = await supabase
+              .from('prospects')
+              .select('prospect_instagram_id')
+              .eq('instagram_user_id', currentUser.instagram_user_id);
+            
+            if (prospects && prospects.length > 0) {
+              const prospectIds = prospects.map(p => p.prospect_instagram_id);
+              
+              const { data, error } = await supabase
+                .from('autoresponder_followups')
+                .select('sender_id, followup_message_text, followup_scheduled_at, is_completed, created_at')
+                .in('sender_id', prospectIds)
+                .eq('is_completed', false);
+              
+              if (!error && data) {
+                sectionData = data.map(item => ({ ...item, categoria: 'Prospectos en Seguimiento' }));
+                exportName += exportName ? '_seguimiento' : 'seguimiento';
+              }
+            }
+          } catch (err) {
+            console.error('Error fetching followup prospects:', err);
+          }
+        }
+        else if (sectionId === 'nuevos_prospectos_posts') {
+          try {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            const { data, error } = await supabase
+              .from('prospects')
+              .select('username, prospect_instagram_id, followers_count, biography, created_at')
+              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .gte('created_at', thirtyDaysAgo.toISOString())
+              .limit(100);
+            
+            if (!error && data) {
+              sectionData = data.map(item => ({ ...item, categoria: 'Nuevos Prospectos - Posts' }));
+              exportName += exportName ? '_posts' : 'posts';
+            }
+          } catch (err) {
+            console.error('Error fetching new prospects posts:', err);
+          }
+        }
+        else if (sectionId === 'nuevos_prospectos_accounts') {
+          try {
+            const { data, error } = await supabase
+              .from('prospect_search_results')
+              .select('instagram_url, title, description, created_at, search_keywords')
+              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .eq('result_type', 'account')
+              .limit(100);
+            
+            if (!error && data) {
+              sectionData = data.map(item => ({ ...item, categoria: 'Nuevos Prospectos - Accounts' }));
+              exportName += exportName ? '_accounts' : 'accounts';
+            }
+          } catch (err) {
+            console.error('Error fetching new prospects accounts:', err);
+          }
         }
 
-        const { data, error } = await query;
-
-        if (error) {
-          console.error('Error fetching data:', error);
-          continue;
-        }
-
-        if (data) {
-          allData = [...allData, ...data];
+        if (sectionData.length > 0) {
+          allData = [...allData, ...sectionData];
         }
       }
 
       if (allData.length === 0) {
         toast({
           title: "Sin datos",
-          description: "No se encontraron datos para exportar en las secciones seleccionadas.",
+          description: "No se encontraron datos para exportar en las categorías seleccionadas.",
           variant: "destructive",
         });
         return;
       }
 
-      // Prepare headers
-      const baseHeaders = ['username', 'full_name', 'is_verified', 'follower_count', 'following_count', 'media_count', 'post_url', 'search_type', 'created_at'];
-      const headers = includeNumbers ? [...baseHeaders, 'contacto'] : baseHeaders;
-
-      // Add contact column if requested
-      if (includeNumbers) {
-        allData.forEach(item => {
-          item.contacto = 'Pendiente'; // Placeholder for future phone number integration
-        });
+      // Prepare headers based on data type
+      let headers: string[] = [];
+      if (allData.length > 0) {
+        const firstItem = allData[0];
+        headers = Object.keys(firstItem).filter(key => 
+          !['id', 'created_at', 'updated_at', 'raw_data', 'analysis_data'].includes(key)
+        );
       }
 
       // Generate file content based on format
@@ -191,7 +264,7 @@ const ExportPanel = () => {
 
       // Generate filename
       const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `prospects_${exportName}_${timestamp}.${fileExtension}`;
+      const filename = `prospectos_${exportName}_${timestamp}.${fileExtension}`;
 
       // Download file
       downloadFile(content, filename, mimeType);
@@ -225,39 +298,81 @@ const ExportPanel = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Secciones a exportar */}
+        {/* Categorías a exportar */}
         <div className="space-y-4">
           <h3 className="font-semibold text-lg">¿Qué datos deseas exportar?</h3>
-          <div className="grid gap-3">
-            {availableSections.map((section) => {
-              const Icon = section.icon;
-              return (
-                <div
-                  key={section.id}
-                  className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <Checkbox
-                    id={section.id}
-                    checked={selectedSections.includes(section.id)}
-                    onCheckedChange={() => handleSectionToggle(section.id)}
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-4 h-4" />
-                      <label 
-                        htmlFor={section.id} 
-                        className="font-medium cursor-pointer"
-                      >
-                        {section.label}
-                      </label>
+          <div className="space-y-3">
+            {/* Prospectos principales */}
+            <div className="space-y-3">
+              {availableSections.filter(section => !section.isSubcategory).map((section) => {
+                const Icon = section.icon;
+                return (
+                  <div
+                    key={section.id}
+                    className="flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <Checkbox
+                      id={section.id}
+                      checked={selectedSections.includes(section.id)}
+                      onCheckedChange={() => handleSectionToggle(section.id)}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" />
+                        <label 
+                          htmlFor={section.id} 
+                          className="font-medium cursor-pointer"
+                        >
+                          {section.label}
+                        </label>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {section.description}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {section.description}
-                    </p>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+            
+            {/* Nuevos Prospectos - Subcategorías */}
+            <div className="border rounded-lg p-4 bg-muted/20">
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                Nuevos Prospectos
+              </h4>
+              <div className="space-y-3 ml-6">
+                {availableSections.filter(section => section.isSubcategory).map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <div
+                      key={section.id}
+                      className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors bg-white"
+                    >
+                      <Checkbox
+                        id={section.id}
+                        checked={selectedSections.includes(section.id)}
+                        onCheckedChange={() => handleSectionToggle(section.id)}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-4 h-4" />
+                          <label 
+                            htmlFor={section.id} 
+                            className="font-medium cursor-pointer text-sm"
+                          >
+                            {section.label}
+                          </label>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {section.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -282,26 +397,6 @@ const ExportPanel = () => {
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        {/* Incluir números */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="include-numbers"
-              checked={includeNumbers}
-              onCheckedChange={(checked) => setIncludeNumbers(checked === true)}
-            />
-            <label 
-              htmlFor="include-numbers" 
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Incluir números de contacto
-            </label>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Agrega una columna con los números de teléfono de los prospectos (cuando estén disponibles)
-          </p>
         </div>
 
         {/* Botón de exportar */}
