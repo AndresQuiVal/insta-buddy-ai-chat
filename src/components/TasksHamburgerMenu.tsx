@@ -24,7 +24,7 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 rounded-lg hover:bg-purple-100 transition-colors"
       >
-        <Menu className="w-6 h-6 text-purple-600" />
+        <Menu className="w-6 h-6 text-white" />
       </button>
 
       <div
