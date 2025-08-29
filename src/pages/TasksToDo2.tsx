@@ -299,14 +299,12 @@ const TasksToDo2: React.FC = () => {
   // Configuración inicial sin redirects automáticos - RESTAURADO (es seguro)
   useEffect(() => {
     if (!userLoading) {
-      if (currentUser) {
-        // Usuario autenticado, generar frase motivacional
-        const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-        setMotivationalQuote(randomQuote);
-      }
+      // Generar frase motivacional siempre, incluso sin usuario
+      const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+      setMotivationalQuote(randomQuote);
       setLoading(false);
     }
-  }, [currentUser, userLoading]);
+  }, [userLoading]);
 
   // Cargar nombre de lista cuando hay usuario - RESTAURADO (consulta simple)
   useEffect(() => {
@@ -2175,14 +2173,15 @@ const TasksToDo2: React.FC = () => {
           </div>
           </div>
 
-          {/* Frase motivacional como quote */}
-          <div className="mt-8 mb-8">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-purple-400 p-4 rounded-lg">
-              <blockquote className="text-gray-700 italic font-medium text-center">
+          {/* Frase motivacional como quote elegante */}
+          {motivationalQuote && (
+            <div className="mt-8 mb-8 text-center">
+              <blockquote className="font-serif text-lg text-gray-700 italic font-light leading-relaxed max-w-2xl mx-auto">
                 "{motivationalQuote}"
               </blockquote>
+              <div className="mt-2 text-gray-500 text-sm">— Sabiduría para prospectores</div>
             </div>
-          </div>
+          )}
 
 
         {/* Tips generales - Notebook style */}
