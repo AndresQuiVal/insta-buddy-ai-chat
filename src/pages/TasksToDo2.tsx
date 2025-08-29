@@ -2559,7 +2559,5 @@ const TasksToDo2: React.FC = () => {
     </div>
   );
 };
-  );
-};
 
 export default TasksToDo2;
