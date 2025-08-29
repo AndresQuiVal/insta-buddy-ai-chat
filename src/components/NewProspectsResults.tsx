@@ -157,22 +157,10 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center justify-between">
+                      <div>
                         <span className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-medium">
                           {post.title}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                          onClick={(e) => e.stopPropagation()}
-                          className="md:w-auto w-10 md:px-3 px-2"
-                        >
-                          <a href={post.instagram_url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 md:mr-2" />
-                            <span className="hidden md:inline">Ver en Instagram</span>
-                          </a>
-                        </Button>
                       </div>
                       
                       {post.comments_count > 0 && (
@@ -223,22 +211,10 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center justify-between">
+                      <div>
                         <span className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-medium">
                           {account.title}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                          onClick={(e) => e.stopPropagation()}
-                          className="md:w-auto w-10 md:px-3 px-2"
-                        >
-                          <a href={account.instagram_url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 md:mr-2" />
-                            <span className="hidden md:inline">Ver en Instagram</span>
-                          </a>
-                        </Button>
                       </div>
                       
                       <p className="text-sm text-muted-foreground">
