@@ -157,6 +157,7 @@ const ExportPanel = () => {
     setIsExporting(true);
 
     try {
+      console.log('Current user for export:', currentUser);
       let allData: any[] = [];
       let exportName = '';
 
@@ -169,9 +170,10 @@ const ExportPanel = () => {
             const { data, error } = await supabase
               .from('prospects')
               .select('username, last_message_from_prospect, last_message_date, status')
-              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .eq('instagram_user_id', currentUser.id)
               .eq('status', 'esperando_respuesta');
             
+            console.log('Prospectos pendientes query result:', { data, error });
             if (!error && data && data.length > 0) {
               sectionData = data.map(item => ({
                 username: item.username,
@@ -187,31 +189,22 @@ const ExportPanel = () => {
         } 
         else if (sectionId === 'prospectos_seguimiento') {
           try {
-            // Primero obtener los followups pendientes
-            const { data: followups, error: followupsError } = await supabase
-              .from('autoresponder_followups')
-              .select('sender_id, followup_scheduled_at, is_completed')
-              .eq('is_completed', false);
+            // Prospectos que están en seguimiento (les escribimos pero no han respondido)
+            const { data, error } = await supabase
+              .from('prospects')
+              .select('username, last_message_from_prospect, last_message_date, status')
+              .eq('instagram_user_id', currentUser.id)
+              .eq('status', 'en_seguimiento');
             
-            if (!followupsError && followups && followups.length > 0) {
-              const senderIds = followups.map(f => f.sender_id);
-              
-              // Luego obtener los prospectos correspondientes
-              const { data: prospects, error: prospectsError } = await supabase
-                .from('prospects')
-                .select('username, last_message_from_prospect, last_message_date, prospect_instagram_id')
-                .eq('instagram_user_id', currentUser.instagram_user_id)
-                .in('prospect_instagram_id', senderIds);
-              
-              if (!prospectsError && prospects && prospects.length > 0) {
-                sectionData = prospects.map(item => ({
-                  username: item.username,
-                  envie_ultimo_mensaje: item.last_message_from_prospect ? 'No' : 'Sí',
-                  fecha_ultimo_mensaje: item.last_message_date,
-                  categoria: 'Prospectos en Seguimiento'
-                }));
-                exportName += exportName ? '_seguimiento' : 'seguimiento';
-              }
+            console.log('Prospectos seguimiento query result:', { data, error });
+            if (!error && data && data.length > 0) {
+              sectionData = data.map(item => ({
+                username: item.username,
+                envie_ultimo_mensaje: item.last_message_from_prospect ? 'No' : 'Sí',
+                fecha_ultimo_mensaje: item.last_message_date,
+                categoria: 'Prospectos en Seguimiento'
+              }));
+              exportName += exportName ? '_seguimiento' : 'seguimiento';
             }
           } catch (err) {
             console.error('Error fetching followup prospects:', err);
@@ -226,6 +219,8 @@ const ExportPanel = () => {
               .eq('instagram_user_id', currentUser.instagram_user_id)
               .eq('result_type', 'post')
               .limit(100);
+            
+            console.log('Nuevos prospectos posts query result:', { data, error });
             
             if (!error && data && data.length > 0) {
               sectionData = data.map(item => ({
@@ -249,6 +244,8 @@ const ExportPanel = () => {
               .eq('instagram_user_id', currentUser.instagram_user_id)
               .eq('result_type', 'account')
               .limit(100);
+            
+            console.log('Nuevos prospectos accounts query result:', { data, error });
             
             if (!error && data && data.length > 0) {
               sectionData = data.map(item => ({
