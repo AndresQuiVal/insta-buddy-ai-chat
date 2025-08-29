@@ -22,40 +22,64 @@ const onboardingSteps: OnboardingStep[] = [
   {
     id: 'welcome',
     title: '¡Bienvenido! 👋',
-    description: 'Te muestro cómo funciona en 5 pasos',
+    description: 'Te explico tu dashboard en 8 pasos',
     target: '[data-onboarding="main-title"]',
     position: 'bottom'
   },
   {
     id: 'pending-prospects',
     title: 'Prospectos pendientes 🎯',
-    description: 'Nuevos contactos para enviar primer mensaje',
+    description: 'Usuarios prospectados con Hower que NO han respondido en Instagram',
     target: '[data-onboarding="pending-section"]',
     position: 'right',
     action: 'Toca para ver la lista'
   },
   {
+    id: 'prospect-card',
+    title: 'Card de prospecto 👤',
+    description: 'Toca una card → Ve mensaje sugerido → Botón Instagram → Envía → Marca ✅',
+    target: '[data-onboarding="pending-section"]',
+    position: 'right',
+    action: 'Así funciona el flujo completo'
+  },
+  {
     id: 'follow-up',
     title: 'Seguimientos ⏰',
-    description: 'Contactos que necesitan segundo mensaje',
+    description: 'Prospectos que YA contactaste pero necesitan 2do o 3er mensaje',
     target: '[data-onboarding="followup-section"]',
     position: 'right',
-    action: 'Revisa quién necesita seguimiento'
+    action: 'Tiene 2 sub-secciones: Ayer y Semana'
+  },
+  {
+    id: 'new-prospects',
+    title: 'Nuevos prospectos 🔍',
+    description: 'Herramienta para encontrar prospectos frescos usando IA',
+    target: '[data-onboarding="new-prospects-section"]',
+    position: 'right',
+    action: 'Busca prospectos ideales automáticamente'
+  },
+  {
+    id: 'tips-in-sections',
+    title: 'Tips en cada sección 💡',
+    description: 'Cada sección tiene tips específicos. ¡Léelos para mejorar resultados!',
+    target: '[data-onboarding="followup-section"]',
+    position: 'left',
+    action: 'Busca los tips con fondo de colores'
   },
   {
     id: 'tip-section',
-    title: 'Tip del día 💡',
-    description: 'Consejo diario para mejorar resultados',
+    title: 'Tip diario 🚀',
+    description: 'Consejo diario para mejorar tu tasa de respuesta',
     target: '[data-onboarding="tip-section"]',
     position: 'top'
   },
   {
-    id: 'how-to-contact',
-    title: '¿Cómo contactar? 📱',
-    description: 'Toca un prospecto → Ve a Instagram → Envía mensaje → Marca como hecho',
+    id: 'workflow',
+    title: '¡Listo para empezar! ✨',
+    description: 'Flujo: Ver pendientes → Ir a Instagram → Enviar mensaje → Marcar ✅ → Repetir',
     target: '[data-onboarding="pending-section"]',
     position: 'left',
-    action: '¡Empieza ahora!'
+    action: '¡A conseguir clientes!'
   }
 ];
 
