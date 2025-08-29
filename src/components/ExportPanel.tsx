@@ -58,61 +58,48 @@ const ExportPanel = () => {
     );
   };
 
-  const generateCSV = (data: any[], translatedHeaders: string[]) => {
+  const generateCSV = (data: any[], headers: string[]) => {
     if (data.length === 0) return '';
     
-    // Crear mapeo inverso para obtener las keys originales
-    const headerTranslations: { [key: string]: string } = {
-      'username': 'Usuario',
-      'prospect_instagram_id': 'ID Instagram',
-      'status': 'Estado',
-      'followers_count': 'Seguidores',
-      'biography': 'Biografía',
-      'categoria': 'Categoría',
-      'sender_id': 'ID Remitente',
-      'followup_message_text': 'Mensaje de Seguimiento',
-      'followup_scheduled_at': 'Seguimiento Programado',
-      'is_completed': 'Completado',
-      'instagram_url': 'URL Instagram',
-      'title': 'Título',
-      'description': 'Descripción',
-      'search_keywords': 'Palabras Clave',
-      'result_type': 'Tipo de Resultado',
-      'prospect_id': 'ID Prospecto',
-      'follows_count': 'Siguiendo',
-      'media_count': 'Publicaciones',
-      'last_message_date': 'Último Mensaje',
-      'first_contact_date': 'Primer Contacto'
-    };
-    
-    // Crear mapeo inverso
-    const reverseTranslations: { [key: string]: string } = {};
-    Object.entries(headerTranslations).forEach(([key, value]) => {
-      reverseTranslations[value] = key;
-    });
-    
     const csvContent = [
-      translatedHeaders.join(','),
+      headers.join(','),
       ...data.map(row =>
-        translatedHeaders.map(translatedHeader => {
-          const originalKey = reverseTranslations[translatedHeader] || translatedHeader;
-          const value = row[originalKey];
+        headers.map(header => {
+          let value;
+          
+          // Mapear headers a las propiedades correctas del objeto
+          switch (header) {
+            case 'Usuario':
+              value = row.username;
+              break;
+            case '¿Envié el último mensaje?':
+              value = row.envie_ultimo_mensaje;
+              break;
+            case 'Fecha de último mensaje':
+              value = row.fecha_ultimo_mensaje;
+              break;
+            case 'Categoría':
+              value = row.categoria;
+              break;
+            default:
+              value = row[header];
+          }
           
           if (value === null || value === undefined) return '';
           
-          // Manejar arrays
-          if (Array.isArray(value)) {
-            return `"${value.join('; ')}"`;
+          // Formatear fecha si es necesario
+          if (header === 'Fecha de último mensaje' && value) {
+            try {
+              const date = new Date(value);
+              value = date.toLocaleDateString('es-ES') + ' ' + date.toLocaleTimeString('es-ES');
+            } catch (e) {
+              // Mantener valor original si no se puede formatear
+            }
           }
           
           // Manejar strings con comas
           if (typeof value === 'string' && value.includes(',')) {
             return `"${value.replace(/"/g, '""')}"`;
-          }
-          
-          // Manejar booleanos
-          if (typeof value === 'boolean') {
-            return value ? 'Sí' : 'No';
           }
           
           return value;
@@ -122,10 +109,9 @@ const ExportPanel = () => {
     return csvContent;
   };
 
-  const generateExcel = async (data: any[], translatedHeaders: string[]) => {
-    // Para Excel también usamos el formato CSV mejorado
-    // En una implementación real, usarías una librería como xlsx
-    return generateCSV(data, translatedHeaders);
+  const generateExcel = async (data: any[], headers: string[]) => {
+    // Para Excel usamos el mismo formato CSV optimizado
+    return generateCSV(data, headers);
   };
 
   const downloadFile = (content: string, filename: string, mimeType: string) => {
@@ -179,14 +165,20 @@ const ExportPanel = () => {
         
         if (sectionId === 'prospectos_pendientes') {
           try {
+            // Prospectos que están esperando respuesta (estado = esperando_respuesta)
             const { data, error } = await supabase
               .from('prospects')
-              .select('username, prospect_instagram_id, status, followers_count, biography, created_at')
+              .select('username, last_message_from_prospect, last_message_date, status')
               .eq('instagram_user_id', currentUser.instagram_user_id)
               .eq('status', 'esperando_respuesta');
             
-            if (!error && data) {
-              sectionData = data.map(item => ({ ...item, categoria: 'Prospectos Pendientes' }));
+            if (!error && data && data.length > 0) {
+              sectionData = data.map(item => ({
+                username: item.username,
+                envie_ultimo_mensaje: item.last_message_from_prospect ? 'No' : 'Sí',
+                fecha_ultimo_mensaje: item.last_message_date,
+                categoria: 'Prospectos Pendientes'
+              }));
               exportName += exportName ? '_pendientes' : 'pendientes';
             }
           } catch (err) {
@@ -195,23 +187,29 @@ const ExportPanel = () => {
         } 
         else if (sectionId === 'prospectos_seguimiento') {
           try {
-            // Buscar followups por instagram_user_id indirectamente
-            const { data: prospects } = await supabase
-              .from('prospects')
-              .select('prospect_instagram_id')
-              .eq('instagram_user_id', currentUser.instagram_user_id);
+            // Primero obtener los followups pendientes
+            const { data: followups, error: followupsError } = await supabase
+              .from('autoresponder_followups')
+              .select('sender_id, followup_scheduled_at, is_completed')
+              .eq('is_completed', false);
             
-            if (prospects && prospects.length > 0) {
-              const prospectIds = prospects.map(p => p.prospect_instagram_id);
+            if (!followupsError && followups && followups.length > 0) {
+              const senderIds = followups.map(f => f.sender_id);
               
-              const { data, error } = await supabase
-                .from('autoresponder_followups')
-                .select('sender_id, followup_message_text, followup_scheduled_at, is_completed, created_at')
-                .in('sender_id', prospectIds)
-                .eq('is_completed', false);
+              // Luego obtener los prospectos correspondientes
+              const { data: prospects, error: prospectsError } = await supabase
+                .from('prospects')
+                .select('username, last_message_from_prospect, last_message_date, prospect_instagram_id')
+                .eq('instagram_user_id', currentUser.instagram_user_id)
+                .in('prospect_instagram_id', senderIds);
               
-              if (!error && data) {
-                sectionData = data.map(item => ({ ...item, categoria: 'Prospectos en Seguimiento' }));
+              if (!prospectsError && prospects && prospects.length > 0) {
+                sectionData = prospects.map(item => ({
+                  username: item.username,
+                  envie_ultimo_mensaje: item.last_message_from_prospect ? 'No' : 'Sí',
+                  fecha_ultimo_mensaje: item.last_message_date,
+                  categoria: 'Prospectos en Seguimiento'
+                }));
                 exportName += exportName ? '_seguimiento' : 'seguimiento';
               }
             }
@@ -221,18 +219,21 @@ const ExportPanel = () => {
         }
         else if (sectionId === 'nuevos_prospectos_posts') {
           try {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            
+            // Nuevos prospectos de posts (de prospect_search_results)
             const { data, error } = await supabase
-              .from('prospects')
-              .select('username, prospect_instagram_id, followers_count, biography, created_at')
+              .from('prospect_search_results')
+              .select('title, description, instagram_url, created_at')
               .eq('instagram_user_id', currentUser.instagram_user_id)
-              .gte('created_at', thirtyDaysAgo.toISOString())
+              .eq('result_type', 'post')
               .limit(100);
             
-            if (!error && data) {
-              sectionData = data.map(item => ({ ...item, categoria: 'Nuevos Prospectos - Posts' }));
+            if (!error && data && data.length > 0) {
+              sectionData = data.map(item => ({
+                username: item.title || 'Sin username',
+                envie_ultimo_mensaje: 'No',  // Para nuevos prospectos siempre es 'No'
+                fecha_ultimo_mensaje: item.created_at,
+                categoria: 'Nuevos Prospectos - Posts'
+              }));
               exportName += exportName ? '_posts' : 'posts';
             }
           } catch (err) {
@@ -241,15 +242,21 @@ const ExportPanel = () => {
         }
         else if (sectionId === 'nuevos_prospectos_accounts') {
           try {
+            // Nuevos prospectos de cuentas
             const { data, error } = await supabase
               .from('prospect_search_results')
-              .select('instagram_url, title, description, created_at, search_keywords')
+              .select('title, description, instagram_url, created_at')
               .eq('instagram_user_id', currentUser.instagram_user_id)
               .eq('result_type', 'account')
               .limit(100);
             
-            if (!error && data) {
-              sectionData = data.map(item => ({ ...item, categoria: 'Nuevos Prospectos - Accounts' }));
+            if (!error && data && data.length > 0) {
+              sectionData = data.map(item => ({
+                username: item.title || 'Sin username',
+                envie_ultimo_mensaje: 'No',  // Para nuevos prospectos siempre es 'No'
+                fecha_ultimo_mensaje: item.created_at,
+                categoria: 'Nuevos Prospectos - Accounts'
+              }));
               exportName += exportName ? '_accounts' : 'accounts';
             }
           } catch (err) {
@@ -271,40 +278,8 @@ const ExportPanel = () => {
         return;
       }
 
-      // Prepare headers based on data type
-      let headers: string[] = [];
-      if (allData.length > 0) {
-        const firstItem = allData[0];
-        const rawHeaders = Object.keys(firstItem).filter(key => 
-          !['id', 'created_at', 'updated_at', 'raw_data', 'analysis_data'].includes(key)
-        );
-        
-        // Traducir headers al español
-        const headerTranslations: { [key: string]: string } = {
-          'username': 'Usuario',
-          'prospect_instagram_id': 'ID Instagram',
-          'status': 'Estado',
-          'followers_count': 'Seguidores',
-          'biography': 'Biografía',
-          'categoria': 'Categoría',
-          'sender_id': 'ID Remitente',
-          'followup_message_text': 'Mensaje de Seguimiento',
-          'followup_scheduled_at': 'Seguimiento Programado',
-          'is_completed': 'Completado',
-          'instagram_url': 'URL Instagram',
-          'title': 'Título',
-          'description': 'Descripción',
-          'search_keywords': 'Palabras Clave',
-          'result_type': 'Tipo de Resultado',
-          'prospect_id': 'ID Prospecto',
-          'follows_count': 'Siguiendo',
-          'media_count': 'Publicaciones',
-          'last_message_date': 'Último Mensaje',
-          'first_contact_date': 'Primer Contacto'
-        };
-        
-        headers = rawHeaders.map(header => headerTranslations[header] || header);
-      }
+      // Headers específicos que solicitas
+      const headers = ['Usuario', '¿Envié el último mensaje?', 'Fecha de último mensaje', 'Categoría'];
 
       // Generate file content based on format
       let content: string;
@@ -323,44 +298,15 @@ const ExportPanel = () => {
           fileExtension = 'xlsx';
           break;
         case 'json':
-          // Para JSON también traducir las keys
-          const headerTranslations: { [key: string]: string } = {
-            'username': 'Usuario',
-            'prospect_instagram_id': 'ID Instagram',
-            'status': 'Estado',
-            'followers_count': 'Seguidores',
-            'biography': 'Biografía',
-            'categoria': 'Categoría',
-            'sender_id': 'ID Remitente',
-            'followup_message_text': 'Mensaje de Seguimiento',
-            'followup_scheduled_at': 'Seguimiento Programado',
-            'is_completed': 'Completado',
-            'instagram_url': 'URL Instagram',
-            'title': 'Título',
-            'description': 'Descripción',
-            'search_keywords': 'Palabras Clave',
-            'result_type': 'Tipo de Resultado',
-            'prospect_id': 'ID Prospecto',
-            'follows_count': 'Siguiendo',
-            'media_count': 'Publicaciones',
-            'last_message_date': 'Último Mensaje',
-            'first_contact_date': 'Primer Contacto'
-          };
+          // Para JSON usar las keys en español directamente
+          const jsonData = allData.map(item => ({
+            'Usuario': item.username,
+            '¿Envié el último mensaje?': item.envie_ultimo_mensaje,
+            'Fecha de último mensaje': item.fecha_ultimo_mensaje,
+            'Categoría': item.categoria
+          }));
           
-          const translatedData = allData.map(item => {
-            const translatedItem: any = {};
-            Object.entries(item).forEach(([key, value]) => {
-              const translatedKey = headerTranslations[key] || key;
-              if (typeof value === 'boolean') {
-                translatedItem[translatedKey] = value ? 'Sí' : 'No';
-              } else {
-                translatedItem[translatedKey] = value;
-              }
-            });
-            return translatedItem;
-          });
-          
-          content = JSON.stringify(translatedData, null, 2);
+          content = JSON.stringify(jsonData, null, 2);
           mimeType = 'application/json';
           fileExtension = 'json';
           break;
