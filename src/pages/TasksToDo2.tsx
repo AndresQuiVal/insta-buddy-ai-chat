@@ -1511,7 +1511,7 @@ const TasksToDo2: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-purple-600">
+    <div className="min-h-screen bg-primary">
       {/* Hamburger Menu - positioned at top left */}
       <div className="absolute top-6 left-6 z-50">
         <TasksHamburgerMenu />

@@ -26,9 +26,10 @@ export default {
 			},
 			colors: {
 				primary: {
-					DEFAULT: '#7a60ff',
-					light: '#9c89ff',
-					dark: '#6247e0',
+					DEFAULT: 'hsl(var(--primary))',
+					light: 'hsl(var(--hower-light))',
+					dark: 'hsl(var(--hower-dark))',
+					foreground: 'hsl(var(--primary-foreground))'
 				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
