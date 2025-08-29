@@ -1511,13 +1511,17 @@ const TasksToDo2: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
-        {/* Header con menú hamburguesa */}
-        <div className="mb-6 sm:mb-8 relative">
-          <div className="absolute top-4 right-4 z-10">
-            <TasksHamburgerMenu />
-          </div>
+    <div className="min-h-screen bg-purple-600">
+      {/* Hamburger Menu - positioned at top left */}
+      <div className="absolute top-6 left-6 z-50">
+        <TasksHamburgerMenu />
+      </div>
+      
+      {/* White Content Container with rounded top */}
+      <div className="min-h-screen bg-white rounded-t-[32px] mt-16 px-6 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Header content */}
+          <div className="mb-6 sm:mb-8 relative">
           {/* Notebook Style Header */}
           <div className="relative">
             <div 
@@ -2366,6 +2370,7 @@ const TasksToDo2: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+        </div>
       </div>
     </div>
   );
