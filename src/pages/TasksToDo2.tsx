@@ -1518,7 +1518,7 @@ const TasksToDo2: React.FC = () => {
       </div>
       
       {/* White Content Container with rounded top */}
-      <div className="min-h-screen bg-white rounded-t-[32px] mt-16 px-6 py-8">
+      <div className="bg-white rounded-t-[32px] mt-24 min-h-[calc(100vh-6rem)] px-6 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header content */}
           <div className="mb-6 sm:mb-8 relative">
