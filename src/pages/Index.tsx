@@ -220,8 +220,15 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-primary">
+      {/* Hamburger Menu - positioned at top left */}
+      <div className="absolute top-6 left-6 z-50">
+        <HamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+      
+      {/* White Content Container with rounded top */}
+      <div className="min-h-screen bg-white rounded-t-[32px] mt-16 px-6 py-8">
+        <div className="container mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -293,6 +300,7 @@ const Index = () => {
 
         {/* Main Content */}
         <div className="space-y-6">{renderContent()}</div>
+        </div>
       </div>
     </div>
   );
