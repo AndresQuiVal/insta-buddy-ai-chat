@@ -1546,12 +1546,6 @@ const TasksToDo2: React.FC = () => {
                 backgroundPosition: '0 40px, 0 0'
               }}
             >
-              {/* Spiral binding holes */}
-              <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
-                {Array.from({length: 8}).map((_, i) => (
-                  <div key={i} className="w-3 h-3 rounded-full shadow-inner" style={{backgroundColor: '#7a60ff'}} />
-                ))}
-              </div>
               
               <div className="text-center ml-4 sm:ml-6">
                 {/* Botones en el header */}
