@@ -3,9 +3,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useInstagramUsers } from '@/hooks/useInstagramUsers';
 import { supabase } from '@/integrations/supabase/client';
+import { Settings, Download } from 'lucide-react';
+import ExportPanel from './ExportPanel';
 import howerLogo from '@/assets/hower-logo.png';
 
 const HowerConfig = () => {
@@ -105,61 +108,80 @@ const HowerConfig = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center mb-8">
         <img 
           src={howerLogo} 
           alt="Hower" 
           className="w-16 h-16 mx-auto mb-4"
         />
-        <h2 className="text-xl font-semibold mb-2">Configuración de Hower</h2>
-        <p className="text-sm text-muted-foreground">
-          Conecta tu cuenta para sincronizar datos
+        <h2 className="text-2xl font-semibold mb-2">Hower - Panel de Control</h2>
+        <p className="text-muted-foreground">
+          Gestiona tu configuración y exporta tus datos
         </p>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Usuario</Label>
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Tu usuario de Hower"
-              />
-            </div>
+      <Tabs defaultValue="config" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="config" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Configuración
+          </TabsTrigger>
+          <TabsTrigger value="export" className="flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Exportar Datos
+          </TabsTrigger>
+        </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="token">Token</Label>
-              <Input
-                id="token"
-                type="password"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="Tu token de Hower"
-              />
-            </div>
-
-            <Button 
-              onClick={handleSave}
-              disabled={isLoading || !username.trim() || !token.trim()}
-              className="w-full"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
-                  Conectando...
+        <TabsContent value="config" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Usuario</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Tu usuario de Hower"
+                  />
                 </div>
-              ) : (
-                'Conectar'
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+
+                <div className="space-y-2">
+                  <Label htmlFor="token">Token</Label>
+                  <Input
+                    id="token"
+                    type="password"
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    placeholder="Tu token de Hower"
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleSave}
+                  disabled={isLoading || !username.trim() || !token.trim()}
+                  className="w-full"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
+                      Conectando...
+                    </div>
+                  ) : (
+                    'Conectar'
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="export" className="space-y-4">
+          <ExportPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
