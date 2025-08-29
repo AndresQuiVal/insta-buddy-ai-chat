@@ -22,6 +22,7 @@ import TasksHamburgerMenu from '@/components/TasksHamburgerMenu';
 import ProspectActionDialog from '@/components/ProspectActionDialog';
 import HowerService from '@/services/howerService';
 import NewProspectsResults from '@/components/NewProspectsResults';
+import { OnboardingTour } from '@/components/OnboardingTour';
 
 interface ProspectData {
   id: string;
@@ -86,6 +87,42 @@ const TasksToDo2: React.FC = () => {
     }
   }, [currentUser, userLoading, toast]);
 
+  // Onboarding initialization - check if user has seen it before
+  useEffect(() => {
+    const hasSeenOnboardingKey = 'hower-tasks-onboarding-seen';
+    const onboardingSeenBefore = localStorage.getItem(hasSeenOnboardingKey) === 'true';
+    
+    setHasSeenOnboarding(onboardingSeenBefore);
+    
+    // Show onboarding automatically for new users after data is loaded
+    if (!onboardingSeenBefore && !userLoading && currentUser && !prospectsLoading) {
+      const timer = setTimeout(() => {
+        setShowOnboarding(true);
+      }, 2000); // 2 seconds delay to let the page load
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentUser, userLoading, prospectsLoading]);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('hower-tasks-onboarding-seen', 'true');
+    setHasSeenOnboarding(true);
+    setShowOnboarding(false);
+    toast({
+      title: "¡Perfecto! 🎉",
+      description: "Ahora ya sabes cómo usar la herramienta. ¡A conseguir clientes!",
+    });
+  };
+
+  const handleOnboardingSkip = () => {
+    localStorage.setItem('hower-tasks-onboarding-seen', 'true');
+    setHasSeenOnboarding(true);
+    setShowOnboarding(false);
+  };
+
+  const startOnboardingManually = () => {
+    setShowOnboarding(true);
+  };
 
   const [loading, setLoading] = useState(true);
   const [howerUsernames, setHowerUsernames] = useState<string[]>([]);
@@ -97,6 +134,10 @@ const TasksToDo2: React.FC = () => {
   const [activeStatsSection, setActiveStatsSection] = useState<string | null>(null);
   const [activeInteractionTip, setActiveInteractionTip] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<CompletedTasks>({});
+  
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [activeProspectTab, setActiveProspectTab] = useState('dms');
   const [activeYesterdayTab, setActiveYesterdayTab] = useState('dms');
   const [activeWeekTab, setActiveWeekTab] = useState('dms');
@@ -1325,7 +1366,8 @@ const TasksToDo2: React.FC = () => {
     tip,
     taskType,
     showCheckbox = true,
-    customContent
+    customContent,
+    dataOnboarding
   }: {
     title: string;
     count: number;
@@ -1337,6 +1379,7 @@ const TasksToDo2: React.FC = () => {
     taskType: string;
     showCheckbox?: boolean;
     customContent?: React.ReactNode;
+    dataOnboarding?: string;
   }) => {
     const taskKey = `section-${taskType}`;
     const sectionCompleted = completedTasks[taskKey];
@@ -1399,6 +1442,7 @@ const TasksToDo2: React.FC = () => {
             background: 'linear-gradient(to right, #fefefe 0%, #f8fafc 100%)',
             boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
           }}
+          data-onboarding={dataOnboarding}
         >
           <CardHeader className="pb-2 sm:pb-3" onClick={onClick}>
             <CardTitle className="flex items-center justify-between text-base sm:text-lg">
@@ -1955,6 +1999,16 @@ const TasksToDo2: React.FC = () => {
                 
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-4 mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={startOnboardingManually}
+                      className="text-xs"
+                    >
+                      📚 Ver Tutorial
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-center gap-4 mb-4">
                     {isEditingListName ? (
                       <div className="flex items-center justify-center gap-2">
                         <input
@@ -1976,6 +2030,7 @@ const TasksToDo2: React.FC = () => {
                       <h1 
                         className="text-2xl sm:text-3xl font-poppins font-bold mb-2 text-gray-800 cursor-pointer hover:text-primary inline-flex items-center gap-2"
                         onClick={handleEditListName}
+                        data-onboarding="main-title"
                       >
                         {listName}
                         <Edit2 className="w-4 h-4 opacity-50" style={{ display: 'none' }} />
@@ -2008,6 +2063,7 @@ const TasksToDo2: React.FC = () => {
           <div className="mb-4 sm:mb-6">
             <Card
               className="transition-all hover:shadow-md border-l-4 border-l-primary"
+              data-onboarding="pending-section"
               style={{
                 background: 'linear-gradient(to right, #fefefe 0%, #f8fafc 100%)',
                 boxShadow: activeSection === 'pending' ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
@@ -2159,6 +2215,7 @@ const TasksToDo2: React.FC = () => {
           <div className="mb-4 sm:mb-6">
             <Card
               className="cursor-pointer transition-all hover:shadow-md border-l-4 border-l-primary/30"
+              data-onboarding="followup-section"
               style={{
                 background: 'linear-gradient(to right, #fefefe 0%, #f8fafc 100%)',
                 boxShadow: showFollowUpSections ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
@@ -2265,6 +2322,7 @@ const TasksToDo2: React.FC = () => {
                        ...prospectsClassification.newProspects.comment]}
             tip="Antes de enviar el primer mensaje, interactúa con sus posts más recientes: da like, comenta algo auténtico. Esto aumenta las posibilidades de que vean y respondan tu mensaje."
             taskType="new"
+            dataOnboarding="new-prospects-section"
             customContent={
               <div className="mt-6">
                 <div style={{ display: activeSection === 'new' ? 'block' : 'none' }}>
@@ -2290,6 +2348,7 @@ const TasksToDo2: React.FC = () => {
           <div 
             className="bg-white rounded-xl shadow-lg border-l-4 border-green-400 p-4 sm:p-6 cursor-pointer hover:shadow-xl transition-shadow"
             onClick={() => setExpandedDailyTip(!expandedDailyTip)}
+            data-onboarding="tip-section"
             style={{
               backgroundImage: `
                 linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
@@ -2316,7 +2375,12 @@ const TasksToDo2: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        {/* Onboarding Tour */}
+        <OnboardingTour
+          isVisible={showOnboarding}
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
 
         {/* Logo de Hower al final */}
         <div className="mt-8 mb-4 text-center">
@@ -2491,7 +2555,10 @@ const TasksToDo2: React.FC = () => {
         onViewConversation={handleViewConversation}
         onAISuggestion={handleAISuggestion}
       />
+      </div>
     </div>
+  );
+};
   );
 };
 
