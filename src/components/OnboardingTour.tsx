@@ -198,32 +198,32 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
       {/* Tooltip de onboarding */}
       <Card 
-        className={`fixed z-[10000] ${isMobile ? 'mx-2' : 'w-80'} shadow-2xl border-primary/30`}
+        className={`fixed z-[10000] ${isMobile ? 'left-4 right-4 w-auto' : 'w-80'} shadow-2xl border-primary/30`}
         style={tooltipStyle}
       >
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg text-primary">
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-base text-primary flex-1">
               {currentStepData.title}
             </CardTitle>
             <Button
               variant="ghost"
               size="icon"
               onClick={handleSkip}
-              className="h-6 w-6"
+              className="h-6 w-6 flex-shrink-0"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4">
-          <p className="text-sm text-foreground/80">
+        <CardContent className="space-y-4 pt-0">
+          <p className="text-sm text-foreground/80 leading-relaxed">
             {currentStepData.description}
           </p>
           
           {currentStepData.action && (
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-2">
               <p className="text-xs font-medium text-primary">
                 💡 {currentStepData.action}
               </p>
@@ -245,46 +245,38 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
             </div>
           </div>
           
-          {/* Botones de navegación */}
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={prevStep}
-              disabled={currentStep === 0}
-              className="flex items-center gap-1"
-            >
-              <ArrowLeft className="h-3 w-3" />
-              Anterior
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSkip}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <SkipForward className="h-3 w-3 mr-1" />
-              Saltar tour
-            </Button>
-            
+          {/* Botones de navegación - Layout mejorado */}
+          <div className="flex flex-col gap-2">
+            {/* Botón principal grande */}
             <Button
               onClick={nextStep}
+              className="w-full"
               size="sm"
-              className="flex items-center gap-1"
             >
-              {isLastStep ? (
-                <>
-                  <Play className="h-3 w-3" />
-                  ¡Empezar!
-                </>
-              ) : (
-                <>
-                  Siguiente
-                  <ArrowRight className="h-3 w-3" />
-                </>
-              )}
+              {isLastStep ? '¡Empezar!' : 'Siguiente'}
             </Button>
+            
+            {/* Botones secundarios en fila */}
+            <div className="flex justify-between gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={prevStep}
+                disabled={currentStep === 0}
+                className="flex-1"
+              >
+                Anterior
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSkip}
+                className="flex-1 text-muted-foreground hover:text-foreground"
+              >
+                Saltar
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
