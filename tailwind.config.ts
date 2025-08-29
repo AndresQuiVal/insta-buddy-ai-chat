@@ -25,10 +25,24 @@ export default {
 				handwriting: ['Kalam', 'cursive'],
 			},
 			colors: {
+				// Hower Brand Colors - Nueva paleta
+				'hower-purple': {
+					DEFAULT: '#6C4DFE',
+					50: '#F5F3FF',
+					100: '#EDE9FE', 
+					500: '#6C4DFE',
+					600: '#5B3FCF',
+					700: '#4A32A0'
+				},
+				'hower-orange': {
+					DEFAULT: '#FFB347',
+					100: '#FFF3E6',
+					500: '#FFB347'
+				},
 				primary: {
-					DEFAULT: '#7a60ff',
-					light: '#9c89ff',
-					dark: '#6247e0',
+					DEFAULT: '#6C4DFE',
+					light: '#9C89FF',
+					dark: '#5B3FCF',
 				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
