@@ -109,9 +109,6 @@ const TasksToDo2: React.FC = () => {
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
   const [instagramOpened, setInstagramOpened] = useState(false);
   
-  // Estados para ProspectActionDialog
-  const [selectedProspectUsername, setSelectedProspectUsername] = useState<string>('');
-  const [showActionDialog, setShowActionDialog] = useState(false);
 
   const [expandedDailyTip, setExpandedDailyTip] = useState(false);
   const [listName, setListName] = useState('Mi Lista de Prospectos');
@@ -1169,28 +1166,11 @@ const TasksToDo2: React.FC = () => {
     }
   };
 
-  // Funciones para manejar ProspectActionDialog
+  // Función para abrir Instagram directamente
   const handleProspectClick = (username: string) => {
-    setSelectedProspectUsername(username);
-    setShowActionDialog(true);
+    window.open(`https://www.instagram.com/${username}`, '_blank');
   };
 
-  const handleViewConversation = () => {
-    if (selectedProspectUsername) {
-      window.open(`https://www.instagram.com/direct/t/${selectedProspectUsername}`, '_blank');
-      setShowActionDialog(false);
-      setSelectedProspectUsername('');
-    }
-  };
-
-  const handleAISuggestion = () => {
-    setShowActionDialog(false);
-    if (selectedProspectUsername) {
-      // Llamar a openOnboarding para abrir el dialog de IA
-      openOnboarding(selectedProspectUsername, 'outreach', undefined, 'pending');
-    }
-    setSelectedProspectUsername('');
-  };
 
   const ProspectCard = ({ prospect, taskType }: { prospect: ProspectData; taskType: string }) => {
     const taskKey = `${taskType}-${prospect.id}`;
@@ -2386,17 +2366,6 @@ const TasksToDo2: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* ProspectActionDialog */}
-      <ProspectActionDialog
-        isOpen={showActionDialog}
-        onClose={() => {
-          setShowActionDialog(false);
-          setSelectedProspectUsername('');
-        }}
-        prospectUsername={selectedProspectUsername}
-        onViewConversation={handleViewConversation}
-        onAISuggestion={handleAISuggestion}
-      />
       </div>
     </div>
   );
