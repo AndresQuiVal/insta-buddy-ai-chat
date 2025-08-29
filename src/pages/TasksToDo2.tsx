@@ -1820,7 +1820,7 @@ const TasksToDo2: React.FC = () => {
                       </Tabs>
                       
                       {/* Botón Más Detalles */}
-                      <div className="text-center mt-4">
+                      <div className="text-center mt-4" style={{ display: 'none' }}>
                         <Button
                           onClick={() => setShowDetailedMetrics(!showDetailedMetrics)}
                           variant="outline"
