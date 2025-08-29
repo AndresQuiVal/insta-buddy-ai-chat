@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Menu, BarChart3, MessageCircle, Users, Settings } from 'lucide-react';
+import { Menu, BarChart3, MessageCircle, Users, Settings, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ExportDialog from './ExportDialog';
 
 interface HamburgerMenuProps {
   activeTab: string;
@@ -9,10 +10,12 @@ interface HamburgerMenuProps {
 
 const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ activeTab, onTabChange }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   const menuItems = [
     { id: 'autoresponder', label: 'Autorespondedor', icon: MessageCircle },
     { id: 'prospecta', label: 'Prospecta', icon: Users },
+    { id: 'export', label: 'Exportar', icon: Download },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
@@ -37,7 +40,11 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ activeTab, onTabChange })
             <button
               key={item.id}
               onClick={() => {
-                onTabChange(item.id);
+                if (item.id === 'export') {
+                  setShowExportDialog(true);
+                } else {
+                  onTabChange(item.id);
+                }
                 setIsOpen(false);
               }}
               className={cn(
@@ -51,6 +58,11 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ activeTab, onTabChange })
           );
         })}
       </div>
+
+      <ExportDialog 
+        open={showExportDialog} 
+        onOpenChange={setShowExportDialog} 
+      />
     </div>
   );
 };

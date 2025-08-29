@@ -146,6 +146,36 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
               {posts.length}
             </span>
           </div>
+
+          {/* Tip for Posts */}
+          <div className="mb-4 p-4 border-2 border-primary rounded-xl bg-primary/5">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="h-4 w-4 text-white" />
+              </div>
+              <div className="space-y-3 flex-1">
+                <h4 className="font-semibold text-primary">¿Qué verás aquí abajo?</h4>
+                <p className="text-sm text-muted-foreground">
+                  Estos son posts/reels de Instagram donde las personas que comentaron{" "}
+                  <span className="font-semibold text-primary">pueden ser tus prospectos!</span>
+                </p>
+                
+                <div className="flex items-start gap-2">
+                  <span className="text-red-500 text-sm">🎯</span>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">¿Qué hago ahora?</p>
+                    <p className="text-sm text-muted-foreground">
+                      Revisa los posts/reels dando click en{" "}
+                      <span className="font-semibold">"Ver en Instagram"</span>, verifica que sean 
+                      parecidos a tu nicho, y haz click en{" "}
+                      <span className="font-semibold">"Prospectar"</span> en el que más te guste para 
+                      contactar a esos que comentaron.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <div className="space-y-3">
             {posts.map((post) => (
@@ -199,6 +229,36 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
             <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-sm font-medium">
               {accounts.length}
             </span>
+          </div>
+
+          {/* Tip for Accounts */}
+          <div className="mb-4 p-4 border-2 border-green-600 rounded-xl bg-green-50">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <Users className="h-4 w-4 text-white" />
+              </div>
+              <div className="space-y-3 flex-1">
+                <h4 className="font-semibold text-green-700">¿Qué verás aquí abajo?</h4>
+                <p className="text-sm text-muted-foreground">
+                  Aquí encontrarás <span className="font-semibold text-green-700">cuentas de Instagram</span> cuyos seguidores pueden ser tus 
+                  prospectos!.
+                </p>
+                
+                <div className="flex items-start gap-2">
+                  <span className="text-red-500 text-sm">🎯</span>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">¿Qué hago ahora?</p>
+                    <p className="text-sm text-muted-foreground">
+                      Revisa cada cuenta dando click en{" "}
+                      <span className="font-semibold">"Ver en Instagram"</span>, verifica que sea de tu 
+                      nicho y que tenga seguidores activos, y haz click en{" "}
+                      <span className="font-semibold">"Prospectar"</span> para 
+                      contactar a sus seguidores.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="space-y-3">
