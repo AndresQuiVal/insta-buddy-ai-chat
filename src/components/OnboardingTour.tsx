@@ -21,63 +21,41 @@ interface OnboardingTourProps {
 const onboardingSteps: OnboardingStep[] = [
   {
     id: 'welcome',
-    title: '¡Bienvenido a tu Dashboard de Prospectos! 🎉',
-    description: 'Te voy a mostrar paso a paso cómo usar esta herramienta para conseguir más clientes. ¡Empezamos!',
+    title: '¡Bienvenido! 👋',
+    description: 'Te muestro cómo funciona en 5 pasos',
     target: '[data-onboarding="main-title"]',
     position: 'bottom'
   },
   {
-    id: 'progress',
-    title: 'Tu Progreso Diario 📊',
-    description: 'Aquí ves cuántos prospectos has contactado hoy y tu progreso hacia la meta. ¡La constancia es clave!',
-    target: '[data-onboarding="progress-bar"]',
-    position: 'bottom'
-  },
-  {
     id: 'pending-prospects',
-    title: 'Prospectos Pendientes 🎯',
-    description: 'Estos son los nuevos prospectos que debes contactar HOY. Haz clic en cada uno para enviar el primer mensaje.',
+    title: 'Prospectos pendientes 🎯',
+    description: 'Nuevos contactos para enviar primer mensaje',
     target: '[data-onboarding="pending-section"]',
     position: 'right',
-    action: 'Haz clic en un prospecto para comenzar'
+    action: 'Toca para ver la lista'
   },
   {
     id: 'follow-up',
-    title: 'Seguimientos Importantes ⏰',
-    description: 'Aquí están los prospectos que ya contactaste antes y necesitan seguimiento. ¡No los dejes enfriar!',
+    title: 'Seguimientos ⏰',
+    description: 'Contactos que necesitan segundo mensaje',
     target: '[data-onboarding="followup-section"]',
     position: 'right',
     action: 'Revisa quién necesita seguimiento'
   },
   {
     id: 'tip-section',
-    title: 'Tip Pro del Día 💡',
-    description: 'Cada día encuentras aquí un consejo probado para mejorar tus resultados. ¡Son oro puro!',
+    title: 'Tip del día 💡',
+    description: 'Consejo diario para mejorar resultados',
     target: '[data-onboarding="tip-section"]',
     position: 'top'
   },
   {
-    id: 'prospect-card',
-    title: 'Tarjeta de Prospecto 👤',
-    description: 'Cada tarjeta muestra la info del prospecto, el mensaje sugerido y botones para actuar. Todo lo que necesitas en un lugar.',
-    target: '[data-onboarding="prospect-card"]',
-    position: 'left'
-  },
-  {
-    id: 'instagram-button',
-    title: 'Botón de Instagram 📱',
-    description: 'Este botón te lleva directo al perfil del prospecto en Instagram. Úsalo para enviar mensajes personalizados.',
-    target: '[data-onboarding="instagram-button"]',
-    position: 'top',
-    action: 'Clic aquí para ir a Instagram'
-  },
-  {
-    id: 'mark-complete',
-    title: 'Marcar como Completado ✅',
-    description: 'Después de contactar al prospecto, marca la tarea como completada para llevar un registro preciso.',
-    target: '[data-onboarding="complete-button"]',
-    position: 'top',
-    action: 'Marca cuando hayas enviado el mensaje'
+    id: 'how-to-contact',
+    title: '¿Cómo contactar? 📱',
+    description: 'Toca un prospecto → Ve a Instagram → Envía mensaje → Marca como hecho',
+    target: '[data-onboarding="pending-section"]',
+    position: 'left',
+    action: '¡Empieza ahora!'
   }
 ];
 
@@ -139,8 +117,26 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   if (!isActive || !currentStepData) return null;
 
   const getTooltipPosition = () => {
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile) {
+      // En móvil, siempre en la parte inferior
+      return {
+        bottom: '20px',
+        left: '10px',
+        right: '10px',
+        transform: 'none'
+      };
+    }
+
     const targetElement = document.querySelector(currentStepData.target);
-    if (!targetElement) return { top: '50%', left: '50%' };
+    if (!targetElement) {
+      return {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      };
+    }
 
     const rect = targetElement.getBoundingClientRect();
     const position = currentStepData.position;
@@ -148,26 +144,26 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     switch (position) {
       case 'top':
         return {
-          top: `${rect.top - 20}px`,
-          left: `${rect.left + rect.width / 2}px`,
+          top: `${Math.max(rect.top - 20, 20)}px`,
+          left: `${Math.min(rect.left + rect.width / 2, window.innerWidth - 160)}px`,
           transform: 'translate(-50%, -100%)'
         };
       case 'bottom':
         return {
-          top: `${rect.bottom + 20}px`,
-          left: `${rect.left + rect.width / 2}px`,
+          top: `${Math.min(rect.bottom + 20, window.innerHeight - 200)}px`,
+          left: `${Math.min(rect.left + rect.width / 2, window.innerWidth - 160)}px`,
           transform: 'translate(-50%, 0)'
         };
       case 'left':
         return {
           top: `${rect.top + rect.height / 2}px`,
-          left: `${rect.left - 20}px`,
+          left: `${Math.max(rect.left - 20, 20)}px`,
           transform: 'translate(-100%, -50%)'
         };
       case 'right':
         return {
           top: `${rect.top + rect.height / 2}px`,
-          left: `${rect.right + 20}px`,
+          left: `${Math.min(rect.right + 20, window.innerWidth - 320)}px`,
           transform: 'translate(0, -50%)'
         };
       default:
@@ -180,6 +176,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
   };
 
   const tooltipStyle = getTooltipPosition();
+  const isMobile = window.innerWidth < 768;
 
   return (
     <>
@@ -201,7 +198,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
       {/* Tooltip de onboarding */}
       <Card 
-        className="fixed z-[10000] w-80 shadow-2xl border-primary/30"
+        className={`fixed z-[10000] ${isMobile ? 'mx-2' : 'w-80'} shadow-2xl border-primary/30`}
         style={tooltipStyle}
       >
         <CardHeader className="pb-3">
