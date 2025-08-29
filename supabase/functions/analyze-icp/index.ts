@@ -84,19 +84,10 @@ El JSON debe tener exactamente esta estructura:
   "completedBlocks": ["array de bloques completos"],
   "missingBlocks": ["array de bloques faltantes"], 
   "suggestions": ["array de sugerencias"],
-  "searchKeywords": ["array de keywords para búsqueda"],
-  "commentKeywords": ["array de keywords para posts"],
-  "accountKeywords": ["array de keywords para cuentas"]
+  "searchKeywords": ["array de keywords si score es 4"]
 }
 
-Los 4 bloques son: WHO, WHERE, BAIT, RESULT
-
-Si el score es 3 o 4, debes generar keywords específicas:
-- searchKeywords: hashtags y palabras generales para búsqueda (#skincare, belleza, etc.)
-- commentKeywords: hashtags específicos para encontrar posts con comentarios (#rutinafacial, #glowskin, etc.)
-- accountKeywords: tipos de cuentas y nombres específicos (@skincare, esteticista, beauty, etc.)
-
-Genera entre 15-25 keywords por categoría, mezclando español e inglés, enfocándote en el nicho específico del ICP.`
+Los 4 bloques son: WHO, WHERE, BAIT, RESULT`
           },
           {
             role: 'user',
