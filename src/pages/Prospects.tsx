@@ -454,7 +454,7 @@ const ProspectsPage: React.FC = () => {
     }, 4000);
   };
 
-  const instaUrl = (username: string) => `https://www.instagram.com/m/${username}`;
+  const instaUrl = (username: string) => `https://www.instagram.com/${username}`;
 
   // Gamificación mejorada
   const totalProspectos = 17; // Total de prospectos reales de @marikowskaya
