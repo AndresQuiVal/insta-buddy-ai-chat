@@ -1900,14 +1900,11 @@ const TasksToDo2: React.FC = () => {
                         onClick={handleEditListName}
                         data-onboarding="main-title"
                       >
-                        {listName}
+                        Mi Lista de <span className="bg-[#724bff] text-white px-3 py-1 rounded-lg">Prospectos</span>
                         <Edit2 className="w-4 h-4 opacity-50" style={{ display: 'none' }} />
                       </h1>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 italic mb-4 font-mono">
-                    {motivationalQuote}
-                  </p>
                 </div>
                 
                 {/* Tag de tiempo estimado */}
@@ -2176,7 +2173,16 @@ const TasksToDo2: React.FC = () => {
             />
           </div>
           </div>
-        </div>
+          </div>
+
+          {/* Frase motivacional como quote */}
+          <div className="mt-8 mb-8">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-purple-400 p-4 rounded-lg">
+              <blockquote className="text-gray-700 italic font-medium text-center">
+                "{motivationalQuote}"
+              </blockquote>
+            </div>
+          </div>
 
 
         {/* Tips generales - Notebook style */}
