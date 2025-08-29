@@ -1555,7 +1555,7 @@ const TasksToDo2: React.FC = () => {
                     variant="outline"
                     className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600 font-mono text-sm shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
                   >
-                    {showStats ? '📊 Ocultar mis números' : '🚀 Mis números'}
+                    {showStats ? '📊 Ocultar mis números' : '📊 Mis números'}
                   </Button>
                   
                 </div>
@@ -2225,15 +2225,6 @@ const TasksToDo2: React.FC = () => {
           
           {/* Botones de opciones */}
           <div className="flex gap-3 justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.location.href = '/dashboard'}
-              className="text-primary border-primary/30 hover:bg-primary/5"
-            >
-              <Settings className="w-4 h-4 mr-1" />
-              Otras opciones
-            </Button>
             <Button
               variant="outline"
               size="sm"
