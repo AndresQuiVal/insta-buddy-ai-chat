@@ -37,7 +37,7 @@ const ProspectActionDialog = ({
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                Conversar con @{prospectUsername}
+                Ir a Instagram
               </h3>
               <p className="text-sm text-gray-600">
                 Ir directo al chat de Instagram
@@ -49,6 +49,7 @@ const ProspectActionDialog = ({
           <div 
             onClick={onAISuggestion}
             className="flex items-center p-6 bg-white rounded-2xl border border-gray-200 hover:border-primary/30 cursor-pointer transition-all duration-200 hover:shadow-lg group"
+            style={{ display: 'none' }}
           >
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mr-6 group-hover:scale-105 transition-transform" style={{ backgroundColor: '#7a60ff' }}>
               <Bot className="w-8 h-8 text-white" />
