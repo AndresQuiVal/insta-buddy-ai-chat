@@ -2,19 +2,20 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Bot, Target, Clock, Wand2, BookOpen } from 'lucide-react';
+import { Settings, Bot, Target, Clock, Wand2, BookOpen, Download } from 'lucide-react';
 import PersonalityEditor from './PersonalityEditor';
 import IdealClientTraits from './IdealClientTraits';
 import AutoResetConfig from './AutoResetConfig';
 import OpenAIKeyManager from './OpenAIKeyManager';
 import HowerConfig from './HowerConfig';
+import ExportPanel from './ExportPanel';
 import { MessageGenerator } from './MessageGenerator';
 
 const ConfigPanel = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="hower" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="hower" className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
             Hower
@@ -34,6 +35,10 @@ const ConfigPanel = () => {
           <TabsTrigger value="auto-reset" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
             Reinicio Auto
+          </TabsTrigger>
+          <TabsTrigger value="export" className="flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Exportar
           </TabsTrigger>
           <TabsTrigger value="api" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
@@ -85,6 +90,10 @@ const ConfigPanel = () => {
 
         <TabsContent value="auto-reset" className="space-y-4">
           <AutoResetConfig />
+        </TabsContent>
+
+        <TabsContent value="export" className="space-y-4">
+          <ExportPanel />
         </TabsContent>
 
         <TabsContent value="api" className="space-y-4">
