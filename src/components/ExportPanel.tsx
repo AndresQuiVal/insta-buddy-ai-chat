@@ -81,6 +81,9 @@ const ExportPanel = () => {
             case 'Categoría':
               value = row.categoria;
               break;
+            case 'URL de Instagram':
+              value = row.url_instagram;
+              break;
             default:
               value = row[header];
           }
@@ -179,7 +182,8 @@ const ExportPanel = () => {
                 username: item.username,
                 envie_ultimo_mensaje: item.last_message_from_prospect ? 'No' : 'Sí',
                 fecha_ultimo_mensaje: item.last_message_date,
-                categoria: 'Prospectos Pendientes'
+                categoria: 'Prospectos Pendientes',
+                url_instagram: `https://www.instagram.com/${item.username}`
               }));
               exportName += exportName ? '_pendientes' : 'pendientes';
             }
@@ -202,7 +206,8 @@ const ExportPanel = () => {
                 username: item.username,
                 envie_ultimo_mensaje: item.last_message_from_prospect ? 'No' : 'Sí',
                 fecha_ultimo_mensaje: item.last_message_date,
-                categoria: 'Prospectos en Seguimiento'
+                categoria: 'Prospectos en Seguimiento',
+                url_instagram: `https://www.instagram.com/${item.username}`
               }));
               exportName += exportName ? '_seguimiento' : 'seguimiento';
             }
@@ -227,7 +232,8 @@ const ExportPanel = () => {
                 username: item.title || 'Sin username',
                 envie_ultimo_mensaje: 'No',  // Para nuevos prospectos siempre es 'No'
                 fecha_ultimo_mensaje: item.created_at,
-                categoria: 'Nuevos Prospectos - Posts'
+                categoria: 'Nuevos Prospectos - Posts',
+                url_instagram: item.instagram_url || `https://www.instagram.com/${item.title}`
               }));
               exportName += exportName ? '_posts' : 'posts';
             }
@@ -252,7 +258,8 @@ const ExportPanel = () => {
                 username: item.title || 'Sin username',
                 envie_ultimo_mensaje: 'No',  // Para nuevos prospectos siempre es 'No'
                 fecha_ultimo_mensaje: item.created_at,
-                categoria: 'Nuevos Prospectos - Accounts'
+                categoria: 'Nuevos Prospectos - Accounts',
+                url_instagram: item.instagram_url || `https://www.instagram.com/${item.title}`
               }));
               exportName += exportName ? '_accounts' : 'accounts';
             }
@@ -276,7 +283,7 @@ const ExportPanel = () => {
       }
 
       // Headers específicos que solicitas
-      const headers = ['Usuario', '¿Envié el último mensaje?', 'Fecha de último mensaje', 'Categoría'];
+      const headers = ['Usuario', '¿Envié el último mensaje?', 'Fecha de último mensaje', 'Categoría', 'URL de Instagram'];
 
       // Generate file content based on format
       let content: string;
@@ -300,7 +307,8 @@ const ExportPanel = () => {
             'Usuario': item.username,
             '¿Envié el último mensaje?': item.envie_ultimo_mensaje,
             'Fecha de último mensaje': item.fecha_ultimo_mensaje,
-            'Categoría': item.categoria
+            'Categoría': item.categoria,
+            'URL de Instagram': item.url_instagram
           }));
           
           content = JSON.stringify(jsonData, null, 2);
