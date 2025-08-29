@@ -29,7 +29,7 @@ const TasksHamburgerMenu: React.FC<TasksHamburgerMenuProps> = () => {
 
       <div
         className={cn(
-          "absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-purple-100 transition-all duration-200",
+          "absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-purple-100 transition-all duration-200",
           isOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"
         )}
       >

@@ -1519,13 +1519,16 @@ const TasksToDo2: React.FC = () => {
         width: '100%'
       }}
     >
-      {/* Hamburger Menu - positioned at top right */}
-      <div className="absolute top-6 right-6 z-50">
-        <TasksHamburgerMenu />
+      {/* Navbar morado visible */}
+      <div className="h-16 w-full" style={{ backgroundColor: '#724bff' }}>
+        {/* Hamburger Menu - positioned at top left */}
+        <div className="absolute top-6 left-6 z-50">
+          <TasksHamburgerMenu />
+        </div>
       </div>
       
-      {/* White Content Container with rounded top and margin */}
-      <div className="bg-white rounded-t-[32px] mt-20 min-h-[calc(100vh-5rem)] px-6 py-8">
+      {/* White Content Container with rounded top */}
+      <div className="bg-white rounded-t-[32px] mt-0 min-h-[calc(100vh-4rem)] px-6 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header content */}
           <div className="mb-6 sm:mb-8 relative">
