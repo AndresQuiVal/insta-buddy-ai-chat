@@ -1208,7 +1208,7 @@ const TasksToDo2: React.FC = () => {
     
     return (
       <div 
-        className={`bg-gradient-to-r from-white to-blue-50 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}
+        className={`bg-gradient-to-r from-white to-primary/5 border-2 border-primary/20 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer ${isCompleted ? 'opacity-60 line-through' : ''} mb-4 p-1`}
         onClick={() => handleProspectClick(prospect.userName)}
       >
         {/* Información principal del prospecto */}
@@ -1233,7 +1233,7 @@ const TasksToDo2: React.FC = () => {
                 }}
                 size="sm"
                 variant="outline"
-                className="text-xs sm:text-sm bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                className="text-xs sm:text-sm bg-primary/5 border-primary/30 text-primary hover:bg-primary/10"
                 disabled={isCompleted}
               >
                 <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
@@ -1249,7 +1249,7 @@ const TasksToDo2: React.FC = () => {
           <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
             <div className="mt-3">
               <div 
-                className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-200"
+                className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 rounded-lg border border-primary/20"
                 style={{
                   backgroundImage: 'linear-gradient(90deg, #e0e7ff 1px, transparent 1px)',
                   backgroundSize: '20px 1px',
@@ -1267,7 +1267,7 @@ const TasksToDo2: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <div className="bg-white rounded border-l-4 border-pink-400 overflow-hidden">
+                  <div className="bg-white rounded border-l-4 border-primary overflow-hidden">
                     <div className="flex items-center p-2">
                       <Share2 className="h-4 w-4 text-pink-600 mr-2 flex-shrink-0" />
                       <span className="text-sm font-mono font-bold">Comentar en su historia</span>
@@ -1368,23 +1368,23 @@ const TasksToDo2: React.FC = () => {
         case 'week':
           return {
             title: "🚀 Frase que revive contactos muertos",
-            gradient: "from-blue-100 to-blue-200",
-            border: "border-blue-300", 
-            textColor: "text-blue-800"
+            gradient: "from-primary/10 to-primary/20",
+            border: "border-primary/30", 
+            textColor: "text-primary"
           };
         case 'new':
           return {
             title: "💎 Sistema de prospección élite",
-            gradient: "from-pink-100 to-pink-200",
-            border: "border-pink-300",
-            textColor: "text-pink-800"
+            gradient: "from-primary/10 to-primary/20",
+            border: "border-primary/30",
+            textColor: "text-primary"
           };
         default:
           return {
             title: "🔥 Secreto que aumenta respuestas 10x",
-            gradient: "from-orange-100 to-orange-200",
-            border: "border-orange-300",
-            textColor: "text-orange-800"
+            gradient: "from-primary/10 to-primary/20",
+            border: "border-primary/30",
+            textColor: "text-primary"
           };
       }
     };
@@ -1428,7 +1428,7 @@ const TasksToDo2: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <Alert className="border-blue-200 bg-blue-50">
+                    <Alert className="border-primary/20 bg-primary/5">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-2 flex-1">
                           <Search className="h-4 w-4 mt-0.5" />
@@ -1675,7 +1675,7 @@ const TasksToDo2: React.FC = () => {
           {showStats && (
                   <div className="mb-6" data-stats-container>
                     <div 
-                      className="bg-white rounded-xl shadow-lg border-l-4 border-blue-400 p-4 sm:p-6"
+                      className="bg-white rounded-xl shadow-lg border-l-4 border-primary p-4 sm:p-6"
                       style={{
                         backgroundImage: `
                           linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
@@ -1751,8 +1751,8 @@ const TasksToDo2: React.FC = () => {
                         </TabsContent>
                         
                         <TabsContent value="ayer" className="space-y-3">
-                          <div className="bg-gradient-to-r from-blue-50 to-white p-3 rounded-lg border border-blue-200">
-                            <h3 className="text-base font-bold text-blue-800 mb-3 font-mono">📅 Ayer</h3>
+                          <div className="bg-gradient-to-r from-primary/5 to-white p-3 rounded-lg border border-primary/20">
+                            <h3 className="text-base font-bold text-primary mb-3 font-mono">📅 Ayer</h3>
                             
                             <div className="space-y-2">
                               <div 
@@ -1900,7 +1900,7 @@ const TasksToDo2: React.FC = () => {
                         <Button
                           onClick={() => setShowDetailedMetrics(!showDetailedMetrics)}
                           variant="outline"
-                          className="bg-gradient-to-r from-blue-100 to-cyan-100 border-blue-300 text-blue-700 hover:from-blue-200 hover:to-cyan-200 font-mono text-sm"
+                          className="bg-gradient-to-r from-primary/10 to-primary/20 border-primary/30 text-primary hover:from-primary/20 hover:to-primary/30 font-mono text-sm"
                         >
                           {showDetailedMetrics ? '📈 Ocultar detalles' : '📊 Más Detalles'}
                         </Button>
@@ -1917,8 +1917,8 @@ const TasksToDo2: React.FC = () => {
                               <div className="text-2xl font-bold text-green-600">4.2</div>
                             </div>
                             
-                            <div className="bg-white p-3 rounded-lg border-l-4 border-blue-400">
-                              <div className="text-sm font-mono font-bold text-blue-800">🎯 # de Mensajes para Lograr 1 Invitación</div>
+                            <div className="bg-white p-3 rounded-lg border-l-4 border-primary">
+                              <div className="text-sm font-mono font-bold text-primary">🎯 # de Mensajes para Lograr 1 Invitación</div>
                               <div className="text-2xl font-bold text-blue-600">8.7</div>
                             </div>
                             
@@ -2044,7 +2044,7 @@ const TasksToDo2: React.FC = () => {
                       }}
                       variant="outline" 
                       size="sm"
-                      className="bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                      className="bg-primary/5 border-primary/30 text-primary hover:bg-primary/10"
                       title="Haz clic después de responder en Instagram para sincronizar"
                       style={{ display: 'none' }}
                     >
@@ -2073,7 +2073,7 @@ const TasksToDo2: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      <Alert className="border-blue-200 bg-blue-50">
+                      <Alert className="border-primary/20 bg-primary/5">
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-2 flex-1">
                             <Search className="h-4 w-4 mt-0.5" />
@@ -2158,7 +2158,7 @@ const TasksToDo2: React.FC = () => {
           {/* 2. Dar Seguimientos e Interactuar */}
           <div className="mb-4 sm:mb-6">
             <Card
-              className="cursor-pointer transition-all hover:shadow-md border-l-4 border-l-orange-300"
+              className="cursor-pointer transition-all hover:shadow-md border-l-4 border-l-primary/30"
               style={{
                 background: 'linear-gradient(to right, #fefefe 0%, #f8fafc 100%)',
                 boxShadow: showFollowUpSections ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)'
@@ -2167,7 +2167,7 @@ const TasksToDo2: React.FC = () => {
               <CardHeader className="pb-2 sm:pb-3" onClick={() => setShowFollowUpSections(!showFollowUpSections)}>
                 <CardTitle className="flex items-center justify-between text-base sm:text-lg">
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 hidden" />
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 hidden" />
                     <span className={`${(completedTasks['section-followup'] || 
                       (prospectsClassification.noResponseYesterday.dm.length === 0 && 
                        prospectsClassification.noResponseYesterday.comment.length === 0 &&
@@ -2235,7 +2235,7 @@ const TasksToDo2: React.FC = () => {
                   tip={
                     <div className="space-y-3">
                       <p>Envía este mensaje por <strong>texto</strong>:</p>
-                      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded font-mono text-sm" style={{
+                      <div className="bg-primary/5 border-l-4 border-primary p-3 rounded font-mono text-sm" style={{
                         backgroundImage: 'linear-gradient(90deg, #dbeafe 1px, transparent 1px)',
                         backgroundSize: '20px 1px',
                         backgroundPosition: '0 15px'
@@ -2335,7 +2335,7 @@ const TasksToDo2: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => window.location.href = '/dashboard'}
-              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+              className="text-primary border-primary/30 hover:bg-primary/5"
             >
               <Settings className="w-4 h-4 mr-1" />
               Otras opciones
@@ -2388,7 +2388,7 @@ const TasksToDo2: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                       <span className="font-medium text-sm">Mensaje generado por IA</span>
@@ -2422,8 +2422,8 @@ const TasksToDo2: React.FC = () => {
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">Ahora abre Instagram y envía el mensaje:</p>
                 
-                <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-lg p-4 text-center">
-                  <div className="text-pink-700 font-medium mb-2">
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-lg p-4 text-center">
+                  <div className="text-primary font-medium mb-2">
                     📱 Abrir conversación con @{dialogUser}
                   </div>
                   <Button 
@@ -2437,7 +2437,7 @@ const TasksToDo2: React.FC = () => {
                     Abrir Instagram
                   </Button>
                   
-                  <div className="mt-3 pt-3 border-t border-pink-200">
+                  <div className="mt-3 pt-3 border-t border-primary/20">
                     <p className="text-xs text-gray-500 text-center mb-2">
                       ¿No se abrió el chat? Copia este enlace y pégalo en tu navegador:
                     </p>
@@ -2452,7 +2452,7 @@ const TasksToDo2: React.FC = () => {
                           description: `Pega el enlace en tu navegador para ir al chat de @${dialogUser}`,
                         });
                       }}
-                      className="w-full text-xs border-pink-200 text-pink-600 hover:bg-pink-50"
+                      className="w-full text-xs border-primary/20 text-primary hover:bg-primary/5"
                     >
                       <Copy className="h-3 w-3 mr-1" />
                       Copiar enlace de @{dialogUser}
