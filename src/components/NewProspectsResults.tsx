@@ -165,11 +165,7 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                   <div className="space-y-1">
                     <p className="text-sm font-medium">¿Qué hago ahora?</p>
                     <p className="text-sm text-muted-foreground">
-                      Revisa los posts/reels dando click en{" "}
-                      <span className="font-semibold">"Ver en Instagram"</span>, verifica que sean 
-                      parecidos a tu nicho, y haz click en{" "}
-                      <span className="font-semibold">"Prospectar"</span> en el que más te guste para 
-                      contactar a esos que comentaron.
+                      Revisa los posts/reels dando click en "Ver en Instagram", verifica las personas que han comentado, y prospectalos! son tus clientes ideales!
                     </p>
                   </div>
                 </div>
@@ -249,11 +245,7 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                   <div className="space-y-1">
                     <p className="text-sm font-medium">¿Qué hago ahora?</p>
                     <p className="text-sm text-muted-foreground">
-                      Revisa cada cuenta dando click en{" "}
-                      <span className="font-semibold">"Ver en Instagram"</span>, verifica que sea de tu 
-                      nicho y que tenga seguidores activos, y haz click en{" "}
-                      <span className="font-semibold">"Prospectar"</span> para 
-                      contactar a sus seguidores.
+                      Da click en las cuentas, checa sus seguidores, y prospectalos! ellos son tus clientes ideales!
                     </p>
                   </div>
                 </div>
