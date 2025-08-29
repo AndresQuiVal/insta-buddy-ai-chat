@@ -58,24 +58,74 @@ const ExportPanel = () => {
     );
   };
 
-  const generateCSV = (data: any[], headers: string[]) => {
+  const generateCSV = (data: any[], translatedHeaders: string[]) => {
+    if (data.length === 0) return '';
+    
+    // Crear mapeo inverso para obtener las keys originales
+    const headerTranslations: { [key: string]: string } = {
+      'username': 'Usuario',
+      'prospect_instagram_id': 'ID Instagram',
+      'status': 'Estado',
+      'followers_count': 'Seguidores',
+      'biography': 'Biografía',
+      'categoria': 'Categoría',
+      'sender_id': 'ID Remitente',
+      'followup_message_text': 'Mensaje de Seguimiento',
+      'followup_scheduled_at': 'Seguimiento Programado',
+      'is_completed': 'Completado',
+      'instagram_url': 'URL Instagram',
+      'title': 'Título',
+      'description': 'Descripción',
+      'search_keywords': 'Palabras Clave',
+      'result_type': 'Tipo de Resultado',
+      'prospect_id': 'ID Prospecto',
+      'follows_count': 'Siguiendo',
+      'media_count': 'Publicaciones',
+      'last_message_date': 'Último Mensaje',
+      'first_contact_date': 'Primer Contacto'
+    };
+    
+    // Crear mapeo inverso
+    const reverseTranslations: { [key: string]: string } = {};
+    Object.entries(headerTranslations).forEach(([key, value]) => {
+      reverseTranslations[value] = key;
+    });
+    
     const csvContent = [
-      headers.join(','),
+      translatedHeaders.join(','),
       ...data.map(row =>
-        headers.map(header =>
-          typeof row[header] === 'string' && row[header].includes(',')
-            ? `"${row[header].replace(/"/g, '""')}"`
-            : row[header] || ''
-        ).join(',')
+        translatedHeaders.map(translatedHeader => {
+          const originalKey = reverseTranslations[translatedHeader] || translatedHeader;
+          const value = row[originalKey];
+          
+          if (value === null || value === undefined) return '';
+          
+          // Manejar arrays
+          if (Array.isArray(value)) {
+            return `"${value.join('; ')}"`;
+          }
+          
+          // Manejar strings con comas
+          if (typeof value === 'string' && value.includes(',')) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          
+          // Manejar booleanos
+          if (typeof value === 'boolean') {
+            return value ? 'Sí' : 'No';
+          }
+          
+          return value;
+        }).join(',')
       )
     ].join('\n');
     return csvContent;
   };
 
-  const generateExcel = async (data: any[], headers: string[]) => {
-    // For now, we'll use a simple CSV-like format for Excel
-    // In a real implementation, you'd use a library like xlsx
-    return generateCSV(data, headers);
+  const generateExcel = async (data: any[], translatedHeaders: string[]) => {
+    // Para Excel también usamos el formato CSV mejorado
+    // En una implementación real, usarías una librería como xlsx
+    return generateCSV(data, translatedHeaders);
   };
 
   const downloadFile = (content: string, filename: string, mimeType: string) => {
@@ -225,9 +275,35 @@ const ExportPanel = () => {
       let headers: string[] = [];
       if (allData.length > 0) {
         const firstItem = allData[0];
-        headers = Object.keys(firstItem).filter(key => 
+        const rawHeaders = Object.keys(firstItem).filter(key => 
           !['id', 'created_at', 'updated_at', 'raw_data', 'analysis_data'].includes(key)
         );
+        
+        // Traducir headers al español
+        const headerTranslations: { [key: string]: string } = {
+          'username': 'Usuario',
+          'prospect_instagram_id': 'ID Instagram',
+          'status': 'Estado',
+          'followers_count': 'Seguidores',
+          'biography': 'Biografía',
+          'categoria': 'Categoría',
+          'sender_id': 'ID Remitente',
+          'followup_message_text': 'Mensaje de Seguimiento',
+          'followup_scheduled_at': 'Seguimiento Programado',
+          'is_completed': 'Completado',
+          'instagram_url': 'URL Instagram',
+          'title': 'Título',
+          'description': 'Descripción',
+          'search_keywords': 'Palabras Clave',
+          'result_type': 'Tipo de Resultado',
+          'prospect_id': 'ID Prospecto',
+          'follows_count': 'Siguiendo',
+          'media_count': 'Publicaciones',
+          'last_message_date': 'Último Mensaje',
+          'first_contact_date': 'Primer Contacto'
+        };
+        
+        headers = rawHeaders.map(header => headerTranslations[header] || header);
       }
 
       // Generate file content based on format
@@ -247,14 +323,44 @@ const ExportPanel = () => {
           fileExtension = 'xlsx';
           break;
         case 'json':
-          const filteredData = allData.map(item => {
-            const filtered: any = {};
-            headers.forEach(header => {
-              filtered[header] = item[header];
+          // Para JSON también traducir las keys
+          const headerTranslations: { [key: string]: string } = {
+            'username': 'Usuario',
+            'prospect_instagram_id': 'ID Instagram',
+            'status': 'Estado',
+            'followers_count': 'Seguidores',
+            'biography': 'Biografía',
+            'categoria': 'Categoría',
+            'sender_id': 'ID Remitente',
+            'followup_message_text': 'Mensaje de Seguimiento',
+            'followup_scheduled_at': 'Seguimiento Programado',
+            'is_completed': 'Completado',
+            'instagram_url': 'URL Instagram',
+            'title': 'Título',
+            'description': 'Descripción',
+            'search_keywords': 'Palabras Clave',
+            'result_type': 'Tipo de Resultado',
+            'prospect_id': 'ID Prospecto',
+            'follows_count': 'Siguiendo',
+            'media_count': 'Publicaciones',
+            'last_message_date': 'Último Mensaje',
+            'first_contact_date': 'Primer Contacto'
+          };
+          
+          const translatedData = allData.map(item => {
+            const translatedItem: any = {};
+            Object.entries(item).forEach(([key, value]) => {
+              const translatedKey = headerTranslations[key] || key;
+              if (typeof value === 'boolean') {
+                translatedItem[translatedKey] = value ? 'Sí' : 'No';
+              } else {
+                translatedItem[translatedKey] = value;
+              }
             });
-            return filtered;
+            return translatedItem;
           });
-          content = JSON.stringify(filteredData, null, 2);
+          
+          content = JSON.stringify(translatedData, null, 2);
           mimeType = 'application/json';
           fileExtension = 'json';
           break;
