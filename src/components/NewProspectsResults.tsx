@@ -77,13 +77,13 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
     
     const colonQuoteIndex = description.indexOf(': "');
     if (colonQuoteIndex === -1) {
-      return description.length > 75 ? description.substring(0, 75) + '...' : description;
+      return description.length > 30 ? description.substring(0, 30) + '...' : description;
     }
     
     const textAfterColonQuote = description.substring(colonQuoteIndex + 3);
     
-    if (textAfterColonQuote.length > 75) {
-      return textAfterColonQuote.substring(0, 75) + '...';
+    if (textAfterColonQuote.length > 30) {
+      return textAfterColonQuote.substring(0, 30) + '...';
     }
     
     return textAfterColonQuote;
@@ -157,15 +157,22 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between">
                         <span className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-medium">
                           {post.title}
                         </span>
-                        {post.is_recent && (
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-xs">
-                            Reciente
-                          </span>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          onClick={(e) => e.stopPropagation()}
+                          className="md:w-auto w-10 md:px-3 px-2"
+                        >
+                          <a href={post.instagram_url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Ver en Instagram</span>
+                          </a>
+                        </Button>
                       </div>
                       
                       {post.comments_count > 0 && (
@@ -178,20 +185,15 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                       <p className="text-sm text-muted-foreground">
                         <strong>Descripción:</strong> {extractAndTruncateDescription(post.description)}
                       </p>
+                      
+                      {post.is_recent && (
+                        <div className="flex justify-start">
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-xs">
+                            Reciente
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                      className="md:w-auto w-10 md:px-3 px-2"
-                    >
-                      <a href={post.instagram_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4 md:mr-2" />
-                        <span className="hidden md:inline">Ver Instagram</span>
-                      </a>
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -221,29 +223,28 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between">
                         <span className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-medium">
                           {account.title}
                         </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          onClick={(e) => e.stopPropagation()}
+                          className="md:w-auto w-10 md:px-3 px-2"
+                        >
+                          <a href={account.instagram_url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Ver en Instagram</span>
+                          </a>
+                        </Button>
                       </div>
                       
                       <p className="text-sm text-muted-foreground">
                         <strong>Descripción:</strong> {extractAndTruncateDescription(account.description)}
                       </p>
                     </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                      className="md:w-auto w-10 md:px-3 px-2"
-                    >
-                      <a href={account.instagram_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4 md:mr-2" />
-                        <span className="hidden md:inline">Ver Instagram</span>
-                      </a>
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -266,18 +267,8 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
               backgroundPosition: '0 40px, 0 0'
             }}
           >
-            {/* Spiral binding holes */}
-            <div className="absolute left-4 top-0 bottom-0 w-1 flex flex-col justify-evenly">
-              {Array.from({length: 6}).map((_, i) => (
-                <div 
-                  key={i} 
-                  className="w-3 h-3 rounded-full shadow-inner" 
-                  style={{backgroundColor: selectedResult?.result_type === 'post' ? '#7a60ff' : '#22c55e'}} 
-                />
-              ))}
-            </div>
             
-            <DialogHeader className="ml-6">
+            <DialogHeader>
               <DialogTitle className="flex items-center gap-2 font-['Poppins'] text-lg font-semibold text-slate-800">
                 {selectedResult?.result_type === 'post' ? (
                   <MessageCircle className="h-5 w-5" style={{color: '#7a60ff'}} />
@@ -288,7 +279,7 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4 ml-6 font-['Poppins']">
+            <div className="space-y-4 font-['Poppins']">
               <p className="text-sm text-slate-700 leading-relaxed">
                 {selectedResult && getDialogContent(selectedResult)}
               </p>
