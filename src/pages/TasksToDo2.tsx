@@ -1456,7 +1456,11 @@ const TasksToDo2: React.FC = () => {
                             return allProspects.length === 0 ? (
                               <div className="text-center py-6 sm:py-8 text-muted-foreground">
                                 <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                                <p className="text-sm sm:text-base">¡Excelente! No hay seguimientos pendientes.</p>
+                                <p className="text-sm sm:text-base">
+                                  {taskType === 'pending' ? '¡Excelente! No hay respuestas pendientes.' : 
+                                   taskType === 'followup' ? '¡Excelente! No hay seguimientos pendientes.' : 
+                                   '¡Todo listo! No hay prospectos nuevos en este momento.'}
+                                </p>
                               </div>
                             ) : (
                               allProspects.map((prospect) => (
