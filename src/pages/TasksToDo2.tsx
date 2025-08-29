@@ -2228,41 +2228,40 @@ const TasksToDo2: React.FC = () => {
           <br />
           <p className="text-xs text-gray-400 mt-2 font-mono">Hecho con 💜 por Hower</p>
           <br />
+          
+          {/* Botones de opciones */}
+          <div className="flex gap-3 justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/dashboard'}
+              className="text-primary border-primary/30 hover:bg-primary/5"
+            >
+              <Settings className="w-4 h-4 mr-1" />
+              Otras opciones
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="text-red-600 border-red-300 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4 mr-1" />
+              Salir
+            </Button>
+          </div>
         </div>
+
       </div>
 
-      {/* Footer morado fuera del contenedor blanco */}
-      <div style={{ backgroundColor: '#724bff' }} className="px-6 py-6">
-        {/* Botones de opciones */}
-        <div className="flex gap-3 justify-center mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.href = '/dashboard'}
-            className="text-white border-white/30 hover:bg-white/10 bg-transparent"
-          >
-            <Settings className="w-4 h-4 mr-1" />
-            Otras opciones
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="text-white border-white/30 hover:bg-red-500/20 bg-transparent"
-          >
-            <LogOut className="w-4 h-4 mr-1" />
-            Salir
-          </Button>
+      {/* Conectado como - Simplificado */}
+      {currentUser && (
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-500">
+            Conectado como @{currentUser.username}
+          </p>
         </div>
-
-        {/* Conectado como - En footer morado */}
-        {currentUser && (
-          <div className="text-center">
-            <p className="text-sm text-white/80">
-              Conectado como @{currentUser.username}
-            </p>
-          </div>
-        )}
+      )}
 
       {/* Diálogo de contacto guiado */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -2381,6 +2380,8 @@ const TasksToDo2: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+        </div>
+      </div>
     </div>
   );
 };
