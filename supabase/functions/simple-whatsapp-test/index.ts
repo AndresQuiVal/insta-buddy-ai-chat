@@ -16,7 +16,7 @@ serve(async (req) => {
 Este es un mensaje de prueba para verificar el endpoint de WhatsApp.
 
 Si recibes esto, ¡funciona! 🎉`,
-        to_number: "523338459844"
+        to_number: "+523338459844"
       })
     });
     
