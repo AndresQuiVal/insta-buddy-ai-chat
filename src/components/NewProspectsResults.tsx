@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Users, MessageCircle, Search, RefreshCw } from 'lucide-react';
+import { ExternalLink, Users, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -28,15 +28,12 @@ interface NewProspectsResultsProps {
 const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUserId, onCountChange }) => {
   const [results, setResults] = useState<ProspectResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
   const [selectedResult, setSelectedResult] = useState<ProspectResult | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [searchesUsed, setSearchesUsed] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
     loadResults();
-    loadSearchCount();
   }, [instagramUserId]);
 
   const loadResults = async () => {
@@ -69,64 +66,6 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
       console.error('Error in loadResults:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadSearchCount = async () => {
-    try {
-      const { data, error } = await supabase
-        .rpc('get_daily_search_count', { p_instagram_user_id: instagramUserId });
-
-      if (error) {
-        console.error('Error loading search count:', error);
-        return;
-      }
-
-      setSearchesUsed(data || 0);
-    } catch (error) {
-      console.error('Error in loadSearchCount:', error);
-    }
-  };
-
-  const handleSearchNewProspects = async () => {
-    try {
-      setSearching(true);
-
-      const { data, error } = await supabase.functions.invoke('search-new-prospects', {
-        body: { instagram_user_id: instagramUserId }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.error) {
-        toast({
-          title: "Error",
-          description: data.message || data.error,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Búsqueda completada",
-        description: `${data.message} Búsquedas restantes: ${data.searches_remaining}`,
-      });
-
-      // Recargar resultados y contador
-      await loadResults();
-      await loadSearchCount();
-
-    } catch (error) {
-      console.error('Error searching new prospects:', error);
-      toast({
-        title: "Error",
-        description: "Error al buscar nuevos prospectos",
-        variant: "destructive",
-      });
-    } finally {
-      setSearching(false);
     }
   };
 
@@ -191,70 +130,12 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
         <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
         <p>No hay nuevos prospectos disponibles.</p>
         <p className="text-sm mt-2">Los nuevos prospectos se generan automáticamente cuando recibes notificaciones.</p>
-        
-        {/* Botón para buscar otros prospectos */}
-        <div className="mt-6">
-          <Button
-            onClick={handleSearchNewProspects}
-            disabled={searching || searchesUsed >= 5}
-            className="gap-2"
-            variant={searchesUsed >= 5 ? "secondary" : "default"}
-          >
-            {searching ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-            {searching ? "Buscando..." : "Buscar Otros Prospectos"}
-          </Button>
-          <p className="text-xs mt-2 text-muted-foreground">
-            Búsquedas utilizadas hoy: {searchesUsed}/5
-          </p>
-          {searchesUsed >= 5 && (
-            <p className="text-xs mt-1 text-destructive">
-              Límite diario alcanzado. Inténtalo mañana.
-            </p>
-          )}
-        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Botón para buscar otros prospectos - siempre visible */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Nuevos Prospectos</h2>
-          <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-medium">
-            {results.length}
-          </span>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <Button
-            onClick={handleSearchNewProspects}
-            disabled={searching || searchesUsed >= 5}
-            size="sm"
-            className="gap-2"
-            variant={searchesUsed >= 5 ? "secondary" : "default"}
-          >
-            {searching ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-            {searching ? "Buscando..." : "Buscar Otros Prospectos"}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Búsquedas: {searchesUsed}/5
-          </p>
-          {searchesUsed >= 5 && (
-            <p className="text-xs text-destructive">
-              Límite alcanzado
-            </p>
-          )}
-        </div>
-      </div>
       {/* Posts Section */}
       {posts.length > 0 && (
         <div>
