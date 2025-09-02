@@ -90,3 +90,6 @@ verify_jwt = false
 
 [functions.diagnose-whatsapp]
 verify_jwt = false
+
+[functions.test-whatsapp-user]
+verify_jwt = false

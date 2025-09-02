@@ -459,9 +459,14 @@ serve(async (req) => {
         
         const notificationTime = notification.notification_time.substring(0, 5); // HH:MM
         
-        // Check if current time matches notification time exactly
-        if (userCurrentTime !== notificationTime) {
-          console.log(`Skipping user ${notification.instagram_user_id} - time mismatch (${userCurrentTime} vs ${notificationTime}) in timezone ${userTimezone}`);
+        // Check if current time is within the notification minute (more flexible)
+        const [notificationHour, notificationMinute] = notificationTime.split(':').map(Number);
+        const currentHour = userDate.getHours();
+        const currentMinute = userDate.getMinutes();
+        
+        // Allow notification if we're in the same hour and minute
+        if (currentHour !== notificationHour || currentMinute !== notificationMinute) {
+          console.log(`Skipping user ${notification.instagram_user_id} - time mismatch (${currentHour}:${currentMinute.toString().padStart(2, '0')} vs ${notificationTime}) in timezone ${userTimezone}`);
           continue;
         }
         
