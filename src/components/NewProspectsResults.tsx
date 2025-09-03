@@ -125,13 +125,7 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
   }
 
   if (results.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p>No hay nuevos prospectos disponibles.</p>
-        <p className="text-sm mt-2">Los nuevos prospectos se generan automáticamente cuando recibes notificaciones.</p>
-      </div>
-    );
+    return null;
   }
 
   return (
