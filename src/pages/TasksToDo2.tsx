@@ -1437,24 +1437,29 @@ const TasksToDo2: React.FC = () => {
                  <>
                    {/* Tabs para divisiones por tipo */}
                    <div className="bg-white rounded-xl p-4 border border-gray-100">
-                        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                          {(() => {
-                            // Obtener todos los prospectos según el tipo de tarea
-                            let allProspects = [];
-                            if (taskType === 'yesterday') {
-                              allProspects = [...prospectsClassification.noResponseYesterday.dm, ...prospectsClassification.noResponseYesterday.comment];
-                            } else if (taskType === 'week') {
-                              allProspects = [...prospectsClassification.noResponse7Days.dm, ...prospectsClassification.noResponse7Days.comment];
-                            } else if (taskType === 'pending') {
-                              allProspects = [...prospectsClassification.pendingResponses.dm, ...prospectsClassification.pendingResponses.comment];
-                            } else if (taskType === 'new') {
-                              allProspects = [...prospectsClassification.newProspects.dm, ...prospectsClassification.newProspects.comment];
-                            } else {
-                              allProspects = [...prospects.filter((_, i) => i % 4 === 1), ...prospects.filter((_, i) => i % 4 === 2)]; // Fallback para otros casos
-                            }
-                            
-                            return allProspects.length === 0 ? (
-                              taskType === 'new' ? null : (
+                        {(() => {
+                          // Obtener todos los prospectos según el tipo de tarea
+                          let allProspects = [];
+                          if (taskType === 'yesterday') {
+                            allProspects = [...prospectsClassification.noResponseYesterday.dm, ...prospectsClassification.noResponseYesterday.comment];
+                          } else if (taskType === 'week') {
+                            allProspects = [...prospectsClassification.noResponse7Days.dm, ...prospectsClassification.noResponse7Days.comment];
+                          } else if (taskType === 'pending') {
+                            allProspects = [...prospectsClassification.pendingResponses.dm, ...prospectsClassification.pendingResponses.comment];
+                          } else if (taskType === 'new') {
+                            allProspects = [...prospectsClassification.newProspects.dm, ...prospectsClassification.newProspects.comment];
+                          } else {
+                            allProspects = [...prospects.filter((_, i) => i % 4 === 1), ...prospects.filter((_, i) => i % 4 === 2)]; // Fallback para otros casos
+                          }
+                          
+                          // Para taskType === 'new', no renderizar nada si no hay prospectos
+                          if (taskType === 'new' && allProspects.length === 0) {
+                            return null;
+                          }
+                          
+                          return (
+                            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                              {allProspects.length === 0 ? (
                                 <div className="text-center py-6 sm:py-8 text-muted-foreground">
                                   <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
                                   <p className="text-sm sm:text-base">
@@ -1462,16 +1467,16 @@ const TasksToDo2: React.FC = () => {
                                      '¡Excelente! No hay seguimientos pendientes.'}
                                   </p>
                                 </div>
-                              )
-                            ) : (
-                              allProspects.map((prospect) => (
-                                <div key={prospect.id} className="mb-5">
-                                  <ProspectCard prospect={prospect} taskType={taskType} />
-                                </div>
-                              ))
-                            );
-                          })()}
-                        </div>
+                              ) : (
+                                allProspects.map((prospect) => (
+                                  <div key={prospect.id} className="mb-5">
+                                    <ProspectCard prospect={prospect} taskType={taskType} />
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          );
+                        })()}
                     </div>
                    
                    {/* Custom Content para otros casos */}
