@@ -2091,6 +2091,23 @@ const TasksToDo2: React.FC = () => {
             {/* Subsecciones de seguimiento - Solo se muestran cuando showFollowUpSections es true */}
             {showFollowUpSections && (
               <div className="ml-4 sm:ml-6 mt-4 space-y-3 sm:space-y-4">
+                {/* Tip explicativo */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4" style={{
+                  backgroundImage: 'linear-gradient(90deg, #dbeafe 1px, transparent 1px)',
+                  backgroundSize: '20px 1px',
+                  backgroundPosition: '0 20px'
+                }}>
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">💡</span>
+                    </div>
+                    <div>
+                      <p className="text-blue-800 text-sm font-medium">
+                        Prospectos que enviaste un mensaje, pero no te contestaron, vale la pena contactarlos de nuevo
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 {/* 2.1 No respondieron ayer */}
                 <TaskSection
                   title="Recontactar los de ayer"
