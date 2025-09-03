@@ -1459,7 +1459,7 @@ const TasksToDo2: React.FC = () => {
                                 <p className="text-sm sm:text-base">
                                   {taskType === 'pending' ? '¡Excelente! No hay respuestas pendientes.' : 
                                    taskType === 'followup' ? '¡Excelente! No hay seguimientos pendientes.' : 
-                                   '¡Todo listo! No hay prospectos nuevos en este momento.'}
+                                   null}
                                 </p>
                               </div>
                             ) : (
