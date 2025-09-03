@@ -28,7 +28,7 @@ const onboardingSteps: OnboardingStep[] = [
   },
   {
     id: 'pending-prospects',
-    title: 'Prospectos pendientes 🎯',
+    title: 'Prospectos sin responder 🎯',
     description: 'Usuarios prospectados con Hower que NO han respondido en Instagram',
     target: '[data-onboarding="pending-section"]',
     position: 'right',
@@ -52,7 +52,7 @@ const onboardingSteps: OnboardingStep[] = [
   },
   {
     id: 'new-prospects',
-    title: 'Nuevos prospectos 🔍',
+    title: 'Nuevas cuentas/posts con prospectos 🔍',
     description: 'Herramienta para encontrar prospectos frescos usando IA',
     target: '[data-onboarding="new-prospects-section"]',
     position: 'right',

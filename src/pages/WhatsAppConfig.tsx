@@ -637,7 +637,7 @@ const WhatsAppConfig: React.FC = () => {
                 💡 ¿Cómo funciona?
               </h3>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Recibirás mensajes cuando tengas nuevos prospectos pendientes</li>
+                <li>• Recibirás mensajes cuando tengas nuevos prospectos sin responder</li>
                 <li>• Solo en los días y horarios que configures</li>
                 <li>• Los mensajes incluirán un resumen de tus tareas del día</li>
                 <li>• Puedes pausar las notificaciones en cualquier momento</li>

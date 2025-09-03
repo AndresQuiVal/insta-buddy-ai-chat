@@ -1944,7 +1944,7 @@ const TasksToDo2: React.FC = () => {
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1 cursor-pointer" onClick={() => setActiveSection(activeSection === 'pending' ? null : 'pending')}>
                     <span className={`${(completedTasks['section-pending'] || 
                       [...prospectsClassification.pendingResponses.dm, 
-                       ...prospectsClassification.pendingResponses.comment].every(p => completedTasks[`pending-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>Prospectos pendientes</span>
+                       ...prospectsClassification.pendingResponses.comment].every(p => completedTasks[`pending-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>Prospectos sin responder</span>
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     <Badge variant="secondary" className="text-xs">{prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length}</Badge>
@@ -2032,7 +2032,7 @@ const TasksToDo2: React.FC = () => {
                           {[...prospectsClassification.pendingResponses.dm, ...prospectsClassification.pendingResponses.comment].length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
                               <CheckCircle className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 text-green-500" />
-                              <p className="text-sm sm:text-base">¡Excelente! No hay prospectos pendientes.</p>
+                              <p className="text-sm sm:text-base">¡Excelente! No hay prospectos sin responder.</p>
                             </div>
                           ) : (
                             [...prospectsClassification.pendingResponses.dm, ...prospectsClassification.pendingResponses.comment].map((prospect) => (
@@ -2072,7 +2072,7 @@ const TasksToDo2: React.FC = () => {
                        ...prospectsClassification.noResponseYesterday.comment,
                        ...prospectsClassification.noResponse7Days.dm,
                        ...prospectsClassification.noResponse7Days.comment].every(p => completedTasks[`yesterday-${p.id}`] || completedTasks[`week-${p.id}`])) ? 'line-through text-gray-400' : ''} text-sm sm:text-base`}>
-                      Prospectos en seguimiento
+                      Prospectos para recontactar
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 flex-shrink-0">
@@ -2093,7 +2093,7 @@ const TasksToDo2: React.FC = () => {
               <div className="ml-4 sm:ml-6 mt-4 space-y-3 sm:space-y-4">
                 {/* 2.1 No respondieron ayer */}
                 <TaskSection
-                  title="No respondieron ayer"
+                  title="Recontactar los de ayer"
                    count={prospectsClassification.noResponseYesterday.dm.length + 
                           prospectsClassification.noResponseYesterday.comment.length}
                   onClick={() => setActiveSection(activeSection === 'yesterday' ? null : 'yesterday')}
@@ -2119,7 +2119,7 @@ const TasksToDo2: React.FC = () => {
                 
                 {/* 2.2 No respondieron en 7 días */}
                 <TaskSection
-                  title="No respondieron en 7 días"
+                  title="Recontactar a los de hace 7 días"
                    count={prospectsClassification.noResponse7Days.dm.length + 
                           prospectsClassification.noResponse7Days.comment.length}
                   onClick={() => setActiveSection(activeSection === 'week' ? null : 'week')}
@@ -2150,7 +2150,7 @@ const TasksToDo2: React.FC = () => {
           {/* 3. Prospectar a nuevos */}
           <div className="mt-8 sm:mt-12">
           <TaskSection
-            title="Nuevos prospectos"
+            title="Nuevas cuentas/posts con prospectos"
             count={(prospectsClassification.newProspects.dm.length + 
                    prospectsClassification.newProspects.comment.length) + newProspectsCount}
             onClick={() => setActiveSection(activeSection === 'new' ? null : 'new')}

@@ -18,13 +18,13 @@ const ExportPanel = () => {
   const availableSections = [
     {
       id: 'prospectos_pendientes',
-      label: 'Prospectos pendientes',
+      label: 'Prospectos sin responder',
       description: 'Prospectos esperando respuesta',
       icon: Clock
     },
     {
       id: 'prospectos_seguimiento',
-      label: 'Prospectos en seguimiento',
+      label: 'Prospectos para recontactar',
       description: 'Prospectos con seguimientos programados',
       icon: Users
     },
@@ -182,7 +182,7 @@ const ExportPanel = () => {
                 username: item.username,
                 envie_ultimo_mensaje: item.last_message_from_prospect ? 'No' : 'Sí',
                 fecha_ultimo_mensaje: item.last_message_date,
-                categoria: 'Prospectos Pendientes',
+                categoria: 'Prospectos Sin Responder',
                 url_instagram: `https://www.instagram.com/${item.username}`
               }));
               exportName += exportName ? '_pendientes' : 'pendientes';
@@ -206,7 +206,7 @@ const ExportPanel = () => {
                 username: item.username,
                 envie_ultimo_mensaje: item.last_message_from_prospect ? 'No' : 'Sí',
                 fecha_ultimo_mensaje: item.last_message_date,
-                categoria: 'Prospectos en Seguimiento',
+                categoria: 'Prospectos para Recontactar',
                 url_instagram: `https://www.instagram.com/${item.username}`
               }));
               exportName += exportName ? '_seguimiento' : 'seguimiento';
@@ -232,7 +232,7 @@ const ExportPanel = () => {
                 username: item.title || 'Sin username',
                 envie_ultimo_mensaje: 'No',  // Para nuevos prospectos siempre es 'No'
                 fecha_ultimo_mensaje: item.created_at,
-                categoria: 'Nuevos Prospectos - Posts',
+                categoria: 'Nuevas Cuentas/Posts con Prospectos - Posts',
                 url_instagram: item.instagram_url || `https://www.instagram.com/${item.title}`
               }));
               exportName += exportName ? '_posts' : 'posts';
@@ -258,7 +258,7 @@ const ExportPanel = () => {
                 username: item.title || 'Sin username',
                 envie_ultimo_mensaje: 'No',  // Para nuevos prospectos siempre es 'No'
                 fecha_ultimo_mensaje: item.created_at,
-                categoria: 'Nuevos Prospectos - Accounts',
+                categoria: 'Nuevas Cuentas/Posts con Prospectos - Accounts',
                 url_instagram: item.instagram_url || `https://www.instagram.com/${item.title}`
               }));
               exportName += exportName ? '_accounts' : 'accounts';
@@ -396,7 +396,7 @@ const ExportPanel = () => {
             <div className="border rounded-lg p-4 bg-muted/20">
               <h4 className="font-medium mb-3 flex items-center gap-2">
                 <UserPlus className="w-4 h-4" />
-                Nuevos Prospectos
+                Nuevas Cuentas/Posts con Prospectos
               </h4>
               <div className="space-y-3 ml-6">
                 {availableSections.filter(section => section.isSubcategory).map((section) => {
