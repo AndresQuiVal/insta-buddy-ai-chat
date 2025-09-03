@@ -2181,6 +2181,23 @@ const TasksToDo2: React.FC = () => {
             customContent={
               <div className="mt-6">
                 <div style={{ display: activeSection === 'new' ? 'block' : 'none' }}>
+                  {/* Tip explicativo */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6" style={{
+                    backgroundImage: 'linear-gradient(90deg, #dcfce7 1px, transparent 1px)',
+                    backgroundSize: '20px 1px',
+                    backgroundPosition: '0 20px'
+                  }}>
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-bold">💡</span>
+                      </div>
+                      <div>
+                        <p className="text-green-800 text-sm font-medium">
+                          Nuevas cuentas / posts donde los seguidores / los que han comentado son tus prospectos
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <NewProspectsResults instagramUserId={currentUser?.instagram_user_id || ''} />
                 </div>
               </div>
