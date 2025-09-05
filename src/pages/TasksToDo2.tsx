@@ -1200,8 +1200,65 @@ const TasksToDo2: React.FC = () => {
             </div>
           </div>
           
-          {/* Solo botón de tips de interacción para seguimientos */}
+          {/* Botones de interacción y eliminar */}
           <div className="flex space-x-2 flex-shrink-0">
+            {/* Botón de eliminar prospecto */}
+            <Button 
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (!currentUser?.instagram_user_id) {
+                  toast({
+                    title: "Error",
+                    description: "No se encontró el usuario",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                if (window.confirm(`¿Estás seguro que quieres eliminar a @${prospect.userName}?`)) {
+                  try {
+                    const { error } = await supabase.rpc('delete_prospect_by_sender', {
+                      p_instagram_user_id: currentUser.instagram_user_id,
+                      p_prospect_sender_id: prospect.id
+                    });
+                    
+                    if (error) {
+                      console.error('Error eliminando prospecto:', error);
+                      toast({
+                        title: "Error",
+                        description: "No se pudo eliminar el prospecto",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+                    
+                    toast({
+                      title: "Eliminado",
+                      description: `@${prospect.userName} ha sido eliminado`
+                    });
+                    
+                    // Refrescar la lista
+                    await refetch();
+                  } catch (error) {
+                    console.error('Error:', error);
+                    toast({
+                      title: "Error",
+                      description: "Ocurrió un error al eliminar el prospecto",
+                      variant: "destructive"
+                    });
+                  }
+                }
+              }}
+              size="sm"
+              variant="outline"
+              className="text-xs sm:text-sm bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+              disabled={isCompleted}
+              title={`Eliminar @${prospect.userName}`}
+            >
+              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline ml-1">Eliminar</span>
+            </Button>
+
             {isFollowUpProspect && (
               <Button 
                 onClick={(e) => {

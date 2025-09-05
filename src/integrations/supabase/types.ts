@@ -503,6 +503,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_prospect_searches: {
+        Row: {
+          created_at: string
+          id: string
+          instagram_user_id: string
+          search_count: number
+          search_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instagram_user_id: string
+          search_count?: number
+          search_date?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instagram_user_id?: string
+          search_count?: number
+          search_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       general_comment_autoresponders: {
         Row: {
           auto_assign_to_all_posts: boolean | null
@@ -1439,6 +1466,14 @@ export type Database = {
         }
         Returns: string
       }
+      delete_prospect_by_sender: {
+        Args: { p_instagram_user_id: string; p_prospect_sender_id: string }
+        Returns: undefined
+      }
+      get_daily_search_count: {
+        Args: { p_instagram_user_id: string }
+        Returns: number
+      }
       get_instagram_token_by_user_id: {
         Args: { user_instagram_id: string }
         Returns: string
@@ -1474,6 +1509,10 @@ export type Database = {
       increment_daily_prospect_contact: {
         Args: { p_instagram_user_id: string; p_prospect_sender_id: string }
         Returns: boolean
+      }
+      increment_daily_search_count: {
+        Args: { p_instagram_user_id: string }
+        Returns: number
       }
       increment_nuevos_prospectos_by_instagram_id: {
         Args: { increment_by?: number; user_instagram_id: string }
