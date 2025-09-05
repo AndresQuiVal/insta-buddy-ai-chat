@@ -1269,7 +1269,6 @@ const TasksToDo2: React.FC = () => {
               title={`Eliminar @${prospect.userName}`}
             >
               <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline ml-1">Eliminar</span>
             </Button>
 
             {isFollowUpProspect && (
@@ -1282,10 +1281,9 @@ const TasksToDo2: React.FC = () => {
                 variant="outline"
                 className="text-xs sm:text-sm bg-primary/5 border-primary/30 text-primary hover:bg-primary/10"
                 disabled={isCompleted}
+                title="¿Cómo aumento respuesta?"
               >
-                <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                <span className="hidden sm:inline">¿Cómo aumento respuesta?</span>
-                <span className="sm:hidden">📈</span>
+                <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             )}
           </div>
@@ -1299,7 +1297,7 @@ const TasksToDo2: React.FC = () => {
                  className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 rounded-lg border border-primary/20"
                >
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-blue-800 text-sm font-mono">💡 Cómo interactuar con @{prospect.userName}:</h4>
+                  <h4 className="font-bold text-blue-800 text-sm font-mono">Cómo interactuar con @{prospect.userName}:</h4>
                   <button 
                     onClick={() => setActiveInteractionTip(null)}
                     className="text-blue-600 hover:text-blue-800 transition-colors"
@@ -1315,9 +1313,9 @@ const TasksToDo2: React.FC = () => {
                       <span className="text-sm font-mono font-bold">Comentar en su historia</span>
                     </div>
                     <div className="px-2 pb-2 ml-6">
-                      <p className="text-xs text-pink-700 bg-pink-50 p-2 rounded font-mono">
-                        💡 "Me encanta esto! 😍" o "Qué buena foto! 🔥" o "Increíble! 👏"
-                      </p>
+                        <p className="text-xs text-pink-700 bg-pink-50 p-2 rounded font-mono">
+                          "Me encanta esto!" o "Qué buena foto!" o "Increíble!"
+                        </p>
                     </div>
                   </div>
                   
@@ -1327,9 +1325,9 @@ const TasksToDo2: React.FC = () => {
                       <span className="text-sm font-mono font-bold">Comentar en su último post algo positivo</span>
                     </div>
                     <div className="px-2 pb-2 ml-6">
-                      <p className="text-xs text-green-700 bg-green-50 p-2 rounded font-mono">
-                        💡 "Excelente contenido! 💪" o "Muy inspirador! ✨" o "Me gusta mucho tu estilo 🎯"
-                      </p>
+                        <p className="text-xs text-green-700 bg-green-50 p-2 rounded font-mono">
+                          "Excelente contenido!" o "Muy inspirador!" o "Me gusta mucho tu estilo"
+                        </p>
                     </div>
                   </div>
                   
@@ -1339,15 +1337,15 @@ const TasksToDo2: React.FC = () => {
                       <span className="text-sm font-mono font-bold">Dar like a sus posts recientes</span>
                     </div>
                     <div className="px-2 pb-2 ml-6">
-                      <p className="text-xs text-red-700 bg-red-50 p-2 rounded font-mono">
-                        💡 Dale like a sus últimos 3-5 posts para aparecer en su radar
-                      </p>
+                        <p className="text-xs text-red-700 bg-red-50 p-2 rounded font-mono">
+                          Dale like a sus últimos 3-5 posts para aparecer en su radar
+                        </p>
                     </div>
                   </div>
                 </div>
                 
                 <p className="text-xs text-blue-600 mt-3 font-mono">
-                  ⚡ Haz esto ANTES de enviar el mensaje para aumentar las posibilidades de respuesta
+                  Haz esto ANTES de enviar el mensaje para aumentar las posibilidades de respuesta
                 </p>
               </div>
             </div>
@@ -2163,11 +2161,11 @@ const TasksToDo2: React.FC = () => {
                 }}>
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">💡</span>
+                      <span className="text-white text-sm font-bold"></span>
                     </div>
                     <div>
                       <p className="text-blue-800 text-sm font-medium">
-                        Prospectos que enviaste un mensaje, pero no te contestaron, vale la pena contactarlos de nuevo
+                        Estos no te contestaron, y vale la pena recontactarlos
                       </p>
                     </div>
                   </div>
@@ -2253,11 +2251,11 @@ const TasksToDo2: React.FC = () => {
                   }}>
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">💡</span>
+                        <span className="text-white text-sm font-bold"></span>
                       </div>
                       <div>
                         <p className="text-green-800 text-sm font-medium">
-                          Nuevas cuentas / posts donde los seguidores / los que han comentado son tus prospectos
+                          Nuevas cuentas / posts para prospectar
                         </p>
                       </div>
                     </div>
