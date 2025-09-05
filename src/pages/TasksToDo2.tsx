@@ -372,6 +372,7 @@ const TasksToDo2: React.FC = () => {
   // Cargar estadísticas - HABILITADO para arreglar problema de decremento
   useEffect(() => {
     if (!userLoading && currentUser) {
+      console.log('🔄 [STATS] Cargando estadísticas para usuario:', currentUser.instagram_user_id);
       loadStats();
     }
   }, [currentUser, userLoading, loadStats]);
@@ -1200,8 +1201,13 @@ const TasksToDo2: React.FC = () => {
     switch (statsType) {
       case 'nuevos':
         if (period === 'hoy') {
-          // Para "respuestas de hoy", usar los prospectos que me respondieron (pendientes)
-          return prospectsClassification.pendingResponses.dm.concat(prospectsClassification.pendingResponses.comment);
+          // ARREGLADO: Para "respuestas de hoy", usar TODOS los que respondieron HOY (acumulativo)
+          // No usar pendientes porque decrementan, usar los que realmente respondieron hoy
+          const today = new Date().toISOString().split('T')[0];
+          return realProspects.filter(prospect => {
+            const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
+            return prospect.lastMessageType === 'received' && lastMessageDate === today;
+          });
         }
         return period === 'ayer' ? prospectsClassification.yesterdayNewProspects : prospectsClassification.weekNewProspects;
       case 'seguimientos':
