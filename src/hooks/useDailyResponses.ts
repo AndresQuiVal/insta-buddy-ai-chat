@@ -83,15 +83,15 @@ export const useDailyResponses = () => {
   useEffect(() => {
     fetchDailyResponses();
     
-    // Suscripción en tiempo real
+    // Suscripción en tiempo real SOLO para INSERT (no para UPDATE/DELETE)
     const subscription = supabase
       .channel('daily-responses-updates')
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT', // SOLO escuchar nuevas respuestas, NO cambios
         schema: 'public',
         table: 'daily_prospect_responses'
-      }, () => {
-        console.log('📊 Cambio detectado en daily_prospect_responses - recargando...');
+      }, (payload) => {
+        console.log('📊 Nueva respuesta detectada en daily_prospect_responses:', payload);
         fetchDailyResponses();
       })
       .subscribe();
