@@ -175,6 +175,17 @@ const TasksToDo2: React.FC = () => {
           return;
         }
         
+        // OCULTAR ERRORES DE CONEXIÓN/TIMEOUT - No molestar al usuario
+        if (response.error && (
+          response.error.includes('Tiempo de conexión agotado') ||
+          response.error.includes('Error de conexión') ||
+          response.error.includes('No se pudo conectar con los servidores')
+        )) {
+          console.warn('🔕 Error de conexión Hower (oculto al usuario):', response.error);
+          return; // No mostrar toast al usuario
+        }
+        
+        // Solo mostrar otros tipos de errores
         toast({
           title: "Error al cargar datos",
           description: errorMessage,
@@ -182,12 +193,8 @@ const TasksToDo2: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('❌ [DEBUG] Error en loadHowerUsers:', error);
-      toast({
-        title: "Error de conexión",
-        description: "No se pudo conectar con los servidores de Hower",
-        variant: "destructive"
-      });
+      console.warn('🔕 Error de conexión Hower (oculto al usuario):', error);
+      // No mostrar toast al usuario para errores de conexión
     } finally {
       setHowerLoading(false);
     }
