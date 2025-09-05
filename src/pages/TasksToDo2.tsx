@@ -1174,8 +1174,17 @@ const TasksToDo2: React.FC = () => {
   const getStatsProspects = (statsType: string, period: string) => {
     switch (statsType) {
       case 'nuevos':
+        if (period === 'hoy') {
+          // Para "respuestas de hoy", usar los prospectos que me respondieron (pendientes)
+          return prospectsClassification.pendingResponses.dm.concat(prospectsClassification.pendingResponses.comment);
+        }
         return period === 'ayer' ? prospectsClassification.yesterdayNewProspects : prospectsClassification.weekNewProspects;
       case 'seguimientos':
+        if (period === 'hoy') {
+          // Para "seguimientos de hoy", usar una combinación de los que necesitan seguimiento
+          // Por ahora regresamos los de ayer como aproximación (esto se puede refinar después)
+          return prospectsClassification.noResponseYesterday.dm.concat(prospectsClassification.noResponseYesterday.comment);
+        }
         return period === 'ayer' ? prospectsClassification.yesterdayFollowUps : prospectsClassification.weekFollowUps;
       case 'agendados':
         return []; // Por ahora vacío, se puede implementar después
@@ -1717,25 +1726,51 @@ const TasksToDo2: React.FC = () => {
                             <h3 className="text-base font-bold text-green-800 mb-3 font-mono">📅 Hoy</h3>
                             
                             <div className="space-y-2">
-                              <div 
-                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
-                                onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-nuevos' ? null : 'hoy-nuevos')}
-                              >
-                                <span className="font-mono text-sm">💬 Respuestas</span>
-                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.today.respuestas}
-                                </div>
-                              </div>
-                              
-                              <div 
-                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
-                                onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-seguimientos' ? null : 'hoy-seguimientos')}
-                              >
-                                <span className="font-mono text-sm">🔄 Seguimientos</span>
-                                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.today.seguimientos}
-                                </div>
-                              </div>
+                               <div 
+                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
+                                 onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-nuevos' ? null : 'hoy-nuevos')}
+                               >
+                                 <span className="font-mono text-sm">💬 Respuestas</span>
+                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {stats.today.respuestas}
+                                 </div>
+                               </div>
+                               
+                               {/* Listado de respuestas de hoy */}
+                               {activeStatsSection === 'hoy-nuevos' && (
+                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                   {getStatsProspects('nuevos', 'hoy').length === 0 ? (
+                                     <p className="text-xs text-muted-foreground italic">No hay respuestas de hoy</p>
+                                   ) : (
+                                     getStatsProspects('nuevos', 'hoy').map((prospect) => (
+                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-nuevos" />
+                                     ))
+                                   )}
+                                 </div>
+                               )}
+                               
+                               <div 
+                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
+                                 onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-seguimientos' ? null : 'hoy-seguimientos')}
+                               >
+                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
+                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {stats.today.seguimientos}
+                                 </div>
+                               </div>
+                               
+                               {/* Listado de seguimientos de hoy */}
+                               {activeStatsSection === 'hoy-seguimientos' && (
+                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                   {getStatsProspects('seguimientos', 'hoy').length === 0 ? (
+                                     <p className="text-xs text-muted-foreground italic">No hay seguimientos de hoy</p>
+                                   ) : (
+                                     getStatsProspects('seguimientos', 'hoy').map((prospect) => (
+                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-seguimientos" />
+                                     ))
+                                   )}
+                                 </div>
+                               )}
                               
                               <div 
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-purple-400"
