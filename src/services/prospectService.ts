@@ -126,10 +126,10 @@ export class ProspectService implements ProspectServiceInterface {
   }
 
   /**
-   * Obtener todos los prospectos de un usuario
+   * Obtener todos los prospectos de un usuario (CON FILTRO DE TACHADOS)
    */
   async getProspectsByUser(instagramUserId: string): Promise<any[]> {
-    console.log('📋 [PROSPECT-SERVICE] Obteniendo prospectos del usuario:', instagramUserId);
+    console.log('📋 [PROSPECT-SERVICE] Obteniendo prospectos con filtro de tachados para usuario:', instagramUserId);
 
     try {
       // Buscar el UUID del usuario de Instagram
@@ -165,9 +165,42 @@ export class ProspectService implements ProspectServiceInterface {
         throw prospectsError;
       }
 
+      // 🔥 NUEVO: Obtener estados de tareas para filtrar tachados (igual que WhatsApp SQL)
+      const { data: taskStatuses, error: taskError } = await supabase
+        .from('prospect_task_status')
+        .select('prospect_sender_id, is_completed')
+        .eq('instagram_user_id', instagramUserId)
+        .eq('task_type', 'pending');
+
+      if (taskError) {
+        console.error('⚠️ [PROSPECT-SERVICE] Error obteniendo estados de tareas:', taskError);
+      }
+
+      // Crear mapa de estados de tareas
+      const taskStatusMap = new Map();
+      if (taskStatuses) {
+        taskStatuses.forEach(task => {
+          taskStatusMap.set(task.prospect_sender_id, task.is_completed);
+        });
+      }
+
+      // 🔥 APLICAR FILTRO DE TACHADOS (igual que WhatsApp SQL)
+      const filteredProspects = prospects?.filter(prospect => {
+        const isCompleted = taskStatusMap.get(prospect.prospect_instagram_id) || false;
+        const shouldInclude = !isCompleted; // Solo incluir NO tachados
+        
+        if (!shouldInclude) {
+          console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado por estar TACHADO`);
+        }
+        
+        return shouldInclude;
+      }) || [];
+
+      console.log(`✅ [PROSPECT-SERVICE] ${filteredProspects.length} prospectos NO tachados (de ${prospects?.length || 0} totales)`);
+
       // Obtener análisis de prospectos por separado
       const prospectsWithAnalysis = await Promise.all(
-        (prospects || []).map(async (prospect) => {
+        filteredProspects.map(async (prospect) => {
           const { data: analysis } = await supabase
             .from('prospect_analysis')
             .select('match_points, met_traits, last_analyzed_at')
@@ -181,7 +214,7 @@ export class ProspectService implements ProspectServiceInterface {
         })
       );
 
-      console.log(`✅ [PROSPECT-SERVICE] ${prospectsWithAnalysis?.length || 0} prospectos obtenidos`);
+      console.log(`✅ [PROSPECT-SERVICE] ${prospectsWithAnalysis?.length || 0} prospectos finales con análisis`);
       return prospectsWithAnalysis || [];
 
     } catch (error) {
