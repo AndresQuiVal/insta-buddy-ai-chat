@@ -1005,59 +1005,21 @@ const TasksToDo2: React.FC = () => {
       });
     }
 
-    // 🔥 NUEVA LÓGICA: Usar los estados del hook useProspects + Filtrar por usuarios de Hower
+    // 🔥 NUEVA LÓGICA: Los prospectos YA vienen filtrados por Hower desde fetchProspects
+    // NO necesitamos filtrar nuevamente - solo clasificamos por estado
     
-    // 🔥 FUNCIÓN ALINEADA CON SQL: Filtrar por usuarios de Hower con misma lógica que WhatsApp
-    const filterByHowerUsers = (prospectsList: any[]) => {
-      if (howerUsernames.length === 0) {
-        console.log('🚫 [HOWER-FILTER] Sin usernames de Hower - retornando array vacío');
-        return [];
-      }
-      
-      console.log(`🔍 [HOWER-FILTER] Filtrando ${prospectsList.length} prospectos con ${howerUsernames.length} usernames de Hower`);
-      
-      const filtered = prospectsList.filter(p => {
-        // Misma lógica que SQL de WhatsApp:
-        // 1. Coincidencia exacta
-        if (howerUsernames.includes(p.username)) {
-          console.log(`✅ [HOWER-FILTER] ${p.username} - Coincidencia exacta`);
-          return true;
-        }
-        
-        // 2. Sin @ (username vs @username en hower)
-        const usernameWithoutAt = p.username.replace('@', '');
-        if (howerUsernames.includes(usernameWithoutAt)) {
-          console.log(`✅ [HOWER-FILTER] ${p.username} - Coincidencia sin @: ${usernameWithoutAt}`);
-          return true;
-        }
-        
-        // 3. Con @ (username vs username en hower)
-        const usernameWithAt = p.username.startsWith('@') ? p.username : `@${p.username}`;
-        if (howerUsernames.includes(usernameWithAt)) {
-          console.log(`✅ [HOWER-FILTER] ${p.username} - Coincidencia con @: ${usernameWithAt}`);
-          return true;
-        }
-        
-        console.log(`❌ [HOWER-FILTER] ${p.username} - NO encontrado en Hower`);
-        return false;
-      });
-      
-      console.log(`🎯 [HOWER-FILTER] Resultado: ${filtered.length}/${prospectsList.length} prospectos pasaron el filtro`);
-      return filtered;
-    };
-    
-    // Prospectos pendientes: state === 'pending' (separados por fuente y filtrados por Hower)
+    // Prospectos pendientes: state === 'pending' (separados por fuente)
     const pendingResponses = {
-      hower: filterByHowerUsers(realProspects.filter(p => p.state === 'pending' && p.source === 'hower')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      dm: filterByHowerUsers(realProspects.filter(p => p.state === 'pending' && (p.source === 'dm' || p.source === 'ads'))).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      comment: filterByHowerUsers(realProspects.filter(p => p.state === 'pending' && p.source === 'comment')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
+      hower: realProspects.filter(p => p.state === 'pending' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      dm: realProspects.filter(p => p.state === 'pending' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: realProspects.filter(p => p.state === 'pending' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
-    // Prospectos que no respondieron ayer: state === 'yesterday' (separados por fuente y filtrados por Hower)
+    // Prospectos que no respondieron ayer: state === 'yesterday' (separados por fuente)
     const noResponseYesterday = {
-      hower: filterByHowerUsers(realProspects.filter(p => p.state === 'yesterday' && p.source === 'hower')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      dm: filterByHowerUsers(realProspects.filter(p => p.state === 'yesterday' && (p.source === 'dm' || p.source === 'ads'))).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      comment: filterByHowerUsers(realProspects.filter(p => p.state === 'yesterday' && p.source === 'comment')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
+      hower: realProspects.filter(p => p.state === 'yesterday' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      dm: realProspects.filter(p => p.state === 'yesterday' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: realProspects.filter(p => p.state === 'yesterday' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
     // 🔥 DEBUG PARA yesterday
@@ -1068,11 +1030,11 @@ const TasksToDo2: React.FC = () => {
       source: p.source
     })));
 
-    // Prospectos que no respondieron en 7 días: state === 'week' (separados por fuente y filtrados por Hower)
+    // Prospectos que no respondieron en 7 días: state === 'week' (separados por fuente)
     const noResponse7Days = {
-      hower: filterByHowerUsers(realProspects.filter(p => p.state === 'week' && p.source === 'hower')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      dm: filterByHowerUsers(realProspects.filter(p => p.state === 'week' && (p.source === 'dm' || p.source === 'ads'))).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
-      comment: filterByHowerUsers(realProspects.filter(p => p.state === 'week' && p.source === 'comment')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
+      hower: realProspects.filter(p => p.state === 'week' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      dm: realProspects.filter(p => p.state === 'week' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
+      comment: realProspects.filter(p => p.state === 'week' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
     // 🔥 DEBUG PARA week
