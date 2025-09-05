@@ -1142,6 +1142,31 @@ const TasksToDo2: React.FC = () => {
     };
   }, [prospects]);
 
+  // Sincronizar stats de "hoy" con prospectsClassification para que coincidan los números con las listas
+  useEffect(() => {
+    if (prospectsClassification && stats.today) {
+      const todayRespuestas = prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length;
+      const todaySeguimientos = prospectsClassification.noResponseYesterday.dm.length + prospectsClassification.noResponseYesterday.comment.length;
+      
+      // Solo actualizar si hay cambios para evitar loops infinitos
+      if (stats.today.respuestas !== todayRespuestas || stats.today.seguimientos !== todaySeguimientos) {
+        console.log('🔄 Sincronizando stats de HOY:', {
+          anterior: { respuestas: stats.today.respuestas, seguimientos: stats.today.seguimientos },
+          nuevo: { respuestas: todayRespuestas, seguimientos: todaySeguimientos }
+        });
+        
+        setStats(prevStats => ({
+          ...prevStats,
+          today: {
+            ...prevStats.today,
+            respuestas: todayRespuestas,
+            seguimientos: todaySeguimientos
+          }
+        }));
+      }
+    }
+  }, [prospectsClassification, stats]);
+
   // Calcular tiempo estimado (10-12 segundos por prospecto, usamos 11 como promedio)
   const calculateEstimatedTime = () => {
     const pendingCount = prospectsClassification.pendingResponses.dm.length + 
