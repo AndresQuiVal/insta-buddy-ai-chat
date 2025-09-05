@@ -342,17 +342,17 @@ const TasksToDo2: React.FC = () => {
 
       setStats({
         today: {
-          respuestas: todayData.data?.[0]?.abiertas || 0,
+          respuestas: todayData.data?.[0]?.respuestas || 0,
           seguimientos: todayData.data?.[0]?.seguimientos || 0,
           agendados: todayData.data?.[0]?.agendados || 0
         },
         yesterday: {
-          respuestas: yesterdayData.data?.[0]?.abiertas || 0,
+          respuestas: yesterdayData.data?.[0]?.respuestas || 0,
           seguimientos: yesterdayData.data?.[0]?.seguimientos || 0,
           agendados: yesterdayData.data?.[0]?.agendados || 0
         },
         week: {
-          respuestas: weekData.data?.[0]?.abiertas || 0,
+          respuestas: weekData.data?.[0]?.respuestas || 0,
           seguimientos: weekData.data?.[0]?.seguimientos || 0,
           agendados: weekData.data?.[0]?.agendados || 0
         }
