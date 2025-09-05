@@ -65,10 +65,14 @@ export const useProspects = (currentInstagramUserId?: string) => {
       return { state: 'pending' };
     }
 
-    // 🔥 LÓGICA CORREGIDA: Calcular tiempo desde mi último mensaje
-    const lastOwnerMessageTime = new Date(prospect.last_owner_message_at).getTime();
-    const now = new Date().getTime();
-    const hoursSinceLastOwnerMessage = (now - lastOwnerMessageTime) / (1000 * 60 * 60);
+    // 🔥 LÓGICA ALINEADA CON SQL: Usar misma lógica que WhatsApp
+    const lastOwnerMessageTime = new Date(prospect.last_owner_message_at);
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+    
+    // Usar misma comparación que SQL: <= (now() - interval '1 day')
+    const isOverOneDay = lastOwnerMessageTime <= oneDayAgo;
+    const hoursSinceLastOwnerMessage = (now.getTime() - lastOwnerMessageTime.getTime()) / (1000 * 60 * 60);
     const daysSinceLastOwnerMessage = hoursSinceLastOwnerMessage / 24;
 
     console.log(`📊 [${senderId.slice(-8)}] Mi último mensaje hace ${daysSinceLastOwnerMessage.toFixed(1)} días`);
@@ -79,15 +83,15 @@ export const useProspects = (currentInstagramUserId?: string) => {
       
     console.log(`💬 [${senderId.slice(-8)}] ¿Había conversación previa? ${hadPreviousConversation}`);
 
-    // 🔥 LÓGICA CORREGIDA: Solo aplicar timer basado en tiempo transcurrido
-    if (daysSinceLastOwnerMessage >= 7) {
+    // 🔥 LÓGICA ALINEADA CON SQL: Usar misma condición que WhatsApp
+    if (isOverOneDay && daysSinceLastOwnerMessage >= 7) {
       console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
       return { 
         state: 'week', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
         lastSentMessageTime: prospect.last_owner_message_at 
       };
-    } else if (daysSinceLastOwnerMessage >= 1) {
+    } else if (isOverOneDay) {
       console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
       return { 
         state: 'yesterday', 
