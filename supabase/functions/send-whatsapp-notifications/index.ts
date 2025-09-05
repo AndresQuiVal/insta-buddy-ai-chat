@@ -293,20 +293,9 @@ async function getUserStats(instagramUserId: string) {
       console.log('⚠️ No Hower credentials or error getting usernames:', howerError?.message || 'No credentials');
     }
 
-    // Fallback a estadísticas generales
-    const { data: fallbackStats, error: fallbackError } = await supabase
-      .rpc('grok_get_stats', {
-        p_instagram_user_id: instagramUserId,
-        p_period: 'today'
-      });
-    
-    if (fallbackError) {
-      console.error('Error getting fallback stats:', fallbackError);
-      return { abiertas: 0, seguimientos: 0, agendados: 0 };
-    }
-    
-    console.log('📊 Using general stats:', fallbackStats[0]);
-    return fallbackStats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
+    // 🎯 FILTRO HOWER ES OBLIGATORIO: Si no hay credenciales Hower, retornar stats = 0
+    console.log('🚫 No Hower credentials available - returning zero stats (Hower filter is mandatory)');
+    return { abiertas: 0, seguimientos: 0, agendados: 0 };
     
   } catch (error) {
     console.error('Error in getUserStats:', error);
