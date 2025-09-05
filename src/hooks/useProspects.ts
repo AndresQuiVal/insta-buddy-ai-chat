@@ -422,7 +422,34 @@ export const useProspects = (currentInstagramUserId?: string) => {
         return;
       }
 
-      // 🏗️ USAR EL NUEVO SERVICIO DE PROSPECTOS
+      // 🎯 PASO 1: Obtener lista de usernames de Hower (FILTRO OBLIGATORIO)
+      console.log('🔍 [FETCH] Obteniendo usernames de Hower...');
+      let howerUsernames: string[] = [];
+      
+      try {
+        const { data: howerResponse, error: howerError } = await supabase.functions.invoke(
+          'get-hower-usernames',
+          {
+            body: { instagram_user_id: currentInstagramUserId }
+          }
+        );
+
+        if (!howerError && howerResponse?.success && howerResponse?.data?.usernames) {
+          howerUsernames = howerResponse.data.usernames;
+          console.log(`✅ [FETCH] ${howerUsernames.length} usernames obtenidos de Hower`);
+        } else {
+          console.log('⚠️ [FETCH] No hay credenciales Hower o error:', howerError?.message || 'No credentials');
+          console.log('🚫 [FETCH] Sin filtro Hower - no se mostrarán prospectos');
+          setProspects([]);
+          return;
+        }
+      } catch (howerError) {
+        console.error('❌ [FETCH] Error obteniendo usernames de Hower:', howerError);
+        setProspects([]);
+        return;
+      }
+
+      // 🏗️ PASO 2: OBTENER PROSPECTOS DESDE SERVICIO
       console.log('📋 [FETCH] Obteniendo prospectos desde servicio...');
       const prospectsData = await prospectService.getProspectsByUser(currentInstagramUserId);
       
@@ -434,7 +461,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
         return;
       }
 
-      // 🔄 CONVERTIR datos de BD a formato de Prospect
+      // 🔄 PASO 3: CONVERTIR datos de BD a formato de Prospect (CON FILTRO HOWER)
       const convertedProspects: Prospect[] = [];
       
        for (const prospectData of prospectsData) {
@@ -450,6 +477,20 @@ export const useProspects = (currentInstagramUserId?: string) => {
             console.log(`❌ [FETCH] Prospecto filtrado por username inválido: ${prospectData.username}`);
             continue;
           }
+          
+          // 🎯 FILTRO HOWER OBLIGATORIO: Solo prospectos en la lista de Hower
+          const isInHowerList = howerUsernames.some(howerUsername => 
+            prospectData.username === howerUsername ||
+            prospectData.username === '@' + howerUsername ||
+            prospectData.username.replace('@', '') === howerUsername
+          );
+          
+          if (!isInHowerList) {
+            console.log(`🚫 [FETCH] Prospecto filtrado por NO estar en lista Hower: ${prospectData.username}`);
+            continue;
+          }
+          
+          console.log(`✅ [FETCH] Prospecto ${prospectData.username} está en lista Hower - procesando...`);
           
           // Obtener mensajes del prospecto
           const messages = prospectData.prospect_messages || [];
