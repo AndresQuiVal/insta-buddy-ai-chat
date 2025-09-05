@@ -1057,17 +1057,23 @@ const TasksToDo2: React.FC = () => {
       hower: noResponse7Days.hower.length
     });
     
-    // 🔥 DEBUG CRÍTICO: Sumar seguimientos como hace WhatsApp
-    const totalSeguimientos = noResponseYesterday.dm.length + 
-                            noResponseYesterday.comment.length + 
-                            noResponseYesterday.hower.length +
-                            noResponse7Days.dm.length + 
-                            noResponse7Days.comment.length + 
-                            noResponse7Days.hower.length;
+    // 🔥 CORRECCIÓN CRÍTICA: Contar seguimientos como WhatsApp (>= 1 día, todo junto)
+    const allFollowupsLikeWhatsApp = realProspects.filter(p => {
+      if (!p.lastSentMessageTime) return false;
+      
+      const lastOwnerMessageTime = new Date(p.lastSentMessageTime);
+      const oneDayAgo = new Date(Date.now() - (24 * 60 * 60 * 1000));
+      
+      return lastOwnerMessageTime <= oneDayAgo; // Misma lógica que SQL: >= 1 día
+    });
     
-    console.log('🎯 [DEBUG] TOTAL SEGUIMIENTOS (yesterday + week):', totalSeguimientos);
-    console.log('🎯 [DEBUG] Hower usernames count:', howerUsernames.length);
-    console.log('🎯 [DEBUG] Primeros 10 usernames de Hower:', howerUsernames.slice(0, 10));
+    const totalSeguimientosCorrect = allFollowupsLikeWhatsApp.length;
+    
+    console.log('🎯 [CRITICAL] COMPARACIÓN CON WHATSAPP:');
+    console.log('🎯 [CRITICAL] Frontend (yesterday + week):', noResponseYesterday.dm.length + noResponseYesterday.comment.length + noResponse7Days.dm.length + noResponse7Days.comment.length);
+    console.log('🎯 [CRITICAL] Frontend CORRECTO (>= 1 día como SQL):', totalSeguimientosCorrect);
+    console.log('🎯 [CRITICAL] WhatsApp dice:', 11);
+    console.log('🎯 [CRITICAL] ¿Coinciden?', totalSeguimientosCorrect === 11 ? '✅ SÍ' : '❌ NO');
 
     // Prospectos nuevos: nunca contactados (separados por fuente)
     const newProspects = {
