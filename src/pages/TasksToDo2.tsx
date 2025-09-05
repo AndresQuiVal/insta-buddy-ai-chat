@@ -369,12 +369,12 @@ const TasksToDo2: React.FC = () => {
     }
   }, [currentUser?.instagram_user_id]);
 
-  // Cargar estadísticas - DESHABILITADO
-  // useEffect(() => {
-  //   if (!userLoading && currentUser && HowerService.isAuthenticated()) {
-  //     loadStats();
-  //   }
-  // }, [currentUser, userLoading, loadStats]);
+  // Cargar estadísticas - HABILITADO para arreglar problema de decremento
+  useEffect(() => {
+    if (!userLoading && currentUser) {
+      loadStats();
+    }
+  }, [currentUser, userLoading, loadStats]);
 
   // Función para compartir estadísticas como imagen
   const shareStats = async () => {
