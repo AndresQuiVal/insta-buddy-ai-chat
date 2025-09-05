@@ -59,81 +59,53 @@ export const useProspects = (currentInstagramUserId?: string) => {
       }
     }
 
-    // 🔥 LÓGICA CORREGIDA: "PENDING" = Solo prospectos que ME escribieron y YO NO les he respondido
-    
-    // Si el prospecto nunca me escribió, NO puede estar en "sin responder"
-    if (!prospect.last_message_from_prospect) {
-      console.log(`⚠️ [${senderId.slice(-8)}] Prospecto nunca me escribió - no está en "sin responder"`);
-      
-      // Si yo nunca le escribí, no aparece en ninguna categoría
-      if (!prospect.last_owner_message_at) {
-        console.log(`❌ [${senderId.slice(-8)}] Ni él me escribió ni yo le escribí - no clasificar`);
-        return { state: 'week' }; // Lo ponemos en week para que no aparezca en pending
-      }
-      
-      // Si yo sí le escribí pero él nunca me respondió, va a seguimientos
-      const lastOwnerMessageTime = new Date(prospect.last_owner_message_at);
-      const now = new Date();
-      const daysSinceLastOwnerMessage = (now.getTime() - lastOwnerMessageTime.getTime()) / (1000 * 60 * 60 * 24);
-      
-      if (daysSinceLastOwnerMessage >= 7) {
-        console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (contacto en frío hace ${daysSinceLastOwnerMessage.toFixed(1)} días)`);
-        return { 
-          state: 'week', 
-          daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
-          lastSentMessageTime: prospect.last_owner_message_at 
-        };
-      } else if (daysSinceLastOwnerMessage >= 1) {
-        console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (contacto en frío hace ${daysSinceLastOwnerMessage.toFixed(1)} días)`);
-        return { 
-          state: 'yesterday', 
-          daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
-          lastSentMessageTime: prospect.last_owner_message_at 
-        };
-      } else {
-        console.log(`⚠️ [${senderId.slice(-8)}] Contacto en frío reciente - no clasificar como pending`);
-        return { state: 'week' }; // No va a pending porque no me escribió
-      }
-    }
-
-    // Si llegamos aquí, el prospecto SÍ me escribió alguna vez
-    console.log(`✅ [${senderId.slice(-8)}] Prospecto me escribió - verificando si le respondí`);
-
-    // Si yo nunca le respondí después de que me escribió = PENDING (sin responder)
+    // 🔥 NUEVA LÓGICA: Si no tengo timestamp de último mensaje mío = PENDING
     if (!prospect.last_owner_message_at) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (me escribió pero nunca le respondí)`);
+      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (no hay timestamp de último mensaje del dueño)`);
       return { state: 'pending' };
     }
 
-    // Si yo sí le respondí, verificar quién escribió último
+    // 🔥 LÓGICA ALINEADA CON SQL: Usar misma lógica que WhatsApp
     const lastOwnerMessageTime = new Date(prospect.last_owner_message_at);
     const now = new Date();
-    const daysSinceLastOwnerMessage = (now.getTime() - lastOwnerMessageTime.getTime()) / (1000 * 60 * 60 * 24);
+    const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+    
+    // Usar misma comparación que SQL: <= (now() - interval '1 day')
+    const isOverOneDay = lastOwnerMessageTime <= oneDayAgo;
+    const hoursSinceLastOwnerMessage = (now.getTime() - lastOwnerMessageTime.getTime()) / (1000 * 60 * 60);
+    const daysSinceLastOwnerMessage = hoursSinceLastOwnerMessage / 24;
 
-    // Si el último mensaje del prospecto fue después de mi último mensaje = PENDING
-    if (prospect.last_message_from_prospect) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (me escribió después de mi último mensaje)`);
-      return { state: 'pending' };
-    }
+    console.log(`📊 [${senderId.slice(-8)}] Mi último mensaje hace ${daysSinceLastOwnerMessage.toFixed(1)} días`);
 
-    // Si yo fui el último en escribir, categorizar por tiempo para seguimientos
-    if (daysSinceLastOwnerMessage >= 7) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (mi último mensaje hace ${daysSinceLastOwnerMessage.toFixed(1)} días)`);
+    // Verificar si ya había conversación previa (el prospecto había respondido alguna vez)
+    const hadPreviousConversation = messages.length > 0 && 
+      messages.some((msg: any) => msg.is_from_prospect === true);
+      
+    console.log(`💬 [${senderId.slice(-8)}] ¿Había conversación previa? ${hadPreviousConversation}`);
+
+    // 🔥 LÓGICA ALINEADA CON SQL: Usar misma condición que WhatsApp
+    if (isOverOneDay && daysSinceLastOwnerMessage >= 7) {
+      console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
       return { 
         state: 'week', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
         lastSentMessageTime: prospect.last_owner_message_at 
       };
-    } else if (daysSinceLastOwnerMessage >= 1) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (mi último mensaje hace ${daysSinceLastOwnerMessage.toFixed(1)} días)`);
+    } else if (isOverOneDay) {
+      console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
       return { 
         state: 'yesterday', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
         lastSentMessageTime: prospect.last_owner_message_at 
       };
     } else {
-      console.log(`⚠️ [${senderId.slice(-8)}] Mi último mensaje reciente - no clasificar`);
-      return { state: 'week' }; // No va a pending porque yo fui el último en escribir
+      // Menos de 1 día desde mi último mensaje - en PENDING
+      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (esperando respuesta, < 1 día)`);
+      return { 
+        state: 'pending',
+        daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
+        lastSentMessageTime: prospect.last_owner_message_at 
+      };
     }
   };
 
