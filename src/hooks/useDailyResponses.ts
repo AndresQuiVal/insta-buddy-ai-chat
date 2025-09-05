@@ -22,6 +22,7 @@ export const useDailyResponses = () => {
   const fetchDailyResponses = async () => {
     if (!currentUser?.instagram_user_id) return;
     
+    console.log('🔍 [DEBUG-RESPUESTAS] Iniciando fetchDailyResponses para usuario:', currentUser.instagram_user_id);
     setLoading(true);
     try {
       const today = new Date();
@@ -66,12 +67,17 @@ export const useDailyResponses = () => {
       if (weekError) console.error('Error fetching week responses:', weekError);
       if (totalError) console.error('Error fetching total responses:', totalError);
 
-      setData({
+      const newData = {
         today: todayData?.length || 0,
         yesterday: yesterdayData?.length || 0,
         week: weekData?.length || 0,
         total: totalData?.length || 0
-      });
+      };
+
+      console.log('📊 [DEBUG-RESPUESTAS] Datos calculados:', newData);
+      console.log('📊 [DEBUG-RESPUESTAS] Respuestas de hoy (raw):', todayData);
+
+      setData(newData);
 
     } catch (error) {
       console.error('Error fetching daily responses:', error);
@@ -83,16 +89,28 @@ export const useDailyResponses = () => {
   useEffect(() => {
     fetchDailyResponses();
     
-    // Suscripción en tiempo real SOLO para INSERT (no para UPDATE/DELETE)
+    // Suscripción en tiempo real - MONITOREAR TODOS LOS EVENTOS PARA DEBUG
     const subscription = supabase
       .channel('daily-responses-updates')
       .on('postgres_changes', {
-        event: 'INSERT', // SOLO escuchar nuevas respuestas, NO cambios
+        event: '*', // TEMPORALMENTE escuchar TODO para debug
         schema: 'public',
         table: 'daily_prospect_responses'
       }, (payload) => {
-        console.log('📊 Nueva respuesta detectada en daily_prospect_responses:', payload);
-        fetchDailyResponses();
+        console.log('🚨 [DEBUG-RESPUESTAS] EVENTO EN daily_prospect_responses:', {
+          eventType: payload.eventType,
+          new: payload.new,
+          old: payload.old,
+          usuario_afectado: (payload.new as any)?.instagram_user_id || (payload.old as any)?.instagram_user_id,
+          usuario_actual: currentUser?.instagram_user_id
+        });
+        
+        // Solo recargar si es nuestro usuario
+        if (((payload.new as any)?.instagram_user_id === currentUser?.instagram_user_id) || 
+            ((payload.old as any)?.instagram_user_id === currentUser?.instagram_user_id)) {
+          console.log('🔄 [DEBUG-RESPUESTAS] Evento afecta a nuestro usuario - recargando...');
+          fetchDailyResponses();
+        }
       })
       .subscribe();
 
