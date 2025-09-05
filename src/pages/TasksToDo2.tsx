@@ -1009,22 +1009,41 @@ const TasksToDo2: React.FC = () => {
     
     // 🔥 FUNCIÓN ALINEADA CON SQL: Filtrar por usuarios de Hower con misma lógica que WhatsApp
     const filterByHowerUsers = (prospectsList: any[]) => {
-      if (howerUsernames.length === 0) return prospectsList;
-      return prospectsList.filter(p => {
+      if (howerUsernames.length === 0) {
+        console.log('🚫 [HOWER-FILTER] Sin usernames de Hower - retornando array vacío');
+        return [];
+      }
+      
+      console.log(`🔍 [HOWER-FILTER] Filtrando ${prospectsList.length} prospectos con ${howerUsernames.length} usernames de Hower`);
+      
+      const filtered = prospectsList.filter(p => {
         // Misma lógica que SQL de WhatsApp:
         // 1. Coincidencia exacta
-        if (howerUsernames.includes(p.username)) return true;
+        if (howerUsernames.includes(p.username)) {
+          console.log(`✅ [HOWER-FILTER] ${p.username} - Coincidencia exacta`);
+          return true;
+        }
         
         // 2. Sin @ (username vs @username en hower)
         const usernameWithoutAt = p.username.replace('@', '');
-        if (howerUsernames.includes(usernameWithoutAt)) return true;
+        if (howerUsernames.includes(usernameWithoutAt)) {
+          console.log(`✅ [HOWER-FILTER] ${p.username} - Coincidencia sin @: ${usernameWithoutAt}`);
+          return true;
+        }
         
         // 3. Con @ (username vs username en hower)
         const usernameWithAt = p.username.startsWith('@') ? p.username : `@${p.username}`;
-        if (howerUsernames.includes(usernameWithAt)) return true;
+        if (howerUsernames.includes(usernameWithAt)) {
+          console.log(`✅ [HOWER-FILTER] ${p.username} - Coincidencia con @: ${usernameWithAt}`);
+          return true;
+        }
         
+        console.log(`❌ [HOWER-FILTER] ${p.username} - NO encontrado en Hower`);
         return false;
       });
+      
+      console.log(`🎯 [HOWER-FILTER] Resultado: ${filtered.length}/${prospectsList.length} prospectos pasaron el filtro`);
+      return filtered;
     };
     
     // Prospectos pendientes: state === 'pending' (separados por fuente y filtrados por Hower)
@@ -1075,6 +1094,18 @@ const TasksToDo2: React.FC = () => {
       comment: noResponse7Days.comment.length,
       hower: noResponse7Days.hower.length
     });
+    
+    // 🔥 DEBUG CRÍTICO: Sumar seguimientos como hace WhatsApp
+    const totalSeguimientos = noResponseYesterday.dm.length + 
+                            noResponseYesterday.comment.length + 
+                            noResponseYesterday.hower.length +
+                            noResponse7Days.dm.length + 
+                            noResponse7Days.comment.length + 
+                            noResponse7Days.hower.length;
+    
+    console.log('🎯 [DEBUG] TOTAL SEGUIMIENTOS (yesterday + week):', totalSeguimientos);
+    console.log('🎯 [DEBUG] Hower usernames count:', howerUsernames.length);
+    console.log('🎯 [DEBUG] Primeros 10 usernames de Hower:', howerUsernames.slice(0, 10));
 
     // Prospectos nuevos: nunca contactados (separados por fuente)
     const newProspects = {
