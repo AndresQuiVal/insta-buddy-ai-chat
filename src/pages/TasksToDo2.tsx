@@ -263,9 +263,9 @@ const TasksToDo2: React.FC = () => {
 
   // Estado para estadísticas GROK
   const [stats, setStats] = useState({
-    today: { abiertas: 0, seguimientos: 0, agendados: 0 },
-    yesterday: { abiertas: 0, seguimientos: 0, agendados: 0 },
-    week: { abiertas: 0, seguimientos: 0, agendados: 0 }
+    today: { respuestas: 0, seguimientos: 0, agendados: 0 },
+    yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
+    week: { respuestas: 0, seguimientos: 0, agendados: 0 }
   });
 
   // Frases motivacionales
@@ -342,17 +342,17 @@ const TasksToDo2: React.FC = () => {
 
       setStats({
         today: {
-          abiertas: todayData.data?.[0]?.abiertas || 0,
+          respuestas: todayData.data?.[0]?.abiertas || 0,
           seguimientos: todayData.data?.[0]?.seguimientos || 0,
           agendados: todayData.data?.[0]?.agendados || 0
         },
         yesterday: {
-          abiertas: yesterdayData.data?.[0]?.abiertas || 0,
+          respuestas: yesterdayData.data?.[0]?.abiertas || 0,
           seguimientos: yesterdayData.data?.[0]?.seguimientos || 0,
           agendados: yesterdayData.data?.[0]?.agendados || 0
         },
         week: {
-          abiertas: weekData.data?.[0]?.abiertas || 0,
+          respuestas: weekData.data?.[0]?.abiertas || 0,
           seguimientos: weekData.data?.[0]?.seguimientos || 0,
           agendados: weekData.data?.[0]?.agendados || 0
         }
@@ -1109,14 +1109,14 @@ const TasksToDo2: React.FC = () => {
 
     // Estadísticas usando GROK (datos persistentes de la BD)
     const yesterdayStats = {
-      nuevosProspectos: stats.yesterday.abiertas,
+      nuevosProspectos: stats.yesterday.respuestas,
       seguimientosHechos: stats.yesterday.seguimientos,
       agendados: stats.yesterday.agendados
     };
 
     // Estadísticas para LA SEMANA usando GROK
     const weekStats = {
-      nuevosProspectos: stats.week.abiertas,
+      nuevosProspectos: stats.week.respuestas,
       seguimientosHechos: stats.week.seguimientos,
       agendados: stats.week.agendados
     };
@@ -1721,9 +1721,9 @@ const TasksToDo2: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-nuevos' ? null : 'hoy-nuevos')}
                               >
-                                <span className="font-mono text-sm">💬 Abiertas</span>
+                                <span className="font-mono text-sm">💬 Respuestas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.today.abiertas}
+                                  {stats.today.respuestas}
                                 </div>
                               </div>
                               
@@ -1759,7 +1759,7 @@ const TasksToDo2: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-nuevos' ? null : 'ayer-nuevos')}
                               >
-                                <span className="font-mono text-sm">💬 Abiertas</span>
+                                <span className="font-mono text-sm">💬 Respuestas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {prospectsClassification.yesterdayStats.nuevosProspectos}
                                 </div>
@@ -1831,9 +1831,9 @@ const TasksToDo2: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
                               >
-                                <span className="font-mono text-sm">💬 Abiertas</span>
+                                <span className="font-mono text-sm">💬 Respuestas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.week.abiertas}
+                                  {stats.week.respuestas}
                                 </div>
                               </div>
                               
