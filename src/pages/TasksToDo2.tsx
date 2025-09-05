@@ -1007,10 +1007,24 @@ const TasksToDo2: React.FC = () => {
 
     // 🔥 NUEVA LÓGICA: Usar los estados del hook useProspects + Filtrar por usuarios de Hower
     
-    // Función helper para filtrar por usuarios de Hower
+    // 🔥 FUNCIÓN ALINEADA CON SQL: Filtrar por usuarios de Hower con misma lógica que WhatsApp
     const filterByHowerUsers = (prospectsList: any[]) => {
       if (howerUsernames.length === 0) return prospectsList;
-      return prospectsList.filter(p => howerUsernames.includes(p.username));
+      return prospectsList.filter(p => {
+        // Misma lógica que SQL de WhatsApp:
+        // 1. Coincidencia exacta
+        if (howerUsernames.includes(p.username)) return true;
+        
+        // 2. Sin @ (username vs @username en hower)
+        const usernameWithoutAt = p.username.replace('@', '');
+        if (howerUsernames.includes(usernameWithoutAt)) return true;
+        
+        // 3. Con @ (username vs username en hower)
+        const usernameWithAt = p.username.startsWith('@') ? p.username : `@${p.username}`;
+        if (howerUsernames.includes(usernameWithAt)) return true;
+        
+        return false;
+      });
     };
     
     // Prospectos pendientes: state === 'pending' (separados por fuente y filtrados por Hower)
