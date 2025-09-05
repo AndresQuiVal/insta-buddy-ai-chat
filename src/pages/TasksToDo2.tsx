@@ -1295,14 +1295,9 @@ const TasksToDo2: React.FC = () => {
         {isFollowUpProspect && isInteractionTipActive && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
             <div className="mt-3">
-              <div 
-                className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 rounded-lg border border-primary/20"
-                style={{
-                  backgroundImage: 'linear-gradient(90deg, #e0e7ff 1px, transparent 1px)',
-                  backgroundSize: '20px 1px',
-                  backgroundPosition: '0 15px'
-                }}
-              >
+               <div 
+                 className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 rounded-lg border border-primary/20"
+               >
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-bold text-blue-800 text-sm font-mono">💡 Cómo interactuar con @{prospect.userName}:</h4>
                   <button 
@@ -2094,16 +2089,9 @@ const TasksToDo2: React.FC = () => {
                     )}
                   </div>
                   
-                  {/* Tabs estilo cuaderno */}
-                  <div className="mb-4">
-                    <div 
-                      className="bg-white rounded-lg border border-gray-200 p-4"
-                      style={{
-                        backgroundImage: 'linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
-                        backgroundSize: '20px 1px',
-                        backgroundPosition: '0 20px'
-                      }}
-                    >
+                   {/* Lista de prospectos */}
+                   <div className="mb-4">
+                     <div className="bg-white rounded-lg border border-gray-200 p-4">
                         <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
                           {[...prospectsClassification.pendingResponses.dm, ...prospectsClassification.pendingResponses.comment].length === 0 ? (
                             <div className="text-center py-6 sm:py-8 text-muted-foreground">
