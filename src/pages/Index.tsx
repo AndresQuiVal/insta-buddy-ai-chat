@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import MyProspects from "@/components/MyProspects";
 import { useInstagramUsers } from "@/hooks/useInstagramUsers";
 import { supabase } from "@/integrations/supabase/client";
-import TestUserWebhookFix from "@/components/TestUserWebhookFix";
+
 
 const Index = () => {
   const navigate = useNavigate();
@@ -299,10 +299,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Temporary Webhook Fix for @t3stus3r_1 */}
-        <div className="mb-6">
-          <TestUserWebhookFix />
-        </div>
 
         {/* Main Content */}
         <div className="space-y-6">{renderContent()}</div>
