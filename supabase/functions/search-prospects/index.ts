@@ -50,10 +50,12 @@ async function getPerplexitySearch(query: string, dateRange: string, followers_m
   }
 
   const data = await response.json();
-  console.log('✅ Hower API success response:', { 
+  console.log('✅ Hower API full response data:', JSON.stringify(data, null, 2));
+  console.log('✅ Hower API summary:', { 
     success: data.success, 
     hasData: !!data.data,
-    dataLength: data.data?.results?.length || 0
+    dataLength: data.data?.results?.length || 0,
+    errorMessage: data.error || data.message || 'none'
   });
     
   return data;
