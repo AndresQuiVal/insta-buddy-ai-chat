@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Users, MessageCircle } from 'lucide-react';
+import { ExternalLink, Users, MessageCircle, Search, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -28,6 +28,7 @@ interface NewProspectsResultsProps {
 const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUserId, onCountChange }) => {
   const [results, setResults] = useState<ProspectResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [selectedResult, setSelectedResult] = useState<ProspectResult | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const { toast } = useToast();
@@ -66,6 +67,53 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
       console.error('Error in loadResults:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const searchNewProspects = async () => {
+    try {
+      setSearching(true);
+      
+      console.log('🔍 Iniciando búsqueda manual de prospectos para:', instagramUserId);
+      
+      const { data, error } = await supabase.functions.invoke('search-prospects', {
+        body: { instagram_user_id: instagramUserId }
+      });
+
+      if (error) {
+        console.error('Error en búsqueda de prospectos:', error);
+        toast({
+          title: "Error",
+          description: "Error al buscar nuevos prospectos. Verifica tu configuración de ICP.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.success) {
+        toast({
+          title: "¡Búsqueda completada!",
+          description: data.message || "Se han encontrado nuevos prospectos",
+        });
+        
+        // Recargar los resultados
+        await loadResults();
+      } else {
+        toast({
+          title: "Sin resultados",
+          description: data?.error || "No se encontraron nuevos prospectos",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error in searchNewProspects:', error);
+      toast({
+        title: "Error",
+        description: "Error al realizar la búsqueda",
+        variant: "destructive",
+      });
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -136,6 +184,36 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
 
   return (
     <div className="space-y-6">
+      {/* Header con botón de búsqueda */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold">Nuevos Prospectos</h2>
+          {results.length > 0 && (
+            <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-medium">
+              {results.length} encontrados
+            </span>
+          )}
+        </div>
+        
+        <Button
+          onClick={searchNewProspects}
+          disabled={searching || loading}
+          className="flex items-center gap-2"
+          variant="outline"
+        >
+          {searching ? (
+            <>
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Buscando...
+            </>
+          ) : (
+            <>
+              <Search className="h-4 w-4" />
+              Buscar Prospectos
+            </>
+          )}
+        </Button>
+      </div>
       {/* Posts Section */}
       {posts.length > 0 && (
         <div>
