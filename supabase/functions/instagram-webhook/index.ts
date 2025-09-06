@@ -127,20 +127,28 @@ serve(async (req) => {
         try {
           console.log('🔄 Verificando si es un seguimiento y debe incrementar contador...')
           
-          // Verificar si el prospecto está en seguimiento (más de 24 horas desde último mensaje)
-          const { data: prospectData, error: prospectError } = await supabase
-            .from('prospects')
-            .select('last_owner_message_at, prospect_instagram_id')
+          // Buscar el último mensaje enviado anteriormente a este prospecto
+          const { data: lastSentMessage, error: lastMessageError } = await supabase
+            .from('instagram_messages')
+            .select('timestamp')
             .eq('instagram_user_id', instagramUser.id)
-            .eq('prospect_instagram_id', recipientId)
+            .eq('sender_id', senderId)  // Enviado por el usuario
+            .eq('recipient_id', recipientId)  // Al mismo prospecto
+            .eq('message_type', 'sent')
+            .neq('instagram_message_id', messageData.instagram_message_id) // Excluir el mensaje actual
+            .order('timestamp', { ascending: false })
+            .limit(1)
             .single()
           
-          if (prospectData && prospectData.last_owner_message_at) {
-            const lastMessageTime = new Date(prospectData.last_owner_message_at).getTime()
+          if (lastMessageError && lastMessageError.code !== 'PGRST116') {
+            console.error('❌ Error consultando último mensaje:', lastMessageError)
+          } else if (lastSentMessage) {
+            // Hay un mensaje anterior - verificar si es seguimiento
+            const lastMessageTime = new Date(lastSentMessage.timestamp).getTime()
             const currentTime = new Date().getTime()
             const hoursSinceLastMessage = (currentTime - lastMessageTime) / (1000 * 60 * 60)
             
-            console.log(`⏰ Horas desde último mensaje: ${hoursSinceLastMessage.toFixed(2)}`)
+            console.log(`⏰ Horas desde último mensaje enviado: ${hoursSinceLastMessage.toFixed(2)}`)
             
             // Si es un seguimiento (más de 24 horas), incrementar contador
             if (hoursSinceLastMessage >= 24) {
@@ -158,10 +166,10 @@ serve(async (req) => {
                 console.log('✅ Contador de seguimientos incrementado automáticamente')
               }
             } else {
-              console.log('📝 Es contacto reciente, no se incrementa seguimientos')
+              console.log('📝 Es contacto reciente (< 24h), no se incrementa seguimientos')
             }
           } else {
-            console.log('📝 Es primer contacto con este prospecto')
+            console.log('📝 Es primer contacto con este prospecto - no se incrementa seguimientos')
           }
         } catch (error) {
           console.error('❌ Error verificando seguimiento:', error)
