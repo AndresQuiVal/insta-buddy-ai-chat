@@ -226,18 +226,17 @@ const ProspectsPage: React.FC = () => {
           .gte('timestamp', fromISO)
           .lte('timestamp', toISO),
         supabase
-          .from('daily_prospect_metrics')
-          .select('follow_ups_done')
-          .eq('instagram_user_id', iu.instagram_user_id)
-          .eq('metric_date', new Date().toISOString().split('T')[0])
-          .single(),
+          .from('autoresponder_followups')
+          .select('id', { count: 'exact', head: true })
+          .gte('followup_sent_at', fromISO)
+          .lte('followup_sent_at', toISO),
       ]);
 
       const newCounts = {
         respuestas: rec.count || 0,
         enviados: Math.max(sent.count || 0, counts.enviados), // Mantener el máximo entre BD y localStorage
         agendados: pres.count || 0,
-        seguimientos: fol.data?.follow_ups_done || 0, // Usar datos de daily_prospect_metrics
+        seguimientos: fol.count || 0,
       };
       
       setCounts(newCounts);
