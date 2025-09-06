@@ -54,6 +54,17 @@ const TasksToDo2: React.FC = () => {
       prospectStates: realProspects.map(p => `${p.username}:${p.state}`).slice(0, 5)
     });
   }, [currentUser, prospectsLoading, realProspects]);
+  
+  // Debug del usuario actual
+  useEffect(() => {
+    console.log('🔍 [USER-DEBUG] Usuario actual cambiado:', {
+      currentUser: currentUser,
+      hasId: !!currentUser?.instagram_user_id,
+      id: currentUser?.instagram_user_id,
+      username: currentUser?.username
+    });
+  }, [currentUser]);
+  
   const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Validación de autenticación - sin simulación
@@ -2340,9 +2351,15 @@ const TasksToDo2: React.FC = () => {
                     </div>
                   </div>
                   <NewProspectsResults instagramUserId={currentUser?.instagram_user_id || ''} />
-                  {currentUser && (
+                  {currentUser ? (
                     <div className="text-xs text-gray-500 mt-2">
-                      Debug: Usuario actual ID: {currentUser.instagram_user_id}
+                      Debug: Usuario actual ID: {currentUser.instagram_user_id || 'NO ID'}
+                      <br />
+                      Username: {currentUser.username || 'NO USERNAME'}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-red-500 mt-2">
+                      Debug: No hay usuario actual cargado
                     </div>
                   )}
                 </div>
