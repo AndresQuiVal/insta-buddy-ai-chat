@@ -283,9 +283,13 @@ async function getUserStats(instagramUserId: string) {
         }
       );
 
-      if (!howerStatsError && howerStats) {
+      if (!howerStatsError && howerStats && howerStats[0]) {
         console.log('📊 Using Hower-filtered stats:', howerStats[0]);
-        return howerStats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
+        return {
+          abiertas: Number(howerStats[0].respuestas) || 0,
+          seguimientos: Number(howerStats[0].seguimientos) || 0,
+          agendados: Number(howerStats[0].agendados) || 0
+        };
       }
 
       console.log('⚠️ Hower-filtered stats failed:', howerStatsError?.message);
@@ -293,8 +297,26 @@ async function getUserStats(instagramUserId: string) {
       console.log('⚠️ No Hower credentials or error getting usernames:', howerError?.message || 'No credentials');
     }
 
-    // 🎯 FILTRO HOWER ES OBLIGATORIO: Si no hay credenciales Hower, retornar stats = 0
-    console.log('🚫 No Hower credentials available - returning zero stats (Hower filter is mandatory)');
+    // Si no hay credenciales Hower o falló, usar stats generales del usuario
+    console.log('📊 Using general user stats (no Hower filter)');
+    const { data: generalStats, error: generalStatsError } = await supabase.rpc(
+      'grok_get_stats',
+      {
+        p_instagram_user_id: instagramUserId,
+        p_period: 'today'
+      }
+    );
+
+    if (!generalStatsError && generalStats && generalStats[0]) {
+      console.log('📊 General stats retrieved:', generalStats[0]);
+      return {
+        abiertas: Number(generalStats[0].respuestas) || 0,
+        seguimientos: Number(generalStats[0].seguimientos) || 0,
+        agendados: Number(generalStats[0].agendados) || 0
+      };
+    }
+
+    console.error('❌ Failed to get any stats:', generalStatsError?.message);
     return { abiertas: 0, seguimientos: 0, agendados: 0 };
     
   } catch (error) {
