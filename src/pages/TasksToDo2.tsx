@@ -2340,6 +2340,11 @@ const TasksToDo2: React.FC = () => {
                     </div>
                   </div>
                   <NewProspectsResults instagramUserId={currentUser?.instagram_user_id || ''} />
+                  {currentUser && (
+                    <div className="text-xs text-gray-500 mt-2">
+                      Debug: Usuario actual ID: {currentUser.instagram_user_id}
+                    </div>
+                  )}
                 </div>
               </div>
             }

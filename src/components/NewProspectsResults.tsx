@@ -41,11 +41,19 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
     try {
       setLoading(true);
       
+      console.log('🔍 [NewProspectsResults] Cargando resultados para usuario:', instagramUserId);
+      
       const { data, error } = await supabase
         .from('prospect_search_results')
         .select('*')
         .eq('instagram_user_id', instagramUserId)
         .order('created_at', { ascending: false });
+
+      console.log('📊 [NewProspectsResults] Resultado de la consulta:', { 
+        data: data?.length || 0, 
+        error: error?.message || 'ninguno',
+        instagramUserId 
+      });
 
       if (error) {
         console.error('Error loading prospect results:', error);
