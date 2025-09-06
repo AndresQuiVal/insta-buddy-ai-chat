@@ -12,11 +12,8 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-async function getPerplexitySearch(query: string, dateRange: string, followers_min: string, followers_max: string) {
-  const username = Deno.env.get('HOWER_USERNAME');
-  const token = Deno.env.get('HOWER_TOKEN');
-  
-  if (!username || !token) {
+async function getPerplexitySearch(query: string, dateRange: string, followers_min: string, followers_max: string, howerUsername: string, howerToken: string) {
+  if (!howerUsername || !howerToken) {
     console.error('Missing HOWER credentials');
     throw new Error('Missing HOWER credentials');
   }
@@ -29,8 +26,8 @@ async function getPerplexitySearch(query: string, dateRange: string, followers_m
   };
 
   console.log('📞 Calling Hower API with:', { 
-    username, 
-    hasToken: !!token,
+    username: howerUsername, 
+    hasToken: !!howerToken,
     requestBody 
   });
 
@@ -38,8 +35,8 @@ async function getPerplexitySearch(query: string, dateRange: string, followers_m
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      'X-Username': username
+      'Authorization': `Bearer ${howerToken}`,
+      'X-Username': howerUsername
     },
     body: JSON.stringify(requestBody)
   });
@@ -65,6 +62,21 @@ async function getPerplexitySearch(query: string, dateRange: string, followers_m
 async function searchAndSaveProspects(instagramUserId: string) {
   try {
     console.log(`🔍 Iniciando búsqueda de prospectos para usuario: ${instagramUserId}`);
+    
+    // Get Hower credentials from database
+    const { data: userData, error: userError } = await supabase
+      .from('instagram_users')
+      .select('hower_username, hower_token')
+      .eq('instagram_user_id', instagramUserId)
+      .single();
+
+    if (userError || !userData || !userData.hower_username || !userData.hower_token) {
+      console.error('❌ Error obteniendo credenciales de Hower:', userError);
+      throw new Error('No tienes credenciales de Hower configuradas. Ve a configuración para agregar tu usuario y token.');
+    }
+
+    console.log('✅ Credenciales de Hower obtenidas correctamente');
+    const { hower_username, hower_token } = userData;
     
     // Obtener ICP del usuario
     const { data: icpData, error: icpError } = await supabase
@@ -104,7 +116,7 @@ async function searchAndSaveProspects(instagramUserId: string) {
     // Realizar búsquedas con cada palabra clave
     for (const keyword of selectedKeywords) {
       try {
-        const searchResults = await getPerplexitySearch(keyword, '', '1000', '50000');
+        const searchResults = await getPerplexitySearch(keyword, '', '1000', '50000', hower_username, hower_token);
         
         if (searchResults.success && searchResults.data?.results) {
           console.log(`✅ Resultados para "${keyword}": ${searchResults.data.results.length} encontrados`);
