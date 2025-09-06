@@ -363,7 +363,7 @@ const ProspectsPage: React.FC = () => {
   };
 
   // Función para manejar el envío de mensaje y gamificación
-  const handleMessageSent = async (username: string) => {
+  const handleMessageSent = (username: string) => {
     const totalProspectos = 17; // Total de prospectos reales de @marikowskaya
     const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : totalProspectos;
     
@@ -1143,8 +1143,8 @@ const ProspectsPage: React.FC = () => {
             ) : (
               <Button 
                 variant="outline" 
-                onClick={async () => {
-                  await handleMessageSent(dialogUser);
+                onClick={() => {
+                  handleMessageSent(dialogUser);
                   setOpenDialog(false);
                 }}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"

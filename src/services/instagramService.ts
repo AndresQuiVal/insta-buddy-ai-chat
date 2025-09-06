@@ -446,26 +446,13 @@ export const sendInstagramMessage = async (
       );
     }
 
-    // Obtener instagram_user_id del usuario activo
-    const { data: currentUser, error: userError } = await supabase
-      .from('instagram_users')
-      .select('instagram_user_id')
-      .eq('is_active', true)
-      .single();
-
-    if (userError || !currentUser) {
-      throw new Error("No se encontró usuario de Instagram activo");
-    }
-
     // Llamar a la edge function en lugar de hacer la llamada directamente
     console.log("🚀 Usando edge function para enviar mensaje...");
-    console.log("📱 Instagram User ID:", currentUser.instagram_user_id);
 
     const { data, error } = await supabase.functions.invoke(
       "instagram-send-message",
       {
         body: {
-          instagram_user_id: currentUser.instagram_user_id, // ✅ AGREGAR ESTE PARÁMETRO
           recipient_id: recipientId,
           message_text: messageText,
           reply_to_message_id: replyToMessageId,

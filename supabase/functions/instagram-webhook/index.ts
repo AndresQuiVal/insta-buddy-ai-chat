@@ -123,58 +123,6 @@ serve(async (req) => {
       } else {
         console.log('✅ Mensaje enviado guardado correctamente en BD')
         
-        // 🔥 NUEVO: INCREMENTAR CONTADOR DE SEGUIMIENTOS AUTOMÁTICAMENTE
-        try {
-          console.log('🔄 Verificando si es un seguimiento y debe incrementar contador...')
-          
-          // Buscar el último mensaje enviado anteriormente a este prospecto
-          const { data: lastSentMessage, error: lastMessageError } = await supabase
-            .from('instagram_messages')
-            .select('timestamp')
-            .eq('instagram_user_id', instagramUser.id)
-            .eq('sender_id', senderId)  // Enviado por el usuario
-            .eq('recipient_id', recipientId)  // Al mismo prospecto
-            .eq('message_type', 'sent')
-            .neq('instagram_message_id', messageData.instagram_message_id) // Excluir el mensaje actual
-            .order('timestamp', { ascending: false })
-            .limit(1)
-            .single()
-          
-          if (lastMessageError && lastMessageError.code !== 'PGRST116') {
-            console.error('❌ Error consultando último mensaje:', lastMessageError)
-          } else if (lastSentMessage) {
-            // Hay un mensaje anterior - verificar si es seguimiento
-            const lastMessageTime = new Date(lastSentMessage.timestamp).getTime()
-            const currentTime = new Date().getTime()
-            const hoursSinceLastMessage = (currentTime - lastMessageTime) / (1000 * 60 * 60)
-            
-            console.log(`⏰ Horas desde último mensaje enviado: ${hoursSinceLastMessage.toFixed(2)}`)
-            
-            // Si es un seguimiento (más de 24 horas), incrementar contador
-            if (hoursSinceLastMessage >= 24) {
-              console.log('📈 ES UN SEGUIMIENTO - Incrementando contador automáticamente')
-              
-              const { error: incrementError } = await supabase.rpc('grok_increment_stat', {
-                p_instagram_user_id: senderId,
-                p_stat_type: 'seguimientos',
-                p_increment: 1
-              })
-              
-              if (incrementError) {
-                console.error('❌ Error incrementando seguimientos:', incrementError)
-              } else {
-                console.log('✅ Contador de seguimientos incrementado automáticamente')
-              }
-            } else {
-              console.log('📝 Es contacto reciente (< 24h), no se incrementa seguimientos')
-            }
-          } else {
-            console.log('📝 Es primer contacto con este prospecto - no se incrementa seguimientos')
-          }
-        } catch (error) {
-          console.error('❌ Error verificando seguimiento:', error)
-        }
-        
         // 🔥 CRÍTICO: Sincronizar estado de tarea del prospecto
         try {
           console.log('🔄 Ejecutando sync_prospect_task_status para marcar como completado...')

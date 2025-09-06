@@ -647,7 +647,7 @@ const InstagramMessages: React.FC = () => {
         addLog(`Nuevo mensaje a enviar: ${messageText}`, 'info');
       }
       
-      const result = await sendInstagramMessage(messageText, selectedConversation);
+      const result = await sendInstagramMessage(selectedConversation, messageText);
       
       if (result.success) {
         setNewMessage('');
