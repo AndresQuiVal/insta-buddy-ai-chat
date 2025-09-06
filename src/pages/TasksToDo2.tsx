@@ -347,8 +347,6 @@ const TasksToDo2: React.FC = () => {
         week: weekData.data?.[0]
       });
 
-      console.log('✅ [RESPUESTAS-FIX] Valor de respuestas hoy (acumulativo):', todayData.data?.[0]?.respuestas || 0);
-
       setStats({
         today: {
           respuestas: todayData.data?.[0]?.respuestas || 0,
@@ -1145,10 +1143,7 @@ const TasksToDo2: React.FC = () => {
     };
   }, [prospects]);
 
-  // ELIMINADO: Sincronización que causaba decremento incorrecto en "respuestas"
-  // Los stats correctos (acumulativos) vienen de grok_get_stats y no deben ser sobrescritos
-  // con valores de pendingResponses que decrementan
-  /*
+  // Sincronizar stats de "hoy" con prospectsClassification para que coincidan los números con las listas
   useEffect(() => {
     if (prospectsClassification && stats.today) {
       const todayRespuestas = prospectsClassification.pendingResponses.dm.length + prospectsClassification.pendingResponses.comment.length;
@@ -1172,7 +1167,6 @@ const TasksToDo2: React.FC = () => {
       }
     }
   }, [prospectsClassification, stats]);
-  */
 
   // Calcular tiempo estimado (10-12 segundos por prospecto, usamos 11 como promedio)
   const calculateEstimatedTime = () => {
