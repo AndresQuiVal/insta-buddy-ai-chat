@@ -323,14 +323,19 @@ function createMotivationalMessage(stats: { abiertas: number, seguimientos: numb
   const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
   const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
   
-  const totalProspects = stats.abiertas + stats.seguimientos;
+  // Asegurar que todos los valores sean números válidos
+  const abiertas = Number(stats.abiertas) || 0;
+  const seguimientos = Number(stats.seguimientos) || 0;
+  const agendados = Number(stats.agendados) || 0;
+  
+  const totalProspects = abiertas + seguimientos;
   
   return `${randomGreeting}
 
 Tienes estos prospectos por contactar:
-URGENTES de contestar: ${stats.abiertas}
-Prospectos en seguimiento: ${stats.seguimientos}
-Nuevos prospectos de hoy: ${stats.agendados}
+URGENTES de contactar: ${abiertas}
+Prospectos en seguimiento: ${seguimientos}
+Nuevos prospectos de hoy: ${agendados}
 
 Accede a este link:
 https://preview--insta-buddy-ai-chat.lovable.app/tasks-to-do
