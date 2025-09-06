@@ -13,6 +13,7 @@ const TestUserWebhookFix = () => {
   const fixT3stus3r1Webhook = async () => {
     try {
       setIsFixing(true);
+      console.log('🚀 Iniciando fix de webhooks para @t3stus3r_1...');
       
       // Obtener datos del usuario t3stus3r_1
       const { data: user, error: userError } = await supabase
@@ -21,17 +22,25 @@ const TestUserWebhookFix = () => {
         .eq('username', 't3stus3r_1')
         .single();
 
+      console.log('📋 Usuario encontrado:', user ? 'SÍ' : 'NO', userError ? `Error: ${userError.message}` : '');
+
       if (userError || !user) {
-        throw new Error('Usuario t3stus3r_1 no encontrado');
+        throw new Error(`Usuario t3stus3r_1 no encontrado: ${userError?.message || 'Sin datos'}`);
       }
 
       if (!user.access_token) {
         throw new Error('No hay token de acceso para t3stus3r_1');
       }
 
-      console.log('🔧 Resubscribiendo webhooks para @t3stus3r_1...');
+      console.log('🔧 Datos del usuario:', {
+        instagram_user_id: user.instagram_user_id,
+        username: user.username,
+        has_token: !!user.access_token,
+        token_length: user.access_token?.length
+      });
       
       // Llamar función de re-suscripción
+      console.log('📞 Llamando a instagram-subscribe-webhooks...');
       const { data, error } = await supabase.functions.invoke('instagram-subscribe-webhooks', {
         body: {
           instagram_user_id: user.instagram_user_id,
@@ -39,9 +48,16 @@ const TestUserWebhookFix = () => {
         }
       });
 
+      console.log('📥 Respuesta de función:', { data, error });
+
       if (error) {
         console.error('❌ Error en re-suscripción:', error);
-        throw error;
+        throw new Error(`Error en función: ${error.message || JSON.stringify(error)}`);
+      }
+
+      if (data?.success === false) {
+        console.error('❌ Función devolvió error:', data);
+        throw new Error(`Error de Instagram API: ${data.error || 'Error desconocido'}`);
       }
 
       console.log('✅ Webhooks resubscritos exitosamente:', data);
