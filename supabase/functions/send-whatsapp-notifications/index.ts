@@ -283,13 +283,9 @@ async function getUserStats(instagramUserId: string) {
         }
       );
 
-      if (!howerStatsError && howerStats && howerStats[0]) {
+      if (!howerStatsError && howerStats) {
         console.log('📊 Using Hower-filtered stats:', howerStats[0]);
-        return {
-          abiertas: Number(howerStats[0].respuestas) || 0,
-          seguimientos: Number(howerStats[0].seguimientos) || 0,
-          agendados: Number(howerStats[0].agendados) || 0
-        };
+        return howerStats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
       }
 
       console.log('⚠️ Hower-filtered stats failed:', howerStatsError?.message);
@@ -297,26 +293,8 @@ async function getUserStats(instagramUserId: string) {
       console.log('⚠️ No Hower credentials or error getting usernames:', howerError?.message || 'No credentials');
     }
 
-    // Si no hay credenciales Hower o falló, usar stats generales del usuario
-    console.log('📊 Using general user stats (no Hower filter)');
-    const { data: generalStats, error: generalStatsError } = await supabase.rpc(
-      'grok_get_stats',
-      {
-        p_instagram_user_id: instagramUserId,
-        p_period: 'today'
-      }
-    );
-
-    if (!generalStatsError && generalStats && generalStats[0]) {
-      console.log('📊 General stats retrieved:', generalStats[0]);
-      return {
-        abiertas: Number(generalStats[0].respuestas) || 0,
-        seguimientos: Number(generalStats[0].seguimientos) || 0,
-        agendados: Number(generalStats[0].agendados) || 0
-      };
-    }
-
-    console.error('❌ Failed to get any stats:', generalStatsError?.message);
+    // 🎯 FILTRO HOWER ES OBLIGATORIO: Si no hay credenciales Hower, retornar stats = 0
+    console.log('🚫 No Hower credentials available - returning zero stats (Hower filter is mandatory)');
     return { abiertas: 0, seguimientos: 0, agendados: 0 };
     
   } catch (error) {
@@ -345,19 +323,14 @@ function createMotivationalMessage(stats: { abiertas: number, seguimientos: numb
   const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
   const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
   
-  // Asegurar que todos los valores sean números válidos
-  const abiertas = Number(stats.abiertas) || 0;
-  const seguimientos = Number(stats.seguimientos) || 0;
-  const agendados = Number(stats.agendados) || 0;
-  
-  const totalProspects = abiertas + seguimientos;
+  const totalProspects = stats.abiertas + stats.seguimientos;
   
   return `${randomGreeting}
 
 Tienes estos prospectos por contactar:
-URGENTES de contactar: ${abiertas}
-Prospectos en seguimiento: ${seguimientos}
-Nuevos prospectos de hoy: ${agendados}
+URGENTES de contestar: ${stats.abiertas}
+Prospectos en seguimiento: ${stats.seguimientos}
+Nuevos prospectos de hoy: ${stats.agendados}
 
 Accede a este link:
 https://preview--insta-buddy-ai-chat.lovable.app/tasks-to-do
