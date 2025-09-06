@@ -285,7 +285,12 @@ async function getUserStats(instagramUserId: string) {
 
       if (!howerStatsError && howerStats) {
         console.log('📊 Using Hower-filtered stats:', howerStats[0]);
-        return howerStats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
+        const stats = howerStats[0];
+        return { 
+          abiertas: stats?.respuestas || 0, 
+          seguimientos: stats?.seguimientos || 0, 
+          agendados: stats?.agendados || 0 
+        };
       }
 
       console.log('⚠️ Hower-filtered stats failed:', howerStatsError?.message);
