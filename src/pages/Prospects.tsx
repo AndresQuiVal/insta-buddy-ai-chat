@@ -363,7 +363,7 @@ const ProspectsPage: React.FC = () => {
   };
 
   // Función para manejar el envío de mensaje y gamificación
-  const handleMessageSent = async (username: string) => {
+  const handleMessageSent = (username: string) => {
     const totalProspectos = 17; // Total de prospectos reales de @marikowskaya
     const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : totalProspectos;
     
@@ -387,29 +387,6 @@ const ProspectsPage: React.FC = () => {
     const newCount = newContactedProspects.length;
     setDailySentMessages(newCount);
     localStorage.setItem('hower-daily-sent', newCount.toString());
-    
-    // 🔥 INCREMENTAR SEGUIMIENTOS EN LA BASE DE DATOS
-    try {
-      // Obtener el Instagram User ID activo
-      const { data: currentUser } = await supabase
-        .from('instagram_users')
-        .select('instagram_user_id')
-        .eq('is_active', true)
-        .single();
-
-      if (currentUser) {
-        // Incrementar seguimientos usando la función de la base de datos
-        await supabase.rpc('grok_increment_stat', {
-          p_instagram_user_id: currentUser.instagram_user_id,
-          p_stat_type: 'seguimientos',
-          p_increment: 1
-        });
-        
-        console.log(`✅ Seguimiento incrementado para usuario ${currentUser.instagram_user_id}`);
-      }
-    } catch (error) {
-      console.error('❌ Error incrementando seguimientos:', error);
-    }
     
     // Actualizar contador de enviados en el dashboard y guardarlo
     const newEnviados = counts.enviados + 1;
