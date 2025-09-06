@@ -363,7 +363,7 @@ const ProspectsPage: React.FC = () => {
   };
 
   // Función para manejar el envío de mensaje y gamificación
-  const handleMessageSent = (username: string) => {
+  const handleMessageSent = async (username: string) => {
     const totalProspectos = 17; // Total de prospectos reales de @marikowskaya
     const prospectsToShow = todayProspects.length > 0 ? todayProspects.length : totalProspectos;
     
@@ -392,6 +392,21 @@ const ProspectsPage: React.FC = () => {
     const newEnviados = counts.enviados + 1;
     setCounts(prev => ({ ...prev, enviados: newEnviados }));
     localStorage.setItem('hower-dashboard-enviados', newEnviados.toString());
+    
+    // 🔥 INCREMENTAR SEGUIMIENTOS EN LA BASE DE DATOS
+    try {
+      const iu = await getActiveInstagramAccount();
+      if (iu?.instagram_user_id) {
+        await supabase.rpc('grok_increment_stat', {
+          p_instagram_user_id: iu.instagram_user_id,
+          p_stat_type: 'seguimientos',
+          p_increment: 1
+        });
+        console.log('✅ Contador de seguimientos incrementado en BD');
+      }
+    } catch (error) {
+      console.error('❌ Error incrementando seguimientos:', error);
+    }
     
     // Verificar si completó todos los prospectos del día
     if (newCount >= prospectsToShow) {
@@ -1143,8 +1158,8 @@ const ProspectsPage: React.FC = () => {
             ) : (
               <Button 
                 variant="outline" 
-                onClick={() => {
-                  handleMessageSent(dialogUser);
+                onClick={async () => {
+                  await handleMessageSent(dialogUser);
                   setOpenDialog(false);
                 }}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
