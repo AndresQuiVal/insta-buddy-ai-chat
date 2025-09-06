@@ -393,21 +393,6 @@ const ProspectsPage: React.FC = () => {
     setCounts(prev => ({ ...prev, enviados: newEnviados }));
     localStorage.setItem('hower-dashboard-enviados', newEnviados.toString());
     
-    // 🔥 INCREMENTAR SEGUIMIENTOS EN LA BASE DE DATOS
-    try {
-      const iu = await getActiveInstagramAccount();
-      if (iu?.instagram_user_id) {
-        await supabase.rpc('grok_increment_stat', {
-          p_instagram_user_id: iu.instagram_user_id,
-          p_stat_type: 'seguimientos',
-          p_increment: 1
-        });
-        console.log('✅ Contador de seguimientos incrementado en BD');
-      }
-    } catch (error) {
-      console.error('❌ Error incrementando seguimientos:', error);
-    }
-    
     // Verificar si completó todos los prospectos del día
     if (newCount >= prospectsToShow) {
       // ¡CELEBRACIÓN ÉPICA!

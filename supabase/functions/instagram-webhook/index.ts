@@ -123,6 +123,50 @@ serve(async (req) => {
       } else {
         console.log('✅ Mensaje enviado guardado correctamente en BD')
         
+        // 🔥 NUEVO: INCREMENTAR CONTADOR DE SEGUIMIENTOS AUTOMÁTICAMENTE
+        try {
+          console.log('🔄 Verificando si es un seguimiento y debe incrementar contador...')
+          
+          // Verificar si el prospecto está en seguimiento (más de 24 horas desde último mensaje)
+          const { data: prospectData, error: prospectError } = await supabase
+            .from('prospects')
+            .select('last_owner_message_at, prospect_instagram_id')
+            .eq('instagram_user_id', instagramUser.id)
+            .eq('prospect_instagram_id', recipientId)
+            .single()
+          
+          if (prospectData && prospectData.last_owner_message_at) {
+            const lastMessageTime = new Date(prospectData.last_owner_message_at).getTime()
+            const currentTime = new Date().getTime()
+            const hoursSinceLastMessage = (currentTime - lastMessageTime) / (1000 * 60 * 60)
+            
+            console.log(`⏰ Horas desde último mensaje: ${hoursSinceLastMessage.toFixed(2)}`)
+            
+            // Si es un seguimiento (más de 24 horas), incrementar contador
+            if (hoursSinceLastMessage >= 24) {
+              console.log('📈 ES UN SEGUIMIENTO - Incrementando contador automáticamente')
+              
+              const { error: incrementError } = await supabase.rpc('grok_increment_stat', {
+                p_instagram_user_id: senderId,
+                p_stat_type: 'seguimientos',
+                p_increment: 1
+              })
+              
+              if (incrementError) {
+                console.error('❌ Error incrementando seguimientos:', incrementError)
+              } else {
+                console.log('✅ Contador de seguimientos incrementado automáticamente')
+              }
+            } else {
+              console.log('📝 Es contacto reciente, no se incrementa seguimientos')
+            }
+          } else {
+            console.log('📝 Es primer contacto con este prospecto')
+          }
+        } catch (error) {
+          console.error('❌ Error verificando seguimiento:', error)
+        }
+        
         // 🔥 CRÍTICO: Sincronizar estado de tarea del prospecto
         try {
           console.log('🔄 Ejecutando sync_prospect_task_status para marcar como completado...')
