@@ -31,7 +31,7 @@ async function getPerplexitySearch(query: string, dateRange: string, followers_m
     requestBody 
   });
 
-  const response = await fetch('https://www.howersoftware.io/clients/api/search/perplexity/', {
+  const response = await fetch('https://www.howersoftware.io/clients/perplexity_instagram_search/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
