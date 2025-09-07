@@ -1238,45 +1238,57 @@ const TasksToDo2: React.FC = () => {
 
       if (statsType === 'respuestas') {
         // RESPUESTAS: Prospectos que ME RESPONDIERON en el período específico (hoy/ayer/semana)
-        // ⚠️ ESTADÍSTICAS: Incluye TODOS los que respondieron, independientemente de si ya les contesté
+        // ⚠️ ESTADÍSTICAS: Buscar el último mensaje RECIBIDO (no el último mensaje en general)
         
-        let dateFilter: (prospect: any) => boolean;
+        let dateFilter: (lastReceivedMessage: any) => boolean;
         
         if (period === 'hoy') {
           const today = new Date().toISOString().split('T')[0];
-          dateFilter = (prospect) => {
-            const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
-            return lastMessageDate === today;
+          dateFilter = (lastReceivedMessage) => {
+            if (!lastReceivedMessage) return false;
+            const messageDate = new Date(lastReceivedMessage.timestamp || lastReceivedMessage.message_timestamp).toISOString().split('T')[0];
+            return messageDate === today;
           };
         } else if (period === 'ayer') {
           const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          dateFilter = (prospect) => {
-            const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
-            return lastMessageDate === yesterday;
+          dateFilter = (lastReceivedMessage) => {
+            if (!lastReceivedMessage) return false;
+            const messageDate = new Date(lastReceivedMessage.timestamp || lastReceivedMessage.message_timestamp).toISOString().split('T')[0];
+            return messageDate === yesterday;
           };
         } else if (period === 'semana') {
           const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          dateFilter = (prospect) => {
-            const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime) : null;
-            return lastMessageDate && lastMessageDate >= weekAgo;
+          dateFilter = (lastReceivedMessage) => {
+            if (!lastReceivedMessage) return false;
+            const messageDate = new Date(lastReceivedMessage.timestamp || lastReceivedMessage.message_timestamp);
+            return messageDate >= weekAgo;
           };
         } else {
           dateFilter = () => false;
         }
         
         filteredProspects = authorizedProspects.filter(prospect => {
-          // Para ESTADÍSTICAS: mostrar todos los que recibieron mensajes en el período
-          // Sin importar si ya les respondí o no (lastMessageType puede ser 'received' o 'sent')
-          const hasReceivedMessage = prospect.lastMessageTime && prospect.lastMessageTime !== '';
+          // Buscar el último mensaje RECIBIDO del prospecto (no el último mensaje en general)
+          const receivedMessages = prospect.conversationMessages?.filter(msg => 
+            msg.message_type === 'received' || msg.is_from_prospect === true
+          ) || [];
           
-          // Verificar que el mensaje fue en el período correcto
-          const inTimeRange = dateFilter(prospect);
+          if (receivedMessages.length === 0) {
+            console.log(`[STATS-RESPUESTAS-${period}] ${prospect.username}: NO tiene mensajes recibidos`);
+            return false;
+          }
           
-          const matches = hasReceivedMessage && inTimeRange;
+          // Obtener el último mensaje recibido
+          const lastReceivedMessage = receivedMessages.sort((a, b) => 
+            new Date(b.timestamp || b.message_timestamp).getTime() - new Date(a.timestamp || a.message_timestamp).getTime()
+          )[0];
           
-          console.log(`[STATS-RESPUESTAS-${period}] ${prospect.username}: hasReceivedMessage=${hasReceivedMessage}, inTimeRange=${inTimeRange}, lastMessageTime=${prospect.lastMessageTime}, lastMessageType=${prospect.lastMessageType}, matches=${matches}`);
+          // Verificar si el último mensaje recibido está en el período correcto
+          const inTimeRange = dateFilter(lastReceivedMessage);
           
-          return matches;
+          console.log(`[STATS-RESPUESTAS-${period}] ${prospect.username}: lastReceivedMessage=${lastReceivedMessage ? new Date(lastReceivedMessage.timestamp || lastReceivedMessage.message_timestamp).toISOString() : 'NONE'}, inTimeRange=${inTimeRange}`);
+          
+          return inTimeRange;
         });
       } else if (statsType === 'nuevos') {
         // NUEVOS: Prospectos completamente nuevos que nunca han interactuado
