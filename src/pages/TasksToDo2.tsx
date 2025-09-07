@@ -1477,9 +1477,9 @@ const TasksToDo2: React.FC = () => {
         default:
           return {
             title: "🔥 Secreto que aumenta respuestas 10x",
-            gradient: "from-primary/10 to-primary/20",
-            border: "border-primary/30",
-            textColor: "text-primary"
+            gradient: "from-yellow-100 to-yellow-200",
+            border: "border-yellow-300",
+            textColor: "text-yellow-800"
           };
       }
     };
@@ -1524,7 +1524,7 @@ const TasksToDo2: React.FC = () => {
                         </div>
                       </div>
                     </DialogTrigger>
-                    <DialogContent className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded-3xl shadow-xl max-w-md">
+                    <DialogContent className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded-3xl shadow-xl max-w-md mx-auto">
                       <DialogHeader>
                         <DialogTitle className="flex items-center space-x-2 text-yellow-800">
                           <Lightbulb className="h-5 w-5" />
