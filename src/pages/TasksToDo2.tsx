@@ -346,24 +346,49 @@ const TasksToDo2: React.FC = () => {
     if (!currentUser?.instagram_user_id) return;
 
     try {
-      // Usar la función híbrida que filtra por Hower Y respeta períodos
-      const [todayData, yesterdayData, weekData] = await Promise.all([
-        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
-          p_instagram_user_id: currentUser.instagram_user_id,
-          p_period: 'today',
-          p_hower_usernames: howerUsernames
-        }),
-        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
-          p_instagram_user_id: currentUser.instagram_user_id,
-          p_period: 'yesterday',
-          p_hower_usernames: howerUsernames
-        }),
-        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
-          p_instagram_user_id: currentUser.instagram_user_id,
-          p_period: 'week',
-          p_hower_usernames: howerUsernames
-        })
-      ]);
+      // Intentar usar la función híbrida primero, con fallback a la función original
+      let todayData, yesterdayData, weekData;
+      
+      try {
+        // Usar la función híbrida que filtra por Hower Y respeta períodos
+        [todayData, yesterdayData, weekData] = await Promise.all([
+          supabase.rpc('grok_get_stats_with_hower_filter' as any, {
+            p_instagram_user_id: currentUser.instagram_user_id,
+            p_period: 'today',
+            p_hower_usernames: howerUsernames
+          }),
+          supabase.rpc('grok_get_stats_with_hower_filter' as any, {
+            p_instagram_user_id: currentUser.instagram_user_id,
+            p_period: 'yesterday',
+            p_hower_usernames: howerUsernames
+          }),
+          supabase.rpc('grok_get_stats_with_hower_filter' as any, {
+            p_instagram_user_id: currentUser.instagram_user_id,
+            p_period: 'week',
+            p_hower_usernames: howerUsernames
+          })
+        ]);
+        console.log('✅ [STATS] Usando función híbrida con filtro Hower');
+      } catch (hybridError) {
+        console.log('⚠️ [STATS] Función híbrida no disponible, usando función original:', hybridError);
+        
+        // Fallback a función original
+        [todayData, yesterdayData, weekData] = await Promise.all([
+          supabase.rpc('grok_get_stats', {
+            p_instagram_user_id: currentUser.instagram_user_id,
+            p_period: 'today'
+          }),
+          supabase.rpc('grok_get_stats', {
+            p_instagram_user_id: currentUser.instagram_user_id,
+            p_period: 'yesterday'
+          }),
+          supabase.rpc('grok_get_stats', {
+            p_instagram_user_id: currentUser.instagram_user_id,
+            p_period: 'week'
+          })
+        ]);
+        console.log('⚠️ [STATS] Usando función original (sin filtro Hower)');
+      }
 
       console.log('📊 [GROK] Estadísticas cargadas:', {
         today: todayData.data?.[0],
@@ -1231,6 +1256,9 @@ const TasksToDo2: React.FC = () => {
   const getProspectUsernames = async (prospectIds: string[]) => {
     if (prospectIds.length === 0) return {};
     
+    console.log('🔍 [getProspectUsernames] Buscando usernames para IDs:', prospectIds);
+    console.log('🔍 [getProspectUsernames] Filtro Hower disponible:', howerUsernames.length, 'usernames');
+    
     const { data: prospects, error } = await supabase
       .from('prospects')
       .select('prospect_instagram_id, username')
@@ -1241,20 +1269,33 @@ const TasksToDo2: React.FC = () => {
       return {};
     }
     
+    console.log('🔍 [getProspectUsernames] Prospectos encontrados:', prospects?.length);
+    
     const usernameMap: { [key: string]: string } = {};
     prospects?.forEach(prospect => {
+      console.log(`🔍 [getProspectUsernames] Evaluando prospecto: ${prospect.username}`);
+      
       // 🎯 FILTRO HOWER OBLIGATORIO: Solo incluir prospectos en la lista de Hower
-      const isInHowerList = howerUsernames.some(howerUsername => 
-        prospect.username === howerUsername ||
-        prospect.username === '@' + howerUsername ||
-        prospect.username.replace('@', '') === howerUsername
-      );
+      const isInHowerList = howerUsernames.some(howerUsername => {
+        const match = prospect.username === howerUsername ||
+          prospect.username === '@' + howerUsername ||
+          prospect.username.replace('@', '') === howerUsername;
+        
+        if (match) {
+          console.log(`✅ [getProspectUsernames] ${prospect.username} coincide con Hower: ${howerUsername}`);
+        }
+        return match;
+      });
       
       if (isInHowerList) {
         usernameMap[prospect.prospect_instagram_id] = prospect.username;
+        console.log(`✅ [getProspectUsernames] Incluido: ${prospect.prospect_instagram_id} -> ${prospect.username}`);
+      } else {
+        console.log(`❌ [getProspectUsernames] Excluido: ${prospect.username} no está en lista de Hower`);
       }
     });
     
+    console.log('🔍 [getProspectUsernames] Mapa final:', usernameMap);
     return usernameMap;
   };
 
