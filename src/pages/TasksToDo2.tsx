@@ -326,53 +326,140 @@ const TasksToDo2: React.FC = () => {
 
   // Función para calcular estadísticas REALES basadas en fechas de mensajes y filtro Hower
   const calculateRealStats = useCallback(() => {
-    if (!realProspects.length || !howerUsernames.length) {
-      console.log('⚠️ [REAL-STATS] Sin datos para calcular - prospects:', realProspects.length, 'hower:', howerUsernames.length);
+    try {
+      if (!realProspects || !Array.isArray(realProspects) || realProspects.length === 0) {
+        console.log('⚠️ [REAL-STATS] Sin realProspects válidos:', realProspects?.length || 'undefined');
+        return {
+          today: { respuestas: 0, seguimientos: 0, agendados: 0 },
+          yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
+          week: { respuestas: 0, seguimientos: 0, agendados: 0 }
+        };
+      }
+
+      if (!howerUsernames || !Array.isArray(howerUsernames) || howerUsernames.length === 0) {
+        console.log('⚠️ [REAL-STATS] Sin howerUsernames válidos:', howerUsernames?.length || 'undefined');
+        return {
+          today: { respuestas: 0, seguimientos: 0, agendados: 0 },
+          yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
+          week: { respuestas: 0, seguimientos: 0, agendados: 0 }
+        };
+      }
+
+      console.log('🔄 [REAL-STATS] Calculando estadísticas reales con:', {
+        prospects: realProspects.length,
+        howerUsernames: howerUsernames.length
+      });
+
+      // Usar las funciones existentes getStatsProspects para cada período con protección
+      const stats = {
+        today: {
+          respuestas: (() => {
+            try {
+              return getStatsProspects('respuestas', 'hoy').length;
+            } catch (error) {
+              console.error('Error calculando respuestas hoy:', error);
+              return 0;
+            }
+          })(),
+          seguimientos: (() => {
+            try {
+              return getStatsProspects('seguimientos', 'hoy').length;
+            } catch (error) {
+              console.error('Error calculando seguimientos hoy:', error);
+              return 0;
+            }
+          })(),
+          agendados: 20 // Placeholder mantenido
+        },
+        yesterday: {
+          respuestas: (() => {
+            try {
+              return getStatsProspects('respuestas', 'ayer').length;
+            } catch (error) {
+              console.error('Error calculando respuestas ayer:', error);
+              return 0;
+            }
+          })(),
+          seguimientos: (() => {
+            try {
+              return getStatsProspects('seguimientos', 'ayer').length;
+            } catch (error) {
+              console.error('Error calculando seguimientos ayer:', error);
+              return 0;
+            }
+          })(),
+          agendados: 20 // Placeholder mantenido
+        },
+        week: {
+          respuestas: (() => {
+            try {
+              return getStatsProspects('respuestas', 'semana').length;
+            } catch (error) {
+              console.error('Error calculando respuestas semana:', error);
+              return 0;
+            }
+          })(),
+          seguimientos: (() => {
+            try {
+              return getStatsProspects('seguimientos', 'semana').length;
+            } catch (error) {
+              console.error('Error calculando seguimientos semana:', error);
+              return 0;
+            }
+          })(),
+          agendados: 20 // Placeholder mantenido
+        }
+      };
+
+      console.log('📊 [REAL-STATS] Estadísticas calculadas:', stats);
+      return stats;
+    } catch (error) {
+      console.error('❌ [REAL-STATS] Error crítico en calculateRealStats:', error);
       return {
         today: { respuestas: 0, seguimientos: 0, agendados: 0 },
         yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
         week: { respuestas: 0, seguimientos: 0, agendados: 0 }
       };
     }
-
-    console.log('🔄 [REAL-STATS] Calculando estadísticas reales con:', {
-      prospects: realProspects.length,
-      howerUsernames: howerUsernames.length
-    });
-
-    // Usar las funciones existentes getStatsProspects para cada período
-    const stats = {
-      today: {
-        respuestas: getStatsProspects('respuestas', 'hoy').length,
-        seguimientos: getStatsProspects('seguimientos', 'hoy').length,
-        agendados: 20 // Placeholder mantenido
-      },
-      yesterday: {
-        respuestas: getStatsProspects('respuestas', 'ayer').length,
-        seguimientos: getStatsProspects('seguimientos', 'ayer').length,
-        agendados: 20 // Placeholder mantenido
-      },
-      week: {
-        respuestas: getStatsProspects('respuestas', 'semana').length,
-        seguimientos: getStatsProspects('seguimientos', 'semana').length,
-        agendados: 20 // Placeholder mantenido
-      }
-    };
-
-    console.log('📊 [REAL-STATS] Estadísticas calculadas:', stats);
-    return stats;
   }, [realProspects, howerUsernames]);
 
   // Función para cargar estadísticas - ahora usa cálculo real
   const loadStats = useCallback(() => {
-    if (!currentUser?.instagram_user_id || !realProspects.length || !howerUsernames.length) {
-      console.log('⚠️ [LOAD-STATS] Faltan datos para cargar estadísticas');
-      return;
-    }
+    try {
+      if (!currentUser?.instagram_user_id) {
+        console.log('⚠️ [LOAD-STATS] Sin currentUser o instagram_user_id');
+        return;
+      }
+      
+      if (!realProspects || !Array.isArray(realProspects) || realProspects.length === 0) {
+        console.log('⚠️ [LOAD-STATS] Sin realProspects válidos:', realProspects?.length || 'undefined');
+        return;
+      }
+      
+      if (!howerUsernames || !Array.isArray(howerUsernames) || howerUsernames.length === 0) {
+        console.log('⚠️ [LOAD-STATS] Sin howerUsernames válidos:', howerUsernames?.length || 'undefined');
+        return;
+      }
 
-    console.log('🔄 [LOAD-STATS] Cargando estadísticas reales basadas en fechas de mensajes');
-    const realStats = calculateRealStats();
-    setStats(realStats);
+      console.log('🔄 [LOAD-STATS] Cargando estadísticas reales basadas en fechas de mensajes');
+      console.log('🔄 [LOAD-STATS] Datos disponibles:', {
+        userId: currentUser.instagram_user_id,
+        prospects: realProspects.length,
+        howerUsers: howerUsernames.length
+      });
+      
+      const realStats = calculateRealStats();
+      console.log('🔄 [LOAD-STATS] Stats calculadas exitosamente:', realStats);
+      setStats(realStats);
+    } catch (error) {
+      console.error('❌ [LOAD-STATS] Error crítico en loadStats:', error);
+      // Establecer stats por defecto en caso de error
+      setStats({
+        today: { respuestas: 0, seguimientos: 0, agendados: 0 },
+        yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
+        week: { respuestas: 0, seguimientos: 0, agendados: 0 }
+      });
+    }
   }, [currentUser?.instagram_user_id, calculateRealStats]);
 
   // Cargar estadísticas cuando tenemos todos los datos necesarios
