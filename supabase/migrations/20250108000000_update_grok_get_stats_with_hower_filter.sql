@@ -1,22 +1,12 @@
--- Crear función híbrida que filtra por Hower Y respeta períodos
-CREATE OR REPLACE FUNCTION public.grok_get_stats_with_hower_filter(
-  p_instagram_user_id text, 
-  p_period text,
-  p_hower_usernames text[]
-)
-RETURNS TABLE(respuestas integer, seguimientos integer, agendados integer)
-LANGUAGE plpgsql
+-- Actualizar función grok_get_stats para incluir filtro de Hower
+CREATE OR REPLACE FUNCTION public.grok_get_stats(p_instagram_user_id text, p_period text, p_hower_usernames text[] DEFAULT NULL)
+ RETURNS TABLE(respuestas integer, seguimientos integer, agendados integer)
+ LANGUAGE plpgsql
 AS $function$
 DECLARE
   start_date DATE;
   end_date DATE;
 BEGIN
-  -- Return default values if no usernames provided
-  IF p_hower_usernames IS NULL OR array_length(p_hower_usernames, 1) IS NULL THEN
-    RETURN QUERY SELECT 0::integer, 0::integer, 20::integer;
-    RETURN;
-  END IF;
-
   -- Configurar fechas según el período
   CASE p_period
     WHEN 'today' THEN
@@ -38,27 +28,30 @@ BEGIN
   RETURN QUERY
   WITH prospect_counts AS (
     -- RESPUESTAS: Contar respuestas únicas de prospectos por período
-    -- Solo primera respuesta por prospecto por día Y que estén en lista de Hower
+    -- Solo primera respuesta por prospecto por día Y que estén en la lista de Hower
     SELECT 
       COUNT(DISTINCT dpr.prospect_sender_id) FILTER (
         WHERE dpr.response_date >= start_date 
         AND dpr.response_date <= end_date
-        AND EXISTS (
-          SELECT 1 FROM prospects p
-          INNER JOIN instagram_users iu ON p.instagram_user_id = iu.id
-          WHERE iu.instagram_user_id = p_instagram_user_id
-          AND p.prospect_instagram_id = dpr.prospect_sender_id
-          AND (
-            p.username = ANY(p_hower_usernames) OR 
-            REPLACE(p.username, '@', '') = ANY(p_hower_usernames) OR
-            p.username = ANY(SELECT '@' || unnest(p_hower_usernames))
+        AND (
+          p_hower_usernames IS NULL OR 
+          EXISTS (
+            SELECT 1 FROM prospects p
+            INNER JOIN instagram_users iu ON p.instagram_user_id = iu.id
+            WHERE iu.instagram_user_id = p_instagram_user_id
+            AND p.prospect_instagram_id = dpr.prospect_sender_id
+            AND (
+              p.username = ANY(p_hower_usernames) OR 
+              REPLACE(p.username, '@', '') = ANY(p_hower_usernames) OR
+              p.username = ANY(SELECT '@' || unnest(p_hower_usernames))
+            )
           )
         )
       ) as responses_count,
       
       -- SEGUIMIENTOS: Contar contactos únicos a prospectos en seguimiento por período  
       -- Solo primer contacto por prospecto por día, y que estén en seguimiento (>=24h desde último mensaje)
-      -- Y que estén en lista de Hower
+      -- Y que estén en la lista de Hower
       COUNT(DISTINCT dpc.prospect_sender_id) FILTER (
         WHERE dpc.contact_date >= start_date 
         AND dpc.contact_date <= end_date
@@ -77,6 +70,7 @@ BEGIN
             AND pts.task_type = 'pending'
           ), false) = false
           AND (
+            p_hower_usernames IS NULL OR
             p.username = ANY(p_hower_usernames) OR 
             REPLACE(p.username, '@', '') = ANY(p_hower_usernames) OR
             p.username = ANY(SELECT '@' || unnest(p_hower_usernames))
