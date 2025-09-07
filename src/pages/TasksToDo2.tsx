@@ -1540,6 +1540,8 @@ const TasksToDo2: React.FC = () => {
   const updateDynamicStatsCounts = useCallback(async () => {
     if (!currentUser?.instagram_user_id) return;
 
+    console.log('🔄 [DYNAMIC-STATS] Iniciando actualización con filtro Hower:', howerUsernames.length, 'usernames');
+
     try {
       // Obtener contadores reales de las listas filtradas
       const [hoyRespuestas, hoySeguimientos, ayerRespuestas, ayerSeguimientos, semanaRespuestas, semanaSeguimientos] = await Promise.all([
@@ -1565,14 +1567,15 @@ const TasksToDo2: React.FC = () => {
     } catch (error) {
       console.error('❌ Error actualizando contadores dinámicos:', error);
     }
-  }, [currentUser?.instagram_user_id]);
+  }, [currentUser?.instagram_user_id, howerUsernames]);
 
   // Actualizar contadores dinámicos cuando se muestran las estadísticas
   useEffect(() => {
-    if (showStats && currentUser) {
+    if (showStats && currentUser && howerUsernames.length > 0) {
+      console.log('🔄 [DYNAMIC-STATS] Actualizando contadores con filtro Hower:', howerUsernames.length, 'usernames');
       updateDynamicStatsCounts();
     }
-  }, [showStats, currentUser, updateDynamicStatsCounts]);
+  }, [showStats, currentUser, howerUsernames, updateDynamicStatsCounts]);
 
   // Función para abrir Instagram directamente
   const handleProspectClick = (username: string) => {
