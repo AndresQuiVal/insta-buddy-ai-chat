@@ -1223,6 +1223,28 @@ const TasksToDo2: React.FC = () => {
     return { minutes, totalProspects, equivalencia };
   };
 
+  // Función auxiliar para obtener usernames de prospectos
+  const getProspectUsernames = async (prospectIds: string[]) => {
+    if (prospectIds.length === 0) return {};
+    
+    const { data: prospects, error } = await supabase
+      .from('prospects')
+      .select('prospect_instagram_id, username')
+      .in('prospect_instagram_id', prospectIds);
+    
+    if (error) {
+      console.error('❌ Error obteniendo usernames:', error);
+      return {};
+    }
+    
+    const usernameMap: { [key: string]: string } = {};
+    prospects?.forEach(prospect => {
+      usernameMap[prospect.prospect_instagram_id] = prospect.username;
+    });
+    
+    return usernameMap;
+  };
+
   // Función para obtener prospectos según la sección de estadísticas
   const getStatsProspects = async (statsType: string, period: string) => {
     console.log(`🔍 [getStatsProspects] Solicitando ${statsType} para ${period}`);
@@ -1253,10 +1275,14 @@ const TasksToDo2: React.FC = () => {
             
             console.log(`✅ [getStatsProspects] Respuestas de hoy desde BD:`, responseProspects?.length || 0);
             
+            // Obtener usernames de los prospectos
+            const prospectIds = (responseProspects || []).map(r => r.prospect_sender_id);
+            const usernameMap = await getProspectUsernames(prospectIds);
+            
             // Mapear a formato esperado
             return (responseProspects || []).map((response, index) => ({
               id: `response-${response.prospect_sender_id}-${index}`,
-              userName: `user_${response.prospect_sender_id.slice(-8)}`, // Username temporal
+              userName: usernameMap[response.prospect_sender_id] || `user_${response.prospect_sender_id.slice(-8)}`,
               status: 'responded',
               firstContactDate: response.first_response_at,
               lastContactDate: response.first_response_at,
@@ -1289,9 +1315,13 @@ const TasksToDo2: React.FC = () => {
               return [];
             }
             
+            // Obtener usernames de los prospectos
+            const prospectIds = (responseProspects || []).map(r => r.prospect_sender_id);
+            const usernameMap = await getProspectUsernames(prospectIds);
+            
             return (responseProspects || []).map((response, index) => ({
               id: `response-${response.prospect_sender_id}-${index}`,
-              userName: `user_${response.prospect_sender_id.slice(-8)}`,
+              userName: usernameMap[response.prospect_sender_id] || `user_${response.prospect_sender_id.slice(-8)}`,
               status: 'responded',
               firstContactDate: response.first_response_at,
               lastContactDate: response.first_response_at,
@@ -1327,9 +1357,13 @@ const TasksToDo2: React.FC = () => {
               return [];
             }
             
+            // Obtener usernames de los prospectos
+            const prospectIds = (responseProspects || []).map(r => r.prospect_sender_id);
+            const usernameMap = await getProspectUsernames(prospectIds);
+            
             return (responseProspects || []).map((response, index) => ({
               id: `response-${response.prospect_sender_id}-${index}`,
-              userName: `user_${response.prospect_sender_id.slice(-8)}`,
+              userName: usernameMap[response.prospect_sender_id] || `user_${response.prospect_sender_id.slice(-8)}`,
               status: 'responded',
               firstContactDate: response.first_response_at,
               lastContactDate: response.first_response_at,
@@ -1363,10 +1397,14 @@ const TasksToDo2: React.FC = () => {
             
             console.log(`✅ [getStatsProspects] Seguimientos de hoy desde BD:`, contactProspects?.length || 0);
             
+            // Obtener usernames de los prospectos
+            const prospectIds = (contactProspects || []).map(c => c.prospect_sender_id);
+            const usernameMap = await getProspectUsernames(prospectIds);
+            
             // Mapear a formato esperado
             return (contactProspects || []).map((contact, index) => ({
               id: `contact-${contact.prospect_sender_id}-${index}`,
-              userName: `user_${contact.prospect_sender_id.slice(-8)}`, // Username temporal
+              userName: usernameMap[contact.prospect_sender_id] || `user_${contact.prospect_sender_id.slice(-8)}`,
               status: 'followed_up',
               firstContactDate: contact.first_contact_at,
               lastContactDate: contact.first_contact_at,
@@ -1399,9 +1437,13 @@ const TasksToDo2: React.FC = () => {
               return [];
             }
             
+            // Obtener usernames de los prospectos
+            const prospectIds = (contactProspects || []).map(c => c.prospect_sender_id);
+            const usernameMap = await getProspectUsernames(prospectIds);
+            
             return (contactProspects || []).map((contact, index) => ({
               id: `contact-${contact.prospect_sender_id}-${index}`,
-              userName: `user_${contact.prospect_sender_id.slice(-8)}`,
+              userName: usernameMap[contact.prospect_sender_id] || `user_${contact.prospect_sender_id.slice(-8)}`,
               status: 'followed_up',
               firstContactDate: contact.first_contact_at,
               lastContactDate: contact.first_contact_at,
@@ -1437,9 +1479,13 @@ const TasksToDo2: React.FC = () => {
               return [];
             }
             
+            // Obtener usernames de los prospectos
+            const prospectIds = (contactProspects || []).map(c => c.prospect_sender_id);
+            const usernameMap = await getProspectUsernames(prospectIds);
+            
             return (contactProspects || []).map((contact, index) => ({
               id: `contact-${contact.prospect_sender_id}-${index}`,
-              userName: `user_${contact.prospect_sender_id.slice(-8)}`,
+              userName: usernameMap[contact.prospect_sender_id] || `user_${contact.prospect_sender_id.slice(-8)}`,
               status: 'followed_up',
               firstContactDate: contact.first_contact_at,
               lastContactDate: contact.first_contact_at,
