@@ -1227,6 +1227,12 @@ const TasksToDo2: React.FC = () => {
     return { minutes, totalProspects, equivalencia };
   };
 
+  // Función auxiliar para filtrar prospectos válidos (no user_ o prospect_)
+  const isValidProspect = (prospect: any) => {
+    const username = prospect.userName || prospect.username || '';
+    return !username.startsWith('user_') && !username.startsWith('prospect_');
+  };
+
   // Función auxiliar para obtener usernames de prospectos filtrados por Hower
   const getProspectUsernames = async (prospectIds: string[]) => {
     if (prospectIds.length === 0) return {};
@@ -1559,7 +1565,7 @@ const TasksToDo2: React.FC = () => {
 
     return (
       <>
-        {prospects.map((prospect) => (
+        {prospects.filter(isValidProspect).map((prospect) => (
           <ProspectCard key={prospect.id} prospect={prospect} taskType={taskType} />
         ))}
       </>
