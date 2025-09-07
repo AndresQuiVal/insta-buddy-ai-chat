@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X, LogOut, Instagram, RefreshCw, Trash2, Bug, Download } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Clock, Search, Heart, MessageCircle, Share2, CheckCircle, Calendar, ChevronDown, ChevronRight, BarChart3, Phone, Settings, ArrowRight, Copy, Edit2, Check, X, LogOut, Instagram, RefreshCw, Trash2, Bug, Download, Lightbulb } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import howerLogo from '@/assets/hower-logo.png';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -1455,24 +1455,24 @@ const TasksToDo2: React.FC = () => {
       switch(taskType) {
         case 'yesterday':
           return {
-            title: "Mensaje audio que funciona al 90%",
-            gradient: "from-green-100 to-green-200",
-            border: "border-green-300",
-            textColor: "text-green-800"
+            title: "Envíales este audio...",
+            gradient: "from-yellow-100 to-yellow-200",
+            border: "border-yellow-300",
+            textColor: "text-yellow-800"
           };
         case 'week':
           return {
-            title: "Frase que revive contactos muertos",
-            gradient: "from-primary/10 to-primary/20",
-            border: "border-primary/30", 
-            textColor: "text-primary"
+            title: "¿Más agendas? haz esto...",
+            gradient: "from-yellow-100 to-yellow-200",
+            border: "border-yellow-300", 
+            textColor: "text-yellow-800"
           };
         case 'new':
           return {
-            title: "Sistema de prospección élite",
-            gradient: "from-primary/10 to-primary/20",
-            border: "border-primary/30",
-            textColor: "text-primary"
+            title: "para más respuestas",
+            gradient: "from-yellow-100 to-yellow-200",
+            border: "border-yellow-300",
+            textColor: "text-yellow-800"
           };
         default:
           return {
@@ -1513,34 +1513,42 @@ const TasksToDo2: React.FC = () => {
             <CardContent className="pt-0 px-3 sm:px-6">
               {tip && (
                 <div className="mb-4">
-                  {!isTipExpanded ? (
-                    <div 
-                      className={`bg-gradient-to-r ${customHook.gradient} border ${customHook.border} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
-                      onClick={toggleTip}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className={`${customHook.textColor} font-semibold text-sm`}>{customHook.title}</span>
-                        <ChevronRight className={`h-4 w-4 ${customHook.textColor}`} />
-                      </div>
-                    </div>
-                  ) : (
-                    <Alert className="border-primary/20 bg-primary/5">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-2 flex-1">
-                          <Search className="h-4 w-4 mt-0.5" />
-                          <AlertDescription className="text-xs sm:text-sm">
-                            <strong>💡 Tip:</strong> {tip}
-                          </AlertDescription>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <div 
+                        className={`bg-gradient-to-r ${customHook.gradient} border ${customHook.border} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Lightbulb className={`h-4 w-4 ${customHook.textColor}`} />
+                          <span className={`${customHook.textColor} font-semibold text-sm`}>{customHook.title}</span>
                         </div>
-                        <button 
-                          onClick={toggleTip}
-                          className="text-blue-600 hover:text-blue-800 transition-colors ml-2"
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </button>
                       </div>
-                    </Alert>
-                  )}
+                    </DialogTrigger>
+                    <DialogContent className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded-3xl shadow-xl max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center space-x-2 text-yellow-800">
+                          <Lightbulb className="h-5 w-5" />
+                          <span>Tip Exclusivo</span>
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="p-4 bg-white/50 rounded-2xl border border-yellow-200">
+                        <p className="text-yellow-800 text-sm leading-relaxed">
+                          {(() => {
+                            switch(taskType) {
+                              case 'yesterday':
+                                return "📱 Graba un audio de 20-30 segundos hablando de tu experiencia personal con el producto/servicio. Los audios generan 3x más respuestas que los mensajes de texto porque transmiten autenticidad y cercanía.";
+                              case 'week':
+                                return "⚡ Usa la técnica del 'reframe': En lugar de preguntar '¿Te interesa?', pregunta '¿Cuál de estas dos opciones se ajusta mejor a tu situación?'. Esto obliga al cerebro a elegir en lugar de rechazar.";
+                              case 'new':
+                                return "🎯 El secreto está en el timing: Contacta entre 6-8 PM cuando la gente revisa Instagram después del trabajo. Usa un gancho emocional en las primeras 3 palabras y siempre haz una pregunta específica.";
+                              default:
+                                return tip || "Tip no disponible para este tipo de tarea.";
+                            }
+                          })()}
+                        </p>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               )}
               
