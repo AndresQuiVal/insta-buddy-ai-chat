@@ -269,15 +269,12 @@ const TasksToDo2: React.FC = () => {
     }
   };
 
-  // Estado para estadísticas REALES basadas en fechas de mensajes y filtro Hower
+  // Estado para estadísticas GROK
   const [stats, setStats] = useState({
-    today: { respuestas: 0, seguimientos: 0, agendados: 20 },
-    yesterday: { respuestas: 0, seguimientos: 0, agendados: 20 },
-    week: { respuestas: 0, seguimientos: 0, agendados: 20 }
+    today: { respuestas: 0, seguimientos: 0, agendados: 0 },
+    yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
+    week: { respuestas: 0, seguimientos: 0, agendados: 0 }
   });
-
-  // Cache para optimizar cálculos de prospectos
-  const [statsCache, setStatsCache] = useState<{[key: string]: any[]}>({});
 
   // Frases motivacionales
   const motivationalQuotes = [
@@ -324,64 +321,64 @@ const TasksToDo2: React.FC = () => {
     }
   }, [currentUser]);
 
-  // Función para calcular estadísticas REALES basadas en fechas de mensajes y filtro Hower
-  const calculateRealStats = useCallback(() => {
-    if (!realProspects.length || !howerUsernames.length) {
-      console.log('⚠️ [REAL-STATS] Sin datos para calcular - prospects:', realProspects.length, 'hower:', howerUsernames.length);
-      return {
-        today: { respuestas: 0, seguimientos: 0, agendados: 0 },
-        yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
-        week: { respuestas: 0, seguimientos: 0, agendados: 0 }
-      };
+  // Función para cargar estadísticas usando GROK - RESTAURADO
+  const loadStats = useCallback(async () => {
+    if (!currentUser?.instagram_user_id) return;
+
+    try {
+      // Usar las funciones GROK para obtener estadísticas
+      const [todayData, yesterdayData, weekData] = await Promise.all([
+        supabase.rpc('grok_get_stats', {
+          p_instagram_user_id: currentUser.instagram_user_id,
+          p_period: 'today'
+        }),
+        supabase.rpc('grok_get_stats', {
+          p_instagram_user_id: currentUser.instagram_user_id,
+          p_period: 'yesterday'
+        }),
+        supabase.rpc('grok_get_stats', {
+          p_instagram_user_id: currentUser.instagram_user_id,
+          p_period: 'week'
+        })
+      ]);
+
+      console.log('📊 [GROK] Estadísticas cargadas:', {
+        today: todayData.data?.[0],
+        yesterday: yesterdayData.data?.[0],
+        week: weekData.data?.[0]
+      });
+
+      console.log('✅ [RESPUESTAS-FIX] Valor de respuestas hoy (acumulativo):', todayData.data?.[0]?.respuestas || 0);
+
+      setStats({
+        today: {
+          respuestas: todayData.data?.[0]?.respuestas || 0,
+          seguimientos: todayData.data?.[0]?.seguimientos || 0,
+          agendados: todayData.data?.[0]?.agendados || 0
+        },
+        yesterday: {
+          respuestas: yesterdayData.data?.[0]?.respuestas || 0,
+          seguimientos: yesterdayData.data?.[0]?.seguimientos || 0,
+          agendados: yesterdayData.data?.[0]?.agendados || 0
+        },
+        week: {
+          respuestas: weekData.data?.[0]?.respuestas || 0,
+          seguimientos: weekData.data?.[0]?.seguimientos || 0,
+          agendados: weekData.data?.[0]?.agendados || 0
+        }
+      });
+    } catch (error) {
+      console.error('Error cargando estadísticas GROK:', error);
     }
+  }, [currentUser?.instagram_user_id]);
 
-    console.log('🔄 [REAL-STATS] Calculando estadísticas reales con:', {
-      prospects: realProspects.length,
-      howerUsernames: howerUsernames.length
-    });
-
-    // Usar las funciones existentes getStatsProspects para cada período
-    const stats = {
-      today: {
-        respuestas: getStatsProspects('respuestas', 'hoy').length,
-        seguimientos: getStatsProspects('seguimientos', 'hoy').length,
-        agendados: 20 // Placeholder mantenido
-      },
-      yesterday: {
-        respuestas: getStatsProspects('respuestas', 'ayer').length,
-        seguimientos: getStatsProspects('seguimientos', 'ayer').length,
-        agendados: 20 // Placeholder mantenido
-      },
-      week: {
-        respuestas: getStatsProspects('respuestas', 'semana').length,
-        seguimientos: getStatsProspects('seguimientos', 'semana').length,
-        agendados: 20 // Placeholder mantenido
-      }
-    };
-
-    console.log('📊 [REAL-STATS] Estadísticas calculadas:', stats);
-    return stats;
-  }, [realProspects, howerUsernames]);
-
-  // Función para cargar estadísticas - ahora usa cálculo real
-  const loadStats = useCallback(() => {
-    if (!currentUser?.instagram_user_id || !realProspects.length || !howerUsernames.length) {
-      console.log('⚠️ [LOAD-STATS] Faltan datos para cargar estadísticas');
-      return;
-    }
-
-    console.log('🔄 [LOAD-STATS] Cargando estadísticas reales basadas en fechas de mensajes');
-    const realStats = calculateRealStats();
-    setStats(realStats);
-  }, [currentUser?.instagram_user_id, calculateRealStats]);
-
-  // Cargar estadísticas cuando tenemos todos los datos necesarios
+  // Cargar estadísticas - HABILITADO para arreglar problema de decremento
   useEffect(() => {
-    if (!userLoading && currentUser && realProspects.length > 0 && howerUsernames.length > 0) {
-      console.log('🔄 [STATS] Cargando estadísticas reales para usuario:', currentUser.instagram_user_id);
+    if (!userLoading && currentUser) {
+      console.log('🔄 [STATS] Cargando estadísticas para usuario:', currentUser.instagram_user_id);
       loadStats();
     }
-  }, [currentUser, userLoading, realProspects, howerUsernames, loadStats]);
+  }, [currentUser, userLoading, loadStats]);
 
   // Función para compartir estadísticas como imagen
   const shareStats = async () => {
@@ -1206,287 +1203,54 @@ const TasksToDo2: React.FC = () => {
     return { minutes, totalProspects, equivalencia };
   };
 
-  // Función optimizada para obtener prospectos según la sección de estadísticas con cache
-  const getStatsProspects = useCallback((statsType: string, period: string): ProspectData[] => {
-    const cacheKey = `${statsType}-${period}`;
+  // Función para obtener prospectos según la sección de estadísticas
+  const getStatsProspects = (statsType: string, period: string) => {
+    console.log(`🔍 [getStatsProspects] Solicitando ${statsType} para ${period}`);
+    console.log(`🔍 [getStatsProspects] realProspects disponibles:`, realProspects.length);
     
-    // Usar cache si disponible y datos no han cambiado
-    if (statsCache[cacheKey] && 
-        realProspects.length > 0 && 
-        howerUsernames.length > 0) {
-      return statsCache[cacheKey];
-    }
-
-    console.log(`🔍 [getStatsProspects] Calculando ${statsType} para ${period}`);
-
-    if (!realProspects.length || !howerUsernames.length) {
-      console.log('❌ [getStatsProspects] Sin datos - realProspects o howerUsernames vacíos');
-      return [];
-    }
-
     try {
-      // Filtrar prospectos autorizados por Hower (misma lógica que el CRM)
-      const authorizedProspects = realProspects.filter(prospect => {
-        const normalizedUsername = prospect.username.replace('@', '');
-        const isAuthorized = howerUsernames.some(howerUsername => 
-          howerUsername === normalizedUsername || 
-          howerUsername === `@${normalizedUsername}` ||
-          howerUsername === prospect.username
-        );
-        return isAuthorized;
-      });
-
-      console.log('✅ [getStatsProspects] Prospectos autorizados:', authorizedProspects.length);
-      
-      // NOTA IMPORTANTE: Esta función sirve para DOS propósitos diferentes:
-      // 1. ESTADÍSTICAS (Mis Números): Conteo histórico/acumulativo que NO cambia cuando usuario responde
-      // 2. PROSPECTOS PENDIENTES: Estado actual que SÍ cambia cuando usuario responde
-      // 
-      // Para RESPUESTAS en estadísticas: usamos lógica de "cualquier mensaje en período"
-      // Para RESPUESTAS en prospectos pendientes: usamos lógica de "último mensaje sin responder"
-      
-      let filteredProspects: any[] = [];
-
-      if (statsType === 'respuestas') {
-        // RESPUESTAS PARA ESTADÍSTICAS: Conteo histórico/acumulativo
-        // Buscar CUALQUIER mensaje recibido del prospecto en el período (no solo el último)
-        // Esto asegura que el conteo no se reduzca cuando el usuario responde
-        
-        let dateFilter: (messageTimestamp: string) => boolean;
-        
-        if (period === 'hoy') {
-          const today = new Date().toISOString().split('T')[0];
-          dateFilter = (messageTimestamp) => {
-            const messageDate = new Date(messageTimestamp).toISOString().split('T')[0];
-            return messageDate === today;
-          };
-        } else if (period === 'ayer') {
-          const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          dateFilter = (messageTimestamp) => {
-            const messageDate = new Date(messageTimestamp).toISOString().split('T')[0];
-            return messageDate === yesterday;
-          };
-        } else if (period === 'semana') {
-          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          dateFilter = (messageTimestamp) => {
-            return new Date(messageTimestamp) >= weekAgo;
-          };
-        } else {
-          dateFilter = () => false;
-        }
-        
-        filteredProspects = authorizedProspects.filter(prospect => {
-          // 🔍 DEBUG: Log detallado para diagnóstico del problema
-          console.log(`🔍 [DEBUG-RESPUESTAS-${period}] Analizando ${prospect.username}:`, {
-            state: prospect.state,
-            lastMessageType: prospect.lastMessageType,
-            source: prospect.source,
-            totalMessages: prospect.conversationMessages?.length || 0
-          });
-          
-          // Buscar TODOS los mensajes RECIBIDOS del prospecto (histórico)
-          const receivedMessages = prospect.conversationMessages?.filter(msg => 
-            msg.message_type === 'received' || msg.is_from_prospect === true
-          ) || [];
-          
-          console.log(`🔍 [DEBUG-RESPUESTAS-${period}] ${prospect.username} - Mensajes recibidos:`, receivedMessages.length);
-          
-          if (receivedMessages.length === 0) {
-            console.log(`❌ [DEBUG-RESPUESTAS-${period}] ${prospect.username}: Sin mensajes recibidos`);
-            return false;
+      switch (statsType) {
+        case 'nuevos':
+          if (period === 'hoy') {
+            // ARREGLADO: Para "respuestas de hoy", usar TODOS los que respondieron HOY (acumulativo)
+            // Usar las propiedades correctas del hook useProspects
+            const today = new Date().toISOString().split('T')[0];
+            const todayResponses = realProspects.filter(prospect => {
+              const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
+              const isReceivedToday = prospect.lastMessageType === 'received' && lastMessageDate === today;
+              console.log(`📧 [${prospect.username}] lastMessageType: ${prospect.lastMessageType}, date: ${lastMessageDate}, isToday: ${isReceivedToday}`);
+              return isReceivedToday;
+            });
+            console.log(`✅ [getStatsProspects] Respuestas de hoy encontradas:`, todayResponses.length);
+            return todayResponses.map(prospect => ({
+              id: prospect.id,
+              userName: prospect.username,
+              status: prospect.state,
+              firstContactDate: prospect.lastMessageTime,
+              lastContactDate: prospect.lastMessageTime,
+              unread: prospect.lastMessageType === 'received',
+              avatar: ''
+            }));
           }
-          
-          // Verificar si el prospecto envió AL MENOS UN mensaje en el período
-          // (Conteo acumulativo - no se reduce cuando usuario responde)
-          const hasMessageInPeriod = receivedMessages.some(message => {
-            const messageTimestamp = message.timestamp || message.message_timestamp;
-            const inPeriod = messageTimestamp && dateFilter(messageTimestamp);
-            if (inPeriod) {
-              console.log(`✅ [DEBUG-RESPUESTAS-${period}] ${prospect.username}: Mensaje en período ${messageTimestamp}`);
-            }
-            return inPeriod;
-          });
-          
-          if (hasMessageInPeriod) {
-            console.log(`✅ [STATS-RESPUESTAS-${period}] ${prospect.username}: Tiene respuesta(s) en ${period} (conteo histórico) - INCLUIDO`);
-          } else {
-            console.log(`❌ [DEBUG-RESPUESTAS-${period}] ${prospect.username}: Sin mensajes en período ${period}`);
+          return period === 'ayer' ? prospectsClassification.yesterdayNewProspects : prospectsClassification.weekNewProspects;
+        case 'seguimientos':
+          if (period === 'hoy') {
+            // Para "seguimientos de hoy", usar una combinación de los que necesitan seguimiento
+            // Por ahora regresamos los de ayer como aproximación (esto se puede refinar después)
+            return prospectsClassification.noResponseYesterday.dm.concat(prospectsClassification.noResponseYesterday.comment);
           }
-          
-          return hasMessageInPeriod;
-        });
-      } else if (statsType === 'nuevos') {
-        // NUEVOS: Prospectos completamente nuevos que nunca han interactuado
-        // (Por ahora podemos dejarlo vacío o implementar lógica específica)
-        filteredProspects = [];
-      } else if (statsType === 'seguimientos') {
-        // SEGUIMIENTOS: Prospectos donde YO les envié mensaje hace >= 24 horas y no están tachados
-        // También aplicar filtro de período para solo contar seguimientos del rango temporal específico
-        
-        let dateFilter: (lastSentMessage: Date) => boolean;
-        
-        if (period === 'hoy') {
-          const today = new Date().toISOString().split('T')[0];
-          dateFilter = (lastSentMessage) => {
-            const messageDate = new Date(lastSentMessage).toISOString().split('T')[0];
-            return messageDate === today;
-          };
-        } else if (period === 'ayer') {
-          const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          dateFilter = (lastSentMessage) => {
-            const messageDate = new Date(lastSentMessage).toISOString().split('T')[0];
-            return messageDate === yesterday;
-          };
-        } else if (period === 'semana') {
-          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          dateFilter = (lastSentMessage) => {
-            return new Date(lastSentMessage) >= weekAgo;
-          };
-        } else {
-          dateFilter = () => false;
-        }
-        
-        filteredProspects = authorizedProspects.filter(prospect => {
-          // Verificar que les he enviado mensaje antes
-          const hasSentMessage = prospect.lastSentMessageTime && prospect.lastSentMessageTime !== '';
-          
-          if (!hasSentMessage) return false;
-          
-          // Calcular tiempo desde último mensaje mío
-          const lastContactTime = new Date(prospect.lastSentMessageTime).getTime();
-          const now = Date.now();
-          const hoursSinceContact = (now - lastContactTime) / (1000 * 60 * 60);
-          
-          // Verificar que están disponibles para seguimiento (>= 24 horas)
-          const readyForFollowUp = hoursSinceContact >= 24;
-          
-          // Verificar que el seguimiento está en el período correcto
-          const inTimeRange = dateFilter(new Date(prospect.lastSentMessageTime));
-          
-          // TODO: Agregar verificación de tachados usando prospect_task_status
-          const notCompleted = true; // Por ahora siempre true
-          
-          const matches = hasSentMessage && readyForFollowUp && inTimeRange && notCompleted;
-          
-          if (matches) {
-            console.log(`✅ [SEGUIMIENTOS-${period}] ${prospect.username}: Seguimiento válido para ${period}`);
-          }
-          
-          return matches;
-        });
-      } else if (statsType === 'agendados') {
-        // Por ahora vacío, se puede implementar después
-        filteredProspects = [];
+          return period === 'ayer' ? prospectsClassification.yesterdayFollowUps : prospectsClassification.weekFollowUps;
+        case 'agendados':
+          return []; // Por ahora vacío, se puede implementar después
+        default:
+          console.log(`⚠️ [getStatsProspects] Tipo de stats desconocido: ${statsType}`);
+          return [];
       }
-
-      console.log('🎯 [getStatsProspects] Prospectos filtrados final:', filteredProspects.length);
-
-      // Convertir a formato ProspectData
-      const result = filteredProspects.map(prospect => ({
-        id: prospect.id,
-        userName: prospect.username,
-        status: prospect.state,
-        firstContactDate: prospect.lastMessageTime || '',
-        lastContactDate: prospect.lastSentMessageTime || prospect.lastMessageTime || '',
-        unread: prospect.lastMessageType === 'received',
-        avatar: '' // No hay URL de avatar en la interfaz Prospect
-      }));
-
-      console.log('📋 [getStatsProspects] Resultado final:', result.length, 'prospectos');
-      
-      // Almacenar en cache
-      setStatsCache(prev => ({
-        ...prev,
-        [cacheKey]: result
-      }));
-      
-      return result;
     } catch (error) {
       console.error(`❌ [getStatsProspects] Error procesando ${statsType} para ${period}:`, error);
       return [];
     }
-  }, [realProspects, howerUsernames, statsCache]);
-
-  // Invalidar cache cuando cambian los datos base
-  useEffect(() => {
-    console.log('🔄 [CACHE] Invalidando cache de estadísticas por cambio en datos');
-    setStatsCache({});
-    
-    // 🔥 FORZAR RECÁLCULO INMEDIATO DE ESTADÍSTICAS cuando cambian los datos
-    if (realProspects.length > 0 && howerUsernames.length > 0) {
-      console.log('🔄 [CACHE] Forzando recálculo inmediato de estadísticas...');
-      setTimeout(() => {
-        loadStats();
-      }, 100); // Pequeño delay para asegurar que cache se haya limpiado
-    }
-  }, [realProspects, howerUsernames, loadStats]);
-
-  // Función auxiliar para obtener prospectos pendientes (estado actual - SÍ cambia cuando usuario responde)
-  const getPendingProspects = useCallback((period: string): any[] => {
-    if (!realProspects.length || !howerUsernames.length) return [];
-    
-    // Para prospectos pendientes, usar la lógica ANTERIOR (último mensaje sin responder)
-    // Esto asegura que se eliminen de pendientes cuando el usuario responde
-    const authorizedProspects = realProspects.filter(prospect => {
-      const normalizedUsername = prospect.username.replace('@', '');
-      return howerUsernames.some(howerUsername => 
-        howerUsername === normalizedUsername || 
-        howerUsername === `@${normalizedUsername}` ||
-        howerUsername === prospect.username
-      );
-    });
-    
-    return authorizedProspects.filter(prospect => {
-      // Lógica original: último mensaje debe ser del prospecto Y estar sin responder
-      return prospect.lastMessageType === 'received' && 
-             prospect.state === 'pending';
-    });
-  }, [realProspects, howerUsernames]);
-
-  // Función para simular el comportamiento cuando el usuario responde a un prospecto
-  // Este efecto se activará cuando se detecte que el usuario envió un mensaje a un prospecto
-  useEffect(() => {
-    const handleProspectResponse = (prospectId: string, prospectUsername: string) => {
-      console.log(`📤 [PROSPECT-RESPONSE] Usuario respondió a ${prospectUsername}`);
-      
-      // 1. El prospecto se elimina automáticamente de "Prospectos Pendientes" 
-      //    porque lastMessageType cambia de 'received' a 'sent'
-      
-      // 2. El prospecto se mantiene en "Mis Números > Respuestas" 
-      //    porque se usa conteo histórico de ANY mensaje en período
-      
-      // 3. El prospecto puede aparecer en "Seguimientos" después de 24h
-      //    si cumple con los criterios de tiempo
-      
-      // Invalidar cache para reflejar cambios en prospectos pendientes
-      setStatsCache({});
-      
-      console.log(`✅ [PROSPECT-RESPONSE] ${prospectUsername}: Removido de Pendientes, mantenido en Estadísticas`);
-    };
-
-    // Este es un ejemplo de cómo se integraría con el sistema de mensajes
-    // En la implementación real, esto se activaría cuando se detecte un mensaje enviado
-    
-  }, [realProspects]);
-
-  // Función para manejar clicks en las estadísticas y mostrar prospectos específicos
-  const handleStatsClick = useCallback((type: 'respuestas' | 'seguimientos' | 'agendados', period: string = 'hoy') => {
-    console.log('🎯 [STATS-CLICK] Clicked on:', { type, period });
-    
-    const prospectsForStat = getStatsProspects(type, period);
-    console.log('📋 [STATS-CLICK] Prospectos encontrados:', prospectsForStat.length);
-    
-    // Actualizar la sección activa para mostrar los prospectos
-    setActiveStatsSection(`${type}-${period}`);
-    
-    // Opcional: scroll hacia la sección de prospectos si está abajo
-    setTimeout(() => {
-      const prospectsSection = document.querySelector('[data-prospects-section]');
-      if (prospectsSection) {
-        prospectsSection.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
-  }, [realProspects, howerUsernames]);
+  };
 
   // Función para abrir Instagram directamente
   const handleProspectClick = (username: string) => {
@@ -1499,16 +1263,13 @@ const TasksToDo2: React.FC = () => {
     const isCompleted = completedTasks[taskKey];
     const isFollowUpProspect = taskType === 'yesterday' || taskType === 'week';
     const interactionTipKey = `interaction-${prospect.id}`;
-    
-    // Determinar si es una tarjeta de estadísticas (no debe mostrar botón eliminar)
-    const isStatsCard = taskType.startsWith('stats-');
 
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
     // LÓGICA ELIMINADA: Ya no hacemos auto-complete aquí
     // La sincronización se maneja en el useEffect principal
     
-    console.log('Rendering ProspectCard for:', prospect.userName, 'Task type:', taskType, 'isStatsCard:', isStatsCard);
+    console.log('Rendering ProspectCard for:', prospect.userName, 'Task type:', taskType);
     
     return (
       <div 
@@ -1520,18 +1281,15 @@ const TasksToDo2: React.FC = () => {
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
             <Avatar className="h-8 w-8 sm:h-12 sm:w-12 flex-shrink-0">
               <AvatarImage src={prospect.avatar || ''} />
-              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white text-xs sm:text-sm font-semibold">
-                {prospect.userName[0]?.toUpperCase()}
-              </AvatarFallback>
+              <AvatarFallback className="text-xs sm:text-sm">{prospect.userName[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-sm sm:text-base truncate">@{prospect.userName}</p>
             </div>
           </div>
           
-          {/* Botones de interacción - solo mostrar si NO es tarjeta de estadísticas */}
-          {!isStatsCard && (
-            <div className="flex space-x-2 flex-shrink-0">
+          {/* Botones de interacción y eliminar */}
+          <div className="flex space-x-2 flex-shrink-0">
             {/* Botón de eliminar prospecto */}
             <Button 
               onClick={async (e) => {
@@ -1603,8 +1361,7 @@ const TasksToDo2: React.FC = () => {
                 <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             )}
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Tip de interacción - SOLO aparece cuando se hace click */}
@@ -2040,19 +1797,19 @@ const TasksToDo2: React.FC = () => {
                             <div className="space-y-2">
                                <div 
                                  className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
-                                 onClick={() => handleStatsClick('respuestas', 'hoy')}
+                                 onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-nuevos' ? null : 'hoy-nuevos')}
                                >
                                  <span className="font-mono text-sm">💬 Respuestas</span>
-                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                    {getStatsProspects('respuestas', 'hoy').length}
-                                  </div>
+                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {stats.today.respuestas}
+                                 </div>
                                </div>
                                
                                {/* Listado de respuestas de hoy */}
-                               {activeStatsSection === 'respuestas-hoy' && (
-                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" data-prospects-section>
+                               {activeStatsSection === 'hoy-nuevos' && (
+                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
                                    {(() => {
-                                     const prospects = getStatsProspects('respuestas', 'hoy');
+                                     const prospects = getStatsProspects('nuevos', 'hoy');
                                      console.log('🔍 [DEBUG-RESPUESTAS] Prospectos de respuestas hoy:', prospects);
                                      
                                      if (prospects.length === 0) {
@@ -2060,7 +1817,7 @@ const TasksToDo2: React.FC = () => {
                                      }
                                      
                                      return prospects.map((prospect) => (
-                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-respuestas" />
+                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-nuevos" />
                                      ));
                                    })()}
                                  </div>
@@ -2068,17 +1825,17 @@ const TasksToDo2: React.FC = () => {
                                
                                <div 
                                  className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
-                                 onClick={() => handleStatsClick('seguimientos', 'hoy')}
+                                 onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-seguimientos' ? null : 'hoy-seguimientos')}
                                >
                                  <span className="font-mono text-sm">🔄 Seguimientos</span>
-                                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                    {getStatsProspects('seguimientos', 'hoy').length}
-                                  </div>
+                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {stats.today.seguimientos}
+                                 </div>
                                </div>
                                
                                {/* Listado de seguimientos de hoy */}
-                               {activeStatsSection === 'seguimientos-hoy' && (
-                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" data-prospects-section>
+                               {activeStatsSection === 'hoy-seguimientos' && (
+                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
                                    {getStatsProspects('seguimientos', 'hoy').length === 0 ? (
                                      <p className="text-xs text-muted-foreground italic">No hay seguimientos de hoy</p>
                                    ) : (
@@ -2112,9 +1869,9 @@ const TasksToDo2: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-nuevos' ? null : 'ayer-nuevos')}
                               >
                                 <span className="font-mono text-sm">💬 Respuestas</span>
-                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {getStatsProspects('respuestas', 'ayer').length}
-                                 </div>
+                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {prospectsClassification.yesterdayStats.nuevosProspectos}
+                                </div>
                               </div>
                               
                               {/* Listado de prospectos nuevos de ayer */}
@@ -2135,9 +1892,9 @@ const TasksToDo2: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-seguimientos' ? null : 'ayer-seguimientos')}
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
-                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {getStatsProspects('seguimientos', 'ayer').length}
-                                 </div>
+                                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {prospectsClassification.yesterdayStats.seguimientosHechos}
+                                </div>
                               </div>
                               
                               {/* Listado de seguimientos de ayer */}
@@ -2182,41 +1939,24 @@ const TasksToDo2: React.FC = () => {
                               <div 
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
-                               >
-                                 <span className="font-mono text-sm">💬 Respuestas</span>
-                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {(() => {
-                                     const count = getStatsProspects('respuestas', 'semana').length;
-                                     const statsValue = stats.week.respuestas;
-                                     console.log('🔍 [SEMANA-RESPUESTAS] Comparación:', { 
-                                       getStatsProspects_length: count, 
-                                       stats_week_respuestas: statsValue,
-                                       user: currentUser?.instagram_user_id 
-                                     });
-                                     return count;
-                                   })()}
-                                 </div>
+                              >
+                                <span className="font-mono text-sm">💬 Respuestas</span>
+                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {stats.week.respuestas}
+                                </div>
                               </div>
                               
-                               {/* Listado de prospectos nuevos de la semana */}
-                               {activeStatsSection === 'semana-nuevos' && (
-                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                   {(() => {
-                                     const prospects = getStatsProspects('respuestas', 'semana');
-                                     console.log('🔍 [SEMANA-RESPUESTAS-LISTADO]:', {
-                                       prospectsCount: prospects.length,
-                                       prospects: prospects.map(p => p.userName).slice(0, 5),
-                                       user: currentUser?.instagram_user_id
-                                     });
-                                     return prospects.length === 0 ? (
-                                       <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
-                                     ) : (
-                                        prospects.map((prospect) => (
-                                         <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
-                                       ))
-                                     );
-                                   })()}
-                                 </div>
+                              {/* Listado de prospectos nuevos de la semana */}
+                              {activeStatsSection === 'semana-nuevos' && (
+                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                  {getStatsProspects('nuevos', 'semana').length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
+                                  ) : (
+                                    getStatsProspects('nuevos', 'semana').map((prospect) => (
+                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
+                                    ))
+                                  )}
+                                </div>
                               )}
                               
                               <div 
@@ -2224,9 +1964,9 @@ const TasksToDo2: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
-                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {getStatsProspects('seguimientos', 'semana').length}
-                                 </div>
+                                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                  {stats.week.seguimientos}
+                                </div>
                               </div>
                               
                               {/* Listado de seguimientos de la semana */}
@@ -2839,57 +2579,6 @@ const TasksToDo2: React.FC = () => {
 
         </DialogContent>
       </Dialog>
-
-      {/* Debug Panel para desarrollo */}
-      {showDebugPanel && (
-        <div className="mt-4 space-y-4">
-          <InstagramDebugPanel />
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-800 mb-2">📊 Debug: Flujo de Prospectos por Fechas</h4>
-            <div className="text-sm space-y-2">
-              <div><strong>Total Prospects:</strong> {realProspects.length}</div>
-              <div><strong>Hower Authorized:</strong> {howerUsernames.length}</div>
-              
-              {/* Ejemplo visual del problema resuelto */}
-              <div className="bg-green-50 border border-green-300 rounded p-3 mt-3">
-                <h5 className="font-semibold text-green-800 text-sm mb-2">✅ PROBLEMA RESUELTO:</h5>
-                <div className="text-xs text-green-700">
-                  <div><strong>Antes:</strong> Respuestas se eliminaban cuando usuario respondía</div>
-                  <div><strong>Ahora:</strong> Respuestas se mantienen como conteo histórico</div>
-                  <div className="mt-1 text-green-600">
-                    Ejemplo: Si un prospecto te respondió HOY y tú le contestas, 
-                    aún cuenta como "1 respuesta HOY" en las estadísticas.
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4 mt-3">
-                <div>
-                  <strong>HOY:</strong>
-                  <div>Respuestas: {stats.today.respuestas}</div>
-                  <div>Seguimientos: {stats.today.seguimientos}</div>
-                </div>
-                <div>
-                  <strong>AYER:</strong>
-                  <div>Respuestas: {stats.yesterday.respuestas}</div>
-                  <div>Seguimientos: {stats.yesterday.seguimientos}</div>
-                </div>
-                <div>
-                  <strong>SEMANA:</strong>
-                  <div>Respuestas: {stats.week.respuestas}</div>
-                  <div>Seguimientos: {stats.week.seguimientos}</div>
-                </div>
-              </div>
-              <div className="mt-3 text-xs text-blue-600">
-                <strong>✅ CORRECCIÓN APLICADA:</strong><br/>
-                • <strong>Respuestas (Mis Números):</strong> Conteo histórico/acumulativo - NO se reduce cuando usuario responde<br/>
-                • <strong>Prospectos Pendientes:</strong> Estado actual - SÍ se eliminan cuando usuario responde<br/>
-                • <strong>Lógica:</strong> Respuestas = CUALQUIER mensaje del prospecto en período. Seguimientos = mensajes míos (&gt;=24h).
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
         </div>
       </div>
