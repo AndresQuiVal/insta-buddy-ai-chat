@@ -36,6 +36,7 @@ import HowerConfigPage from "./pages/HowerConfig";
 import ICPOnboarding from "./pages/ICPOnboarding";
 import ICPEditor from "./pages/ICPEditor";
 import HowerProspector from "./pages/HowerProspector";
+import DesignVault from "./pages/DesignVault";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
           <Route path="/icp-onboarding" element={<ICPOnboarding />} />
           <Route path="/icp-editor" element={<ICPEditor />} />
           <Route path="/hower-prospector" element={<HowerProspector />} />
+          <Route path="/design-vault" element={<DesignVault />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
