@@ -1237,21 +1237,43 @@ const TasksToDo2: React.FC = () => {
       let filteredProspects: any[] = [];
 
       if (statsType === 'respuestas') {
-        // RESPUESTAS: Prospectos que ME RESPONDIERON pero YO NO LES HE CONTESTADO NUNCA
-        // Esta es la lógica correcta para "Mis números > Respuestas"
+        // RESPUESTAS: Prospectos que ME RESPONDIERON en el período específico (hoy/ayer/semana)
+        // Solo cuenta una vez por prospecto en el período, sin duplicados
+        
+        let dateFilter: (prospect: any) => boolean;
+        
+        if (period === 'hoy') {
+          const today = new Date().toISOString().split('T')[0];
+          dateFilter = (prospect) => {
+            const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
+            return lastMessageDate === today;
+          };
+        } else if (period === 'ayer') {
+          const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          dateFilter = (prospect) => {
+            const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
+            return lastMessageDate === yesterday;
+          };
+        } else if (period === 'semana') {
+          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          dateFilter = (prospect) => {
+            const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime) : null;
+            return lastMessageDate && lastMessageDate >= weekAgo;
+          };
+        } else {
+          dateFilter = () => false;
+        }
+        
         filteredProspects = authorizedProspects.filter(prospect => {
-          // Verificar que el último mensaje fue del prospecto hacia mí
-          const lastWasFromProspect = prospect.lastMessageType === 'received';
+          // Verificar que el último mensaje fue del prospecto hacia mí (me respondió)
+          const receivedMessage = prospect.lastMessageType === 'received';
           
-          // Verificar que nunca les he enviado mensaje (no hay lastSentMessageTime)
-          const neverSentMessage = !prospect.lastSentMessageTime;
+          // Verificar que el mensaje fue en el período correcto
+          const inTimeRange = dateFilter(prospect);
           
-          // TODO: Verificar que no están tachados usando prospect_task_status
-          const notCompleted = true; // Por ahora siempre true, se puede mejorar después
+          const matches = receivedMessage && inTimeRange;
           
-          const matches = lastWasFromProspect && neverSentMessage && notCompleted;
-          
-          console.log(`[RESPUESTAS] ${prospect.username}: lastWasFromProspect=${lastWasFromProspect}, neverSentMessage=${neverSentMessage}, notCompleted=${notCompleted}, matches=${matches}`);
+          console.log(`[RESPUESTAS-${period}] ${prospect.username}: receivedMessage=${receivedMessage}, inTimeRange=${inTimeRange}, lastMessageTime=${prospect.lastMessageTime}, matches=${matches}`);
           
           return matches;
         });
