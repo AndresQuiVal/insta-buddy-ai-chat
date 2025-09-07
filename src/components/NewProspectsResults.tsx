@@ -196,13 +196,7 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
   return (
     <div className="space-y-6">
       {/* Botón para buscar nuevos prospectos */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Nuevos Prospectos</h2>
-          <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-medium">
-            {results.length}
-          </span>
-        </div>
+      <div className="flex justify-end items-center">
         
         <Button 
           onClick={searchNewProspects}
