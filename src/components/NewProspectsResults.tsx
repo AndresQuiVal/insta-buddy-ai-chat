@@ -180,18 +180,13 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
         <Button 
           onClick={searchNewProspects}
           disabled={searching || !instagramUserId}
-          className="bg-primary hover:bg-primary/90"
+          size="icon"
+          className="h-12 w-12 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200"
         >
           {searching ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Buscando...
-            </>
+            <RefreshCw className="h-5 w-5 animate-spin" />
           ) : (
-            <>
-              <Search className="h-4 w-4 mr-2" />
-              Buscar nuevos prospectos
-            </>
+            <Search className="h-5 w-5" />
           )}
         </Button>
       </div>
@@ -212,19 +207,13 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
         <Button 
           onClick={searchNewProspects}
           disabled={searching || !instagramUserId}
-          variant="outline"
-          size="sm"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all duration-200"
         >
           {searching ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Buscando...
-            </>
+            <RefreshCw className="h-4 w-4 animate-spin" />
           ) : (
-            <>
-              <Search className="h-4 w-4 mr-2" />
-              Buscar nuevos
-            </>
+            <Search className="h-4 w-4" />
           )}
         </Button>
       </div>
