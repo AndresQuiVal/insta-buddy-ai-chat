@@ -2297,10 +2297,22 @@ const TasksToDo2: React.FC = () => {
                         </TabsContent>
                         
                         <TabsContent value="semana" className="space-y-3">
-                          <div className="bg-gradient-to-r from-purple-50 to-white p-3 rounded-lg border border-purple-200">
+                          <div className="bg-gradient-to-r from-purple-50 to-white p-3 rounded-lg border border-purple-200 relative">
                             <h3 className="text-base font-bold text-purple-800 mb-3 font-mono">📊 Semana</h3>
                             
-                            <div className="space-y-2">
+                            {/* Overlay PRONTO que cubre las subsecciones */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/95 to-purple-50/95 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
+                              <div className="text-center">
+                                <div className="bg-gradient-to-r from-blue-100 to-purple-100 border-2 border-dashed border-blue-300 px-8 py-4 rounded-xl shadow-lg">
+                                  <span className="text-blue-800 font-mono text-lg font-bold">
+                                    🚀 PRONTO
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Contenido original (oculto detrás del overlay) */}
+                            <div className="space-y-2 opacity-30">
                               <div 
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
@@ -2321,15 +2333,6 @@ const TasksToDo2: React.FC = () => {
                                   />
                                 </div>
                                )}
-                               
-                               {/* Label PRONTO entre Respuestas y Seguimientos */}
-                               <div className="flex justify-center my-3">
-                                 <div className="bg-gradient-to-r from-blue-100 to-purple-100 border-2 border-dashed border-blue-300 px-4 py-2 rounded-lg">
-                                   <span className="text-blue-800 font-mono text-sm font-bold">
-                                     🚀 PRONTO
-                                   </span>
-                                 </div>
-                               </div>
                                
                                <div 
                                  className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
