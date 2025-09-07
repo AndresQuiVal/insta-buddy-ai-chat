@@ -346,19 +346,22 @@ const TasksToDo2: React.FC = () => {
     if (!currentUser?.instagram_user_id) return;
 
     try {
-      // Usar las funciones GROK para obtener estadísticas
+      // Usar la función híbrida que filtra por Hower Y respeta períodos
       const [todayData, yesterdayData, weekData] = await Promise.all([
-        supabase.rpc('grok_get_stats', {
+        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
           p_instagram_user_id: currentUser.instagram_user_id,
-          p_period: 'today'
+          p_period: 'today',
+          p_hower_usernames: howerUsernames
         }),
-        supabase.rpc('grok_get_stats', {
+        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
           p_instagram_user_id: currentUser.instagram_user_id,
-          p_period: 'yesterday'
+          p_period: 'yesterday',
+          p_hower_usernames: howerUsernames
         }),
-        supabase.rpc('grok_get_stats', {
+        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
           p_instagram_user_id: currentUser.instagram_user_id,
-          p_period: 'week'
+          p_period: 'week',
+          p_hower_usernames: howerUsernames
         })
       ]);
 
@@ -394,11 +397,12 @@ const TasksToDo2: React.FC = () => {
 
   // Cargar estadísticas - HABILITADO para arreglar problema de decremento
   useEffect(() => {
-    if (!userLoading && currentUser) {
+    if (!userLoading && currentUser && howerUsernames.length > 0) {
       console.log('🔄 [STATS] Cargando estadísticas para usuario:', currentUser.instagram_user_id);
+      console.log('🔄 [STATS] Con filtro Hower:', howerUsernames.length, 'usernames');
       loadStats();
     }
-  }, [currentUser, userLoading, loadStats]);
+  }, [currentUser, userLoading, loadStats, howerUsernames]);
 
   // Función para compartir estadísticas como imagen
   const shareStats = async () => {
@@ -598,10 +602,10 @@ const TasksToDo2: React.FC = () => {
 
   // Cargar estadísticas cuando hay usuario - RESTAURADO
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && howerUsernames.length > 0) {
       loadStats();
     }
-  }, [currentUser, loadStats]);
+  }, [currentUser, loadStats, howerUsernames]);
 
   // ✅ DESHABILITADO - El webhook ya maneja perfectamente el estado de las tareas
   // No necesitamos sincronizar manualmente porque el webhook de Instagram
@@ -1223,7 +1227,7 @@ const TasksToDo2: React.FC = () => {
     return { minutes, totalProspects, equivalencia };
   };
 
-  // Función auxiliar para obtener usernames de prospectos
+  // Función auxiliar para obtener usernames de prospectos filtrados por Hower
   const getProspectUsernames = async (prospectIds: string[]) => {
     if (prospectIds.length === 0) return {};
     
@@ -1239,7 +1243,16 @@ const TasksToDo2: React.FC = () => {
     
     const usernameMap: { [key: string]: string } = {};
     prospects?.forEach(prospect => {
-      usernameMap[prospect.prospect_instagram_id] = prospect.username;
+      // 🎯 FILTRO HOWER OBLIGATORIO: Solo incluir prospectos en la lista de Hower
+      const isInHowerList = howerUsernames.some(howerUsername => 
+        prospect.username === howerUsername ||
+        prospect.username === '@' + howerUsername ||
+        prospect.username.replace('@', '') === howerUsername
+      );
+      
+      if (isInHowerList) {
+        usernameMap[prospect.prospect_instagram_id] = prospect.username;
+      }
     });
     
     return usernameMap;
