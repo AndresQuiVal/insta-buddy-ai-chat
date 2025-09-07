@@ -350,6 +350,10 @@ const TasksToDo2: React.FC = () => {
       let todayData, yesterdayData, weekData;
       
       try {
+        console.log('🔍 [STATS] Intentando usar función híbrida...');
+        console.log('🔍 [STATS] Usernames de Hower:', howerUsernames.length, howerUsernames.slice(0, 5));
+        console.log('🔍 [STATS] Instagram User ID:', currentUser.instagram_user_id);
+        
         // Usar la función híbrida que filtra por Hower Y respeta períodos
         [todayData, yesterdayData, weekData] = await Promise.all([
           supabase.rpc('grok_get_stats_with_hower_filter' as any, {
@@ -369,6 +373,26 @@ const TasksToDo2: React.FC = () => {
           })
         ]);
         console.log('✅ [STATS] Usando función híbrida con filtro Hower');
+        console.log('📊 [STATS] Resultados híbridos:', {
+          today: todayData.data?.[0],
+          yesterday: yesterdayData.data?.[0],
+          week: weekData.data?.[0]
+        });
+        
+        // Debug adicional
+        console.log('🔍 [STATS] Respuesta completa today:', todayData);
+        console.log('🔍 [STATS] Respuesta completa yesterday:', yesterdayData);
+        console.log('🔍 [STATS] Respuesta completa week:', weekData);
+        
+        if (todayData.error) {
+          console.error('❌ [STATS] Error en today:', todayData.error);
+        }
+        if (yesterdayData.error) {
+          console.error('❌ [STATS] Error en yesterday:', yesterdayData.error);
+        }
+        if (weekData.error) {
+          console.error('❌ [STATS] Error en week:', weekData.error);
+        }
       } catch (hybridError) {
         console.log('⚠️ [STATS] Función híbrida no disponible, usando función original:', hybridError);
         
