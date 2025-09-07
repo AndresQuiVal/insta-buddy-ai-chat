@@ -296,6 +296,13 @@ const TasksToDo2: React.FC = () => {
     week: { respuestas: 0, seguimientos: 0, agendados: 0 }
   });
 
+  // Estado para contadores dinámicos de listas filtradas en "Mis Números"
+  const [dynamicStatsCounts, setDynamicStatsCounts] = useState({
+    hoy: { respuestas: 0, seguimientos: 0 },
+    ayer: { respuestas: 0, seguimientos: 0 },
+    semana: { respuestas: 0, seguimientos: 0 }
+  });
+
   // Frases motivacionales
   const motivationalQuotes = [
     "Cada 'no' te acerca más a un 'sí'. ¡Sigue prospectando!",
@@ -403,6 +410,7 @@ const TasksToDo2: React.FC = () => {
       loadStats();
     }
   }, [currentUser, userLoading, loadStats, howerUsernames]);
+
 
   // Función para compartir estadísticas como imagen
   const shareStats = async () => {
@@ -1264,6 +1272,7 @@ const TasksToDo2: React.FC = () => {
     return usernameMap;
   };
 
+
   // Función para obtener prospectos según la sección de estadísticas
   const getStatsProspects = async (statsType: string, period: string) => {
     console.log(`🔍 [getStatsProspects] Solicitando ${statsType} para ${period}`);
@@ -1526,6 +1535,44 @@ const TasksToDo2: React.FC = () => {
       return [];
     }
   };
+
+  // Función para actualizar contadores dinámicos de estadísticas
+  const updateDynamicStatsCounts = useCallback(async () => {
+    if (!currentUser?.instagram_user_id) return;
+
+    try {
+      // Obtener contadores reales de las listas filtradas
+      const [hoyRespuestas, hoySeguimientos, ayerRespuestas, ayerSeguimientos, semanaRespuestas, semanaSeguimientos] = await Promise.all([
+        getStatsProspects('nuevos', 'hoy').then(list => list.length),
+        getStatsProspects('seguimientos', 'hoy').then(list => list.length),
+        getStatsProspects('nuevos', 'ayer').then(list => list.length),
+        getStatsProspects('seguimientos', 'ayer').then(list => list.length),
+        getStatsProspects('nuevos', 'semana').then(list => list.length),
+        getStatsProspects('seguimientos', 'semana').then(list => list.length)
+      ]);
+
+      setDynamicStatsCounts({
+        hoy: { respuestas: hoyRespuestas, seguimientos: hoySeguimientos },
+        ayer: { respuestas: ayerRespuestas, seguimientos: ayerSeguimientos },
+        semana: { respuestas: semanaRespuestas, seguimientos: semanaSeguimientos }
+      });
+
+      console.log('📊 [DYNAMIC-STATS] Contadores actualizados:', {
+        hoy: { respuestas: hoyRespuestas, seguimientos: hoySeguimientos },
+        ayer: { respuestas: ayerRespuestas, seguimientos: ayerSeguimientos },
+        semana: { respuestas: semanaRespuestas, seguimientos: semanaSeguimientos }
+      });
+    } catch (error) {
+      console.error('❌ Error actualizando contadores dinámicos:', error);
+    }
+  }, [currentUser?.instagram_user_id]);
+
+  // Actualizar contadores dinámicos cuando se muestran las estadísticas
+  useEffect(() => {
+    if (showStats && currentUser) {
+      updateDynamicStatsCounts();
+    }
+  }, [showStats, currentUser, updateDynamicStatsCounts]);
 
   // Función para abrir Instagram directamente
   const handleProspectClick = (username: string) => {
@@ -2116,7 +2163,7 @@ const TasksToDo2: React.FC = () => {
                                >
                                  <span className="font-mono text-sm">💬 Respuestas</span>
                                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {stats.today.respuestas}
+                                   {dynamicStatsCounts.hoy.respuestas}
                                  </div>
                                </div>
                                
@@ -2137,7 +2184,7 @@ const TasksToDo2: React.FC = () => {
                                >
                                  <span className="font-mono text-sm">🔄 Seguimientos</span>
                                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {stats.today.seguimientos}
+                                   {dynamicStatsCounts.hoy.seguimientos}
                                  </div>
                                </div>
                                
@@ -2176,7 +2223,7 @@ const TasksToDo2: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">💬 Respuestas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {prospectsClassification.yesterdayStats.nuevosProspectos}
+                                  {dynamicStatsCounts.ayer.respuestas}
                                 </div>
                               </div>
                               
@@ -2197,7 +2244,7 @@ const TasksToDo2: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {prospectsClassification.yesterdayStats.seguimientosHechos}
+                                  {dynamicStatsCounts.ayer.seguimientos}
                                 </div>
                               </div>
                               
@@ -2244,7 +2291,7 @@ const TasksToDo2: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">💬 Respuestas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.week.respuestas}
+                                  {dynamicStatsCounts.semana.respuestas}
                                 </div>
                               </div>
                               
@@ -2274,7 +2321,7 @@ const TasksToDo2: React.FC = () => {
                                >
                                  <span className="font-mono text-sm">🔄 Seguimientos</span>
                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.week.seguimientos}
+                                  {dynamicStatsCounts.semana.seguimientos}
                                 </div>
                               </div>
                               
