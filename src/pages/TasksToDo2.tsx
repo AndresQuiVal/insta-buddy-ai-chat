@@ -1360,13 +1360,16 @@ const TasksToDo2: React.FC = () => {
     const isCompleted = completedTasks[taskKey];
     const isFollowUpProspect = taskType === 'yesterday' || taskType === 'week';
     const interactionTipKey = `interaction-${prospect.id}`;
+    
+    // Determinar si es una tarjeta de estadísticas (no debe mostrar botón eliminar)
+    const isStatsCard = taskType.startsWith('stats-');
 
     const isInteractionTipActive = activeInteractionTip === interactionTipKey;
 
     // LÓGICA ELIMINADA: Ya no hacemos auto-complete aquí
     // La sincronización se maneja en el useEffect principal
     
-    console.log('Rendering ProspectCard for:', prospect.userName, 'Task type:', taskType);
+    console.log('Rendering ProspectCard for:', prospect.userName, 'Task type:', taskType, 'isStatsCard:', isStatsCard);
     
     return (
       <div 
@@ -1385,8 +1388,9 @@ const TasksToDo2: React.FC = () => {
             </div>
           </div>
           
-          {/* Botones de interacción y eliminar */}
-          <div className="flex space-x-2 flex-shrink-0">
+          {/* Botones de interacción - solo mostrar si NO es tarjeta de estadísticas */}
+          {!isStatsCard && (
+            <div className="flex space-x-2 flex-shrink-0">
             {/* Botón de eliminar prospecto */}
             <Button 
               onClick={async (e) => {
@@ -1458,7 +1462,8 @@ const TasksToDo2: React.FC = () => {
                 <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Tip de interacción - SOLO aparece cuando se hace click */}
