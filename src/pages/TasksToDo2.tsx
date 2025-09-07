@@ -1238,7 +1238,7 @@ const TasksToDo2: React.FC = () => {
 
       if (statsType === 'respuestas') {
         // RESPUESTAS: Prospectos que ME RESPONDIERON en el período específico (hoy/ayer/semana)
-        // Solo cuenta una vez por prospecto en el período, sin duplicados
+        // ⚠️ ESTADÍSTICAS: Incluye TODOS los que respondieron, independientemente de si ya les contesté
         
         let dateFilter: (prospect: any) => boolean;
         
@@ -1265,15 +1265,16 @@ const TasksToDo2: React.FC = () => {
         }
         
         filteredProspects = authorizedProspects.filter(prospect => {
-          // Verificar que el último mensaje fue del prospecto hacia mí (me respondió)
-          const receivedMessage = prospect.lastMessageType === 'received';
+          // Para ESTADÍSTICAS: mostrar todos los que recibieron mensajes en el período
+          // Sin importar si ya les respondí o no (lastMessageType puede ser 'received' o 'sent')
+          const hasReceivedMessage = prospect.lastMessageTime && prospect.lastMessageTime !== '';
           
           // Verificar que el mensaje fue en el período correcto
           const inTimeRange = dateFilter(prospect);
           
-          const matches = receivedMessage && inTimeRange;
+          const matches = hasReceivedMessage && inTimeRange;
           
-          console.log(`[RESPUESTAS-${period}] ${prospect.username}: receivedMessage=${receivedMessage}, inTimeRange=${inTimeRange}, lastMessageTime=${prospect.lastMessageTime}, matches=${matches}`);
+          console.log(`[STATS-RESPUESTAS-${period}] ${prospect.username}: hasReceivedMessage=${hasReceivedMessage}, inTimeRange=${inTimeRange}, lastMessageTime=${prospect.lastMessageTime}, lastMessageType=${prospect.lastMessageType}, matches=${matches}`);
           
           return matches;
         });
