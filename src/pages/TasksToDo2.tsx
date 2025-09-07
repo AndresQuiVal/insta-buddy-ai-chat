@@ -1267,6 +1267,7 @@ const TasksToDo2: React.FC = () => {
 
   // Función auxiliar para filtrar prospectos válidos (no user_ o prospect_)
   const isValidProspect = (prospect: any) => {
+    return true;
     const username = prospect.userName || prospect.username || '';
     return !username.startsWith('user_') && !username.startsWith('prospect_');
   };
