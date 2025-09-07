@@ -195,9 +195,8 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
 
   return (
     <div className="space-y-6">
-      {/* Botón para buscar nuevos prospectos */}
-      <div className="flex justify-end items-center">
-        
+      {/* Botón para buscar nuevos prospectos centrado */}
+      <div className="flex justify-center items-center">
         <Button 
           onClick={searchNewProspects}
           disabled={searching || !instagramUserId}
@@ -267,7 +266,7 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                       {post.comments_count > 0 && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MessageCircle className="h-4 w-4" />
-                          <span>{post.comments_count} comentarios</span>
+                          <span>{post.comments_count}</span>
                         </div>
                       )}
                       
@@ -275,13 +274,16 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                         <strong>Descripción:</strong> {extractAndTruncateDescription(post.description)}
                       </p>
                       
-                      {post.is_recent && (
-                        <div className="flex justify-start">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Post de Instagram</strong>
+                        </p>
+                        {post.is_recent && (
                           <span className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-xs">
                             Reciente
                           </span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
