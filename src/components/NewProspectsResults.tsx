@@ -365,28 +365,16 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
       {/* Dialog for contact instructions */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-lg">
-          <div 
-            className="bg-white rounded-2xl shadow-xl p-6"
-            style={{
-              backgroundImage: `
-                linear-gradient(90deg, #e5e7eb 1px, transparent 1px),
-                linear-gradient(#f9fafb 0%, #ffffff 100%)
-              `,
-              backgroundSize: '24px 1px, 100% 100%',
-              backgroundPosition: '0 40px, 0 0'
-            }}
-          >
-            
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 font-['Poppins'] text-lg font-semibold text-slate-800">
-                {selectedResult?.result_type === 'post' ? (
-                  <MessageCircle className="h-5 w-5" style={{color: '#7a60ff'}} />
-                ) : (
-                  <Users className="h-5 w-5 text-green-600" />
-                )}
-                {selectedResult && getDialogTitle(selectedResult)}
-              </DialogTitle>
-            </DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-['Poppins'] text-lg font-semibold text-slate-800">
+              {selectedResult?.result_type === 'post' ? (
+                <MessageCircle className="h-5 w-5" style={{color: '#7a60ff'}} />
+              ) : (
+                <Users className="h-5 w-5 text-green-600" />
+              )}
+              {selectedResult && getDialogTitle(selectedResult)}
+            </DialogTitle>
+          </DialogHeader>
             
             <div className="space-y-4 font-['Poppins']">
               <p className="text-sm text-slate-700 leading-relaxed">
@@ -427,7 +415,6 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                 </p>
               </div>
             </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>
