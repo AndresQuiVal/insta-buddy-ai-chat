@@ -326,140 +326,53 @@ const TasksToDo2: React.FC = () => {
 
   // Función para calcular estadísticas REALES basadas en fechas de mensajes y filtro Hower
   const calculateRealStats = useCallback(() => {
-    try {
-      if (!realProspects || !Array.isArray(realProspects) || realProspects.length === 0) {
-        console.log('⚠️ [REAL-STATS] Sin realProspects válidos:', realProspects?.length || 'undefined');
-        return {
-          today: { respuestas: 0, seguimientos: 0, agendados: 0 },
-          yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
-          week: { respuestas: 0, seguimientos: 0, agendados: 0 }
-        };
-      }
-
-      if (!howerUsernames || !Array.isArray(howerUsernames) || howerUsernames.length === 0) {
-        console.log('⚠️ [REAL-STATS] Sin howerUsernames válidos:', howerUsernames?.length || 'undefined');
-        return {
-          today: { respuestas: 0, seguimientos: 0, agendados: 0 },
-          yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
-          week: { respuestas: 0, seguimientos: 0, agendados: 0 }
-        };
-      }
-
-      console.log('🔄 [REAL-STATS] Calculando estadísticas reales con:', {
-        prospects: realProspects.length,
-        howerUsernames: howerUsernames.length
-      });
-
-      // Usar las funciones existentes getStatsProspects para cada período con protección
-      const stats = {
-        today: {
-          respuestas: (() => {
-            try {
-              return getStatsProspects('respuestas', 'hoy').length;
-            } catch (error) {
-              console.error('Error calculando respuestas hoy:', error);
-              return 0;
-            }
-          })(),
-          seguimientos: (() => {
-            try {
-              return getStatsProspects('seguimientos', 'hoy').length;
-            } catch (error) {
-              console.error('Error calculando seguimientos hoy:', error);
-              return 0;
-            }
-          })(),
-          agendados: 20 // Placeholder mantenido
-        },
-        yesterday: {
-          respuestas: (() => {
-            try {
-              return getStatsProspects('respuestas', 'ayer').length;
-            } catch (error) {
-              console.error('Error calculando respuestas ayer:', error);
-              return 0;
-            }
-          })(),
-          seguimientos: (() => {
-            try {
-              return getStatsProspects('seguimientos', 'ayer').length;
-            } catch (error) {
-              console.error('Error calculando seguimientos ayer:', error);
-              return 0;
-            }
-          })(),
-          agendados: 20 // Placeholder mantenido
-        },
-        week: {
-          respuestas: (() => {
-            try {
-              return getStatsProspects('respuestas', 'semana').length;
-            } catch (error) {
-              console.error('Error calculando respuestas semana:', error);
-              return 0;
-            }
-          })(),
-          seguimientos: (() => {
-            try {
-              return getStatsProspects('seguimientos', 'semana').length;
-            } catch (error) {
-              console.error('Error calculando seguimientos semana:', error);
-              return 0;
-            }
-          })(),
-          agendados: 20 // Placeholder mantenido
-        }
-      };
-
-      console.log('📊 [REAL-STATS] Estadísticas calculadas:', stats);
-      return stats;
-    } catch (error) {
-      console.error('❌ [REAL-STATS] Error crítico en calculateRealStats:', error);
+    if (!realProspects.length || !howerUsernames.length) {
+      console.log('⚠️ [REAL-STATS] Sin datos para calcular - prospects:', realProspects.length, 'hower:', howerUsernames.length);
       return {
         today: { respuestas: 0, seguimientos: 0, agendados: 0 },
         yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
         week: { respuestas: 0, seguimientos: 0, agendados: 0 }
       };
     }
+
+    console.log('🔄 [REAL-STATS] Calculando estadísticas reales con:', {
+      prospects: realProspects.length,
+      howerUsernames: howerUsernames.length
+    });
+
+    // Usar las funciones existentes getStatsProspects para cada período
+    const stats = {
+      today: {
+        respuestas: getStatsProspects('respuestas', 'hoy').length,
+        seguimientos: getStatsProspects('seguimientos', 'hoy').length,
+        agendados: 20 // Placeholder mantenido
+      },
+      yesterday: {
+        respuestas: getStatsProspects('respuestas', 'ayer').length,
+        seguimientos: getStatsProspects('seguimientos', 'ayer').length,
+        agendados: 20 // Placeholder mantenido
+      },
+      week: {
+        respuestas: getStatsProspects('respuestas', 'semana').length,
+        seguimientos: getStatsProspects('seguimientos', 'semana').length,
+        agendados: 20 // Placeholder mantenido
+      }
+    };
+
+    console.log('📊 [REAL-STATS] Estadísticas calculadas:', stats);
+    return stats;
   }, [realProspects, howerUsernames]);
 
   // Función para cargar estadísticas - ahora usa cálculo real
   const loadStats = useCallback(() => {
-    try {
-      if (!currentUser?.instagram_user_id) {
-        console.log('⚠️ [LOAD-STATS] Sin currentUser o instagram_user_id');
-        return;
-      }
-      
-      if (!realProspects || !Array.isArray(realProspects) || realProspects.length === 0) {
-        console.log('⚠️ [LOAD-STATS] Sin realProspects válidos:', realProspects?.length || 'undefined');
-        return;
-      }
-      
-      if (!howerUsernames || !Array.isArray(howerUsernames) || howerUsernames.length === 0) {
-        console.log('⚠️ [LOAD-STATS] Sin howerUsernames válidos:', howerUsernames?.length || 'undefined');
-        return;
-      }
-
-      console.log('🔄 [LOAD-STATS] Cargando estadísticas reales basadas en fechas de mensajes');
-      console.log('🔄 [LOAD-STATS] Datos disponibles:', {
-        userId: currentUser.instagram_user_id,
-        prospects: realProspects.length,
-        howerUsers: howerUsernames.length
-      });
-      
-      const realStats = calculateRealStats();
-      console.log('🔄 [LOAD-STATS] Stats calculadas exitosamente:', realStats);
-      setStats(realStats);
-    } catch (error) {
-      console.error('❌ [LOAD-STATS] Error crítico en loadStats:', error);
-      // Establecer stats por defecto en caso de error
-      setStats({
-        today: { respuestas: 0, seguimientos: 0, agendados: 0 },
-        yesterday: { respuestas: 0, seguimientos: 0, agendados: 0 },
-        week: { respuestas: 0, seguimientos: 0, agendados: 0 }
-      });
+    if (!currentUser?.instagram_user_id || !realProspects.length || !howerUsernames.length) {
+      console.log('⚠️ [LOAD-STATS] Faltan datos para cargar estadísticas');
+      return;
     }
+
+    console.log('🔄 [LOAD-STATS] Cargando estadísticas reales basadas en fechas de mensajes');
+    const realStats = calculateRealStats();
+    setStats(realStats);
   }, [currentUser?.instagram_user_id, calculateRealStats]);
 
   // Cargar estadísticas cuando tenemos todos los datos necesarios
@@ -1295,38 +1208,23 @@ const TasksToDo2: React.FC = () => {
 
   // Función optimizada para obtener prospectos según la sección de estadísticas con cache
   const getStatsProspects = useCallback((statsType: string, period: string): ProspectData[] => {
-    // ✅ VALIDACIONES DE SEGURIDAD CRÍTICAS
+    const cacheKey = `${statsType}-${period}`;
+    
+    // Usar cache si disponible y datos no han cambiado
+    if (statsCache[cacheKey] && 
+        realProspects.length > 0 && 
+        howerUsernames.length > 0) {
+      return statsCache[cacheKey];
+    }
+
+    console.log(`🔍 [getStatsProspects] Calculando ${statsType} para ${period}`);
+
+    if (!realProspects.length || !howerUsernames.length) {
+      console.log('❌ [getStatsProspects] Sin datos - realProspects o howerUsernames vacíos');
+      return [];
+    }
+
     try {
-      // Validar parámetros básicos
-      if (!statsType || !period) {
-        console.log('❌ [getStatsProspects] Parámetros inválidos:', { statsType, period });
-        return [];
-      }
-
-      // Validar datos necesarios disponibles
-      if (!realProspects || !Array.isArray(realProspects) || realProspects.length === 0) {
-        console.log('❌ [getStatsProspects] realProspects no válido:', realProspects?.length || 'undefined');
-        return [];
-      }
-
-      if (!howerUsernames || !Array.isArray(howerUsernames) || howerUsernames.length === 0) {
-        console.log('❌ [getStatsProspects] howerUsernames no válido:', howerUsernames?.length || 'undefined');
-        return [];
-      }
-
-      const cacheKey = `${statsType}-${period}`;
-      
-      // 🔥 FORZAR CÁLCULO DIRECTO PARA RESPUESTAS - NO USAR CACHE
-      const useCache = statsType !== 'respuestas';
-      
-      // Usar cache solo para tipos que no sean respuestas
-      if (useCache && statsCache[cacheKey]) {
-        console.log(`📋 [CACHE-HIT] Usando cache para ${statsType}-${period}:`, statsCache[cacheKey].length);
-        return statsCache[cacheKey];
-      }
-
-      console.log(`🔍 [getStatsProspects] Calculando ${statsType} para ${period} con datos válidos`);
-
       // Filtrar prospectos autorizados por Hower (misma lógica que el CRM)
       const authorizedProspects = realProspects.filter(prospect => {
         const normalizedUsername = prospect.username.replace('@', '');
@@ -2144,43 +2042,27 @@ const TasksToDo2: React.FC = () => {
                                  className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                  onClick={() => handleStatsClick('respuestas', 'hoy')}
                                >
-                                  <span className="font-mono text-sm">💬 Respuestas</span>
-                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                     {(() => {
-                                       try {
-                                         return realProspects.length > 0 && howerUsernames.length > 0 
-                                           ? getStatsProspects('respuestas', 'hoy').length 
-                                           : 0;
-                                       } catch (error) {
-                                         console.error('Error calculando respuestas hoy:', error);
-                                         return 0;
-                                       }
-                                     })()}
-                                   </div>
+                                 <span className="font-mono text-sm">💬 Respuestas</span>
+                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                    {getStatsProspects('respuestas', 'hoy').length}
+                                  </div>
                                </div>
                                
                                {/* Listado de respuestas de hoy */}
-                                {activeStatsSection === 'respuestas-hoy' && (
-                                  <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" data-prospects-section>
-                                     {(() => {
-                                       try {
-                                         const prospects = realProspects.length > 0 && howerUsernames.length > 0 
-                                           ? getStatsProspects('respuestas', 'hoy')
-                                           : [];
-                                         console.log('🔍 [DEBUG-RESPUESTAS] Prospectos de respuestas hoy:', prospects);
-                                      
-                                         if (prospects.length === 0) {
-                                           return <p className="text-xs text-muted-foreground italic">No hay respuestas de hoy</p>;
-                                         }
-                                      
-                                         return prospects.map((prospect) => (
-                                           <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-respuestas" />
-                                         ));
-                                       } catch (error) {
-                                         console.error('Error renderizando respuestas hoy:', error);
-                                         return <p className="text-xs text-red-500">Error cargando respuestas</p>;
-                                       }
-                                     })()}
+                               {activeStatsSection === 'respuestas-hoy' && (
+                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" data-prospects-section>
+                                   {(() => {
+                                     const prospects = getStatsProspects('respuestas', 'hoy');
+                                     console.log('🔍 [DEBUG-RESPUESTAS] Prospectos de respuestas hoy:', prospects);
+                                     
+                                     if (prospects.length === 0) {
+                                       return <p className="text-xs text-muted-foreground italic">No hay respuestas de hoy</p>;
+                                     }
+                                     
+                                     return prospects.map((prospect) => (
+                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-respuestas" />
+                                     ));
+                                   })()}
                                  </div>
                                )}
                                
@@ -2229,19 +2111,10 @@ const TasksToDo2: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-nuevos' ? null : 'ayer-nuevos')}
                               >
-                                 <span className="font-mono text-sm">💬 Respuestas</span>
-                                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                    {(() => {
-                                      try {
-                                        return realProspects.length > 0 && howerUsernames.length > 0 
-                                          ? getStatsProspects('respuestas', 'ayer').length 
-                                          : 0;
-                                      } catch (error) {
-                                        console.error('Error calculando respuestas ayer:', error);
-                                        return 0;
-                                      }
-                                    })()}
-                                  </div>
+                                <span className="font-mono text-sm">💬 Respuestas</span>
+                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {getStatsProspects('respuestas', 'ayer').length}
+                                 </div>
                               </div>
                               
                               {/* Listado de prospectos nuevos de ayer */}
@@ -2310,46 +2183,39 @@ const TasksToDo2: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
                                >
-                                  <span className="font-mono text-sm">💬 Respuestas</span>
-                                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                    {(() => {
-                                      try {
-                                        return realProspects.length > 0 && howerUsernames.length > 0 
-                                          ? getStatsProspects('respuestas', 'semana').length 
-                                          : 0;
-                                      } catch (error) {
-                                        console.error('Error calculando respuestas semana:', error);
-                                        return 0;
-                                      }
-                                    })()}
-                                  </div>
+                                 <span className="font-mono text-sm">💬 Respuestas</span>
+                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {(() => {
+                                     const count = getStatsProspects('respuestas', 'semana').length;
+                                     const statsValue = stats.week.respuestas;
+                                     console.log('🔍 [SEMANA-RESPUESTAS] Comparación:', { 
+                                       getStatsProspects_length: count, 
+                                       stats_week_respuestas: statsValue,
+                                       user: currentUser?.instagram_user_id 
+                                     });
+                                     return count;
+                                   })()}
+                                 </div>
                               </div>
                               
                                {/* Listado de prospectos nuevos de la semana */}
                                {activeStatsSection === 'semana-nuevos' && (
                                  <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                    {(() => {
-                                      try {
-                                        const prospects = realProspects.length > 0 && howerUsernames.length > 0 
-                                          ? getStatsProspects('respuestas', 'semana')
-                                          : [];
-                                        console.log('🔍 [SEMANA-RESPUESTAS-LISTADO]:', {
-                                          prospectsCount: prospects.length,
-                                          prospects: prospects.map(p => p.userName).slice(0, 5),
-                                          user: currentUser?.instagram_user_id
-                                        });
-                                        return prospects.length === 0 ? (
-                                          <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
-                                        ) : (
-                                           prospects.map((prospect) => (
-                                            <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
-                                          ))
-                                        );
-                                      } catch (error) {
-                                        console.error('Error renderizando respuestas semana:', error);
-                                        return <p className="text-xs text-red-500">Error cargando respuestas</p>;
-                                      }
-                                    })()}
+                                   {(() => {
+                                     const prospects = getStatsProspects('respuestas', 'semana');
+                                     console.log('🔍 [SEMANA-RESPUESTAS-LISTADO]:', {
+                                       prospectsCount: prospects.length,
+                                       prospects: prospects.map(p => p.userName).slice(0, 5),
+                                       user: currentUser?.instagram_user_id
+                                     });
+                                     return prospects.length === 0 ? (
+                                       <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
+                                     ) : (
+                                        prospects.map((prospect) => (
+                                         <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
+                                       ))
+                                     );
+                                   })()}
                                  </div>
                               )}
                               
@@ -2358,18 +2224,9 @@ const TasksToDo2: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
-                                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                    {(() => {
-                                      try {
-                                        return realProspects.length > 0 && howerUsernames.length > 0 
-                                          ? getStatsProspects('seguimientos', 'semana').length 
-                                          : 0;
-                                      } catch (error) {
-                                        console.error('Error calculando seguimientos semana:', error);
-                                        return 0;
-                                      }
-                                    })()}
-                                  </div>
+                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {getStatsProspects('seguimientos', 'semana').length}
+                                 </div>
                               </div>
                               
                               {/* Listado de seguimientos de la semana */}
@@ -3009,80 +2866,25 @@ const TasksToDo2: React.FC = () => {
               <div className="grid grid-cols-3 gap-4 mt-3">
                 <div>
                   <strong>HOY:</strong>
-                  <div>Respuestas: {(() => {
-                    try {
-                      return realProspects.length > 0 && howerUsernames.length > 0 
-                        ? getStatsProspects('respuestas', 'hoy').length 
-                        : 0;
-                    } catch (error) {
-                      console.error('Error debug respuestas hoy:', error);
-                      return 'ERROR';
-                    }
-                  })()} (DIRECTO)</div>
-                  <div>Seguimientos: {(() => {
-                    try {
-                      return realProspects.length > 0 && howerUsernames.length > 0 
-                        ? getStatsProspects('seguimientos', 'hoy').length 
-                        : 0;
-                    } catch (error) {
-                      console.error('Error debug seguimientos hoy:', error);
-                      return 'ERROR';
-                    }
-                  })()} (DIRECTO)</div>
+                  <div>Respuestas: {stats.today.respuestas}</div>
+                  <div>Seguimientos: {stats.today.seguimientos}</div>
                 </div>
                 <div>
                   <strong>AYER:</strong>
-                  <div>Respuestas: {(() => {
-                    try {
-                      return realProspects.length > 0 && howerUsernames.length > 0 
-                        ? getStatsProspects('respuestas', 'ayer').length 
-                        : 0;
-                    } catch (error) {
-                      console.error('Error debug respuestas ayer:', error);
-                      return 'ERROR';
-                    }
-                  })()} (DIRECTO)</div>
-                  <div>Seguimientos: {(() => {
-                    try {
-                      return realProspects.length > 0 && howerUsernames.length > 0 
-                        ? getStatsProspects('seguimientos', 'ayer').length 
-                        : 0;
-                    } catch (error) {
-                      console.error('Error debug seguimientos ayer:', error);
-                      return 'ERROR';
-                    }
-                  })()} (DIRECTO)</div>
+                  <div>Respuestas: {stats.yesterday.respuestas}</div>
+                  <div>Seguimientos: {stats.yesterday.seguimientos}</div>
                 </div>
                 <div>
                   <strong>SEMANA:</strong>
-                  <div>Respuestas: {(() => {
-                    try {
-                      return realProspects.length > 0 && howerUsernames.length > 0 
-                        ? getStatsProspects('respuestas', 'semana').length 
-                        : 0;
-                    } catch (error) {
-                      console.error('Error debug respuestas semana:', error);
-                      return 'ERROR';
-                    }
-                  })()} (DIRECTO)</div>
-                  <div>Seguimientos: {(() => {
-                    try {
-                      return realProspects.length > 0 && howerUsernames.length > 0 
-                        ? getStatsProspects('seguimientos', 'semana').length 
-                        : 0;
-                    } catch (error) {
-                      console.error('Error debug seguimientos semana:', error);
-                      return 'ERROR';
-                    }
-                  })()} (DIRECTO)</div>
+                  <div>Respuestas: {stats.week.respuestas}</div>
+                  <div>Seguimientos: {stats.week.seguimientos}</div>
                 </div>
               </div>
               <div className="mt-3 text-xs text-blue-600">
                 <strong>✅ CORRECCIÓN APLICADA:</strong><br/>
                 • <strong>Respuestas (Mis Números):</strong> Conteo histórico/acumulativo - NO se reduce cuando usuario responde<br/>
                 • <strong>Prospectos Pendientes:</strong> Estado actual - SÍ se eliminan cuando usuario responde<br/>
-                • <strong>NUEVA LÓGICA:</strong> Respuestas usa cálculo directo (sin cache) para datos siempre frescos<br/>
-                • <strong>DEBUG:</strong> Los números arriba muestran "(DIRECTO)" para confirmar que no usan cache<br/>
+                • <strong>Lógica:</strong> Respuestas = CUALQUIER mensaje del prospecto en período. Seguimientos = mensajes míos (&gt;=24h).
               </div>
             </div>
           </div>
