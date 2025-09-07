@@ -51,7 +51,8 @@ const TasksToDo2: React.FC = () => {
       instagram_user_id: currentUser?.instagram_user_id,
       prospectsLoading,
       prospectsCount: realProspects.length,
-      prospectStates: realProspects.map(p => `${p.username}:${p.state}`).slice(0, 5)
+      prospectStates: realProspects.map(p => `${p.username}:${p.state}`).slice(0, 5),
+      prospectMessages: realProspects.map(p => `${p.username}: lastType=${p.lastMessageType}, time=${p.lastMessageTime}`).slice(0, 3)
     });
   }, [currentUser, prospectsLoading, realProspects]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
@@ -1204,29 +1205,50 @@ const TasksToDo2: React.FC = () => {
 
   // Función para obtener prospectos según la sección de estadísticas
   const getStatsProspects = (statsType: string, period: string) => {
-    switch (statsType) {
-      case 'nuevos':
-        if (period === 'hoy') {
-          // ARREGLADO: Para "respuestas de hoy", usar TODOS los que respondieron HOY (acumulativo)
-          // No usar pendientes porque decrementan, usar los que realmente respondieron hoy
-          const today = new Date().toISOString().split('T')[0];
-          return realProspects.filter(prospect => {
-            const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
-            return prospect.lastMessageType === 'received' && lastMessageDate === today;
-          });
-        }
-        return period === 'ayer' ? prospectsClassification.yesterdayNewProspects : prospectsClassification.weekNewProspects;
-      case 'seguimientos':
-        if (period === 'hoy') {
-          // Para "seguimientos de hoy", usar una combinación de los que necesitan seguimiento
-          // Por ahora regresamos los de ayer como aproximación (esto se puede refinar después)
-          return prospectsClassification.noResponseYesterday.dm.concat(prospectsClassification.noResponseYesterday.comment);
-        }
-        return period === 'ayer' ? prospectsClassification.yesterdayFollowUps : prospectsClassification.weekFollowUps;
-      case 'agendados':
-        return []; // Por ahora vacío, se puede implementar después
-      default:
-        return [];
+    console.log(`🔍 [getStatsProspects] Solicitando ${statsType} para ${period}`);
+    console.log(`🔍 [getStatsProspects] realProspects disponibles:`, realProspects.length);
+    
+    try {
+      switch (statsType) {
+        case 'nuevos':
+          if (period === 'hoy') {
+            // ARREGLADO: Para "respuestas de hoy", usar TODOS los que respondieron HOY (acumulativo)
+            // Usar las propiedades correctas del hook useProspects
+            const today = new Date().toISOString().split('T')[0];
+            const todayResponses = realProspects.filter(prospect => {
+              const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
+              const isReceivedToday = prospect.lastMessageType === 'received' && lastMessageDate === today;
+              console.log(`📧 [${prospect.username}] lastMessageType: ${prospect.lastMessageType}, date: ${lastMessageDate}, isToday: ${isReceivedToday}`);
+              return isReceivedToday;
+            });
+            console.log(`✅ [getStatsProspects] Respuestas de hoy encontradas:`, todayResponses.length);
+            return todayResponses.map(prospect => ({
+              id: prospect.id,
+              userName: prospect.username,
+              status: prospect.state,
+              firstContactDate: prospect.lastMessageTime,
+              lastContactDate: prospect.lastMessageTime,
+              unread: prospect.lastMessageType === 'received',
+              avatar: ''
+            }));
+          }
+          return period === 'ayer' ? prospectsClassification.yesterdayNewProspects : prospectsClassification.weekNewProspects;
+        case 'seguimientos':
+          if (period === 'hoy') {
+            // Para "seguimientos de hoy", usar una combinación de los que necesitan seguimiento
+            // Por ahora regresamos los de ayer como aproximación (esto se puede refinar después)
+            return prospectsClassification.noResponseYesterday.dm.concat(prospectsClassification.noResponseYesterday.comment);
+          }
+          return period === 'ayer' ? prospectsClassification.yesterdayFollowUps : prospectsClassification.weekFollowUps;
+        case 'agendados':
+          return []; // Por ahora vacío, se puede implementar después
+        default:
+          console.log(`⚠️ [getStatsProspects] Tipo de stats desconocido: ${statsType}`);
+          return [];
+      }
+    } catch (error) {
+      console.error(`❌ [getStatsProspects] Error procesando ${statsType} para ${period}:`, error);
+      return [];
     }
   };
 
@@ -1786,13 +1808,18 @@ const TasksToDo2: React.FC = () => {
                                {/* Listado de respuestas de hoy */}
                                {activeStatsSection === 'hoy-nuevos' && (
                                  <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                   {getStatsProspects('nuevos', 'hoy').length === 0 ? (
-                                     <p className="text-xs text-muted-foreground italic">No hay respuestas de hoy</p>
-                                   ) : (
-                                     getStatsProspects('nuevos', 'hoy').map((prospect) => (
+                                   {(() => {
+                                     const prospects = getStatsProspects('nuevos', 'hoy');
+                                     console.log('🔍 [DEBUG-RESPUESTAS] Prospectos de respuestas hoy:', prospects);
+                                     
+                                     if (prospects.length === 0) {
+                                       return <p className="text-xs text-muted-foreground italic">No hay respuestas de hoy</p>;
+                                     }
+                                     
+                                     return prospects.map((prospect) => (
                                        <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-nuevos" />
-                                     ))
-                                   )}
+                                     ));
+                                   })()}
                                  </div>
                                )}
                                
