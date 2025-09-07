@@ -1238,47 +1238,45 @@ const TasksToDo2: React.FC = () => {
 
       console.log('✅ [getStatsProspects] Prospectos autorizados:', authorizedProspects.length);
       
-      // DEBUGGING: Mostrar estados de todos los prospectos
-      console.log('📊 [getStatsProspects] DEBUGGING Estados de prospectos:');
-      authorizedProspects.forEach(p => {
-        console.log(`  ${p.username}: state=${p.state}, lastType=${p.lastMessageType}, lastSentTime=${p.lastSentMessageTime || 'NUNCA'}`);
-      });
-
+      // NOTA IMPORTANTE: Esta función sirve para DOS propósitos diferentes:
+      // 1. ESTADÍSTICAS (Mis Números): Conteo histórico/acumulativo que NO cambia cuando usuario responde
+      // 2. PROSPECTOS PENDIENTES: Estado actual que SÍ cambia cuando usuario responde
+      // 
+      // Para RESPUESTAS en estadísticas: usamos lógica de "cualquier mensaje en período"
+      // Para RESPUESTAS en prospectos pendientes: usamos lógica de "último mensaje sin responder"
+      
       let filteredProspects: any[] = [];
 
       if (statsType === 'respuestas') {
-        // RESPUESTAS: Prospectos que ME RESPONDIERON en el período específico (hoy/ayer/semana)
-        // ⚠️ ESTADÍSTICAS: Buscar el último mensaje RECIBIDO (no el último mensaje en general)
+        // RESPUESTAS PARA ESTADÍSTICAS: Conteo histórico/acumulativo
+        // Buscar CUALQUIER mensaje recibido del prospecto en el período (no solo el último)
+        // Esto asegura que el conteo no se reduzca cuando el usuario responde
         
-        let dateFilter: (lastReceivedMessage: any) => boolean;
+        let dateFilter: (messageTimestamp: string) => boolean;
         
         if (period === 'hoy') {
           const today = new Date().toISOString().split('T')[0];
-          dateFilter = (lastReceivedMessage) => {
-            if (!lastReceivedMessage) return false;
-            const messageDate = new Date(lastReceivedMessage.timestamp || lastReceivedMessage.message_timestamp).toISOString().split('T')[0];
+          dateFilter = (messageTimestamp) => {
+            const messageDate = new Date(messageTimestamp).toISOString().split('T')[0];
             return messageDate === today;
           };
         } else if (period === 'ayer') {
           const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          dateFilter = (lastReceivedMessage) => {
-            if (!lastReceivedMessage) return false;
-            const messageDate = new Date(lastReceivedMessage.timestamp || lastReceivedMessage.message_timestamp).toISOString().split('T')[0];
+          dateFilter = (messageTimestamp) => {
+            const messageDate = new Date(messageTimestamp).toISOString().split('T')[0];
             return messageDate === yesterday;
           };
         } else if (period === 'semana') {
           const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          dateFilter = (lastReceivedMessage) => {
-            if (!lastReceivedMessage) return false;
-            const messageDate = new Date(lastReceivedMessage.timestamp || lastReceivedMessage.message_timestamp);
-            return messageDate >= weekAgo;
+          dateFilter = (messageTimestamp) => {
+            return new Date(messageTimestamp) >= weekAgo;
           };
         } else {
           dateFilter = () => false;
         }
         
         filteredProspects = authorizedProspects.filter(prospect => {
-          // Buscar el último mensaje RECIBIDO del prospecto (no el último mensaje en general)
+          // Buscar TODOS los mensajes RECIBIDOS del prospecto (histórico)
           const receivedMessages = prospect.conversationMessages?.filter(msg => 
             msg.message_type === 'received' || msg.is_from_prospect === true
           ) || [];
@@ -1287,20 +1285,18 @@ const TasksToDo2: React.FC = () => {
             return false;
           }
           
-          // Obtener el último mensaje recibido
-          const lastReceivedMessage = receivedMessages.sort((a, b) => 
-            new Date(b.timestamp || b.message_timestamp).getTime() - new Date(a.timestamp || a.message_timestamp).getTime()
-          )[0];
+          // Verificar si el prospecto envió AL MENOS UN mensaje en el período
+          // (Conteo acumulativo - no se reduce cuando usuario responde)
+          const hasMessageInPeriod = receivedMessages.some(message => {
+            const messageTimestamp = message.timestamp || message.message_timestamp;
+            return messageTimestamp && dateFilter(messageTimestamp);
+          });
           
-          // Verificar si el último mensaje recibido está en el período correcto
-          const inTimeRange = dateFilter(lastReceivedMessage);
-          
-          // Log solo cuando encuentra coincidencias para debug sin spam
-          if (inTimeRange) {
-            console.log(`✅ [STATS-RESPUESTAS-${period}] ${prospect.username}: Respuesta en rango de tiempo`);
+          if (hasMessageInPeriod) {
+            console.log(`✅ [STATS-RESPUESTAS-${period}] ${prospect.username}: Tiene respuesta(s) en ${period} (conteo histórico)`);
           }
           
-          return inTimeRange;
+          return hasMessageInPeriod;
         });
       } else if (statsType === 'nuevos') {
         // NUEVOS: Prospectos completamente nuevos que nunca han interactuado
@@ -1400,22 +1396,47 @@ const TasksToDo2: React.FC = () => {
     setStatsCache({});
   }, [realProspects, howerUsernames]);
 
+  // Función auxiliar para obtener prospectos pendientes (estado actual - SÍ cambia cuando usuario responde)
+  const getPendingProspects = useCallback((period: string): any[] => {
+    if (!realProspects.length || !howerUsernames.length) return [];
+    
+    // Para prospectos pendientes, usar la lógica ANTERIOR (último mensaje sin responder)
+    // Esto asegura que se eliminen de pendientes cuando el usuario responde
+    const authorizedProspects = realProspects.filter(prospect => {
+      const normalizedUsername = prospect.username.replace('@', '');
+      return howerUsernames.some(howerUsername => 
+        howerUsername === normalizedUsername || 
+        howerUsername === `@${normalizedUsername}` ||
+        howerUsername === prospect.username
+      );
+    });
+    
+    return authorizedProspects.filter(prospect => {
+      // Lógica original: último mensaje debe ser del prospecto Y estar sin responder
+      return prospect.lastMessageType === 'received' && 
+             prospect.state === 'pending';
+    });
+  }, [realProspects, howerUsernames]);
+
   // Función para simular el comportamiento cuando el usuario responde a un prospecto
   // Este efecto se activará cuando se detecte que el usuario envió un mensaje a un prospecto
   useEffect(() => {
     const handleProspectResponse = (prospectId: string, prospectUsername: string) => {
       console.log(`📤 [PROSPECT-RESPONSE] Usuario respondió a ${prospectUsername}`);
       
-      // El prospecto se moverá automáticamente de "Respuestas Pendientes" a "Seguimientos"
-      // porque el estado se actualiza basado en lastSentMessageTime y lastMessageType
+      // 1. El prospecto se elimina automáticamente de "Prospectos Pendientes" 
+      //    porque lastMessageType cambia de 'received' a 'sent'
       
-      // Invalidar cache para recalcular estadísticas
+      // 2. El prospecto se mantiene en "Mis Números > Respuestas" 
+      //    porque se usa conteo histórico de ANY mensaje en período
+      
+      // 3. El prospecto puede aparecer en "Seguimientos" después de 24h
+      //    si cumple con los criterios de tiempo
+      
+      // Invalidar cache para reflejar cambios en prospectos pendientes
       setStatsCache({});
       
-      // Las estadísticas se actualizarán automáticamente en el próximo render
-      // ya que getStatsProspects evalúa los mensajes en tiempo real
-      
-      console.log(`✅ [PROSPECT-RESPONSE] ${prospectUsername} movido de Respuestas a Seguimientos`);
+      console.log(`✅ [PROSPECT-RESPONSE] ${prospectUsername}: Removido de Pendientes, mantenido en Estadísticas`);
     };
 
     // Este es un ejemplo de cómo se integraría con el sistema de mensajes
@@ -2803,6 +2824,20 @@ const TasksToDo2: React.FC = () => {
             <div className="text-sm space-y-2">
               <div><strong>Total Prospects:</strong> {realProspects.length}</div>
               <div><strong>Hower Authorized:</strong> {howerUsernames.length}</div>
+              
+              {/* Ejemplo visual del problema resuelto */}
+              <div className="bg-green-50 border border-green-300 rounded p-3 mt-3">
+                <h5 className="font-semibold text-green-800 text-sm mb-2">✅ PROBLEMA RESUELTO:</h5>
+                <div className="text-xs text-green-700">
+                  <div><strong>Antes:</strong> Respuestas se eliminaban cuando usuario respondía</div>
+                  <div><strong>Ahora:</strong> Respuestas se mantienen como conteo histórico</div>
+                  <div className="mt-1 text-green-600">
+                    Ejemplo: Si un prospecto te respondió HOY y tú le contestas, 
+                    aún cuenta como "1 respuesta HOY" en las estadísticas.
+                  </div>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-3 gap-4 mt-3">
                 <div>
                   <strong>HOY:</strong>
@@ -2821,8 +2856,10 @@ const TasksToDo2: React.FC = () => {
                 </div>
               </div>
               <div className="mt-3 text-xs text-blue-600">
-                <strong>Lógica:</strong> Respuestas = último mensaje del prospecto en período. 
-                Seguimientos = últimos mensajes míos enviados en período (&gt;=24h desde contacto).
+                <strong>✅ CORRECCIÓN APLICADA:</strong><br/>
+                • <strong>Respuestas (Mis Números):</strong> Conteo histórico/acumulativo - NO se reduce cuando usuario responde<br/>
+                • <strong>Prospectos Pendientes:</strong> Estado actual - SÍ se eliminan cuando usuario responde<br/>
+                • <strong>Lógica:</strong> Respuestas = CUALQUIER mensaje del prospecto en período. Seguimientos = mensajes míos (&gt;=24h).
               </div>
             </div>
           </div>
