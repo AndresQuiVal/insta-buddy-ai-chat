@@ -1469,7 +1469,7 @@ const TasksToDo2: React.FC = () => {
           };
         case 'new':
           return {
-            title: "para más respuestas",
+            title: "Envía este mensaje...",
             gradient: "from-yellow-100 to-yellow-200",
             border: "border-yellow-300",
             textColor: "text-yellow-800"
@@ -1536,11 +1536,11 @@ const TasksToDo2: React.FC = () => {
                           {(() => {
                             switch(taskType) {
                               case 'yesterday':
-                                return "📱 Graba un audio de 20-30 segundos hablando de tu experiencia personal con el producto/servicio. Los audios generan 3x más respuestas que los mensajes de texto porque transmiten autenticidad y cercanía.";
+                                return tip || "Tip no disponible para este tipo de tarea.";
                               case 'week':
-                                return "⚡ Usa la técnica del 'reframe': En lugar de preguntar '¿Te interesa?', pregunta '¿Cuál de estas dos opciones se ajusta mejor a tu situación?'. Esto obliga al cerebro a elegir en lugar de rechazar.";
+                                return tip || "Tip no disponible para este tipo de tarea.";
                               case 'new':
-                                return "🎯 El secreto está en el timing: Contacta entre 6-8 PM cuando la gente revisa Instagram después del trabajo. Usa un gancho emocional en las primeras 3 palabras y siempre haz una pregunta específica.";
+                                return tip || "Tip no disponible para este tipo de tarea.";
                               default:
                                 return tip || "Tip no disponible para este tipo de tarea.";
                             }
