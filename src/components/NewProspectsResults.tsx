@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Users, MessageCircle } from 'lucide-react';
+import { ExternalLink, Users, MessageCircle, Search, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -28,6 +28,7 @@ interface NewProspectsResultsProps {
 const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUserId, onCountChange }) => {
   const [results, setResults] = useState<ProspectResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [selectedResult, setSelectedResult] = useState<ProspectResult | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const { toast } = useToast();
@@ -66,6 +67,51 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
       console.error('Error in loadResults:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const searchNewProspects = async () => {
+    try {
+      setSearching(true);
+      
+      const { data, error } = await supabase.functions.invoke('search-new-prospects', {
+        body: { instagram_user_id: instagramUserId }
+      });
+
+      if (error) {
+        console.error('Error searching prospects:', error);
+        toast({
+          title: "Error",
+          description: "Error al buscar nuevos prospectos",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.success) {
+        toast({
+          title: "¡Búsqueda completada!",
+          description: data.message,
+        });
+        
+        // Recargar los resultados después de la búsqueda
+        await loadResults();
+      } else {
+        toast({
+          title: "Sin resultados",
+          description: data.error || "No se encontraron nuevos prospectos",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error in searchNewProspects:', error);
+      toast({
+        title: "Error",
+        description: "Error al buscar nuevos prospectos",
+        variant: "destructive",
+      });
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -129,13 +175,59 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
       <div className="text-center py-8 text-muted-foreground">
         <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
         <p>No hay nuevos prospectos disponibles.</p>
-        <p className="text-sm mt-2">Los nuevos prospectos se generan automáticamente cuando recibes notificaciones.</p>
+        <p className="text-sm mt-2 mb-4">Busca nuevos prospectos basados en tus palabras clave del ICP.</p>
+        
+        <Button 
+          onClick={searchNewProspects}
+          disabled={searching || !instagramUserId}
+          className="bg-primary hover:bg-primary/90"
+        >
+          {searching ? (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              Buscando...
+            </>
+          ) : (
+            <>
+              <Search className="h-4 w-4 mr-2" />
+              Buscar nuevos prospectos
+            </>
+          )}
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Botón para buscar nuevos prospectos */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold">Nuevos Prospectos</h2>
+          <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-medium">
+            {results.length}
+          </span>
+        </div>
+        
+        <Button 
+          onClick={searchNewProspects}
+          disabled={searching || !instagramUserId}
+          variant="outline"
+          size="sm"
+        >
+          {searching ? (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              Buscando...
+            </>
+          ) : (
+            <>
+              <Search className="h-4 w-4 mr-2" />
+              Buscar nuevos
+            </>
+          )}
+        </Button>
+      </div>
       {/* Posts Section */}
       {posts.length > 0 && (
         <div>

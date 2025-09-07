@@ -93,3 +93,6 @@ verify_jwt = false
 
 [functions.test-whatsapp-user]
 verify_jwt = false
+
+[functions.search-new-prospects]
+verify_jwt = true
