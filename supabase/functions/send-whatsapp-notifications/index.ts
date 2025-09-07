@@ -113,8 +113,8 @@ async function searchAndSaveProspects(instagramUserId: string) {
       .eq('instagram_user_id', instagramUserId)
       .single();
 
-    if (icpError || !icpData || !icpData.is_complete) {
-      console.log(`⚠️ Usuario ${instagramUserId} no tiene ICP definido o completo`);
+    if (icpError || !icpData || !icpData.search_keywords || icpData.search_keywords.length === 0) {
+      console.log(`⚠️ Usuario ${instagramUserId} no tiene palabras clave definidas`);
       return;
     }
 
