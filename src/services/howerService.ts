@@ -238,6 +238,44 @@ export class HowerService {
   static isAuthenticated(): boolean {
     return this.getStoredCredentials() !== null;
   }
+
+  // Nueva función para verificar credenciales en la base de datos
+  static async checkAndLoadCredentials(instagramUserId: string): Promise<boolean> {
+    try {
+      // Si ya hay credenciales en localStorage, están listas
+      if (this.isAuthenticated()) {
+        return true;
+      }
+
+      console.log('🔍 Verificando credenciales en BD para usuario:', instagramUserId);
+
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: userData, error } = await supabase
+        .from('instagram_users')
+        .select('hower_username, hower_token')
+        .eq('instagram_user_id', instagramUserId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ Error verificando credenciales en BD:', error);
+        return false;
+      }
+
+      if (userData && userData.hower_username && userData.hower_token) {
+        console.log('✅ Credenciales encontradas en BD, cargando a localStorage...');
+        // Migrar credenciales a localStorage para acceso rápido
+        localStorage.setItem('hower_username', userData.hower_username);
+        localStorage.setItem('hower_token', userData.hower_token);
+        return true;
+      }
+
+      console.log('⚠️ No hay credenciales en BD');
+      return false;
+    } catch (error) {
+      console.error('❌ Error en checkAndLoadCredentials:', error);
+      return false;
+    }
+  }
 }
 
 export default HowerService;

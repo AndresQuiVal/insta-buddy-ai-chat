@@ -59,7 +59,7 @@ const TasksToDo2: React.FC = () => {
 
   // Validación de autenticación - sin simulación
 
-  // Validación de autenticación sin redirects automáticos - RESTAURADO (es seguro)
+  // Validación de autenticación mejorada - evita mensajes innecesarios
   useEffect(() => {
     console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
       userLoading,
@@ -67,25 +67,23 @@ const TasksToDo2: React.FC = () => {
       localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
     });
     
-    // Solo mostrar mensaje informativo si no hay usuario, pero NO redirigir
+    // Solo mostrar mensaje informativo si no hay usuario después de 3 segundos, pero NO redirigir
     if (!userLoading && !currentUser) {
-      console.log('ℹ️ No hay usuario autenticado - mostrando mensaje informativo');
-      toast({
-        title: "Información",
-        description: "Para usar esta función necesitas conectar tu cuenta de Instagram",
-        variant: "default"
-      });
+      console.log('ℹ️ No hay usuario autenticado');
+      // Dar un poco de tiempo para que se cargue automáticamente
+      setTimeout(() => {
+        if (!currentUser) {
+          toast({
+            title: "Información",
+            description: "Para usar esta función necesitas conectar tu cuenta de Instagram",
+            variant: "default"
+          });
+        }
+      }, 3000);
     }
 
-    // Solo mostrar mensaje si no hay credenciales de Hower, pero NO redirigir
-    if (!userLoading && currentUser && !HowerService.isAuthenticated()) {
-      console.log('ℹ️ No hay credenciales de Hower - mostrando mensaje informativo');
-      toast({
-        title: "Información",
-        description: "Para acceder al CRM necesitas autenticarte con Hower",
-        variant: "default"
-      });
-    }
+    // NO mostrar mensaje de Hower aquí, se maneja en checkDatabaseCredentials
+    // para evitar mensajes innecesarios mientras se recuperan las credenciales
   }, [currentUser, userLoading, toast]);
 
 
@@ -118,16 +116,25 @@ const TasksToDo2: React.FC = () => {
   const [motivationalQuote, setMotivationalQuote] = useState('');
   const [newProspectsCount, setNewProspectsCount] = useState(0);
 
-  // Función para cargar los usuarios de Hower - RESTAURADO
+  // Función para cargar los usuarios de Hower - MEJORADA con verificación automática
   const loadHowerUsers = useCallback(async () => {
-    if (!HowerService.isAuthenticated()) {
-      console.log('❌ No hay credenciales de Hower disponibles');
+    // Si no hay usuario de Instagram, no continuar
+    if (!currentUser?.instagram_user_id) {
+      console.log('❌ No hay usuario de Instagram disponible');
+      return;
+    }
+
+    // Verificar y cargar credenciales automáticamente si es necesario
+    const hasCredentials = await HowerService.checkAndLoadCredentials(currentUser.instagram_user_id);
+    
+    if (!hasCredentials) {
+      console.log('❌ No hay credenciales de Hower disponibles después de verificar BD');
       return;
     }
 
     setHowerLoading(true);
     try {
-      console.log('🔄 [DEBUG] Iniciando loadHowerUsers...');
+      console.log('🔄 [DEBUG] Iniciando loadHowerUsers con credenciales verificadas...');
       const response = await HowerService.getSentMessagesUsernames();
       
       console.log('🔍 [DEBUG] Response completo:', response);
@@ -199,9 +206,9 @@ const TasksToDo2: React.FC = () => {
     } finally {
       setHowerLoading(false);
     }
-  }, [toast]);
+  }, [toast, currentUser?.instagram_user_id]);
 
-  // Cargar datos de Hower al inicializar - RESTAURADO
+  // Cargar datos de Hower al inicializar - MEJORADO para evitar pantalla de configuración repetida
   useEffect(() => {
     console.log('🔍 Verificando condiciones para cargar Hower:', {
       userLoading,
@@ -213,17 +220,17 @@ const TasksToDo2: React.FC = () => {
       console.log('✅ Usuario disponible, verificando autenticación de Hower...');
       
       if (HowerService.isAuthenticated()) {
-        console.log('🔑 Credenciales de Hower encontradas, cargando usuarios...');
+        console.log('🔑 Credenciales de Hower encontradas en localStorage, cargando usuarios...');
         loadHowerUsers();
       } else {
-        console.log('⚠️ No hay credenciales de Hower disponibles');
-        // Verificar si hay credenciales en la base de datos
+        console.log('⚠️ No hay credenciales en localStorage, verificando base de datos...');
+        // Verificar si hay credenciales en la base de datos ANTES de pedir configuración
         checkDatabaseCredentials();
       }
     }
   }, [currentUser, userLoading, loadHowerUsers]);
 
-  // Nueva función para verificar credenciales en la base de datos
+  // Nueva función para verificar credenciales en la base de datos - MEJORADA
   const checkDatabaseCredentials = async () => {
     try {
       const instagramUserData = localStorage.getItem('hower-instagram-user');
@@ -255,14 +262,27 @@ const TasksToDo2: React.FC = () => {
 
       if (userData && userData.hower_username && userData.hower_token) {
         console.log('✅ Credenciales encontradas en BD, migrando a localStorage...');
-        // Migrar credenciales a localStorage
+        // Migrar credenciales a localStorage para acceso rápido
         localStorage.setItem('hower_username', userData.hower_username);
         localStorage.setItem('hower_token', userData.hower_token);
         
-        // Ahora cargar los usuarios
-        loadHowerUsers();
+        // Ahora cargar los usuarios automáticamente
+        await loadHowerUsers();
+        
+        // Mostrar mensaje de éxito
+        toast({
+          title: "✅ Credenciales restauradas",
+          description: "Se han recuperado tus credenciales de Hower automáticamente",
+          variant: "default"
+        });
       } else {
-        console.log('⚠️ No hay credenciales en BD tampoco');
+        console.log('⚠️ No hay credenciales guardadas. El usuario necesita configurar Hower.');
+        // Solo aquí mostrar mensaje informativo, no error
+        toast({
+          title: "Configuración necesaria",
+          description: "Para usar el CRM necesitas configurar tus credenciales de Hower en Configuración",
+          variant: "default"
+        });
       }
     } catch (error) {
       console.error('❌ Error en checkDatabaseCredentials:', error);
