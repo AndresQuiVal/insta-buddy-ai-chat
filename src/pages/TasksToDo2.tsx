@@ -2273,7 +2273,7 @@ const TasksToDo2: React.FC = () => {
                       }}>
                         "Holaa [NOMBRE] todo bien? soy Andrés! pasaba a dejarte un mensaje y saber si aun sigues por aca? por cierto vi tu perfil y [COMPLEMENTO DEL PERFIL]"
                       </div>
-                      <p><strong>💡 Tip:</strong> No olvides interactuar con sus posts: dar like, comentar, compartir. ¡La interacción aumenta las respuestas!</p>
+                      <p><strong>💡 Tip:</strong> ¡La interacción aumenta las respuestas!</p>
                     </div>
                   }
                   taskType="yesterday"
@@ -2299,7 +2299,7 @@ const TasksToDo2: React.FC = () => {
                       }}>
                         "Hey hey [NOMBRE] oye, hace 7 días no escucho de ti, todo bien?"
                       </div>
-                      <p><strong>💡 Tip:</strong> Aprovecha para interactuar con sus posts recientes: da like, comenta algo genuino, comparte si es relevante. ¡La interacción previa aumenta las posibilidades de respuesta!</p>
+                      <p><strong>💡 Tip:</strong> ¡La interacción previa aumenta las posibilidades de respuesta!</p>
                     </div>
                   }
                   taskType="week"
