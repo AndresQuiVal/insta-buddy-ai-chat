@@ -1381,7 +1381,9 @@ const TasksToDo2: React.FC = () => {
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
             <Avatar className="h-8 w-8 sm:h-12 sm:w-12 flex-shrink-0">
               <AvatarImage src={prospect.avatar || ''} />
-              <AvatarFallback className="text-xs sm:text-sm">{prospect.userName[0]?.toUpperCase()}</AvatarFallback>
+              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white text-xs sm:text-sm font-semibold">
+                {prospect.userName[0]?.toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-sm sm:text-base truncate">@{prospect.userName}</p>
