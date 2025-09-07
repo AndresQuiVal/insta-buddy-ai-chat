@@ -95,6 +95,16 @@ const TasksToDo2: React.FC = () => {
   const [showStats, setShowStats] = useState(false);
   const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
   const [activeStatsSection, setActiveStatsSection] = useState<string | null>(null);
+  
+  // Estados para conteos dinámicos de prospectos válidos
+  const [dynamicCounts, setDynamicCounts] = useState({
+    'hoy-nuevos': 0,
+    'hoy-seguimientos': 0,
+    'ayer-nuevos': 0,
+    'ayer-seguimientos': 0,
+    'semana-nuevos': 0,
+    'semana-seguimientos': 0
+  });
   const [activeInteractionTip, setActiveInteractionTip] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<CompletedTasks>({});
   
@@ -346,19 +356,28 @@ const TasksToDo2: React.FC = () => {
     if (!currentUser?.instagram_user_id) return;
 
     try {
-      // Usar la función híbrida que filtra por Hower Y respeta períodos
+      // 🔍 PRUEBA: Verificar que la función SQL funciona
+      console.log('🧪 [TEST] Probando función SQL directamente...');
+      const testResult = await supabase.rpc('grok_get_stats' as any, {
+        p_instagram_user_id: currentUser.instagram_user_id,
+        p_period: 'today',
+        p_hower_usernames: howerUsernames
+      });
+      console.log('🧪 [TEST] Resultado de prueba:', testResult);
+      
+      // Usar las funciones GROK para obtener estadísticas con filtro de Hower
       const [todayData, yesterdayData, weekData] = await Promise.all([
-        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
+        supabase.rpc('grok_get_stats' as any, {
           p_instagram_user_id: currentUser.instagram_user_id,
           p_period: 'today',
           p_hower_usernames: howerUsernames
         }),
-        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
+        supabase.rpc('grok_get_stats' as any, {
           p_instagram_user_id: currentUser.instagram_user_id,
           p_period: 'yesterday',
           p_hower_usernames: howerUsernames
         }),
-        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
+        supabase.rpc('grok_get_stats' as any, {
           p_instagram_user_id: currentUser.instagram_user_id,
           p_period: 'week',
           p_hower_usernames: howerUsernames
@@ -370,6 +389,22 @@ const TasksToDo2: React.FC = () => {
         yesterday: yesterdayData.data?.[0],
         week: weekData.data?.[0]
       });
+      
+      console.log('🔍 [DEBUG] Hower usernames enviados:', howerUsernames);
+      console.log('🔍 [DEBUG] Respuesta completa today:', todayData);
+      console.log('🔍 [DEBUG] Respuesta completa yesterday:', yesterdayData);
+      console.log('🔍 [DEBUG] Respuesta completa week:', weekData);
+      
+      // Verificar errores
+      if (todayData.error) {
+        console.error('❌ [ERROR] Today data error:', todayData.error);
+      }
+      if (yesterdayData.error) {
+        console.error('❌ [ERROR] Yesterday data error:', yesterdayData.error);
+      }
+      if (weekData.error) {
+        console.error('❌ [ERROR] Week data error:', weekData.error);
+      }
 
       console.log('✅ [RESPUESTAS-FIX] Valor de respuestas hoy (acumulativo):', todayData.data?.[0]?.respuestas || 0);
 
@@ -400,7 +435,10 @@ const TasksToDo2: React.FC = () => {
     if (!userLoading && currentUser && howerUsernames.length > 0) {
       console.log('🔄 [STATS] Cargando estadísticas para usuario:', currentUser.instagram_user_id);
       console.log('🔄 [STATS] Con filtro Hower:', howerUsernames.length, 'usernames');
+      console.log('🔄 [STATS] Hower usernames específicos:', howerUsernames);
       loadStats();
+    } else if (!userLoading && currentUser && howerUsernames.length === 0) {
+      console.log('⚠️ [STATS] Usuario cargado pero no hay usernames de Hower:', howerUsernames);
     }
   }, [currentUser, userLoading, loadStats, howerUsernames]);
 
@@ -1227,6 +1265,12 @@ const TasksToDo2: React.FC = () => {
     return { minutes, totalProspects, equivalencia };
   };
 
+  // Función auxiliar para filtrar prospectos válidos (no user_ o prospect_)
+  const isValidProspect = (prospect: any) => {
+    const username = prospect.userName || prospect.username || '';
+    return !username.startsWith('user_') && !username.startsWith('prospect_');
+  };
+
   // Función auxiliar para obtener usernames de prospectos filtrados por Hower
   const getProspectUsernames = async (prospectIds: string[]) => {
     if (prospectIds.length === 0) return {};
@@ -1527,7 +1571,12 @@ const TasksToDo2: React.FC = () => {
   };
 
   // Componente para mostrar la lista de prospectos de estadísticas
-  const StatsProspectsList = ({ statsType, period, taskType }: { statsType: string, period: string, taskType: string }) => {
+  const StatsProspectsList = ({ statsType, period, taskType, onCountUpdate }: { 
+    statsType: string, 
+    period: string, 
+    taskType: string,
+    onCountUpdate?: (count: number) => void 
+  }) => {
     const [prospects, setProspects] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -1549,17 +1598,26 @@ const TasksToDo2: React.FC = () => {
       loadProspects();
     }, [statsType, period]);
 
+    // Filtrar prospectos válidos y notificar el conteo
+    const validProspects = prospects.filter(isValidProspect);
+    
+    useEffect(() => {
+      if (onCountUpdate) {
+        onCountUpdate(validProspects.length);
+      }
+    }, [validProspects.length, onCountUpdate]);
+
     if (loading) {
       return <p className="text-xs text-muted-foreground italic">Cargando...</p>;
     }
 
-    if (prospects.length === 0) {
+    if (validProspects.length === 0) {
       return <p className="text-xs text-muted-foreground italic">No hay {statsType} de {period}</p>;
     }
 
     return (
       <>
-        {prospects.map((prospect) => (
+        {validProspects.map((prospect) => (
           <ProspectCard key={prospect.id} prospect={prospect} taskType={taskType} />
         ))}
       </>
@@ -2110,7 +2168,7 @@ const TasksToDo2: React.FC = () => {
                                >
                                  <span className="font-mono text-sm">💬 Respuestas</span>
                                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {stats.today.respuestas}
+                                   {dynamicCounts['hoy-nuevos']}
                                  </div>
                                </div>
                                
@@ -2121,6 +2179,7 @@ const TasksToDo2: React.FC = () => {
                                      statsType="nuevos" 
                                      period="hoy" 
                                      taskType="stats-hoy-nuevos"
+                                     onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'hoy-nuevos': count }))}
                                    />
                                  </div>
                                )}
@@ -2131,7 +2190,7 @@ const TasksToDo2: React.FC = () => {
                                >
                                  <span className="font-mono text-sm">🔄 Seguimientos</span>
                                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {stats.today.seguimientos}
+                                   {dynamicCounts['hoy-seguimientos']}
                                  </div>
                                </div>
                                
@@ -2142,6 +2201,7 @@ const TasksToDo2: React.FC = () => {
                                      statsType="seguimientos" 
                                      period="hoy" 
                                      taskType="stats-hoy-seguimientos"
+                                     onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'hoy-seguimientos': count }))}
                                    />
                                  </div>
                                )}
@@ -2170,7 +2230,7 @@ const TasksToDo2: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">💬 Respuestas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {prospectsClassification.yesterdayStats.nuevosProspectos}
+                                  {dynamicCounts['ayer-nuevos']}
                                 </div>
                               </div>
                               
@@ -2181,6 +2241,7 @@ const TasksToDo2: React.FC = () => {
                                     statsType="nuevos" 
                                     period="ayer" 
                                     taskType="stats-ayer-nuevos"
+                                    onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'ayer-nuevos': count }))}
                                   />
                                 </div>
                               )}
@@ -2191,7 +2252,7 @@ const TasksToDo2: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {prospectsClassification.yesterdayStats.seguimientosHechos}
+                                  {dynamicCounts['ayer-seguimientos']}
                                 </div>
                               </div>
                               
@@ -2202,6 +2263,7 @@ const TasksToDo2: React.FC = () => {
                                     statsType="seguimientos" 
                                     period="ayer" 
                                     taskType="stats-ayer-seguimientos"
+                                    onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'ayer-seguimientos': count }))}
                                   />
                                 </div>
                               )}
@@ -2238,7 +2300,7 @@ const TasksToDo2: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">💬 Respuestas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.week.respuestas}
+                                  {dynamicCounts['semana-nuevos']}
                                 </div>
                               </div>
                               
@@ -2249,6 +2311,7 @@ const TasksToDo2: React.FC = () => {
                                     statsType="nuevos" 
                                     period="semana" 
                                     taskType="stats-semana-nuevos"
+                                    onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'semana-nuevos': count }))}
                                   />
                                 </div>
                                )}
@@ -2262,13 +2325,13 @@ const TasksToDo2: React.FC = () => {
                                  </div>
                                </div>
                                
-                               <div 
-                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
-                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
-                               >
-                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
+                              <div 
+                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
+                              >
+                                <span className="font-mono text-sm">🔄 Seguimientos</span>
                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.week.seguimientos}
+                                  {dynamicCounts['semana-seguimientos']}
                                 </div>
                               </div>
                               
@@ -2279,6 +2342,7 @@ const TasksToDo2: React.FC = () => {
                                     statsType="seguimientos" 
                                     period="semana" 
                                     taskType="stats-semana-seguimientos"
+                                    onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'semana-seguimientos': count }))}
                                   />
                                 </div>
                               )}
