@@ -1307,17 +1307,19 @@ const TasksToDo2: React.FC = () => {
             const prospectIds = (responseProspects || []).map(r => r.prospect_sender_id);
             const usernameMap = await getProspectUsernames(prospectIds);
             
-            // Mapear a formato esperado
-            return (responseProspects || []).map((response, index) => ({
-              id: `response-${response.prospect_sender_id}-${index}`,
-              userName: usernameMap[response.prospect_sender_id] || `user_${response.prospect_sender_id.slice(-8)}`,
-              status: 'responded',
-              firstContactDate: response.first_response_at,
-              lastContactDate: response.first_response_at,
-              unread: true,
-              avatar: '',
-              prospect_instagram_id: response.prospect_sender_id
-            }));
+            // Mapear a formato esperado - SOLO los que están en Hower
+            return (responseProspects || [])
+              .filter(response => usernameMap[response.prospect_sender_id]) // 🎯 FILTRO HOWER: Solo los que están en usernameMap
+              .map((response, index) => ({
+                id: `response-${response.prospect_sender_id}-${index}`,
+                userName: usernameMap[response.prospect_sender_id],
+                status: 'responded',
+                firstContactDate: response.first_response_at,
+                lastContactDate: response.first_response_at,
+                unread: true,
+                avatar: '',
+                prospect_instagram_id: response.prospect_sender_id
+              }));
           }
           if (period === 'ayer') {
             // Obtener respuestas de ayer desde BD
@@ -1347,16 +1349,18 @@ const TasksToDo2: React.FC = () => {
             const prospectIds = (responseProspects || []).map(r => r.prospect_sender_id);
             const usernameMap = await getProspectUsernames(prospectIds);
             
-            return (responseProspects || []).map((response, index) => ({
-              id: `response-${response.prospect_sender_id}-${index}`,
-              userName: usernameMap[response.prospect_sender_id] || `user_${response.prospect_sender_id.slice(-8)}`,
-              status: 'responded',
-              firstContactDate: response.first_response_at,
-              lastContactDate: response.first_response_at,
-              unread: true,
-              avatar: '',
-              prospect_instagram_id: response.prospect_sender_id
-            }));
+            return (responseProspects || [])
+              .filter(response => usernameMap[response.prospect_sender_id]) // 🎯 FILTRO HOWER: Solo los que están en usernameMap
+              .map((response, index) => ({
+                id: `response-${response.prospect_sender_id}-${index}`,
+                userName: usernameMap[response.prospect_sender_id],
+                status: 'responded',
+                firstContactDate: response.first_response_at,
+                lastContactDate: response.first_response_at,
+                unread: true,
+                avatar: '',
+                prospect_instagram_id: response.prospect_sender_id
+              }));
           }
           
           if (period === 'semana') {
@@ -1389,16 +1393,18 @@ const TasksToDo2: React.FC = () => {
             const prospectIds = (responseProspects || []).map(r => r.prospect_sender_id);
             const usernameMap = await getProspectUsernames(prospectIds);
             
-            return (responseProspects || []).map((response, index) => ({
-              id: `response-${response.prospect_sender_id}-${index}`,
-              userName: usernameMap[response.prospect_sender_id] || `user_${response.prospect_sender_id.slice(-8)}`,
-              status: 'responded',
-              firstContactDate: response.first_response_at,
-              lastContactDate: response.first_response_at,
-              unread: true,
-              avatar: '',
-              prospect_instagram_id: response.prospect_sender_id
-            }));
+            return (responseProspects || [])
+              .filter(response => usernameMap[response.prospect_sender_id]) // 🎯 FILTRO HOWER: Solo los que están en usernameMap
+              .map((response, index) => ({
+                id: `response-${response.prospect_sender_id}-${index}`,
+                userName: usernameMap[response.prospect_sender_id],
+                status: 'responded',
+                firstContactDate: response.first_response_at,
+                lastContactDate: response.first_response_at,
+                unread: true,
+                avatar: '',
+                prospect_instagram_id: response.prospect_sender_id
+              }));
           }
           
           return [];
@@ -1429,17 +1435,19 @@ const TasksToDo2: React.FC = () => {
             const prospectIds = (contactProspects || []).map(c => c.prospect_sender_id);
             const usernameMap = await getProspectUsernames(prospectIds);
             
-            // Mapear a formato esperado
-            return (contactProspects || []).map((contact, index) => ({
-              id: `contact-${contact.prospect_sender_id}-${index}`,
-              userName: usernameMap[contact.prospect_sender_id] || `user_${contact.prospect_sender_id.slice(-8)}`,
-              status: 'followed_up',
-              firstContactDate: contact.first_contact_at,
-              lastContactDate: contact.first_contact_at,
-              unread: false,
-              avatar: '',
-              prospect_instagram_id: contact.prospect_sender_id
-            }));
+            // Mapear a formato esperado - SOLO los que están en Hower
+            return (contactProspects || [])
+              .filter(contact => usernameMap[contact.prospect_sender_id]) // 🎯 FILTRO HOWER: Solo los que están en usernameMap
+              .map((contact, index) => ({
+                id: `contact-${contact.prospect_sender_id}-${index}`,
+                userName: usernameMap[contact.prospect_sender_id],
+                status: 'followed_up',
+                firstContactDate: contact.first_contact_at,
+                lastContactDate: contact.first_contact_at,
+                unread: false,
+                avatar: '',
+                prospect_instagram_id: contact.prospect_sender_id
+              }));
           }
           if (period === 'ayer') {
             // Obtener seguimientos de ayer desde BD
@@ -1469,16 +1477,18 @@ const TasksToDo2: React.FC = () => {
             const prospectIds = (contactProspects || []).map(c => c.prospect_sender_id);
             const usernameMap = await getProspectUsernames(prospectIds);
             
-            return (contactProspects || []).map((contact, index) => ({
-              id: `contact-${contact.prospect_sender_id}-${index}`,
-              userName: usernameMap[contact.prospect_sender_id] || `user_${contact.prospect_sender_id.slice(-8)}`,
-              status: 'followed_up',
-              firstContactDate: contact.first_contact_at,
-              lastContactDate: contact.first_contact_at,
-              unread: false,
-              avatar: '',
-              prospect_instagram_id: contact.prospect_sender_id
-            }));
+            return (contactProspects || [])
+              .filter(contact => usernameMap[contact.prospect_sender_id]) // 🎯 FILTRO HOWER: Solo los que están en usernameMap
+              .map((contact, index) => ({
+                id: `contact-${contact.prospect_sender_id}-${index}`,
+                userName: usernameMap[contact.prospect_sender_id],
+                status: 'followed_up',
+                firstContactDate: contact.first_contact_at,
+                lastContactDate: contact.first_contact_at,
+                unread: false,
+                avatar: '',
+                prospect_instagram_id: contact.prospect_sender_id
+              }));
           }
           
           if (period === 'semana') {
@@ -1511,16 +1521,18 @@ const TasksToDo2: React.FC = () => {
             const prospectIds = (contactProspects || []).map(c => c.prospect_sender_id);
             const usernameMap = await getProspectUsernames(prospectIds);
             
-            return (contactProspects || []).map((contact, index) => ({
-              id: `contact-${contact.prospect_sender_id}-${index}`,
-              userName: usernameMap[contact.prospect_sender_id] || `user_${contact.prospect_sender_id.slice(-8)}`,
-              status: 'followed_up',
-              firstContactDate: contact.first_contact_at,
-              lastContactDate: contact.first_contact_at,
-              unread: false,
-              avatar: '',
-              prospect_instagram_id: contact.prospect_sender_id
-            }));
+            return (contactProspects || [])
+              .filter(contact => usernameMap[contact.prospect_sender_id]) // 🎯 FILTRO HOWER: Solo los que están en usernameMap
+              .map((contact, index) => ({
+                id: `contact-${contact.prospect_sender_id}-${index}`,
+                userName: usernameMap[contact.prospect_sender_id],
+                status: 'followed_up',
+                firstContactDate: contact.first_contact_at,
+                lastContactDate: contact.first_contact_at,
+                unread: false,
+                avatar: '',
+                prospect_instagram_id: contact.prospect_sender_id
+              }));
           }
           
           return [];
@@ -1559,11 +1571,12 @@ const TasksToDo2: React.FC = () => {
         semana: { respuestas: semanaRespuestas, seguimientos: semanaSeguimientos }
       });
 
-      console.log('📊 [DYNAMIC-STATS] Contadores actualizados:', {
+      console.log('📊 [DYNAMIC-STATS] Contadores actualizados (SOLO HOWER):', {
         hoy: { respuestas: hoyRespuestas, seguimientos: hoySeguimientos },
         ayer: { respuestas: ayerRespuestas, seguimientos: ayerSeguimientos },
         semana: { respuestas: semanaRespuestas, seguimientos: semanaSeguimientos }
       });
+      console.log('🎯 [HOWER-FILTER] Usernames de Hower disponibles:', howerUsernames.length);
     } catch (error) {
       console.error('❌ Error actualizando contadores dinámicos:', error);
     }
