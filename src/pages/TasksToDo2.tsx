@@ -1210,10 +1210,16 @@ const TasksToDo2: React.FC = () => {
   const getStatsProspects = useCallback((statsType: string, period: string): ProspectData[] => {
     const cacheKey = `${statsType}-${period}`;
     
-    // Usar cache si disponible y datos no han cambiado
-    if (statsCache[cacheKey] && 
+    // 🔥 FORZAR CÁLCULO DIRECTO PARA RESPUESTAS - NO USAR CACHE
+    // Esto asegura que siempre obtenemos datos frescos al calcular respuestas
+    const useCache = statsType !== 'respuestas';
+    
+    // Usar cache solo para tipos que no sean respuestas
+    if (useCache && 
+        statsCache[cacheKey] && 
         realProspects.length > 0 && 
         howerUsernames.length > 0) {
+      console.log(`📋 [CACHE-HIT] Usando cache para ${statsType}-${period}:`, statsCache[cacheKey].length);
       return statsCache[cacheKey];
     }
 
@@ -2866,25 +2872,26 @@ const TasksToDo2: React.FC = () => {
               <div className="grid grid-cols-3 gap-4 mt-3">
                 <div>
                   <strong>HOY:</strong>
-                  <div>Respuestas: {stats.today.respuestas}</div>
-                  <div>Seguimientos: {stats.today.seguimientos}</div>
+                  <div>Respuestas: {getStatsProspects('respuestas', 'hoy').length} (DIRECTO)</div>
+                  <div>Seguimientos: {getStatsProspects('seguimientos', 'hoy').length} (DIRECTO)</div>
                 </div>
                 <div>
                   <strong>AYER:</strong>
-                  <div>Respuestas: {stats.yesterday.respuestas}</div>
-                  <div>Seguimientos: {stats.yesterday.seguimientos}</div>
+                  <div>Respuestas: {getStatsProspects('respuestas', 'ayer').length} (DIRECTO)</div>
+                  <div>Seguimientos: {getStatsProspects('seguimientos', 'ayer').length} (DIRECTO)</div>
                 </div>
                 <div>
                   <strong>SEMANA:</strong>
-                  <div>Respuestas: {stats.week.respuestas}</div>
-                  <div>Seguimientos: {stats.week.seguimientos}</div>
+                  <div>Respuestas: {getStatsProspects('respuestas', 'semana').length} (DIRECTO)</div>
+                  <div>Seguimientos: {getStatsProspects('seguimientos', 'semana').length} (DIRECTO)</div>
                 </div>
               </div>
               <div className="mt-3 text-xs text-blue-600">
                 <strong>✅ CORRECCIÓN APLICADA:</strong><br/>
                 • <strong>Respuestas (Mis Números):</strong> Conteo histórico/acumulativo - NO se reduce cuando usuario responde<br/>
                 • <strong>Prospectos Pendientes:</strong> Estado actual - SÍ se eliminan cuando usuario responde<br/>
-                • <strong>Lógica:</strong> Respuestas = CUALQUIER mensaje del prospecto en período. Seguimientos = mensajes míos (&gt;=24h).
+                • <strong>NUEVA LÓGICA:</strong> Respuestas usa cálculo directo (sin cache) para datos siempre frescos<br/>
+                • <strong>DEBUG:</strong> Los números arriba muestran "(DIRECTO)" para confirmar que no usan cache<br/>
               </div>
             </div>
           </div>
