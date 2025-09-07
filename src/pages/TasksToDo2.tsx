@@ -1204,53 +1204,117 @@ const TasksToDo2: React.FC = () => {
   };
 
   // Función para obtener prospectos según la sección de estadísticas
-  const getStatsProspects = (statsType: string, period: string) => {
+  const getStatsProspects = (statsType: string, period: string): ProspectData[] => {
     console.log(`🔍 [getStatsProspects] Solicitando ${statsType} para ${period}`);
     console.log(`🔍 [getStatsProspects] realProspects disponibles:`, realProspects.length);
-    
+    console.log(`🔍 [getStatsProspects] howerUsernames disponibles:`, howerUsernames.length);
+
+    if (!realProspects.length || !howerUsernames.length) {
+      console.log('❌ [getStatsProspects] Sin datos - realProspects o howerUsernames vacíos');
+      return [];
+    }
+
     try {
-      switch (statsType) {
-        case 'nuevos':
-          if (period === 'hoy') {
-            // ARREGLADO: Para "respuestas de hoy", usar TODOS los que respondieron HOY (acumulativo)
-            // Usar las propiedades correctas del hook useProspects
-            const today = new Date().toISOString().split('T')[0];
-            const todayResponses = realProspects.filter(prospect => {
-              const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
-              const isReceivedToday = prospect.lastMessageType === 'received' && lastMessageDate === today;
-              console.log(`📧 [${prospect.username}] lastMessageType: ${prospect.lastMessageType}, date: ${lastMessageDate}, isToday: ${isReceivedToday}`);
-              return isReceivedToday;
-            });
-            console.log(`✅ [getStatsProspects] Respuestas de hoy encontradas:`, todayResponses.length);
-            return todayResponses.map(prospect => ({
-              id: prospect.id,
-              userName: prospect.username,
-              status: prospect.state,
-              firstContactDate: prospect.lastMessageTime,
-              lastContactDate: prospect.lastMessageTime,
-              unread: prospect.lastMessageType === 'received',
-              avatar: ''
-            }));
-          }
-          return period === 'ayer' ? prospectsClassification.yesterdayNewProspects : prospectsClassification.weekNewProspects;
-        case 'seguimientos':
-          if (period === 'hoy') {
-            // Para "seguimientos de hoy", usar una combinación de los que necesitan seguimiento
-            // Por ahora regresamos los de ayer como aproximación (esto se puede refinar después)
-            return prospectsClassification.noResponseYesterday.dm.concat(prospectsClassification.noResponseYesterday.comment);
-          }
-          return period === 'ayer' ? prospectsClassification.yesterdayFollowUps : prospectsClassification.weekFollowUps;
-        case 'agendados':
-          return []; // Por ahora vacío, se puede implementar después
-        default:
-          console.log(`⚠️ [getStatsProspects] Tipo de stats desconocido: ${statsType}`);
-          return [];
+      // Filtrar prospectos autorizados por Hower (misma lógica que el CRM)
+      const authorizedProspects = realProspects.filter(prospect => {
+        const normalizedUsername = prospect.username.replace('@', '');
+        const isAuthorized = howerUsernames.some(howerUsername => 
+          howerUsername === normalizedUsername || 
+          howerUsername === `@${normalizedUsername}` ||
+          howerUsername === prospect.username
+        );
+        return isAuthorized;
+      });
+
+      console.log('✅ [getStatsProspects] Prospectos autorizados:', authorizedProspects.length);
+
+      let filteredProspects: any[] = [];
+
+      if (statsType === 'respuestas' || statsType === 'nuevos') {
+        // RESPUESTAS: Solo prospectos que ME RESPONDIERON pero YO NO LES HE CONTESTADO NUNCA
+        filteredProspects = authorizedProspects.filter(prospect => {
+          // Verificar que el último mensaje fue del prospecto hacia mí
+          const lastWasFromProspect = prospect.lastMessageType === 'received';
+          
+          // Verificar que nunca les he enviado mensaje (no hay lastSentMessageTime)
+          const neverSentMessage = !prospect.lastSentMessageTime;
+          
+          // TODO: Verificar que no están tachados usando prospect_task_status
+          const notCompleted = true; // Por ahora siempre true, se puede mejorar después
+          
+          const matches = lastWasFromProspect && neverSentMessage && notCompleted;
+          
+          console.log(`[RESPUESTAS] ${prospect.username}: lastWasFromProspect=${lastWasFromProspect}, neverSentMessage=${neverSentMessage}, notCompleted=${notCompleted}, matches=${matches}`);
+          
+          return matches;
+        });
+      } else if (statsType === 'seguimientos') {
+        // SEGUIMIENTOS: Prospectos donde YO les envié mensaje hace >= 24 horas y no están tachados
+        filteredProspects = authorizedProspects.filter(prospect => {
+          // Verificar que les he enviado mensaje antes
+          const hasSentMessage = prospect.lastSentMessageTime && prospect.lastSentMessageTime !== '';
+          
+          if (!hasSentMessage) return false;
+          
+          // Calcular tiempo desde último mensaje mío
+          const lastContactTime = new Date(prospect.lastSentMessageTime).getTime();
+          const now = Date.now();
+          const hoursSinceContact = (now - lastContactTime) / (1000 * 60 * 60);
+          
+          // TODO: Verificar que no están tachados usando prospect_task_status
+          const notCompleted = true; // Por ahora siempre true, se puede mejorar después
+          
+          const matches = hasSentMessage && hoursSinceContact >= 24 && notCompleted;
+          
+          console.log(`[SEGUIMIENTOS] ${prospect.username}: hasSentMessage=${hasSentMessage}, hoursSinceContact=${hoursSinceContact.toFixed(1)}, notCompleted=${notCompleted}, matches=${matches}`);
+          
+          return matches;
+        });
+      } else if (statsType === 'agendados') {
+        // Por ahora vacío, se puede implementar después
+        filteredProspects = [];
       }
+
+      console.log('🎯 [getStatsProspects] Prospectos filtrados final:', filteredProspects.length);
+
+      // Convertir a formato ProspectData
+      const result = filteredProspects.map(prospect => ({
+        id: prospect.id,
+        userName: prospect.username,
+        status: prospect.state,
+        firstContactDate: prospect.lastMessageTime || '',
+        lastContactDate: prospect.lastSentMessageTime || prospect.lastMessageTime || '',
+        unread: prospect.lastMessageType === 'received',
+        avatar: '' // No hay URL de avatar en la interfaz Prospect
+      }));
+
+      console.log('📋 [getStatsProspects] Resultado final:', result.length, 'prospectos');
+      
+      return result;
     } catch (error) {
       console.error(`❌ [getStatsProspects] Error procesando ${statsType} para ${period}:`, error);
       return [];
     }
   };
+
+  // Función para manejar clicks en las estadísticas y mostrar prospectos específicos
+  const handleStatsClick = useCallback((type: 'respuestas' | 'seguimientos' | 'agendados', period: string = 'hoy') => {
+    console.log('🎯 [STATS-CLICK] Clicked on:', { type, period });
+    
+    const prospectsForStat = getStatsProspects(type, period);
+    console.log('📋 [STATS-CLICK] Prospectos encontrados:', prospectsForStat.length);
+    
+    // Actualizar la sección activa para mostrar los prospectos
+    setActiveStatsSection(`${type}-${period}`);
+    
+    // Opcional: scroll hacia la sección de prospectos si está abajo
+    setTimeout(() => {
+      const prospectsSection = document.querySelector('[data-prospects-section]');
+      if (prospectsSection) {
+        prospectsSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  }, [realProspects, howerUsernames]);
 
   // Función para abrir Instagram directamente
   const handleProspectClick = (username: string) => {
@@ -1797,7 +1861,7 @@ const TasksToDo2: React.FC = () => {
                             <div className="space-y-2">
                                <div 
                                  className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
-                                 onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-nuevos' ? null : 'hoy-nuevos')}
+                                 onClick={() => handleStatsClick('respuestas', 'hoy')}
                                >
                                  <span className="font-mono text-sm">💬 Respuestas</span>
                                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
@@ -1806,10 +1870,10 @@ const TasksToDo2: React.FC = () => {
                                </div>
                                
                                {/* Listado de respuestas de hoy */}
-                               {activeStatsSection === 'hoy-nuevos' && (
-                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                               {activeStatsSection === 'respuestas-hoy' && (
+                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" data-prospects-section>
                                    {(() => {
-                                     const prospects = getStatsProspects('nuevos', 'hoy');
+                                     const prospects = getStatsProspects('respuestas', 'hoy');
                                      console.log('🔍 [DEBUG-RESPUESTAS] Prospectos de respuestas hoy:', prospects);
                                      
                                      if (prospects.length === 0) {
@@ -1817,7 +1881,7 @@ const TasksToDo2: React.FC = () => {
                                      }
                                      
                                      return prospects.map((prospect) => (
-                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-nuevos" />
+                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-respuestas" />
                                      ));
                                    })()}
                                  </div>
@@ -1825,7 +1889,7 @@ const TasksToDo2: React.FC = () => {
                                
                                <div 
                                  className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
-                                 onClick={() => setActiveStatsSection(activeStatsSection === 'hoy-seguimientos' ? null : 'hoy-seguimientos')}
+                                 onClick={() => handleStatsClick('seguimientos', 'hoy')}
                                >
                                  <span className="font-mono text-sm">🔄 Seguimientos</span>
                                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
@@ -1834,8 +1898,8 @@ const TasksToDo2: React.FC = () => {
                                </div>
                                
                                {/* Listado de seguimientos de hoy */}
-                               {activeStatsSection === 'hoy-seguimientos' && (
-                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                               {activeStatsSection === 'seguimientos-hoy' && (
+                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" data-prospects-section>
                                    {getStatsProspects('seguimientos', 'hoy').length === 0 ? (
                                      <p className="text-xs text-muted-foreground italic">No hay seguimientos de hoy</p>
                                    ) : (
