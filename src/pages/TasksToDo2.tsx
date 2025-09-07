@@ -346,19 +346,19 @@ const TasksToDo2: React.FC = () => {
     if (!currentUser?.instagram_user_id) return;
 
     try {
-      // Usar las funciones GROK para obtener estadísticas con filtro de Hower
+      // Usar la función híbrida que filtra por Hower Y respeta períodos
       const [todayData, yesterdayData, weekData] = await Promise.all([
-        supabase.rpc('grok_get_stats' as any, {
+        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
           p_instagram_user_id: currentUser.instagram_user_id,
           p_period: 'today',
           p_hower_usernames: howerUsernames
         }),
-        supabase.rpc('grok_get_stats' as any, {
+        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
           p_instagram_user_id: currentUser.instagram_user_id,
           p_period: 'yesterday',
           p_hower_usernames: howerUsernames
         }),
-        supabase.rpc('grok_get_stats' as any, {
+        supabase.rpc('grok_get_stats_with_hower_filter' as any, {
           p_instagram_user_id: currentUser.instagram_user_id,
           p_period: 'week',
           p_hower_usernames: howerUsernames
@@ -1231,9 +1231,6 @@ const TasksToDo2: React.FC = () => {
   const getProspectUsernames = async (prospectIds: string[]) => {
     if (prospectIds.length === 0) return {};
     
-    console.log('🔍 [getProspectUsernames] Buscando usernames para IDs:', prospectIds);
-    console.log('🔍 [getProspectUsernames] Filtro Hower disponible:', howerUsernames.length, 'usernames');
-    
     const { data: prospects, error } = await supabase
       .from('prospects')
       .select('prospect_instagram_id, username')
@@ -1244,33 +1241,20 @@ const TasksToDo2: React.FC = () => {
       return {};
     }
     
-    console.log('🔍 [getProspectUsernames] Prospectos encontrados:', prospects?.length);
-    
     const usernameMap: { [key: string]: string } = {};
     prospects?.forEach(prospect => {
-      console.log(`🔍 [getProspectUsernames] Evaluando prospecto: ${prospect.username}`);
-      
       // 🎯 FILTRO HOWER OBLIGATORIO: Solo incluir prospectos en la lista de Hower
-      const isInHowerList = howerUsernames.some(howerUsername => {
-        const match = prospect.username === howerUsername ||
-          prospect.username === '@' + howerUsername ||
-          prospect.username.replace('@', '') === howerUsername;
-        
-        if (match) {
-          console.log(`✅ [getProspectUsernames] ${prospect.username} coincide con Hower: ${howerUsername}`);
-        }
-        return match;
-      });
+      const isInHowerList = howerUsernames.some(howerUsername => 
+        prospect.username === howerUsername ||
+        prospect.username === '@' + howerUsername ||
+        prospect.username.replace('@', '') === howerUsername
+      );
       
       if (isInHowerList) {
         usernameMap[prospect.prospect_instagram_id] = prospect.username;
-        console.log(`✅ [getProspectUsernames] Incluido: ${prospect.prospect_instagram_id} -> ${prospect.username}`);
-      } else {
-        console.log(`❌ [getProspectUsernames] Excluido: ${prospect.username} no está en lista de Hower`);
       }
     });
     
-    console.log('🔍 [getProspectUsernames] Mapa final:', usernameMap);
     return usernameMap;
   };
 
