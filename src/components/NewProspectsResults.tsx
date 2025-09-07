@@ -206,7 +206,7 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
           {searching ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
           ) : (
-            <Search className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
           )}
         </Button>
       </div>
@@ -257,10 +257,15 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <span className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-medium">
                           {post.title}
                         </span>
+                        {post.is_recent && (
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-xs">
+                            Reciente
+                          </span>
+                        )}
                       </div>
                       
                       {post.comments_count > 0 && (
@@ -274,16 +279,6 @@ const NewProspectsResults: React.FC<NewProspectsResultsProps> = ({ instagramUser
                         <strong>Descripción:</strong> {extractAndTruncateDescription(post.description)}
                       </p>
                       
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                          <strong>Post de Instagram</strong>
-                        </p>
-                        {post.is_recent && (
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-xs">
-                            Reciente
-                          </span>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </CardContent>
