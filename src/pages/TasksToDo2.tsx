@@ -1525,16 +1525,7 @@ const TasksToDo2: React.FC = () => {
                         </div>
                       </div>
                     </DialogTrigger>
-                    <DialogContent 
-                      className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded-3xl shadow-xl max-w-md"
-                      style={{
-                        position: 'fixed',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        zIndex: 9999
-                      }}
-                    >
+                    <DialogContent className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded-3xl shadow-xl max-w-md">
                       <DialogHeader>
                         <DialogTitle className="flex items-center space-x-2 text-yellow-800">
                           <Lightbulb className="h-5 w-5" />
