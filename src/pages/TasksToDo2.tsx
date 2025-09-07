@@ -1455,21 +1455,21 @@ const TasksToDo2: React.FC = () => {
       switch(taskType) {
         case 'yesterday':
           return {
-            title: "🎯 Mensaje audio que funciona al 90%",
+            title: "Mensaje audio que funciona al 90%",
             gradient: "from-green-100 to-green-200",
             border: "border-green-300",
             textColor: "text-green-800"
           };
         case 'week':
           return {
-            title: "🚀 Frase que revive contactos muertos",
+            title: "Frase que revive contactos muertos",
             gradient: "from-primary/10 to-primary/20",
             border: "border-primary/30", 
             textColor: "text-primary"
           };
         case 'new':
           return {
-            title: "💎 Sistema de prospección élite",
+            title: "Sistema de prospección élite",
             gradient: "from-primary/10 to-primary/20",
             border: "border-primary/30",
             textColor: "text-primary"
@@ -2239,9 +2239,6 @@ const TasksToDo2: React.FC = () => {
                   backgroundPosition: '0 20px'
                 }}>
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-bold"></span>
-                    </div>
                     <div>
                       <p className="text-blue-800 text-sm font-medium">
                         Estos no te contestaron, y vale la pena recontactarlos
@@ -2329,9 +2326,6 @@ const TasksToDo2: React.FC = () => {
                     backgroundPosition: '0 20px'
                   }}>
                     <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-bold"></span>
-                      </div>
                       <div>
                         <p className="text-green-800 text-sm font-medium">
                           Nuevas cuentas / posts para prospectar
