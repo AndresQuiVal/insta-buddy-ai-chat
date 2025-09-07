@@ -2043,24 +2043,41 @@ const TasksToDo2: React.FC = () => {
                               <div 
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
-                              >
-                                <span className="font-mono text-sm">💬 Respuestas</span>
+                               >
+                                 <span className="font-mono text-sm">💬 Respuestas</span>
                                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {getStatsProspects('respuestas', 'semana').length}
+                                   {(() => {
+                                     const count = getStatsProspects('respuestas', 'semana').length;
+                                     const statsValue = stats.week.respuestas;
+                                     console.log('🔍 [SEMANA-RESPUESTAS] Comparación:', { 
+                                       getStatsProspects_length: count, 
+                                       stats_week_respuestas: statsValue,
+                                       user: currentUser?.instagram_user_id 
+                                     });
+                                     return count;
+                                   })()}
                                  </div>
                               </div>
                               
-                              {/* Listado de prospectos nuevos de la semana */}
-                              {activeStatsSection === 'semana-nuevos' && (
-                                <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                  {getStatsProspects('nuevos', 'semana').length === 0 ? (
-                                    <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
-                                  ) : (
-                                    getStatsProspects('nuevos', 'semana').map((prospect) => (
-                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
-                                    ))
-                                  )}
-                                </div>
+                               {/* Listado de prospectos nuevos de la semana */}
+                               {activeStatsSection === 'semana-nuevos' && (
+                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
+                                   {(() => {
+                                     const prospects = getStatsProspects('respuestas', 'semana');
+                                     console.log('🔍 [SEMANA-RESPUESTAS-LISTADO]:', {
+                                       prospectsCount: prospects.length,
+                                       prospects: prospects.map(p => p.userName).slice(0, 5),
+                                       user: currentUser?.instagram_user_id
+                                     });
+                                     return prospects.length === 0 ? (
+                                       <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
+                                     ) : (
+                                        prospects.map((prospect) => (
+                                         <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
+                                       ))
+                                     );
+                                   })()}
+                                 </div>
                               )}
                               
                               <div 
