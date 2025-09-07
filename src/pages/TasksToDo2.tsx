@@ -1904,9 +1904,9 @@ const TasksToDo2: React.FC = () => {
                                  onClick={() => handleStatsClick('respuestas', 'hoy')}
                                >
                                  <span className="font-mono text-sm">💬 Respuestas</span>
-                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {stats.today.respuestas}
-                                 </div>
+                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                    {getStatsProspects('respuestas', 'hoy').length}
+                                  </div>
                                </div>
                                
                                {/* Listado de respuestas de hoy */}
@@ -1932,9 +1932,9 @@ const TasksToDo2: React.FC = () => {
                                  onClick={() => handleStatsClick('seguimientos', 'hoy')}
                                >
                                  <span className="font-mono text-sm">🔄 Seguimientos</span>
-                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {stats.today.seguimientos}
-                                 </div>
+                                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                    {getStatsProspects('seguimientos', 'hoy').length}
+                                  </div>
                                </div>
                                
                                {/* Listado de seguimientos de hoy */}
@@ -1973,9 +1973,9 @@ const TasksToDo2: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-nuevos' ? null : 'ayer-nuevos')}
                               >
                                 <span className="font-mono text-sm">💬 Respuestas</span>
-                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {prospectsClassification.yesterdayStats.nuevosProspectos}
-                                </div>
+                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {getStatsProspects('respuestas', 'ayer').length}
+                                 </div>
                               </div>
                               
                               {/* Listado de prospectos nuevos de ayer */}
@@ -1996,9 +1996,9 @@ const TasksToDo2: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-seguimientos' ? null : 'ayer-seguimientos')}
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
-                                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {prospectsClassification.yesterdayStats.seguimientosHechos}
-                                </div>
+                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {getStatsProspects('seguimientos', 'ayer').length}
+                                 </div>
                               </div>
                               
                               {/* Listado de seguimientos de ayer */}
@@ -2045,9 +2045,9 @@ const TasksToDo2: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
                               >
                                 <span className="font-mono text-sm">💬 Respuestas</span>
-                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.week.respuestas}
-                                </div>
+                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {getStatsProspects('respuestas', 'semana').length}
+                                 </div>
                               </div>
                               
                               {/* Listado de prospectos nuevos de la semana */}
@@ -2068,9 +2068,9 @@ const TasksToDo2: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
-                                <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {stats.week.seguimientos}
-                                </div>
+                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                   {getStatsProspects('seguimientos', 'semana').length}
+                                 </div>
                               </div>
                               
                               {/* Listado de seguimientos de la semana */}
