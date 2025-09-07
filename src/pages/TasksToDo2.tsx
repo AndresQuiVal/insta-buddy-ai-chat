@@ -2144,34 +2144,31 @@ const TasksToDo2: React.FC = () => {
               {activeSection === 'pending' && (
                 <CardContent className="pt-0 px-3 sm:px-6">
                   <div className="mb-4">
-                    {!expandedTips['tip-pending'] ? (
-                      <div 
-                        className="bg-gradient-to-r from-purple-100 via-blue-100 to-cyan-100 border-2 border-purple-300 rounded-xl p-4 cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
-                        onClick={() => setExpandedTips(prev => ({ ...prev, ['tip-pending']: !prev['tip-pending'] }))}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-purple-800 font-semibold text-sm">⚡ Hack de velocidad 3X más respuestas</span>
-                          <ChevronRight className="h-4 w-4 text-purple-600" />
-                        </div>
-                      </div>
-                    ) : (
-                      <Alert className="border-primary/20 bg-primary/5">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-2 flex-1">
-                            <Search className="h-4 w-4 mt-0.5" />
-                            <AlertDescription className="text-xs sm:text-sm">
-                              <strong>💡 Tip:</strong> Responde rápido para mantener el engagement. ¡La velocidad de respuesta es clave!
-                            </AlertDescription>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <div 
+                          className="bg-gradient-to-r from-yellow-100 to-yellow-200 border border-yellow-300 rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <Lightbulb className="h-4 w-4 text-yellow-800" />
+                            <span className="text-yellow-800 font-semibold text-sm">¿Más agendas? haz esto...</span>
                           </div>
-                          <button 
-                            onClick={() => setExpandedTips(prev => ({ ...prev, ['tip-pending']: false }))}
-                            className="text-blue-600 hover:text-blue-800 transition-colors ml-2"
-                          >
-                            <ChevronDown className="h-4 w-4" />
-                          </button>
                         </div>
-                      </Alert>
-                    )}
+                      </DialogTrigger>
+                      <DialogContent className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded-3xl shadow-xl max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center space-x-2 text-yellow-800">
+                            <Lightbulb className="h-5 w-5" />
+                            <span>Tip Exclusivo</span>
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="p-4 bg-white/50 rounded-2xl border border-yellow-200">
+                          <p className="text-yellow-800 text-sm leading-relaxed">
+                            ⚡ **Respuesta en 2 minutos = 3x más conversiones.** Configura notificaciones push y responde inmediatamente. El primer mensaje que ven decide si te responden o te ignoran para siempre.
+                          </p>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                   
                    {/* Lista de prospectos */}
