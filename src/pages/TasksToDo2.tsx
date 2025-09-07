@@ -1957,13 +1957,22 @@ const TasksToDo2: React.FC = () => {
                                     ))
                                   )}
                                 </div>
-                              )}
-                              
-                              <div 
-                                className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
-                                onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
-                              >
-                                <span className="font-mono text-sm">🔄 Seguimientos</span>
+                               )}
+                               
+                               {/* Label PRONTO entre Respuestas y Seguimientos */}
+                               <div className="flex justify-center my-3">
+                                 <div className="bg-gradient-to-r from-blue-100 to-purple-100 border-2 border-dashed border-blue-300 px-4 py-2 rounded-lg">
+                                   <span className="text-blue-800 font-mono text-sm font-bold">
+                                     🚀 PRONTO
+                                   </span>
+                                 </div>
+                               </div>
+                               
+                               <div 
+                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-orange-400 cursor-pointer hover:shadow-md transition-all"
+                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
+                               >
+                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
                                   {stats.week.seguimientos}
                                 </div>
