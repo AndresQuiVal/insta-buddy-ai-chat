@@ -1269,12 +1269,20 @@ const TasksToDo2: React.FC = () => {
         
         filteredProspects = authorizedProspects.filter(prospect => {
           // Buscar el último mensaje RECIBIDO del prospecto (no el último mensaje en general)
+          console.log(`🔍 [STATS-RESPUESTAS-${period}] Analizando ${prospect.username}:`, {
+            conversationMessages: prospect.conversationMessages?.length || 0,
+            lastMessageType: prospect.lastMessageType,
+            lastMessageTime: prospect.lastMessageTime
+          });
+          
           const receivedMessages = prospect.conversationMessages?.filter(msg => 
             msg.message_type === 'received' || msg.is_from_prospect === true
           ) || [];
           
+          console.log(`🔍 [STATS-RESPUESTAS-${period}] ${prospect.username}: receivedMessages=${receivedMessages.length}`);
+          
           if (receivedMessages.length === 0) {
-            console.log(`[STATS-RESPUESTAS-${period}] ${prospect.username}: NO tiene mensajes recibidos`);
+            console.log(`❌ [STATS-RESPUESTAS-${period}] ${prospect.username}: NO tiene mensajes recibidos`);
             return false;
           }
           
@@ -1283,10 +1291,15 @@ const TasksToDo2: React.FC = () => {
             new Date(b.timestamp || b.message_timestamp).getTime() - new Date(a.timestamp || a.message_timestamp).getTime()
           )[0];
           
+          console.log(`🔍 [STATS-RESPUESTAS-${period}] ${prospect.username}: lastReceivedMessage=`, lastReceivedMessage ? {
+            timestamp: lastReceivedMessage.timestamp || lastReceivedMessage.message_timestamp,
+            text: lastReceivedMessage.message_text?.substring(0, 50)
+          } : 'NONE');
+          
           // Verificar si el último mensaje recibido está en el período correcto
           const inTimeRange = dateFilter(lastReceivedMessage);
           
-          console.log(`[STATS-RESPUESTAS-${period}] ${prospect.username}: lastReceivedMessage=${lastReceivedMessage ? new Date(lastReceivedMessage.timestamp || lastReceivedMessage.message_timestamp).toISOString() : 'NONE'}, inTimeRange=${inTimeRange}`);
+          console.log(`✅ [STATS-RESPUESTAS-${period}] ${prospect.username}: RESULTADO=${inTimeRange}`);
           
           return inTimeRange;
         });
