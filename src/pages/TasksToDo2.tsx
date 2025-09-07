@@ -353,30 +353,31 @@ const TasksToDo2: React.FC = () => {
         console.log('🔍 [STATS] Intentando usar función híbrida...');
         console.log('🔍 [STATS] Usernames de Hower:', howerUsernames.length, howerUsernames.slice(0, 5));
         console.log('🔍 [STATS] Instagram User ID:', currentUser.instagram_user_id);
+        console.log('🔍 [STATS] Tipo de howerUsernames:', typeof howerUsernames, Array.isArray(howerUsernames));
         
         // Usar la función híbrida que filtra por Hower Y respeta períodos
         [todayData, yesterdayData, weekData] = await Promise.all([
           supabase.rpc('grok_get_stats_with_hower_filter' as any, {
             p_instagram_user_id: currentUser.instagram_user_id,
             p_period: 'today',
-            p_hower_usernames: howerUsernames
+            p_hower_usernames: howerUsernames.join(',')
           }),
           supabase.rpc('grok_get_stats_with_hower_filter' as any, {
             p_instagram_user_id: currentUser.instagram_user_id,
             p_period: 'yesterday',
-            p_hower_usernames: howerUsernames
+            p_hower_usernames: howerUsernames.join(',')
           }),
           supabase.rpc('grok_get_stats_with_hower_filter' as any, {
             p_instagram_user_id: currentUser.instagram_user_id,
             p_period: 'week',
-            p_hower_usernames: howerUsernames
+            p_hower_usernames: howerUsernames.join(',')
           })
         ]);
         console.log('✅ [STATS] Usando función híbrida con filtro Hower');
         console.log('📊 [STATS] Resultados híbridos:', {
-          today: todayData.data?.[0],
-          yesterday: yesterdayData.data?.[0],
-          week: weekData.data?.[0]
+          today: todayData.data,
+          yesterday: yesterdayData.data,
+          week: weekData.data
         });
         
         // Debug adicional
