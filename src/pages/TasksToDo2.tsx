@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,17 +95,6 @@ const TasksToDo2: React.FC = () => {
   const [showStats, setShowStats] = useState(false);
   const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
   const [activeStatsSection, setActiveStatsSection] = useState<string | null>(null);
-  
-  // Estados para conteos dinámicos
-  const [dynamicCounts, setDynamicCounts] = useState({
-    'hoy-nuevos': 0,
-    'hoy-seguimientos': 0,
-    'ayer-nuevos': 0,
-    'ayer-seguimientos': 0,
-    'semana-nuevos': 0,
-    'semana-seguimientos': 0
-  });
-  
   const [activeInteractionTip, setActiveInteractionTip] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<CompletedTasks>({});
   
@@ -1544,15 +1533,9 @@ const TasksToDo2: React.FC = () => {
   };
 
   // Componente para mostrar la lista de prospectos de estadísticas
-  const StatsProspectsList = ({ statsType, period, taskType, onCountUpdate }: { 
-    statsType: string, 
-    period: string, 
-    taskType: string,
-    onCountUpdate?: (count: number) => void 
-  }) => {
+  const StatsProspectsList = ({ statsType, period, taskType }: { statsType: string, period: string, taskType: string }) => {
     const [prospects, setProspects] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-    const listRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
       const loadProspects = async () => {
@@ -1576,26 +1559,16 @@ const TasksToDo2: React.FC = () => {
       return <p className="text-xs text-muted-foreground italic">Cargando...</p>;
     }
 
-    // Contar elementos después del renderizado
-    useEffect(() => {
-      if (listRef.current && onCountUpdate) {
-        const validElements = listRef.current.querySelectorAll('[data-prospect-card]');
-        onCountUpdate(validElements.length);
-      }
-    }, [prospects, onCountUpdate]);
-
     if (prospects.length === 0) {
       return <p className="text-xs text-muted-foreground italic">No hay {statsType} de {period}</p>;
     }
 
     return (
-      <div ref={listRef}>
+      <>
         {prospects.filter(isValidProspect).map((prospect) => (
-          <div key={prospect.id} data-prospect-card>
-            <ProspectCard prospect={prospect} taskType={taskType} />
-          </div>
+          <ProspectCard key={prospect.id} prospect={prospect} taskType={taskType} />
         ))}
-      </div>
+      </>
     );
   };
 
@@ -2143,7 +2116,7 @@ const TasksToDo2: React.FC = () => {
                                >
                                  <span className="font-mono text-sm">💬 Respuestas</span>
                                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {dynamicCounts['hoy-nuevos']}
+                                   {stats.today.respuestas}
                                  </div>
                                </div>
                                
@@ -2154,7 +2127,6 @@ const TasksToDo2: React.FC = () => {
                                      statsType="nuevos" 
                                      period="hoy" 
                                      taskType="stats-hoy-nuevos"
-                                     onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'hoy-nuevos': count }))}
                                    />
                                  </div>
                                )}
@@ -2165,7 +2137,7 @@ const TasksToDo2: React.FC = () => {
                                >
                                  <span className="font-mono text-sm">🔄 Seguimientos</span>
                                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {dynamicCounts['hoy-seguimientos']}
+                                   {stats.today.seguimientos}
                                  </div>
                                </div>
                                
@@ -2176,7 +2148,6 @@ const TasksToDo2: React.FC = () => {
                                      statsType="seguimientos" 
                                      period="hoy" 
                                      taskType="stats-hoy-seguimientos"
-                                     onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'hoy-seguimientos': count }))}
                                    />
                                  </div>
                                )}
@@ -2205,7 +2176,7 @@ const TasksToDo2: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">💬 Respuestas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {dynamicCounts['ayer-nuevos']}
+                                  {prospectsClassification.yesterdayStats.nuevosProspectos}
                                 </div>
                               </div>
                               
@@ -2216,7 +2187,6 @@ const TasksToDo2: React.FC = () => {
                                     statsType="nuevos" 
                                     period="ayer" 
                                     taskType="stats-ayer-nuevos"
-                                    onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'ayer-nuevos': count }))}
                                   />
                                 </div>
                               )}
@@ -2227,7 +2197,7 @@ const TasksToDo2: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {dynamicCounts['ayer-seguimientos']}
+                                  {prospectsClassification.yesterdayStats.seguimientosHechos}
                                 </div>
                               </div>
                               
@@ -2238,7 +2208,6 @@ const TasksToDo2: React.FC = () => {
                                     statsType="seguimientos" 
                                     period="ayer" 
                                     taskType="stats-ayer-seguimientos"
-                                    onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'ayer-seguimientos': count }))}
                                   />
                                 </div>
                               )}
@@ -2275,7 +2244,7 @@ const TasksToDo2: React.FC = () => {
                               >
                                 <span className="font-mono text-sm">💬 Respuestas</span>
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                  {dynamicCounts['semana-nuevos']}
+                                  {stats.week.respuestas}
                                 </div>
                               </div>
                               
@@ -2286,7 +2255,6 @@ const TasksToDo2: React.FC = () => {
                                     statsType="nuevos" 
                                     period="semana" 
                                     taskType="stats-semana-nuevos"
-                                    onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'semana-nuevos': count }))}
                                   />
                                 </div>
                                )}
@@ -2306,7 +2274,7 @@ const TasksToDo2: React.FC = () => {
                                >
                                  <span className="font-mono text-sm">🔄 Seguimientos</span>
                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {dynamicCounts['semana-seguimientos']}
+                                  {stats.week.seguimientos}
                                 </div>
                               </div>
                               
@@ -2317,7 +2285,6 @@ const TasksToDo2: React.FC = () => {
                                     statsType="seguimientos" 
                                     period="semana" 
                                     taskType="stats-semana-seguimientos"
-                                    onCountUpdate={(count) => setDynamicCounts(prev => ({ ...prev, 'semana-seguimientos': count }))}
                                   />
                                 </div>
                               )}
