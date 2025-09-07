@@ -2048,10 +2048,19 @@ const TasksToDo2: React.FC = () => {
                                  className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                  onClick={() => handleStatsClick('respuestas', 'hoy')}
                                >
-                                 <span className="font-mono text-sm">💬 Respuestas</span>
-                                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                    {getStatsProspects('respuestas', 'hoy').length}
-                                  </div>
+                                  <span className="font-mono text-sm">💬 Respuestas</span>
+                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                     {(() => {
+                                       try {
+                                         return realProspects.length > 0 && howerUsernames.length > 0 
+                                           ? getStatsProspects('respuestas', 'hoy').length 
+                                           : 0;
+                                       } catch (error) {
+                                         console.error('Error calculando respuestas hoy:', error);
+                                         return 0;
+                                       }
+                                     })()}
+                                   </div>
                                </div>
                                
                                {/* Listado de respuestas de hoy */}
@@ -2117,10 +2126,19 @@ const TasksToDo2: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'ayer-nuevos' ? null : 'ayer-nuevos')}
                               >
-                                <span className="font-mono text-sm">💬 Respuestas</span>
-                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {getStatsProspects('respuestas', 'ayer').length}
-                                 </div>
+                                 <span className="font-mono text-sm">💬 Respuestas</span>
+                                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                    {(() => {
+                                      try {
+                                        return realProspects.length > 0 && howerUsernames.length > 0 
+                                          ? getStatsProspects('respuestas', 'ayer').length 
+                                          : 0;
+                                      } catch (error) {
+                                        console.error('Error calculando respuestas ayer:', error);
+                                        return 0;
+                                      }
+                                    })()}
+                                  </div>
                               </div>
                               
                               {/* Listado de prospectos nuevos de ayer */}
@@ -2189,19 +2207,19 @@ const TasksToDo2: React.FC = () => {
                                 className="flex justify-between items-center p-2 bg-white rounded border-l-4 border-green-400 cursor-pointer hover:shadow-md transition-all"
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-nuevos' ? null : 'semana-nuevos')}
                                >
-                                 <span className="font-mono text-sm">💬 Respuestas</span>
-                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {(() => {
-                                     const count = getStatsProspects('respuestas', 'semana').length;
-                                     const statsValue = stats.week.respuestas;
-                                     console.log('🔍 [SEMANA-RESPUESTAS] Comparación:', { 
-                                       getStatsProspects_length: count, 
-                                       stats_week_respuestas: statsValue,
-                                       user: currentUser?.instagram_user_id 
-                                     });
-                                     return count;
-                                   })()}
-                                 </div>
+                                  <span className="font-mono text-sm">💬 Respuestas</span>
+                                  <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-sm">
+                                    {(() => {
+                                      try {
+                                        return realProspects.length > 0 && howerUsernames.length > 0 
+                                          ? getStatsProspects('respuestas', 'semana').length 
+                                          : 0;
+                                      } catch (error) {
+                                        console.error('Error calculando respuestas semana:', error);
+                                        return 0;
+                                      }
+                                    })()}
+                                  </div>
                               </div>
                               
                                {/* Listado de prospectos nuevos de la semana */}
@@ -2872,18 +2890,72 @@ const TasksToDo2: React.FC = () => {
               <div className="grid grid-cols-3 gap-4 mt-3">
                 <div>
                   <strong>HOY:</strong>
-                  <div>Respuestas: {getStatsProspects('respuestas', 'hoy').length} (DIRECTO)</div>
-                  <div>Seguimientos: {getStatsProspects('seguimientos', 'hoy').length} (DIRECTO)</div>
+                  <div>Respuestas: {(() => {
+                    try {
+                      return realProspects.length > 0 && howerUsernames.length > 0 
+                        ? getStatsProspects('respuestas', 'hoy').length 
+                        : 0;
+                    } catch (error) {
+                      console.error('Error debug respuestas hoy:', error);
+                      return 'ERROR';
+                    }
+                  })()} (DIRECTO)</div>
+                  <div>Seguimientos: {(() => {
+                    try {
+                      return realProspects.length > 0 && howerUsernames.length > 0 
+                        ? getStatsProspects('seguimientos', 'hoy').length 
+                        : 0;
+                    } catch (error) {
+                      console.error('Error debug seguimientos hoy:', error);
+                      return 'ERROR';
+                    }
+                  })()} (DIRECTO)</div>
                 </div>
                 <div>
                   <strong>AYER:</strong>
-                  <div>Respuestas: {getStatsProspects('respuestas', 'ayer').length} (DIRECTO)</div>
-                  <div>Seguimientos: {getStatsProspects('seguimientos', 'ayer').length} (DIRECTO)</div>
+                  <div>Respuestas: {(() => {
+                    try {
+                      return realProspects.length > 0 && howerUsernames.length > 0 
+                        ? getStatsProspects('respuestas', 'ayer').length 
+                        : 0;
+                    } catch (error) {
+                      console.error('Error debug respuestas ayer:', error);
+                      return 'ERROR';
+                    }
+                  })()} (DIRECTO)</div>
+                  <div>Seguimientos: {(() => {
+                    try {
+                      return realProspects.length > 0 && howerUsernames.length > 0 
+                        ? getStatsProspects('seguimientos', 'ayer').length 
+                        : 0;
+                    } catch (error) {
+                      console.error('Error debug seguimientos ayer:', error);
+                      return 'ERROR';
+                    }
+                  })()} (DIRECTO)</div>
                 </div>
                 <div>
                   <strong>SEMANA:</strong>
-                  <div>Respuestas: {getStatsProspects('respuestas', 'semana').length} (DIRECTO)</div>
-                  <div>Seguimientos: {getStatsProspects('seguimientos', 'semana').length} (DIRECTO)</div>
+                  <div>Respuestas: {(() => {
+                    try {
+                      return realProspects.length > 0 && howerUsernames.length > 0 
+                        ? getStatsProspects('respuestas', 'semana').length 
+                        : 0;
+                    } catch (error) {
+                      console.error('Error debug respuestas semana:', error);
+                      return 'ERROR';
+                    }
+                  })()} (DIRECTO)</div>
+                  <div>Seguimientos: {(() => {
+                    try {
+                      return realProspects.length > 0 && howerUsernames.length > 0 
+                        ? getStatsProspects('seguimientos', 'semana').length 
+                        : 0;
+                    } catch (error) {
+                      console.error('Error debug seguimientos semana:', error);
+                      return 'ERROR';
+                    }
+                  })()} (DIRECTO)</div>
                 </div>
               </div>
               <div className="mt-3 text-xs text-blue-600">
