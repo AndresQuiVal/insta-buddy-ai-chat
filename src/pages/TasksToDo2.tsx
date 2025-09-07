@@ -1276,12 +1276,23 @@ const TasksToDo2: React.FC = () => {
         }
         
         filteredProspects = authorizedProspects.filter(prospect => {
+          // 🔍 DEBUG: Log detallado para diagnóstico del problema
+          console.log(`🔍 [DEBUG-RESPUESTAS-${period}] Analizando ${prospect.username}:`, {
+            state: prospect.state,
+            lastMessageType: prospect.lastMessageType,
+            source: prospect.source,
+            totalMessages: prospect.conversationMessages?.length || 0
+          });
+          
           // Buscar TODOS los mensajes RECIBIDOS del prospecto (histórico)
           const receivedMessages = prospect.conversationMessages?.filter(msg => 
             msg.message_type === 'received' || msg.is_from_prospect === true
           ) || [];
           
+          console.log(`🔍 [DEBUG-RESPUESTAS-${period}] ${prospect.username} - Mensajes recibidos:`, receivedMessages.length);
+          
           if (receivedMessages.length === 0) {
+            console.log(`❌ [DEBUG-RESPUESTAS-${period}] ${prospect.username}: Sin mensajes recibidos`);
             return false;
           }
           
@@ -1289,11 +1300,17 @@ const TasksToDo2: React.FC = () => {
           // (Conteo acumulativo - no se reduce cuando usuario responde)
           const hasMessageInPeriod = receivedMessages.some(message => {
             const messageTimestamp = message.timestamp || message.message_timestamp;
-            return messageTimestamp && dateFilter(messageTimestamp);
+            const inPeriod = messageTimestamp && dateFilter(messageTimestamp);
+            if (inPeriod) {
+              console.log(`✅ [DEBUG-RESPUESTAS-${period}] ${prospect.username}: Mensaje en período ${messageTimestamp}`);
+            }
+            return inPeriod;
           });
           
           if (hasMessageInPeriod) {
-            console.log(`✅ [STATS-RESPUESTAS-${period}] ${prospect.username}: Tiene respuesta(s) en ${period} (conteo histórico)`);
+            console.log(`✅ [STATS-RESPUESTAS-${period}] ${prospect.username}: Tiene respuesta(s) en ${period} (conteo histórico) - INCLUIDO`);
+          } else {
+            console.log(`❌ [DEBUG-RESPUESTAS-${period}] ${prospect.username}: Sin mensajes en período ${period}`);
           }
           
           return hasMessageInPeriod;
@@ -1394,7 +1411,15 @@ const TasksToDo2: React.FC = () => {
   useEffect(() => {
     console.log('🔄 [CACHE] Invalidando cache de estadísticas por cambio en datos');
     setStatsCache({});
-  }, [realProspects, howerUsernames]);
+    
+    // 🔥 FORZAR RECÁLCULO INMEDIATO DE ESTADÍSTICAS cuando cambian los datos
+    if (realProspects.length > 0 && howerUsernames.length > 0) {
+      console.log('🔄 [CACHE] Forzando recálculo inmediato de estadísticas...');
+      setTimeout(() => {
+        loadStats();
+      }, 100); // Pequeño delay para asegurar que cache se haya limpiado
+    }
+  }, [realProspects, howerUsernames, loadStats]);
 
   // Función auxiliar para obtener prospectos pendientes (estado actual - SÍ cambia cuando usuario responde)
   const getPendingProspects = useCallback((period: string): any[] => {
