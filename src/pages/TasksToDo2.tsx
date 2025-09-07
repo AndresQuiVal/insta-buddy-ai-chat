@@ -1208,29 +1208,38 @@ const TasksToDo2: React.FC = () => {
 
   // Función optimizada para obtener prospectos según la sección de estadísticas con cache
   const getStatsProspects = useCallback((statsType: string, period: string): ProspectData[] => {
-    const cacheKey = `${statsType}-${period}`;
-    
-    // 🔥 FORZAR CÁLCULO DIRECTO PARA RESPUESTAS - NO USAR CACHE
-    // Esto asegura que siempre obtenemos datos frescos al calcular respuestas
-    const useCache = statsType !== 'respuestas';
-    
-    // Usar cache solo para tipos que no sean respuestas
-    if (useCache && 
-        statsCache[cacheKey] && 
-        realProspects.length > 0 && 
-        howerUsernames.length > 0) {
-      console.log(`📋 [CACHE-HIT] Usando cache para ${statsType}-${period}:`, statsCache[cacheKey].length);
-      return statsCache[cacheKey];
-    }
-
-    console.log(`🔍 [getStatsProspects] Calculando ${statsType} para ${period}`);
-
-    if (!realProspects.length || !howerUsernames.length) {
-      console.log('❌ [getStatsProspects] Sin datos - realProspects o howerUsernames vacíos');
-      return [];
-    }
-
+    // ✅ VALIDACIONES DE SEGURIDAD CRÍTICAS
     try {
+      // Validar parámetros básicos
+      if (!statsType || !period) {
+        console.log('❌ [getStatsProspects] Parámetros inválidos:', { statsType, period });
+        return [];
+      }
+
+      // Validar datos necesarios disponibles
+      if (!realProspects || !Array.isArray(realProspects) || realProspects.length === 0) {
+        console.log('❌ [getStatsProspects] realProspects no válido:', realProspects?.length || 'undefined');
+        return [];
+      }
+
+      if (!howerUsernames || !Array.isArray(howerUsernames) || howerUsernames.length === 0) {
+        console.log('❌ [getStatsProspects] howerUsernames no válido:', howerUsernames?.length || 'undefined');
+        return [];
+      }
+
+      const cacheKey = `${statsType}-${period}`;
+      
+      // 🔥 FORZAR CÁLCULO DIRECTO PARA RESPUESTAS - NO USAR CACHE
+      const useCache = statsType !== 'respuestas';
+      
+      // Usar cache solo para tipos que no sean respuestas
+      if (useCache && statsCache[cacheKey]) {
+        console.log(`📋 [CACHE-HIT] Usando cache para ${statsType}-${period}:`, statsCache[cacheKey].length);
+        return statsCache[cacheKey];
+      }
+
+      console.log(`🔍 [getStatsProspects] Calculando ${statsType} para ${period} con datos válidos`);
+
       // Filtrar prospectos autorizados por Hower (misma lógica que el CRM)
       const authorizedProspects = realProspects.filter(prospect => {
         const normalizedUsername = prospect.username.replace('@', '');
@@ -2064,20 +2073,27 @@ const TasksToDo2: React.FC = () => {
                                </div>
                                
                                {/* Listado de respuestas de hoy */}
-                               {activeStatsSection === 'respuestas-hoy' && (
-                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" data-prospects-section>
-                                   {(() => {
-                                     const prospects = getStatsProspects('respuestas', 'hoy');
-                                     console.log('🔍 [DEBUG-RESPUESTAS] Prospectos de respuestas hoy:', prospects);
-                                     
-                                     if (prospects.length === 0) {
-                                       return <p className="text-xs text-muted-foreground italic">No hay respuestas de hoy</p>;
-                                     }
-                                     
-                                     return prospects.map((prospect) => (
-                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-respuestas" />
-                                     ));
-                                   })()}
+                                {activeStatsSection === 'respuestas-hoy' && (
+                                  <div className="ml-4 space-y-2 max-h-60 overflow-y-auto" data-prospects-section>
+                                     {(() => {
+                                       try {
+                                         const prospects = realProspects.length > 0 && howerUsernames.length > 0 
+                                           ? getStatsProspects('respuestas', 'hoy')
+                                           : [];
+                                         console.log('🔍 [DEBUG-RESPUESTAS] Prospectos de respuestas hoy:', prospects);
+                                      
+                                         if (prospects.length === 0) {
+                                           return <p className="text-xs text-muted-foreground italic">No hay respuestas de hoy</p>;
+                                         }
+                                      
+                                         return prospects.map((prospect) => (
+                                           <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-respuestas" />
+                                         ));
+                                       } catch (error) {
+                                         console.error('Error renderizando respuestas hoy:', error);
+                                         return <p className="text-xs text-red-500">Error cargando respuestas</p>;
+                                       }
+                                     })()}
                                  </div>
                                )}
                                
@@ -2225,21 +2241,28 @@ const TasksToDo2: React.FC = () => {
                                {/* Listado de prospectos nuevos de la semana */}
                                {activeStatsSection === 'semana-nuevos' && (
                                  <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                   {(() => {
-                                     const prospects = getStatsProspects('respuestas', 'semana');
-                                     console.log('🔍 [SEMANA-RESPUESTAS-LISTADO]:', {
-                                       prospectsCount: prospects.length,
-                                       prospects: prospects.map(p => p.userName).slice(0, 5),
-                                       user: currentUser?.instagram_user_id
-                                     });
-                                     return prospects.length === 0 ? (
-                                       <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
-                                     ) : (
-                                        prospects.map((prospect) => (
-                                         <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
-                                       ))
-                                     );
-                                   })()}
+                                    {(() => {
+                                      try {
+                                        const prospects = realProspects.length > 0 && howerUsernames.length > 0 
+                                          ? getStatsProspects('respuestas', 'semana')
+                                          : [];
+                                        console.log('🔍 [SEMANA-RESPUESTAS-LISTADO]:', {
+                                          prospectsCount: prospects.length,
+                                          prospects: prospects.map(p => p.userName).slice(0, 5),
+                                          user: currentUser?.instagram_user_id
+                                        });
+                                        return prospects.length === 0 ? (
+                                          <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
+                                        ) : (
+                                           prospects.map((prospect) => (
+                                            <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
+                                          ))
+                                        );
+                                      } catch (error) {
+                                        console.error('Error renderizando respuestas semana:', error);
+                                        return <p className="text-xs text-red-500">Error cargando respuestas</p>;
+                                      }
+                                    })()}
                                  </div>
                               )}
                               
@@ -2248,9 +2271,18 @@ const TasksToDo2: React.FC = () => {
                                 onClick={() => setActiveStatsSection(activeStatsSection === 'semana-seguimientos' ? null : 'semana-seguimientos')}
                               >
                                 <span className="font-mono text-sm">🔄 Seguimientos</span>
-                                 <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
-                                   {getStatsProspects('seguimientos', 'semana').length}
-                                 </div>
+                                  <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-bold text-sm">
+                                    {(() => {
+                                      try {
+                                        return realProspects.length > 0 && howerUsernames.length > 0 
+                                          ? getStatsProspects('seguimientos', 'semana').length 
+                                          : 0;
+                                      } catch (error) {
+                                        console.error('Error calculando seguimientos semana:', error);
+                                        return 0;
+                                      }
+                                    })()}
+                                  </div>
                               </div>
                               
                               {/* Listado de seguimientos de la semana */}
