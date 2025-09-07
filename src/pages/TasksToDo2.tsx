@@ -1227,11 +1227,18 @@ const TasksToDo2: React.FC = () => {
       });
 
       console.log('✅ [getStatsProspects] Prospectos autorizados:', authorizedProspects.length);
+      
+      // DEBUGGING: Mostrar estados de todos los prospectos
+      console.log('📊 [getStatsProspects] DEBUGGING Estados de prospectos:');
+      authorizedProspects.forEach(p => {
+        console.log(`  ${p.username}: state=${p.state}, lastType=${p.lastMessageType}, lastSentTime=${p.lastSentMessageTime || 'NUNCA'}`);
+      });
 
       let filteredProspects: any[] = [];
 
-      if (statsType === 'respuestas' || statsType === 'nuevos') {
-        // RESPUESTAS: Solo prospectos que ME RESPONDIERON pero YO NO LES HE CONTESTADO NUNCA
+      if (statsType === 'respuestas') {
+        // RESPUESTAS: Prospectos que ME RESPONDIERON pero YO NO LES HE CONTESTADO NUNCA
+        // Esta es la lógica correcta para "Mis números > Respuestas"
         filteredProspects = authorizedProspects.filter(prospect => {
           // Verificar que el último mensaje fue del prospecto hacia mí
           const lastWasFromProspect = prospect.lastMessageType === 'received';
@@ -1248,6 +1255,10 @@ const TasksToDo2: React.FC = () => {
           
           return matches;
         });
+      } else if (statsType === 'nuevos') {
+        // NUEVOS: Prospectos completamente nuevos que nunca han interactuado
+        // (Por ahora podemos dejarlo vacío o implementar lógica específica)
+        filteredProspects = [];
       } else if (statsType === 'seguimientos') {
         // SEGUIMIENTOS: Prospectos donde YO les envié mensaje hace >= 24 horas y no están tachados
         filteredProspects = authorizedProspects.filter(prospect => {
