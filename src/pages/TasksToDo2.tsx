@@ -1517,6 +1517,7 @@ const TasksToDo2: React.FC = () => {
                     <DialogTrigger asChild>
                       <div 
                         className={`bg-gradient-to-r ${customHook.gradient} border ${customHook.border} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow`}
+                        onClick={() => console.log('Dialog trigger clicked for taskType:', taskType)}
                       >
                         <div className="flex items-center space-x-2">
                           <Lightbulb className={`h-4 w-4 ${customHook.textColor}`} />
@@ -1524,7 +1525,7 @@ const TasksToDo2: React.FC = () => {
                         </div>
                       </div>
                     </DialogTrigger>
-                    <DialogContent className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded-3xl shadow-xl max-w-md mx-auto">
+                    <DialogContent className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded-3xl shadow-xl max-w-md z-[9999]">
                       <DialogHeader>
                         <DialogTitle className="flex items-center space-x-2 text-yellow-800">
                           <Lightbulb className="h-5 w-5" />
@@ -1534,6 +1535,7 @@ const TasksToDo2: React.FC = () => {
                       <div className="p-4 bg-white/50 rounded-2xl border border-yellow-200">
                         <p className="text-yellow-800 text-sm leading-relaxed">
                           {(() => {
+                            console.log('Rendering dialog content for taskType:', taskType, 'tip:', tip);
                             switch(taskType) {
                               case 'yesterday':
                                 return tip || "Tip no disponible para este tipo de tarea.";
