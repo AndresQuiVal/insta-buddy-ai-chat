@@ -1224,7 +1224,7 @@ const TasksToDo2: React.FC = () => {
   };
 
   // Función para obtener prospectos según la sección de estadísticas
-  const getStatsProspects = (statsType: string, period: string) => {
+  const getStatsProspects = async (statsType: string, period: string) => {
     console.log(`🔍 [getStatsProspects] Solicitando ${statsType} para ${period}`);
     console.log(`🔍 [getStatsProspects] realProspects disponibles:`, realProspects.length);
     
@@ -1232,34 +1232,224 @@ const TasksToDo2: React.FC = () => {
       switch (statsType) {
         case 'nuevos':
           if (period === 'hoy') {
-            // ARREGLADO: Para "respuestas de hoy", usar TODOS los que respondieron HOY (acumulativo)
-            // Usar las propiedades correctas del hook useProspects
-            const today = new Date().toISOString().split('T')[0];
-            const todayResponses = realProspects.filter(prospect => {
-              const lastMessageDate = prospect.lastMessageTime ? new Date(prospect.lastMessageTime).toISOString().split('T')[0] : null;
-              const isReceivedToday = prospect.lastMessageType === 'received' && lastMessageDate === today;
-              console.log(`📧 [${prospect.username}] lastMessageType: ${prospect.lastMessageType}, date: ${lastMessageDate}, isToday: ${isReceivedToday}`);
-              return isReceivedToday;
-            });
-            console.log(`✅ [getStatsProspects] Respuestas de hoy encontradas:`, todayResponses.length);
-            return todayResponses.map(prospect => ({
-              id: prospect.id,
-              userName: prospect.username,
-              status: prospect.state,
-              firstContactDate: prospect.lastMessageTime,
-              lastContactDate: prospect.lastMessageTime,
-              unread: prospect.lastMessageType === 'received',
-              avatar: ''
+            // 🔥 NUEVO: Obtener prospectos directamente de la BD para que coincida con las estadísticas
+            if (!currentUser?.instagram_user_id) return [];
+            
+            const { data: responseProspects, error } = await supabase
+              .from('daily_prospect_responses')
+              .select(`
+                prospect_sender_id,
+                first_response_at,
+                response_date
+              `)
+              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .eq('response_date', new Date().toISOString().split('T')[0])
+              .order('first_response_at', { ascending: false });
+            
+            if (error) {
+              console.error('❌ Error obteniendo respuestas de hoy:', error);
+              return [];
+            }
+            
+            console.log(`✅ [getStatsProspects] Respuestas de hoy desde BD:`, responseProspects?.length || 0);
+            
+            // Mapear a formato esperado
+            return (responseProspects || []).map((response, index) => ({
+              id: `response-${response.prospect_sender_id}-${index}`,
+              userName: `user_${response.prospect_sender_id.slice(-8)}`, // Username temporal
+              status: 'responded',
+              firstContactDate: response.first_response_at,
+              lastContactDate: response.first_response_at,
+              unread: true,
+              avatar: '',
+              prospect_instagram_id: response.prospect_sender_id
             }));
           }
-          return period === 'ayer' ? prospectsClassification.yesterdayNewProspects : prospectsClassification.weekNewProspects;
+          if (period === 'ayer') {
+            // Obtener respuestas de ayer desde BD
+            if (!currentUser?.instagram_user_id) return [];
+            
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            const { data: responseProspects, error } = await supabase
+              .from('daily_prospect_responses')
+              .select(`
+                prospect_sender_id,
+                first_response_at,
+                response_date
+              `)
+              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .eq('response_date', yesterdayStr)
+              .order('first_response_at', { ascending: false });
+            
+            if (error) {
+              console.error('❌ Error obteniendo respuestas de ayer:', error);
+              return [];
+            }
+            
+            return (responseProspects || []).map((response, index) => ({
+              id: `response-${response.prospect_sender_id}-${index}`,
+              userName: `user_${response.prospect_sender_id.slice(-8)}`,
+              status: 'responded',
+              firstContactDate: response.first_response_at,
+              lastContactDate: response.first_response_at,
+              unread: true,
+              avatar: '',
+              prospect_instagram_id: response.prospect_sender_id
+            }));
+          }
+          
+          if (period === 'semana') {
+            // Obtener respuestas de la semana desde BD
+            if (!currentUser?.instagram_user_id) return [];
+            
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Lunes
+            const weekStartStr = weekStart.toISOString().split('T')[0];
+            const todayStr = new Date().toISOString().split('T')[0];
+            
+            const { data: responseProspects, error } = await supabase
+              .from('daily_prospect_responses')
+              .select(`
+                prospect_sender_id,
+                first_response_at,
+                response_date
+              `)
+              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .gte('response_date', weekStartStr)
+              .lte('response_date', todayStr)
+              .order('first_response_at', { ascending: false });
+            
+            if (error) {
+              console.error('❌ Error obteniendo respuestas de la semana:', error);
+              return [];
+            }
+            
+            return (responseProspects || []).map((response, index) => ({
+              id: `response-${response.prospect_sender_id}-${index}`,
+              userName: `user_${response.prospect_sender_id.slice(-8)}`,
+              status: 'responded',
+              firstContactDate: response.first_response_at,
+              lastContactDate: response.first_response_at,
+              unread: true,
+              avatar: '',
+              prospect_instagram_id: response.prospect_sender_id
+            }));
+          }
+          
+          return [];
         case 'seguimientos':
           if (period === 'hoy') {
-            // Para "seguimientos de hoy", usar una combinación de los que necesitan seguimiento
-            // Por ahora regresamos los de ayer como aproximación (esto se puede refinar después)
-            return prospectsClassification.noResponseYesterday.dm.concat(prospectsClassification.noResponseYesterday.comment);
+            // 🔥 NUEVO: Obtener seguimientos directamente de la BD
+            if (!currentUser?.instagram_user_id) return [];
+            
+            const { data: contactProspects, error } = await supabase
+              .from('daily_prospect_contacts')
+              .select(`
+                prospect_sender_id,
+                first_contact_at,
+                contact_date
+              `)
+              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .eq('contact_date', new Date().toISOString().split('T')[0])
+              .order('first_contact_at', { ascending: false });
+            
+            if (error) {
+              console.error('❌ Error obteniendo seguimientos de hoy:', error);
+              return [];
+            }
+            
+            console.log(`✅ [getStatsProspects] Seguimientos de hoy desde BD:`, contactProspects?.length || 0);
+            
+            // Mapear a formato esperado
+            return (contactProspects || []).map((contact, index) => ({
+              id: `contact-${contact.prospect_sender_id}-${index}`,
+              userName: `user_${contact.prospect_sender_id.slice(-8)}`, // Username temporal
+              status: 'followed_up',
+              firstContactDate: contact.first_contact_at,
+              lastContactDate: contact.first_contact_at,
+              unread: false,
+              avatar: '',
+              prospect_instagram_id: contact.prospect_sender_id
+            }));
           }
-          return period === 'ayer' ? prospectsClassification.yesterdayFollowUps : prospectsClassification.weekFollowUps;
+          if (period === 'ayer') {
+            // Obtener seguimientos de ayer desde BD
+            if (!currentUser?.instagram_user_id) return [];
+            
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            const { data: contactProspects, error } = await supabase
+              .from('daily_prospect_contacts')
+              .select(`
+                prospect_sender_id,
+                first_contact_at,
+                contact_date
+              `)
+              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .eq('contact_date', yesterdayStr)
+              .order('first_contact_at', { ascending: false });
+            
+            if (error) {
+              console.error('❌ Error obteniendo seguimientos de ayer:', error);
+              return [];
+            }
+            
+            return (contactProspects || []).map((contact, index) => ({
+              id: `contact-${contact.prospect_sender_id}-${index}`,
+              userName: `user_${contact.prospect_sender_id.slice(-8)}`,
+              status: 'followed_up',
+              firstContactDate: contact.first_contact_at,
+              lastContactDate: contact.first_contact_at,
+              unread: false,
+              avatar: '',
+              prospect_instagram_id: contact.prospect_sender_id
+            }));
+          }
+          
+          if (period === 'semana') {
+            // Obtener seguimientos de la semana desde BD
+            if (!currentUser?.instagram_user_id) return [];
+            
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Lunes
+            const weekStartStr = weekStart.toISOString().split('T')[0];
+            const todayStr = new Date().toISOString().split('T')[0];
+            
+            const { data: contactProspects, error } = await supabase
+              .from('daily_prospect_contacts')
+              .select(`
+                prospect_sender_id,
+                first_contact_at,
+                contact_date
+              `)
+              .eq('instagram_user_id', currentUser.instagram_user_id)
+              .gte('contact_date', weekStartStr)
+              .lte('contact_date', todayStr)
+              .order('first_contact_at', { ascending: false });
+            
+            if (error) {
+              console.error('❌ Error obteniendo seguimientos de la semana:', error);
+              return [];
+            }
+            
+            return (contactProspects || []).map((contact, index) => ({
+              id: `contact-${contact.prospect_sender_id}-${index}`,
+              userName: `user_${contact.prospect_sender_id.slice(-8)}`,
+              status: 'followed_up',
+              firstContactDate: contact.first_contact_at,
+              lastContactDate: contact.first_contact_at,
+              unread: false,
+              avatar: '',
+              prospect_instagram_id: contact.prospect_sender_id
+            }));
+          }
+          
+          return [];
         case 'agendados':
           return []; // Por ahora vacío, se puede implementar después
         default:
@@ -1275,6 +1465,46 @@ const TasksToDo2: React.FC = () => {
   // Función para abrir Instagram directamente
   const handleProspectClick = (username: string) => {
     window.open(`https://www.instagram.com/${username}`, '_blank');
+  };
+
+  // Componente para mostrar la lista de prospectos de estadísticas
+  const StatsProspectsList = ({ statsType, period, taskType }: { statsType: string, period: string, taskType: string }) => {
+    const [prospects, setProspects] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+      const loadProspects = async () => {
+        setLoading(true);
+        try {
+          const data = await getStatsProspects(statsType, period);
+          setProspects(data);
+          console.log(`🔍 [StatsProspectsList] ${statsType} ${period} cargados:`, data.length);
+        } catch (error) {
+          console.error(`❌ Error cargando ${statsType} ${period}:`, error);
+          setProspects([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadProspects();
+    }, [statsType, period]);
+
+    if (loading) {
+      return <p className="text-xs text-muted-foreground italic">Cargando...</p>;
+    }
+
+    if (prospects.length === 0) {
+      return <p className="text-xs text-muted-foreground italic">No hay {statsType} de {period}</p>;
+    }
+
+    return (
+      <>
+        {prospects.map((prospect) => (
+          <ProspectCard key={prospect.id} prospect={prospect} taskType={taskType} />
+        ))}
+      </>
+    );
   };
 
 
@@ -1828,18 +2058,11 @@ const TasksToDo2: React.FC = () => {
                                {/* Listado de respuestas de hoy */}
                                {activeStatsSection === 'hoy-nuevos' && (
                                  <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                   {(() => {
-                                     const prospects = getStatsProspects('nuevos', 'hoy');
-                                     console.log('🔍 [DEBUG-RESPUESTAS] Prospectos de respuestas hoy:', prospects);
-                                     
-                                     if (prospects.length === 0) {
-                                       return <p className="text-xs text-muted-foreground italic">No hay respuestas de hoy</p>;
-                                     }
-                                     
-                                     return prospects.map((prospect) => (
-                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-nuevos" />
-                                     ));
-                                   })()}
+                                   <StatsProspectsList 
+                                     statsType="nuevos" 
+                                     period="hoy" 
+                                     taskType="stats-hoy-nuevos"
+                                   />
                                  </div>
                                )}
                                
@@ -1856,13 +2079,11 @@ const TasksToDo2: React.FC = () => {
                                {/* Listado de seguimientos de hoy */}
                                {activeStatsSection === 'hoy-seguimientos' && (
                                  <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                   {getStatsProspects('seguimientos', 'hoy').length === 0 ? (
-                                     <p className="text-xs text-muted-foreground italic">No hay seguimientos de hoy</p>
-                                   ) : (
-                                     getStatsProspects('seguimientos', 'hoy').map((prospect) => (
-                                       <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-hoy-seguimientos" />
-                                     ))
-                                   )}
+                                   <StatsProspectsList 
+                                     statsType="seguimientos" 
+                                     period="hoy" 
+                                     taskType="stats-hoy-seguimientos"
+                                   />
                                  </div>
                                )}
                               
@@ -1897,13 +2118,11 @@ const TasksToDo2: React.FC = () => {
                               {/* Listado de prospectos nuevos de ayer */}
                               {activeStatsSection === 'ayer-nuevos' && (
                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                  {getStatsProspects('nuevos', 'ayer').length === 0 ? (
-                                    <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos de ayer</p>
-                                  ) : (
-                                    getStatsProspects('nuevos', 'ayer').map((prospect) => (
-                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-ayer-nuevos" />
-                                    ))
-                                  )}
+                                  <StatsProspectsList 
+                                    statsType="nuevos" 
+                                    period="ayer" 
+                                    taskType="stats-ayer-nuevos"
+                                  />
                                 </div>
                               )}
                               
@@ -1920,13 +2139,11 @@ const TasksToDo2: React.FC = () => {
                               {/* Listado de seguimientos de ayer */}
                               {activeStatsSection === 'ayer-seguimientos' && (
                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                  {getStatsProspects('seguimientos', 'ayer').length === 0 ? (
-                                    <p className="text-xs text-muted-foreground italic">No hay seguimientos de ayer</p>
-                                  ) : (
-                                    getStatsProspects('seguimientos', 'ayer').map((prospect) => (
-                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-ayer-seguimientos" />
-                                    ))
-                                  )}
+                                  <StatsProspectsList 
+                                    statsType="seguimientos" 
+                                    period="ayer" 
+                                    taskType="stats-ayer-seguimientos"
+                                  />
                                 </div>
                               )}
                               
@@ -1969,13 +2186,11 @@ const TasksToDo2: React.FC = () => {
                               {/* Listado de prospectos nuevos de la semana */}
                               {activeStatsSection === 'semana-nuevos' && (
                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                  {getStatsProspects('nuevos', 'semana').length === 0 ? (
-                                    <p className="text-xs text-muted-foreground italic">No hay prospectos nuevos esta semana</p>
-                                  ) : (
-                                    getStatsProspects('nuevos', 'semana').map((prospect) => (
-                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-nuevos" />
-                                    ))
-                                  )}
+                                  <StatsProspectsList 
+                                    statsType="nuevos" 
+                                    period="semana" 
+                                    taskType="stats-semana-nuevos"
+                                  />
                                 </div>
                                )}
                                
@@ -2001,13 +2216,11 @@ const TasksToDo2: React.FC = () => {
                               {/* Listado de seguimientos de la semana */}
                               {activeStatsSection === 'semana-seguimientos' && (
                                 <div className="ml-4 space-y-2 max-h-60 overflow-y-auto">
-                                  {getStatsProspects('seguimientos', 'semana').length === 0 ? (
-                                    <p className="text-xs text-muted-foreground italic">No hay seguimientos esta semana</p>
-                                  ) : (
-                                    getStatsProspects('seguimientos', 'semana').map((prospect) => (
-                                      <ProspectCard key={prospect.id} prospect={prospect} taskType="stats-semana-seguimientos" />
-                                    ))
-                                  )}
+                                  <StatsProspectsList 
+                                    statsType="seguimientos" 
+                                    period="semana" 
+                                    taskType="stats-semana-seguimientos"
+                                  />
                                 </div>
                               )}
                               

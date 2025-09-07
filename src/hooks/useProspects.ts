@@ -498,6 +498,8 @@ export const useProspects = (currentInstagramUserId?: string) => {
           
           // Obtener mensajes del prospecto
           const messages = prospectData.prospect_messages || [];
+
+          // ordenar de mas reciente a mas antiguo
           const sortedMessages = messages.sort((a: any, b: any) => 
             new Date(b.message_timestamp).getTime() - new Date(a.message_timestamp).getTime()
           );
