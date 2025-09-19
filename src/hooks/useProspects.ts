@@ -40,13 +40,6 @@ export const useProspects = (currentInstagramUserId?: string) => {
     console.log(`🔥 [RECONTACTAR-DEBUG] Sender ID: ${senderId}`);
     console.log(`🔥 [RECONTACTAR-DEBUG] last_owner_message_at: ${prospect.last_owner_message_at}`);
     console.log(`🔥 [RECONTACTAR-DEBUG] last_message_from_prospect: ${prospect.last_message_from_prospect}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] Datos completos del prospecto:`, prospect);
-    console.log(`🔥 [RECONTACTAR-DEBUG] ============================================`);
-
-    // ⚠️ DEBUG ESPECÍFICO PARA estamosprobando1231
-    if (prospect.username === 'estamosprobando1231') {
-      console.log('🎯 [DEBUG-SPECIFIC] estamosprobando1231 datos completos:', prospect);
-    }
 
     // Verificar si hay invitaciones enviadas (mantenemos esta lógica)
     const messages = prospect.prospect_messages || prospect.messages || [];
@@ -60,58 +53,63 @@ export const useProspects = (currentInstagramUserId?: string) => {
       }
     }
 
-    // 🔥 NUEVA LÓGICA: Si no tengo timestamp de último mensaje mío = PENDING
+    // 🚨 LÓGICA CORREGIDA: Solo pueden ir a "recontactar" los que YO les envié mensaje
+    // Si no tengo last_owner_message_at = nunca les envié mensaje = NO aparece en recontactar
     if (!prospect.last_owner_message_at) {
-      console.log(`🔥 [RECONTACTAR-DEBUG] Sin last_owner_message_at -> PENDING`);
+      console.log(`🔥 [RECONTACTAR-DEBUG] Sin last_owner_message_at -> NUNCA LES ENVIÉ MENSAJE = NO APARECE EN RECONTACTAR`);
+      
+      // 🚨 NUEVA LÓGICA: Si el prospecto me respondió pero yo nunca le envié mensaje = PENDING
+      if (prospect.last_message_from_prospect === true) {
+        console.log(`🔥 [RECONTACTAR-DEBUG] Prospecto me respondió pero nunca le envié -> PENDING`);
+        return { state: 'pending' };
+      } else {
+        // Si ni yo le envié ni me respondió, no debería aparecer en ninguna lista
+        console.log(`🔥 [RECONTACTAR-DEBUG] Sin conversación -> NO APARECE`);
+        return { state: 'pending' }; // Fallback para evitar errores
+      }
+    }
+
+    // 🚨 VERIFICACIÓN ADICIONAL: ¿Quién envió el último mensaje?
+    if (prospect.last_message_from_prospect === true) {
+      console.log(`🔥 [RECONTACTAR-DEBUG] El prospecto me envió el último mensaje -> PENDING (debe responder YO)`);
       return { state: 'pending' };
     }
 
-    // 🔥 LÓGICA ALINEADA CON SQL: Usar misma lógica que WhatsApp
+    // 🔥 LÓGICA PARA RECONTACTAR: YO envié el último mensaje Y ha pasado tiempo
     const lastOwnerMessageTime = new Date(prospect.last_owner_message_at);
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
     const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
     
-    // Usar misma comparación que SQL: <= (now() - interval '1 day')
     const isOverOneDay = lastOwnerMessageTime <= oneDayAgo;
     const isOverSevenDays = lastOwnerMessageTime <= sevenDaysAgo;
     const hoursSinceLastOwnerMessage = (now.getTime() - lastOwnerMessageTime.getTime()) / (1000 * 60 * 60);
     const daysSinceLastOwnerMessage = hoursSinceLastOwnerMessage / 24;
 
     console.log(`🔥 [RECONTACTAR-DEBUG] CÁLCULOS TEMPORALES:`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - Now: ${now.toISOString()}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - Last owner message: ${lastOwnerMessageTime.toISOString()}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - One day ago: ${oneDayAgo.toISOString()}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - Seven days ago: ${sevenDaysAgo.toISOString()}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - Hours since: ${hoursSinceLastOwnerMessage.toFixed(2)}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - Days since: ${daysSinceLastOwnerMessage.toFixed(2)}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - Is over 1 day: ${isOverOneDay}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - Is over 7 days: ${isOverSevenDays}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - YO envié último mensaje: ${lastOwnerMessageTime.toISOString()}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - Hace cuántos días: ${daysSinceLastOwnerMessage.toFixed(2)} días`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 1 día?: ${isOverOneDay}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 7 días?: ${isOverSevenDays}`);
 
-    // Verificar si ya había conversación previa (el prospecto había respondido alguna vez)
-    const hadPreviousConversation = messages.length > 0 && 
-      messages.some((msg: any) => msg.is_from_prospect === true);
-      
-    console.log(`🔥 [RECONTACTAR-DEBUG] ¿Había conversación previa? ${hadPreviousConversation}`);
-
-    // 🔥 LÓGICA ALINEADA CON SQL: Usar misma condición que WhatsApp
+    // 🚨 CLASIFICACIÓN CORRECTA PARA RECONTACTAR
     if (isOverSevenDays) {
-      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ ASIGNANDO ESTADO: WEEK (${daysSinceLastOwnerMessage.toFixed(1)} días)`);
+      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ RECONTACTAR 7 DÍAS: ${daysSinceLastOwnerMessage.toFixed(1)} días`);
       return { 
         state: 'week', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
         lastSentMessageTime: prospect.last_owner_message_at 
       };
     } else if (isOverOneDay) {
-      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ ASIGNANDO ESTADO: YESTERDAY (${daysSinceLastOwnerMessage.toFixed(1)} días)`);
+      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ RECONTACTAR AYER: ${daysSinceLastOwnerMessage.toFixed(1)} días`);
       return { 
         state: 'yesterday', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
         lastSentMessageTime: prospect.last_owner_message_at 
       };
     } else {
-      // Menos de 1 día desde mi último mensaje - en PENDING
-      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ ASIGNANDO ESTADO: PENDING (${daysSinceLastOwnerMessage.toFixed(1)} días, < 1 día)`);
+      // YO envié el último mensaje pero hace menos de 1 día = esperando respuesta
+      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ ESPERANDO RESPUESTA: ${daysSinceLastOwnerMessage.toFixed(1)} días (< 1 día)`);
       return { 
         state: 'pending',
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
