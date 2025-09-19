@@ -56,16 +56,16 @@ export const useProspects = (currentInstagramUserId?: string) => {
     // 🚨 LÓGICA CORREGIDA: Solo pueden ir a "recontactar" los que YO les envié mensaje
     // Si no tengo last_owner_message_at = nunca les envié mensaje = NO aparece en recontactar
     if (!prospect.last_owner_message_at) {
-      console.log(`🔥 [RECONTACTAR-DEBUG] Sin last_owner_message_at -> NUNCA LES ENVIÉ MENSAJE = NO APARECE EN RECONTACTAR`);
+      console.log(`🔥 [RECONTACTAR-DEBUG] Sin last_owner_message_at -> NUNCA LES ENVIÉ MENSAJE`);
       
       // 🚨 NUEVA LÓGICA: Si el prospecto me respondió pero yo nunca le envié mensaje = PENDING
       if (prospect.last_message_from_prospect === true) {
         console.log(`🔥 [RECONTACTAR-DEBUG] Prospecto me respondió pero nunca le envié -> PENDING`);
         return { state: 'pending' };
       } else {
-        // Si ni yo le envié ni me respondió, no debería aparecer en ninguna lista
-        console.log(`🔥 [RECONTACTAR-DEBUG] Sin conversación -> NO APARECE`);
-        return { state: 'pending' }; // Fallback para evitar errores
+        // OBLIGADAMENTE: Sin conversación -> RECONTACTAR
+        console.log(`🔥 [RECONTACTAR-DEBUG] Sin conversación -> RECONTACTAR AYER`);
+        return { state: 'yesterday' };
       }
     }
 
