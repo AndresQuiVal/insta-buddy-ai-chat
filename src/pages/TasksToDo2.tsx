@@ -1037,16 +1037,19 @@ const TasksToDo2: React.FC = () => {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    // 🔥 DEBUG ESPECÍFICO PARA estamosprobando1231
-    const debugProspect = realProspects.find(p => p.username === 'estamosprobando1231');
-    if (debugProspect) {
-      console.log('🎯 [DEBUG] estamosprobando1231 en realProspects:', {
-        state: debugProspect.state,
-        source: debugProspect.source,
-        username: debugProspect.username,
-        senderId: debugProspect.senderId
-      });
-    }
+    // 🔥 DEBUG - Mostrar estados de TODOS los prospectos
+    console.log('🔥 [CLASSIFICATION-DEBUG] ===== TODOS LOS ESTADOS =====');
+    realProspects.forEach(p => {
+      console.log(`🔥 [CLASSIFICATION-DEBUG] ${p.username}: ${p.state} (source: ${p.source})`);
+    });
+    console.log('🔥 [CLASSIFICATION-DEBUG] ======================================');
+
+    // 🔥 DEBUG ESPECÍFICO para prospectos que deberían ser PENDING
+    const debugPendingProspects = realProspects.filter(p => ['el_mae_delasquintas', 't3stus3r_2', 'luis_urquizo95', 'alexeigaray'].includes(p.username));
+    console.log('🔥 [CLASSIFICATION-DEBUG] Estados de prospectos con last_owner_message_at null:');
+    debugPendingProspects.forEach(p => {
+      console.log(`🔥 [CLASSIFICATION-DEBUG] - ${p.username}: estado='${p.state}', fuente='${p.source}'`);
+    });
 
     // 🔥 NUEVA LÓGICA: Los prospectos YA vienen filtrados por Hower desde fetchProspects
     // NO necesitamos filtrar nuevamente - solo clasificamos por estado
@@ -1058,12 +1061,24 @@ const TasksToDo2: React.FC = () => {
       comment: realProspects.filter(p => p.state === 'pending' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
 
+    // 🔥 DEBUG PENDING clasificados
+    console.log('🔥 [CLASSIFICATION-DEBUG] Prospectos clasificados como PENDING:');
+    console.log('🔥 [CLASSIFICATION-DEBUG] - DM:', pendingResponses.dm.map(p => p?.userName || 'NO_USERNAME'));
+    console.log('🔥 [CLASSIFICATION-DEBUG] - Comment:', pendingResponses.comment.map(p => p?.userName || 'NO_USERNAME'));
+    console.log('🔥 [CLASSIFICATION-DEBUG] - Hower:', pendingResponses.hower.map(p => p?.userName || 'NO_USERNAME'));
+
     // Prospectos que no respondieron ayer: state === 'yesterday' (separados por fuente)
     const noResponseYesterday = {
       hower: realProspects.filter(p => p.state === 'yesterday' && p.source === 'hower').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
       dm: realProspects.filter(p => p.state === 'yesterday' && (p.source === 'dm' || p.source === 'ads')).map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean),
       comment: realProspects.filter(p => p.state === 'yesterday' && p.source === 'comment').map(p => prospects.find(pr => pr.id === p.senderId)).filter(Boolean)
     };
+
+    // 🔥 DEBUG YESTERDAY clasificados
+    console.log('🔥 [CLASSIFICATION-DEBUG] Prospectos clasificados como YESTERDAY (para recontactar):');
+    console.log('🔥 [CLASSIFICATION-DEBUG] - DM:', noResponseYesterday.dm.map(p => p?.userName || 'NO_USERNAME'));
+    console.log('🔥 [CLASSIFICATION-DEBUG] - Comment:', noResponseYesterday.comment.map(p => p?.userName || 'NO_USERNAME'));
+    console.log('🔥 [CLASSIFICATION-DEBUG] - Hower:', noResponseYesterday.hower.map(p => p?.userName || 'NO_USERNAME'));
 
     // 🔥 DEBUG PARA yesterday
     const yesterdayFiltered = realProspects.filter(p => p.state === 'yesterday');
