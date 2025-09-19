@@ -124,16 +124,11 @@ const TasksToDo2: React.FC = () => {
       return;
     }
 
-    console.log('🔍 [HOWER-DEBUG] Iniciando loadHowerUsers para usuario:', currentUser.instagram_user_id);
-    
     // Verificar y cargar credenciales automáticamente si es necesario
     const hasCredentials = await HowerService.checkAndLoadCredentials(currentUser.instagram_user_id);
     
-    console.log('🔍 [HOWER-DEBUG] ¿Tiene credenciales?', hasCredentials);
-    
     if (!hasCredentials) {
       console.log('❌ No hay credenciales de Hower disponibles después de verificar BD');
-      setHowerUsernames([]); // Asegurar que esté vacío
       return;
     }
 
@@ -156,15 +151,9 @@ const TasksToDo2: React.FC = () => {
         
         setHowerUsernames(usernames);
         console.log('✅ [DEBUG] Usuarios de Hower cargados:', usernames.length, 'total. Primeros 5:', usernames.slice(0, 5));
-        console.log('🎯 [HOWER-DEBUG] Estado actual después de cargar usernames:', {
-          howerUsernamesLength: usernames.length,
-          currentUserExists: !!currentUser,
-          shouldLoadProspects: true
-        });
       } else {
         console.error('❌ [DEBUG] Error al cargar usuarios de Hower:', response.error);
         console.error('❌ [DEBUG] Response completo que causó el error:', JSON.stringify(response, null, 2));
-        setHowerUsernames([]); // Asegurar que esté vacío en caso de error
         
         let errorMessage = response.error || "No se pudieron cargar los datos de Hower";
         
@@ -216,7 +205,6 @@ const TasksToDo2: React.FC = () => {
       // No mostrar toast al usuario para errores de conexión
     } finally {
       setHowerLoading(false);
-      console.log('🔍 [HOWER-DEBUG] loadHowerUsers finalizado. Estado final howerUsernames.length:', howerUsernames.length);
     }
   }, [toast, currentUser?.instagram_user_id]);
 
@@ -1049,12 +1037,6 @@ const TasksToDo2: React.FC = () => {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    console.log('🔍 [PROSPECTS-CLASSIFICATION] Iniciando clasificación con:', {
-      realProspectsCount: realProspects.length,
-      howerUsernamesCount: howerUsernames.length,
-      currentUserExists: !!currentUser
-    });
-
     // 🔥 DEBUG ESPECÍFICO PARA estamosprobando1231
     const debugProspect = realProspects.find(p => p.username === 'estamosprobando1231');
     if (debugProspect) {
@@ -1116,16 +1098,6 @@ const TasksToDo2: React.FC = () => {
       dm: noResponse7Days.dm.length,
       comment: noResponse7Days.comment.length,
       hower: noResponse7Days.hower.length
-    });
-
-    const totalRecontactar = noResponseYesterday.dm.length + noResponseYesterday.comment.length + 
-                           noResponse7Days.dm.length + noResponse7Days.comment.length;
-    
-    console.log('🎯 [PROSPECTS-CLASSIFICATION] RESUMEN FINAL:', {
-      prospectosPendientes: pendingResponses.dm.length + pendingResponses.comment.length,
-      prospectosParaRecontactar: totalRecontactar,
-      detalleYesterday: { dm: noResponseYesterday.dm.length, comment: noResponseYesterday.comment.length },
-      detalle7Days: { dm: noResponse7Days.dm.length, comment: noResponse7Days.comment.length }
     });
     
     // 🔥 CORRECCIÓN CRÍTICA: Contar seguimientos como WhatsApp (>= 1 día, todo junto)
