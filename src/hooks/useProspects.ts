@@ -33,14 +33,15 @@ export const useProspects = (currentInstagramUserId?: string) => {
   const [loading, setLoading] = useState(true);
 
   const determineProspectState = (prospect: any): { state: 'pending' | 'yesterday' | 'week' | 'invited', daysSinceLastSent?: number, lastSentMessageTime?: string } => {
-    const senderId = prospect.prospect_instagram_id;
+    const senderId = prospect.prospect_instagram_id || prospect.id;
     
-    console.log(`🔍 [${senderId.slice(-8)}] Analizando prospecto:`, {
-      username: prospect.username,
-      last_owner_message_at: prospect.last_owner_message_at,
-      last_message_from_prospect: prospect.last_message_from_prospect,
-      messages_count: prospect.messages?.length || 0
-    });
+    console.log(`🔥 [RECONTACTAR-DEBUG] ===== ANALIZANDO PROSPECTO =====`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] Username: ${prospect.username}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] Sender ID: ${senderId}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] last_owner_message_at: ${prospect.last_owner_message_at}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] last_message_from_prospect: ${prospect.last_message_from_prospect}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] Datos completos del prospecto:`, prospect);
+    console.log(`🔥 [RECONTACTAR-DEBUG] ============================================`);
 
     // ⚠️ DEBUG ESPECÍFICO PARA estamosprobando1231
     if (prospect.username === 'estamosprobando1231') {
@@ -61,7 +62,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
 
     // 🔥 NUEVA LÓGICA: Si no tengo timestamp de último mensaje mío = PENDING
     if (!prospect.last_owner_message_at) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (no hay timestamp de último mensaje del dueño)`);
+      console.log(`🔥 [RECONTACTAR-DEBUG] Sin last_owner_message_at -> PENDING`);
       return { state: 'pending' };
     }
 
@@ -69,30 +70,40 @@ export const useProspects = (currentInstagramUserId?: string) => {
     const lastOwnerMessageTime = new Date(prospect.last_owner_message_at);
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+    const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
     
     // Usar misma comparación que SQL: <= (now() - interval '1 day')
     const isOverOneDay = lastOwnerMessageTime <= oneDayAgo;
+    const isOverSevenDays = lastOwnerMessageTime <= sevenDaysAgo;
     const hoursSinceLastOwnerMessage = (now.getTime() - lastOwnerMessageTime.getTime()) / (1000 * 60 * 60);
     const daysSinceLastOwnerMessage = hoursSinceLastOwnerMessage / 24;
 
-    console.log(`📊 [${senderId.slice(-8)}] Mi último mensaje hace ${daysSinceLastOwnerMessage.toFixed(1)} días`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] CÁLCULOS TEMPORALES:`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - Now: ${now.toISOString()}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - Last owner message: ${lastOwnerMessageTime.toISOString()}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - One day ago: ${oneDayAgo.toISOString()}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - Seven days ago: ${sevenDaysAgo.toISOString()}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - Hours since: ${hoursSinceLastOwnerMessage.toFixed(2)}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - Days since: ${daysSinceLastOwnerMessage.toFixed(2)}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - Is over 1 day: ${isOverOneDay}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - Is over 7 days: ${isOverSevenDays}`);
 
     // Verificar si ya había conversación previa (el prospecto había respondido alguna vez)
     const hadPreviousConversation = messages.length > 0 && 
       messages.some((msg: any) => msg.is_from_prospect === true);
       
-    console.log(`💬 [${senderId.slice(-8)}] ¿Había conversación previa? ${hadPreviousConversation}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] ¿Había conversación previa? ${hadPreviousConversation}`);
 
     // 🔥 LÓGICA ALINEADA CON SQL: Usar misma condición que WhatsApp
-    if (isOverOneDay && daysSinceLastOwnerMessage >= 7) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: WEEK (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
+    if (isOverSevenDays) {
+      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ ASIGNANDO ESTADO: WEEK (${daysSinceLastOwnerMessage.toFixed(1)} días)`);
       return { 
         state: 'week', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
         lastSentMessageTime: prospect.last_owner_message_at 
       };
     } else if (isOverOneDay) {
-      console.log(`✅ [${senderId.slice(-8)}] Estado: YESTERDAY (${daysSinceLastOwnerMessage.toFixed(1)} días sin respuesta)`);
+      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ ASIGNANDO ESTADO: YESTERDAY (${daysSinceLastOwnerMessage.toFixed(1)} días)`);
       return { 
         state: 'yesterday', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
@@ -100,7 +111,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
       };
     } else {
       // Menos de 1 día desde mi último mensaje - en PENDING
-      console.log(`✅ [${senderId.slice(-8)}] Estado: PENDING (esperando respuesta, < 1 día)`);
+      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ ASIGNANDO ESTADO: PENDING (${daysSinceLastOwnerMessage.toFixed(1)} días, < 1 día)`);
       return { 
         state: 'pending',
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
