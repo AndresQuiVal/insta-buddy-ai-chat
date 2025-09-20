@@ -358,19 +358,6 @@ async function getUserStats(instagramUserId: string) {
 
       const { is_completed, completed_at, last_message_type } = taskStatus;
 
-      // 🚨 FILTRO CRÍTICO: Prospectos > 14 días NO aparecen en ninguna categoría
-      if (prospect.last_owner_message_at) {
-        const lastOwnerMessage = new Date(prospect.last_owner_message_at);
-        const now = new Date();
-        const fourteenDaysAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
-        const daysSinceOwnerMessage = (now.getTime() - lastOwnerMessage.getTime()) / (1000 * 60 * 60 * 24);
-        
-        if (lastOwnerMessage <= fourteenDaysAgo) {
-          console.log(`🚫 ${prospect.username} DESCARTADO (${Math.round(daysSinceOwnerMessage)} días > 14 días)`);
-          continue; // DESCARTAR completamente
-        }
-      }
-
       // 🔥 LÓGICA DE RECONTACTO PRINCIPAL (APLICAR PRIMERO como en prospectService)
       if (is_completed && last_message_type === 'sent' && completed_at) {
         const completedDate = new Date(completed_at);
@@ -380,55 +367,44 @@ async function getUserStats(instagramUserId: string) {
         console.log(`⏰ ${prospect.username}: ${Math.round(hoursSinceCompleted)}h desde completed_at`);
         
         if (hoursSinceCompleted > 24) {
-          // Verificar si no excede 14 días desde el último mensaje del owner
-          if (prospect.last_owner_message_at) {
-            const lastOwnerMessage = new Date(prospect.last_owner_message_at);
-            const daysSinceOwnerMessage = (now.getTime() - lastOwnerMessage.getTime()) / (1000 * 60 * 60 * 24);
+          console.log(`🔄 ${prospect.username} → SEGUIMIENTO (recontacto necesario, ${Math.round(hoursSinceCompleted)}h > 24h)`);
+          
+          // 🔥 ACTUALIZAR BD: Sincronizar EXACTAMENTE como hace el prospectService
+          try {
+            const { error: updateError } = await supabase
+              .from('prospects')
+              .update({ 
+                last_owner_message_at: completed_at,
+                last_message_from_prospect: false
+              })
+              .eq('instagram_user_id', prospect.instagram_user_id)
+              .eq('prospect_instagram_id', prospect.prospect_instagram_id);
             
-            if (daysSinceOwnerMessage >= 7 && daysSinceOwnerMessage <= 14) {
-              console.log(`🔄 ${prospect.username} → SEGUIMIENTO (recontacto necesario, ${Math.round(daysSinceOwnerMessage)} días entre 7-14)`);
-              
-              // 🔥 ACTUALIZAR BD: Sincronizar EXACTAMENTE como hace el prospectService
-              try {
-                const { error: updateError } = await supabase
-                  .from('prospects')
-                  .update({ 
-                    last_owner_message_at: completed_at,
-                    last_message_from_prospect: false
-                  })
-                  .eq('instagram_user_id', prospect.instagram_user_id)
-                  .eq('prospect_instagram_id', prospect.prospect_instagram_id);
-                
-                if (updateError) {
-                  console.error(`❌ Error actualizando prospect ${prospect.username}:`, updateError);
-                } else {
-                  console.log(`✅ BD actualizada para ${prospect.username}`);
-                }
-                
-                // Destachar el prospecto
-                const { error: taskError } = await supabase
-                  .from('prospect_task_status')
-                  .update({ is_completed: false })
-                  .eq('instagram_user_id', instagramUserId)
-                  .eq('prospect_sender_id', prospect.prospect_instagram_id)
-                  .eq('task_type', 'pending');
-                
-                if (taskError) {
-                  console.error(`❌ Error destachando ${prospect.username}:`, taskError);
-                } else {
-                  console.log(`✅ Prospecto ${prospect.username} destachado`);
-                }
-              } catch (syncError) {
-                console.error(`❌ Error sincronizando ${prospect.username}:`, syncError);
-              }
-              
-              seguimientos++;
-              continue; // IMPORTANTE: Ya procesado, no evaluar más
+            if (updateError) {
+              console.error(`❌ Error actualizando prospect ${prospect.username}:`, updateError);
             } else {
-              console.log(`🚫 ${prospect.username} filtrado (${Math.round(daysSinceOwnerMessage)} días fuera del rango 7-14)`);
-              continue;
+              console.log(`✅ BD actualizada para ${prospect.username}`);
             }
+            
+            // Destachar el prospecto
+            const { error: taskError } = await supabase
+              .from('prospect_task_status')
+              .update({ is_completed: false })
+              .eq('instagram_user_id', instagramUserId)
+              .eq('prospect_sender_id', prospect.prospect_instagram_id)
+              .eq('task_type', 'pending');
+            
+            if (taskError) {
+              console.error(`❌ Error destachando ${prospect.username}:`, taskError);
+            } else {
+              console.log(`✅ Prospecto ${prospect.username} destachado`);
+            }
+          } catch (syncError) {
+            console.error(`❌ Error sincronizando ${prospect.username}:`, syncError);
           }
+          
+          seguimientos++;
+          continue; // IMPORTANTE: Ya procesado, no evaluar más
         } else {
           console.log(`🚫 ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
           continue; // IMPORTANTE: Filtrado, no evaluar más
@@ -447,13 +423,15 @@ async function getUserStats(instagramUserId: string) {
           const hoursSinceLastMessage = (now.getTime() - lastOwnerMessage.getTime()) / (1000 * 60 * 60);
           const daysSinceLastMessage = hoursSinceLastMessage / 24;
           
-          // Solo considerar seguimiento si está en el rango 7-14 días
-          if (daysSinceLastMessage >= 7 && daysSinceLastMessage <= 14 && hoursSinceLastMessage >= 24) {
-            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(daysSinceLastMessage)} días entre 7-14)`);
+          // 🎯 APLICAR FILTRO 7-30 DÍAS para recontactar
+          if (daysSinceLastMessage >= 7 && daysSinceLastMessage <= 30) {
+            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(daysSinceLastMessage)} días - en rango 7-30)`);
             seguimientos++;
-          } else if (daysSinceLastMessage < 7 && hoursSinceLastMessage >= 24) {
-            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(daysSinceLastMessage)} días < 7)`);
+          } else if (hoursSinceLastMessage >= 24 && daysSinceLastMessage < 7) {
+            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(hoursSinceLastMessage)}h desde último mensaje - menos de 7 días)`);
             seguimientos++;
+          } else if (daysSinceLastMessage > 30) {
+            console.log(`🚫 ${prospect.username} filtrado (${Math.round(daysSinceLastMessage)} días > 30 días)`);
           }
         }
       } else if (last_message_type === 'received') {
@@ -461,6 +439,7 @@ async function getUserStats(instagramUserId: string) {
         console.log(`✅ ${prospect.username} → ABIERTA (completado pero último mensaje del prospecto)`);
         abiertas++;
       }
+    } // ← Cerrar el bucle for aquí
 
     const finalStats = { 
       abiertas, 
