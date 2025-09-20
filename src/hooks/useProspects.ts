@@ -79,10 +79,11 @@ export const useProspects = (currentInstagramUserId?: string) => {
     const lastOwnerMessageTime = new Date(prospect.last_owner_message_at);
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-    const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+    const sevenDaysFromNow = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+    const oneMonthFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
     
     const isOverOneDay = lastOwnerMessageTime <= oneDayAgo;
-    const isOverSevenDays = lastOwnerMessageTime <= sevenDaysAgo;
+    const isInAcceptableRange = lastOwnerMessageTime >= sevenDaysFromNow && lastOwnerMessageTime <= oneMonthFromNow;
     const hoursSinceLastOwnerMessage = (now.getTime() - lastOwnerMessageTime.getTime()) / (1000 * 60 * 60);
     const daysSinceLastOwnerMessage = hoursSinceLastOwnerMessage / 24;
 
@@ -90,11 +91,12 @@ export const useProspects = (currentInstagramUserId?: string) => {
     console.log(`🔥 [RECONTACTAR-DEBUG] - YO envié último mensaje: ${lastOwnerMessageTime.toISOString()}`);
     console.log(`🔥 [RECONTACTAR-DEBUG] - Hace cuántos días: ${daysSinceLastOwnerMessage.toFixed(2)} días`);
     console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 1 día?: ${isOverOneDay}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 7 días?: ${isOverSevenDays}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - ¿En rango aceptable (7 días - 1 mes)?: ${isInAcceptableRange}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - Rango: ${sevenDaysFromNow.toISOString()} a ${oneMonthFromNow.toISOString()}`);
 
     // 🚨 CLASIFICACIÓN CORRECTA PARA RECONTACTAR
-    if (isOverSevenDays) {
-      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ RECONTACTAR 7 DÍAS: ${daysSinceLastOwnerMessage.toFixed(1)} días`);
+    if (isInAcceptableRange) {
+      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ RECONTACTAR EN RANGO ACEPTABLE: ${daysSinceLastOwnerMessage.toFixed(1)} días`);
       return { 
         state: 'week', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),

@@ -1035,7 +1035,8 @@ const TasksToDo2: React.FC = () => {
   const prospectsClassification = useMemo(() => {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysFromNow = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+    const oneMonthFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
 
     // 🔥 DEBUG - Mostrar estados de TODOS los prospectos
     console.log('🔥 [CLASSIFICATION-DEBUG] ===== TODOS LOS ESTADOS =====');
@@ -1156,13 +1157,14 @@ const TasksToDo2: React.FC = () => {
     // Prospectos específicos para estadísticas SEMANA
     const weekNewProspects = prospects.filter(p => {
       const contactDate = new Date(p.firstContactDate);
-      return contactDate >= sevenDaysAgo && p.status === 'esperando_respuesta';
+      return contactDate >= sevenDaysFromNow && contactDate <= oneMonthFromNow && p.status === 'esperando_respuesta';
     });
 
     const weekFollowUps = prospects.filter(p => {
       const lastMessage = new Date(p.lastContactDate);
       return p.status === 'seguimiento' && 
-             lastMessage >= sevenDaysAgo;
+             lastMessage >= sevenDaysFromNow && 
+             lastMessage <= oneMonthFromNow;
     });
 
     // Estadísticas usando GROK (datos persistentes de la BD)
