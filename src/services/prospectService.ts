@@ -212,6 +212,19 @@ export class ProspectService implements ProspectServiceInterface {
           
           if (shouldReappear) {
             console.log(`🔄 [PROSPECT-SERVICE] Prospecto ${prospect.username} reapareció para recontacto (${Math.round(hoursSinceCompleted)}h desde completado)`);
+            
+            // Sobreescribir last_owner_message_at con completed_at para correcta categorización UI
+            prospect.last_owner_message_at = completed_at;
+            
+            // Destachar el prospecto (marcar como no completado)
+            supabase
+              .from('prospect_task_status')
+              .update({ is_completed: false })
+              .eq('instagram_user_id', instagramUserId)
+              .eq('prospect_sender_id', prospect.prospect_instagram_id)
+              .eq('task_type', 'pending')
+              .then(() => console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} destachado automáticamente`));
+            
             return true;
           } else {
             console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
