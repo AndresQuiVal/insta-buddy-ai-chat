@@ -213,8 +213,7 @@ export class ProspectService implements ProspectServiceInterface {
         
         const { is_completed, completed_at, last_message_type } = taskStatus;
         
-        // 🔥 LÓGICA DE RECONTACTO: Verificar si debe ejecutar recontacto
-        // Aplica tanto para is_completed = true como false, siempre que haya completed_at y last_message_type = 'sent'
+        // 🔥 LÓGICA DE RECONTACTO: Solo aplica si hay completed_at y last_message_type = 'sent'
         if (last_message_type === 'sent' && completed_at) {
           const completedDate = new Date(completed_at);
           const now = new Date();
@@ -267,25 +266,30 @@ export class ProspectService implements ProspectServiceInterface {
             }
             
             return prospect;
-          } else if (is_completed) {
-            // Solo filtrar si está actualmente completado Y no ha pasado tiempo suficiente
-            console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
-            return null;
-          } else {
-            // No está completado pero tuvo un completed_at previo - incluir sin cambios
-            console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} incluido (destachado previamente)`);
-            return prospect;
           }
-        } else {
-          // Sin envío previo - incluir si no está completado
-          if (!is_completed) {
-            console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} incluido (sin historial de envío)`);
-            return prospect;
-          } else {
-            console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado sin envío previo)`);
+        }
+        
+        // 🔥 LÓGICA ORIGINAL: Si no está completado = incluir siempre
+        if (!is_completed) {
+          console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} incluido (no completado)`);
+          return prospect;
+        }
+        
+        // 🔥 LÓGICA ORIGINAL: Si está completado, verificar tiempo para filtrar
+        if (last_message_type === 'sent' && completed_at) {
+          const completedDate = new Date(completed_at);
+          const now = new Date();
+          const hoursSinceCompleted = (now.getTime() - completedDate.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursSinceCompleted <= 24) {
+            console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
             return null;
           }
         }
+        
+        // Si llegamos aquí, está completado pero sin lógica de filtrado específica
+        console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado sin envío previo)`);
+        return null;
       }) || [];
 
       // Esperar a que todas las promesas se resuelvan y filtrar nulls
