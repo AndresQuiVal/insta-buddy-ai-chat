@@ -188,7 +188,8 @@ export class ProspectService implements ProspectServiceInterface {
       console.log(`🔍 [PROSPECT-SERVICE] Iniciando filtrado de ${prospects?.length || 0} prospectos`);
       console.log(`🔍 [PROSPECT-SERVICE] TaskStatuses encontrados:`, taskStatuses?.length || 0);
       
-      const filteredProspects = prospects?.filter(prospect => {
+      // Usar Promise.all para procesar filtros de manera asíncrona
+      const filteredProspectsPromises = prospects?.map(async (prospect) => {
         console.log(`🔍 [PROSPECT-SERVICE] Evaluando prospecto: ${prospect.username} (${prospect.prospect_instagram_id})`);
         
         const taskStatus = taskStatuses?.find(task => 
@@ -199,14 +200,14 @@ export class ProspectService implements ProspectServiceInterface {
         
         if (!taskStatus) {
           // No hay estado de tarea = incluir
-          return true;
+          return prospect;
         }
         
         const { is_completed, completed_at, last_message_type } = taskStatus;
         
         if (!is_completed) {
           // No está completado = incluir
-          return true;
+          return prospect;
         }
         
         // Está completado - verificar si debe reaparecer para recontacto
@@ -224,25 +225,30 @@ export class ProspectService implements ProspectServiceInterface {
             prospect.last_owner_message_at = completed_at;
             
             // Destachar el prospecto (marcar como no completado)
-            supabase
+            await supabase
               .from('prospect_task_status')
               .update({ is_completed: false })
               .eq('instagram_user_id', instagramUserId)
               .eq('prospect_sender_id', prospect.prospect_instagram_id)
-              .eq('task_type', 'pending')
-              .then(() => console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} destachado automáticamente`));
+              .eq('task_type', 'pending');
             
-            return true;
+            console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} destachado automáticamente`);
+            
+            return prospect;
           } else {
             console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
-            return false;
+            return null;
           }
         } else {
           // Completado pero sin envío previo = no incluir
           console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado sin envío previo)`);
-          return false;
+          return null;
         }
       }) || [];
+
+      // Esperar a que todas las promesas se resuelvan y filtrar nulls
+      const filteredProspectsResults = await Promise.all(filteredProspectsPromises);
+      const filteredProspects = filteredProspectsResults.filter(prospect => prospect !== null);
 
       console.log(`✅ [PROSPECT-SERVICE] ${filteredProspects.length} prospectos NO tachados (de ${prospects?.length || 0} totales)`);
 
