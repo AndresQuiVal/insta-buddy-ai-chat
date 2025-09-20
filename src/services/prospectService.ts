@@ -207,56 +207,56 @@ export class ProspectService implements ProspectServiceInterface {
         console.log(`🔥🔥🔥 [PROSPECT-SERVICE] TaskStatus encontrado:`, taskStatus);
         
         if (!taskStatus) {
-          // No hay estado de tarea = incluir
+          // No hay estado de tarea = incluir siempre
+          console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} incluido (sin taskStatus)`);
           return prospect;
         }
         
         const { is_completed, completed_at, last_message_type } = taskStatus;
         
-        // 🔥 LÓGICA DE RECONTACTO: Solo aplica si hay completed_at y last_message_type = 'sent'
-        console.log(`🔍 [PROSPECT-SERVICE] Evaluando recontacto para ${prospect.username}: last_message_type=${last_message_type}, completed_at=${completed_at}`);
+        // 🔥 LÓGICA PRINCIPAL: Si no está completado = incluir siempre
+        if (!is_completed) {
+          console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} incluido (no completado)`);
+          return prospect;
+        }
         
-        if (last_message_type === 'sent' && completed_at) {
+        // 🔥 LÓGICA DE RECONTACTO: Solo aplica si está completado Y hay completed_at y last_message_type = 'sent'
+        console.log(`🔍 [PROSPECT-SERVICE] Evaluando recontacto para ${prospect.username}: is_completed=${is_completed}, last_message_type=${last_message_type}, completed_at=${completed_at}`);
+        
+        if (is_completed && last_message_type === 'sent' && completed_at) {
           const completedDate = new Date(completed_at);
           const now = new Date();
           const hoursSinceCompleted = (now.getTime() - completedDate.getTime()) / (1000 * 60 * 60);
           
           console.log(`⏰ [PROSPECT-SERVICE] ${prospect.username}: ${Math.round(hoursSinceCompleted)}h desde completed_at`);
           
-          const shouldReappear = hoursSinceCompleted > 24;
-          console.log(`🎯 [PROSPECT-SERVICE] ${prospect.username}: shouldReappear = ${shouldReappear} (>24h)`);
-          
-          if (shouldReappear) {
-            console.log(`🔄 [PROSPECT-SERVICE] Prospecto ${prospect.username} reapareció para recontacto (${Math.round(hoursSinceCompleted)}h desde completado)`);
+          if (hoursSinceCompleted > 24) {
+            console.log(`🔄 [PROSPECT-SERVICE] Prospecto ${prospect.username} necesita recontacto (${Math.round(hoursSinceCompleted)}h > 24h)`);
             
-            // Sobreescribir last_owner_message_at con completed_at para correcta categorización UI
+            // Actualizar en memoria para la UI
             prospect.last_owner_message_at = completed_at;
-            prospect.last_message_from_prospect = false; // También actualizar en memoria
+            prospect.last_message_from_prospect = false;
             
             console.log(`📝 [PROSPECT-SERVICE] Actualizando BD para ${prospect.username}: last_owner_message_at=${completed_at}, last_message_from_prospect=false`);
-            console.log(`📝 [PROSPECT-SERVICE] UUID usado: ${prospect.instagram_user_id}, prospect_instagram_id: ${prospect.prospect_instagram_id}`);
             
-            // Actualizar last_owner_message_at y last_message_from_prospect en la base de datos
+            // Actualizar en la base de datos
             const { data: updateData, error: updateError } = await supabase
               .from('prospects')
               .update({ 
                 last_owner_message_at: completed_at,
-                last_message_from_prospect: false  // El último mensaje fue MÍO (simulado para recontacto)
+                last_message_from_prospect: false
               })
               .eq('instagram_user_id', prospect.instagram_user_id)
               .eq('prospect_instagram_id', prospect.prospect_instagram_id)
-              .select(); // Agregar select para ver qué se actualizó
+              .select();
             
             if (updateError) {
               console.error(`❌ [PROSPECT-SERVICE] Error actualizando prospect ${prospect.username}:`, updateError);
             } else {
-              console.log(`✅ [PROSPECT-SERVICE] BD actualizada correctamente para ${prospect.username}. Registros actualizados:`, updateData?.length || 0);
-              if (updateData && updateData.length > 0) {
-                console.log(`✅ [PROSPECT-SERVICE] Nuevo estado para ${prospect.username}: last_message_from_prospect = ${updateData[0].last_message_from_prospect}`);
-              }
+              console.log(`✅ [PROSPECT-SERVICE] BD actualizada para ${prospect.username}. Registros: ${updateData?.length || 0}`);
             }
             
-            // Destachar el prospecto (marcar como no completado)
+            // Destachar el prospecto
             const { error: taskError } = await supabase
               .from('prospect_task_status')
               .update({ is_completed: false })
@@ -267,35 +267,19 @@ export class ProspectService implements ProspectServiceInterface {
             if (taskError) {
               console.error(`❌ [PROSPECT-SERVICE] Error destachando ${prospect.username}:`, taskError);
             } else {
-              console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} destachado automáticamente`);
+              console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} destachado`);
             }
             
             return prospect;
-          }
-        } else {
-          console.log(`❌ [PROSPECT-SERVICE] ${prospect.username}: NO cumple condiciones de recontacto (last_message_type=${last_message_type}, completed_at=${completed_at})`);
-        }
-        
-        // 🔥 LÓGICA ORIGINAL: Si no está completado = incluir siempre
-        if (!is_completed) {
-          console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} incluido (no completado)`);
-          return prospect;
-        }
-        
-        // 🔥 LÓGICA ORIGINAL: Si está completado, verificar tiempo para filtrar
-        if (last_message_type === 'sent' && completed_at) {
-          const completedDate = new Date(completed_at);
-          const now = new Date();
-          const hoursSinceCompleted = (now.getTime() - completedDate.getTime()) / (1000 * 60 * 60);
-          
-          if (hoursSinceCompleted <= 24) {
+          } else {
+            // Completado hace menos de 24h = filtrar
             console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
             return null;
           }
         }
         
-        // Si llegamos aquí, está completado pero sin lógica de filtrado específica
-        console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado sin envío previo)`);
+        // Si está completado pero sin last_message_type='sent' o sin completed_at
+        console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado sin envío válido)`);
         return null;
       }) || [];
 
