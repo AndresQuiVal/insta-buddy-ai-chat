@@ -282,19 +282,31 @@ async function getUserStats(instagramUserId: string) {
       return { abiertas: 0, seguimientos: 0, agendados: 0 };
     }
 
-    // 🔥 NUEVA LÓGICA: Replicar exactamente la lógica del prospectService
-    console.log('🔥 Aplicando lógica actualizada del prospectService...');
+    // 🔥 NUEVA LÓGICA: Replicar EXACTAMENTE la lógica del prospectService
+    console.log('🔥 Aplicando lógica CORREGIDA del prospectService...');
 
-    // Obtener todos los prospectos
+    // Obtener UUID del usuario
+    const { data: userUuidData, error: userUuidError } = await supabase
+      .from('instagram_users')
+      .select('id')
+      .eq('instagram_user_id', instagramUserId)
+      .single();
+
+    if (userUuidError || !userUuidData) {
+      console.error('❌ Error obteniendo UUID del usuario:', userUuidError);
+      return { abiertas: 0, seguimientos: 0, agendados: 0 };
+    }
+
+    const userUUID = userUuidData.id;
+
+    // Obtener todos los prospectos con filtros de calidad (MISMOS FILTROS que prospectService)
     const { data: prospects, error: prospectsError } = await supabase
       .from('prospects')
       .select('*')
-      .eq('instagram_user_id', (await supabase
-        .from('instagram_users')
-        .select('id')
-        .eq('instagram_user_id', instagramUserId)
-        .single()
-      ).data?.id);
+      .eq('instagram_user_id', userUUID)
+      .not('username', 'like', 'user_%')  // EXCLUIR usernames genéricos user_*
+      .not('username', 'like', 'prospect_%')  // EXCLUIR usernames genéricos prospect_*
+      .neq('username', '');  // EXCLUIR usernames vacíos
 
     if (prospectsError) {
       console.error('❌ Error obteniendo prospectos:', prospectsError);
@@ -304,7 +316,7 @@ async function getUserStats(instagramUserId: string) {
     // Obtener estados de tareas
     const { data: taskStatuses, error: taskError } = await supabase
       .from('prospect_task_status')
-      .select('*')
+      .select('prospect_sender_id, is_completed, completed_at, last_message_type')
       .eq('instagram_user_id', instagramUserId)
       .eq('task_type', 'pending');
 
@@ -312,7 +324,7 @@ async function getUserStats(instagramUserId: string) {
       console.error('❌ Error obteniendo task statuses:', taskError);
     }
 
-    console.log(`📊 Procesando ${prospects?.length || 0} prospectos con lógica actualizada`);
+    console.log(`📊 Procesando ${prospects?.length || 0} prospectos con lógica CORREGIDA`);
 
     let abiertas = 0;
     let seguimientos = 0;
@@ -336,7 +348,7 @@ async function getUserStats(instagramUserId: string) {
       console.log(`🔍 Procesando ${prospect.username}: taskStatus=${JSON.stringify(taskStatus)}`);
 
       if (!taskStatus) {
-        // No hay estado de tarea - evaluar según last_message_from_prospect
+        // Sin taskStatus = evaluar según last_message_from_prospect (SIMPLIFICADO como prospectService)
         if (prospect.last_message_from_prospect) {
           console.log(`✅ ${prospect.username} → ABIERTA (sin taskStatus, último mensaje del prospecto)`);
           abiertas++;
@@ -346,26 +358,8 @@ async function getUserStats(instagramUserId: string) {
 
       const { is_completed, completed_at, last_message_type } = taskStatus;
 
-      // 🔥 LÓGICA PRINCIPAL: Si no está completado, evaluar categoría
-      if (!is_completed) {
-        if (prospect.last_message_from_prospect && !prospect.last_owner_message_at) {
-          console.log(`✅ ${prospect.username} → ABIERTA (no completado, nunca le envié mensaje)`);
-          abiertas++;
-        } else if (prospect.last_owner_message_at) {
-          const lastOwnerMessage = new Date(prospect.last_owner_message_at);
-          const now = new Date();
-          const hoursSinceLastMessage = (now.getTime() - lastOwnerMessage.getTime()) / (1000 * 60 * 60);
-          
-          if (hoursSinceLastMessage >= 24) {
-            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(hoursSinceLastMessage)}h desde último mensaje)`);
-            seguimientos++;
-          }
-        }
-        continue;
-      }
-
-      // 🔥 LÓGICA DE RECONTACTO: Solo aplica si está completado Y hay datos válidos
-      if (last_message_type === 'sent' && completed_at) {
+      // 🔥 LÓGICA DE RECONTACTO PRINCIPAL (APLICAR PRIMERO como en prospectService)
+      if (is_completed && last_message_type === 'sent' && completed_at) {
         const completedDate = new Date(completed_at);
         const now = new Date();
         const hoursSinceCompleted = (now.getTime() - completedDate.getTime()) / (1000 * 60 * 60);
@@ -375,7 +369,7 @@ async function getUserStats(instagramUserId: string) {
         if (hoursSinceCompleted > 24) {
           console.log(`🔄 ${prospect.username} → SEGUIMIENTO (recontacto necesario, ${Math.round(hoursSinceCompleted)}h > 24h)`);
           
-          // 🔥 ACTUALIZAR BD: Sincronizar como hace el prospectService
+          // 🔥 ACTUALIZAR BD: Sincronizar EXACTAMENTE como hace el prospectService
           try {
             const { error: updateError } = await supabase
               .from('prospects')
@@ -410,17 +404,34 @@ async function getUserStats(instagramUserId: string) {
           }
           
           seguimientos++;
+          continue; // IMPORTANTE: Ya procesado, no evaluar más
         } else {
           console.log(`🚫 ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
+          continue; // IMPORTANTE: Filtrado, no evaluar más
+        }
+      }
+
+      // 🔥 LÓGICA NORMAL: Si no está completado O si está completado pero recibió mensaje
+      if (!is_completed) {
+        // MISMO CRITERIO que prospectService: Solo evaluar last_message_from_prospect
+        if (prospect.last_message_from_prospect) {
+          console.log(`✅ ${prospect.username} → ABIERTA (no completado, último mensaje del prospecto)`);
+          abiertas++;
+        } else if (prospect.last_owner_message_at) {
+          const lastOwnerMessage = new Date(prospect.last_owner_message_at);
+          const now = new Date();
+          const hoursSinceLastMessage = (now.getTime() - lastOwnerMessage.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursSinceLastMessage >= 24) {
+            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(hoursSinceLastMessage)}h desde último mensaje)`);
+            seguimientos++;
+          }
         }
       } else if (last_message_type === 'received') {
         // El prospecto me respondió después de que yo le escribí
         console.log(`✅ ${prospect.username} → ABIERTA (completado pero último mensaje del prospecto)`);
         abiertas++;
-      } else {
-        console.log(`🚫 ${prospect.username} filtrado (completado sin datos válidos)`);
       }
-    }
 
     const finalStats = { 
       abiertas, 
