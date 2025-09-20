@@ -439,6 +439,7 @@ async function getUserStats(instagramUserId: string) {
         console.log(`✅ ${prospect.username} → ABIERTA (completado pero último mensaje del prospecto)`);
         abiertas++;
       }
+    } // ← Cerrar el bucle for aquí
 
     const finalStats = { 
       abiertas, 
