@@ -185,10 +185,17 @@ export class ProspectService implements ProspectServiceInterface {
       }
 
       // 🔥 APLICAR FILTRO DE TACHADOS CON LÓGICA DE RECONTACTO (24 HORAS)
+      console.log(`🔍 [PROSPECT-SERVICE] Iniciando filtrado de ${prospects?.length || 0} prospectos`);
+      console.log(`🔍 [PROSPECT-SERVICE] TaskStatuses encontrados:`, taskStatuses?.length || 0);
+      
       const filteredProspects = prospects?.filter(prospect => {
+        console.log(`🔍 [PROSPECT-SERVICE] Evaluando prospecto: ${prospect.username} (${prospect.prospect_instagram_id})`);
+        
         const taskStatus = taskStatuses?.find(task => 
           task.prospect_sender_id === prospect.prospect_instagram_id
         );
+        
+        console.log(`🔍 [PROSPECT-SERVICE] TaskStatus para ${prospect.username}:`, taskStatus);
         
         if (!taskStatus) {
           // No hay estado de tarea = incluir
