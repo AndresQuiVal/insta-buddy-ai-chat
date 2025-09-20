@@ -229,7 +229,7 @@ export class ProspectService implements ProspectServiceInterface {
               .from('prospects')
               .update({ 
                 last_owner_message_at: completed_at,
-                last_message_from_prospect: true  // !is_completed (cuando destachamos, is_completed = false, entonces last_message_from_prospect = true)
+                last_message_from_prospect: false  // El último mensaje fue MÍO (simulado para recontacto)
               })
               .eq('instagram_user_id', prospect.instagram_user_id)
               .eq('prospect_instagram_id', prospect.prospect_instagram_id);
