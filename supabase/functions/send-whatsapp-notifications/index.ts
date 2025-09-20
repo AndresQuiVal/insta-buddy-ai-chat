@@ -421,10 +421,17 @@ async function getUserStats(instagramUserId: string) {
           const lastOwnerMessage = new Date(prospect.last_owner_message_at);
           const now = new Date();
           const hoursSinceLastMessage = (now.getTime() - lastOwnerMessage.getTime()) / (1000 * 60 * 60);
+          const daysSinceLastMessage = hoursSinceLastMessage / 24;
           
-          if (hoursSinceLastMessage >= 24) {
-            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(hoursSinceLastMessage)}h desde último mensaje)`);
+          // 🎯 APLICAR FILTRO 7-30 DÍAS para recontactar
+          if (daysSinceLastMessage >= 7 && daysSinceLastMessage <= 30) {
+            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(daysSinceLastMessage)} días - en rango 7-30)`);
             seguimientos++;
+          } else if (hoursSinceLastMessage >= 24 && daysSinceLastMessage < 7) {
+            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(hoursSinceLastMessage)}h desde último mensaje - menos de 7 días)`);
+            seguimientos++;
+          } else if (daysSinceLastMessage > 30) {
+            console.log(`🚫 ${prospect.username} filtrado (${Math.round(daysSinceLastMessage)} días > 30 días)`);
           }
         }
       } else if (last_message_type === 'received') {
