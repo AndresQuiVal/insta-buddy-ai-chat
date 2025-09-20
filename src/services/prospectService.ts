@@ -168,7 +168,7 @@ export class ProspectService implements ProspectServiceInterface {
       // 🔥 NUEVO: Obtener estados de tareas para filtrar tachados (igual que WhatsApp SQL)
       const { data: taskStatuses, error: taskError } = await supabase
         .from('prospect_task_status')
-        .select('prospect_sender_id, is_completed')
+        .select('prospect_sender_id, is_completed, completed_at, last_message_type')
         .eq('instagram_user_id', instagramUserId)
         .eq('task_type', 'pending');
 
@@ -184,16 +184,44 @@ export class ProspectService implements ProspectServiceInterface {
         });
       }
 
-      // 🔥 APLICAR FILTRO DE TACHADOS (igual que WhatsApp SQL)
+      // 🔥 APLICAR FILTRO DE TACHADOS CON LÓGICA DE RECONTACTO (24 HORAS)
       const filteredProspects = prospects?.filter(prospect => {
-        const isCompleted = taskStatusMap.get(prospect.prospect_instagram_id) || false;
-        const shouldInclude = !isCompleted; // Solo incluir NO tachados
+        const taskStatus = taskStatuses?.find(task => 
+          task.prospect_sender_id === prospect.prospect_instagram_id
+        );
         
-        if (!shouldInclude) {
-          console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado por estar TACHADO`);
+        if (!taskStatus) {
+          // No hay estado de tarea = incluir
+          return true;
         }
         
-        return shouldInclude;
+        const { is_completed, completed_at, last_message_type } = taskStatus;
+        
+        if (!is_completed) {
+          // No está completado = incluir
+          return true;
+        }
+        
+        // Está completado - verificar si debe reaparecer para recontacto
+        if (last_message_type === 'sent' && completed_at) {
+          const completedDate = new Date(completed_at);
+          const now = new Date();
+          const hoursSinceCompleted = (now.getTime() - completedDate.getTime()) / (1000 * 60 * 60);
+          
+          const shouldReappear = hoursSinceCompleted > 24;
+          
+          if (shouldReappear) {
+            console.log(`🔄 [PROSPECT-SERVICE] Prospecto ${prospect.username} reapareció para recontacto (${Math.round(hoursSinceCompleted)}h desde completado)`);
+            return true;
+          } else {
+            console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
+            return false;
+          }
+        } else {
+          // Completado pero sin envío previo = no incluir
+          console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado sin envío previo)`);
+          return false;
+        }
       }) || [];
 
       console.log(`✅ [PROSPECT-SERVICE] ${filteredProspects.length} prospectos NO tachados (de ${prospects?.length || 0} totales)`);
