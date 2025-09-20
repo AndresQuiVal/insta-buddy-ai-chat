@@ -223,9 +223,12 @@ export class ProspectService implements ProspectServiceInterface {
             
             // Sobreescribir last_owner_message_at con completed_at para correcta categorización UI
             prospect.last_owner_message_at = completed_at;
+            prospect.last_message_from_prospect = false; // También actualizar en memoria
+            
+            console.log(`📝 [PROSPECT-SERVICE] Actualizando BD para ${prospect.username}: last_owner_message_at=${completed_at}, last_message_from_prospect=false`);
             
             // Actualizar last_owner_message_at y last_message_from_prospect en la base de datos
-            await supabase
+            const { error: updateError } = await supabase
               .from('prospects')
               .update({ 
                 last_owner_message_at: completed_at,
@@ -234,15 +237,25 @@ export class ProspectService implements ProspectServiceInterface {
               .eq('instagram_user_id', prospect.instagram_user_id)
               .eq('prospect_instagram_id', prospect.prospect_instagram_id);
             
+            if (updateError) {
+              console.error(`❌ [PROSPECT-SERVICE] Error actualizando prospect ${prospect.username}:`, updateError);
+            } else {
+              console.log(`✅ [PROSPECT-SERVICE] BD actualizada correctamente para ${prospect.username}`);
+            }
+            
             // Destachar el prospecto (marcar como no completado)
-            await supabase
+            const { error: taskError } = await supabase
               .from('prospect_task_status')
               .update({ is_completed: false })
               .eq('instagram_user_id', instagramUserId)
               .eq('prospect_sender_id', prospect.prospect_instagram_id)
               .eq('task_type', 'pending');
             
-            console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} destachado automáticamente y last_owner_message_at actualizado`);
+            if (taskError) {
+              console.error(`❌ [PROSPECT-SERVICE] Error destachando ${prospect.username}:`, taskError);
+            } else {
+              console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} destachado automáticamente`);
+            }
             
             return prospect;
           } else {
