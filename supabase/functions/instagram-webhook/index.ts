@@ -123,6 +123,76 @@ serve(async (req) => {
       } else {
         console.log('✅ Mensaje enviado guardado correctamente en BD')
         
+        // 🔥 NUEVO: Verificar/Crear prospecto antes de actualizar estados
+        let prospectId: string | null = null
+        try {
+          console.log('👤 Verificando si el prospecto existe...')
+          
+          // Buscar si el prospecto ya existe
+          const { data: existingProspect, error: prospectLookupError } = await supabase
+            .from('prospects')
+            .select('id')
+            .eq('instagram_user_id', instagramUser.id)
+            .eq('prospect_instagram_id', recipientId)
+            .maybeSingle()
+          
+          if (prospectLookupError) {
+            console.error('❌ Error buscando prospecto existente:', prospectLookupError)
+          } else if (existingProspect) {
+            prospectId = existingProspect.id
+            console.log(`✅ Prospecto existente encontrado: ${prospectId}`)
+          } else {
+            console.log('🆕 Prospecto no existe, creando nuevo...')
+            
+            // Intentar obtener username del recipient
+            let prospectUsername = `user_${recipientId.slice(-8)}`
+            
+            try {
+              // Intentar obtener username del recipient desde Instagram API si tenemos token válido
+              if (instagramUser.access_token && (!instagramUser.token_expires_at || new Date(instagramUser.token_expires_at) > new Date())) {
+                console.log(`🔗 Intentando obtener username de Instagram API para ${recipientId}...`)
+                
+                const instagramApiUrl = `https://graph.instagram.com/${recipientId}?fields=username,name&access_token=${instagramUser.access_token}`
+                const apiResponse = await fetch(instagramApiUrl, {
+                  headers: {
+                    'User-Agent': 'Hower-Instagram-Bot/1.0'
+                  }
+                })
+                
+                if (apiResponse.ok) {
+                  const userData = await apiResponse.json()
+                  if (userData.username) {
+                    prospectUsername = userData.username
+                    console.log(`✅ Username obtenido de Instagram API: ${prospectUsername}`)
+                  }
+                } else {
+                  console.log(`⚠️ No se pudo obtener username de API (${apiResponse.status})`)
+                }
+              }
+            } catch (usernameError) {
+              console.log('⚠️ Error obteniendo username, usando genérico:', usernameError)
+            }
+            
+            // Crear el nuevo prospecto
+            const { data: createdProspectId, error: prospectError } = await supabase
+              .rpc('create_or_update_prospect', {
+                p_instagram_user_id: instagramUser.id,
+                p_prospect_instagram_id: recipientId,
+                p_username: prospectUsername,
+                p_profile_picture_url: null
+              })
+            
+            if (prospectError) {
+              console.error('❌ Error creando prospecto nuevo:', prospectError)
+            } else {
+              prospectId = createdProspectId
+              console.log(`✅ Nuevo prospecto creado con ID: ${prospectId}`)
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error en verificación/creación de prospecto:', error)
+        }
+        
         // 🔥 CRÍTICO: Sincronizar estado de tarea del prospecto
         try {
           console.log('🔄 Ejecutando sync_prospect_task_status para marcar como completado...')
