@@ -273,6 +273,11 @@ export class ProspectService implements ProspectServiceInterface {
             return null;
           }
         }
+
+        if (last_message_type === 'received') {
+          console.log(`[PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado es valido pero en recibir mensaje)`);
+          return prospect;
+        }
         
         // Si está completado pero sin last_message_type='sent' o sin completed_at
         console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado sin envío válido)`);
