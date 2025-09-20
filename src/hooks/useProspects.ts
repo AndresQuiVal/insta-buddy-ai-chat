@@ -32,7 +32,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const determineProspectState = (prospect: any): { state: 'pending' | 'yesterday' | 'week' | 'invited', daysSinceLastSent?: number, lastSentMessageTime?: string } => {
+  const determineProspectState = (prospect: any): { state: 'pending' | 'yesterday' | 'week' | 'invited', daysSinceLastSent?: number, lastSentMessageTime?: string } | null => {
     const senderId = prospect.prospect_instagram_id || prospect.id;
     
     console.log(`🔥 [RECONTACTAR-DEBUG] ===== ANALIZANDO PROSPECTO =====`);
@@ -537,6 +537,13 @@ export const useProspects = (currentInstagramUserId?: string) => {
           
           // 🔥 NUEVA LÓGICA: Usar determineProspectState con los datos del prospecto
           const stateResult = determineProspectState(prospectData);
+          
+          // Si el prospecto se desecha (más de 14 días), saltarlo
+          if (!stateResult) {
+            console.log(`🗑️ [FETCH] Prospecto desechado por ser muy antiguo: ${prospectData.username}`);
+            continue;
+          }
+          
           const state = stateResult.state;
           const daysSinceLastSent = stateResult.daysSinceLastSent;
           const lastSentMessageTime = stateResult.lastSentMessageTime;

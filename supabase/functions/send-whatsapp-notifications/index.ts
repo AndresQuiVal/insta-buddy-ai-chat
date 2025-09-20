@@ -431,9 +431,10 @@ async function getUserStats(instagramUserId: string) {
             console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(hoursSinceLastMessage)}h desde último mensaje - menos de 7 días)`);
             seguimientos++;
           } else if (daysSinceLastMessage > 14) {
-            console.log(`🚫 ${prospect.username} filtrado (${Math.round(daysSinceLastMessage)} días > 14 días)`);
+            console.log(`🗑️ ${prospect.username} completamente desechado (${Math.round(daysSinceLastMessage)} días > 14 días)`);
+            // No se cuenta para nada - completamente desechado
+            continue;
           }
-        }
       } else if (last_message_type === 'received') {
         // El prospecto me respondió después de que yo le escribí
         console.log(`✅ ${prospect.username} → ABIERTA (completado pero último mensaje del prospecto)`);
