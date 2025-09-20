@@ -224,10 +224,13 @@ export class ProspectService implements ProspectServiceInterface {
             // Sobreescribir last_owner_message_at con completed_at para correcta categorización UI
             prospect.last_owner_message_at = completed_at;
             
-            // Actualizar last_owner_message_at en la base de datos también
+            // Actualizar last_owner_message_at y last_message_from_prospect en la base de datos
             await supabase
               .from('prospects')
-              .update({ last_owner_message_at: completed_at })
+              .update({ 
+                last_owner_message_at: completed_at,
+                last_message_from_prospect: true  // !is_completed (cuando destachamos, is_completed = false, entonces last_message_from_prospect = true)
+              })
               .eq('instagram_user_id', prospect.instagram_user_id)
               .eq('prospect_instagram_id', prospect.prospect_instagram_id);
             
