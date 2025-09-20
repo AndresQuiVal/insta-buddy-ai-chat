@@ -213,12 +213,8 @@ export class ProspectService implements ProspectServiceInterface {
         
         const { is_completed, completed_at, last_message_type } = taskStatus;
         
-        if (!is_completed) {
-          // No está completado = incluir
-          return prospect;
-        }
-        
-        // Está completado - verificar si debe reaparecer para recontacto
+        // 🔥 LÓGICA DE RECONTACTO: Verificar si debe ejecutar recontacto
+        // Aplica tanto para is_completed = true como false, siempre que haya completed_at y last_message_type = 'sent'
         if (last_message_type === 'sent' && completed_at) {
           const completedDate = new Date(completed_at);
           const now = new Date();
@@ -266,14 +262,24 @@ export class ProspectService implements ProspectServiceInterface {
             }
             
             return prospect;
-          } else {
+          } else if (is_completed) {
+            // Solo filtrar si está actualmente completado Y no ha pasado tiempo suficiente
             console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
             return null;
+          } else {
+            // No está completado pero tuvo un completed_at previo - incluir sin cambios
+            console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} incluido (destachado previamente)`);
+            return prospect;
           }
         } else {
-          // Completado pero sin envío previo = no incluir
-          console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado sin envío previo)`);
-          return null;
+          // Sin envío previo - incluir si no está completado
+          if (!is_completed) {
+            console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} incluido (sin historial de envío)`);
+            return prospect;
+          } else {
+            console.log(`🚫 [PROSPECT-SERVICE] Prospecto ${prospect.username} filtrado (completado sin envío previo)`);
+            return null;
+          }
         }
       }) || [];
 
