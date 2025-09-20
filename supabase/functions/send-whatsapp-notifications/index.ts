@@ -435,6 +435,7 @@ async function getUserStats(instagramUserId: string) {
             // No se cuenta para nada - completamente desechado
             continue;
           }
+        }
       } else if (last_message_type === 'received') {
         // El prospecto me respondió después de que yo le escribí
         console.log(`✅ ${prospect.username} → ABIERTA (completado pero último mensaje del prospecto)`);
