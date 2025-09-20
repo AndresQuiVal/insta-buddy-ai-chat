@@ -185,18 +185,26 @@ export class ProspectService implements ProspectServiceInterface {
       }
 
       // 🔥 APLICAR FILTRO DE TACHADOS CON LÓGICA DE RECONTACTO (24 HORAS)
-      console.log(`🔍 [PROSPECT-SERVICE] Iniciando filtrado de ${prospects?.length || 0} prospectos`);
-      console.log(`🔍 [PROSPECT-SERVICE] TaskStatuses encontrados:`, taskStatuses?.length || 0);
+      console.log(`🔥🔥🔥 [PROSPECT-SERVICE] ===== INICIANDO FILTRADO DE TACHADOS =====`);
+      console.log(`🔥🔥🔥 [PROSPECT-SERVICE] Total prospectos a evaluar: ${prospects?.length || 0}`);
+      console.log(`🔥🔥🔥 [PROSPECT-SERVICE] TaskStatuses encontrados: ${taskStatuses?.length || 0}`);
+      
+      if (taskStatuses && taskStatuses.length > 0) {
+        console.log(`🔥🔥🔥 [PROSPECT-SERVICE] Primeros 3 taskStatuses:`, taskStatuses.slice(0, 3));
+      }
       
       // Usar Promise.all para procesar filtros de manera asíncrona
       const filteredProspectsPromises = prospects?.map(async (prospect) => {
-        console.log(`🔍 [PROSPECT-SERVICE] Evaluando prospecto: ${prospect.username} (${prospect.prospect_instagram_id})`);
+        console.log(`🔥🔥🔥 [PROSPECT-SERVICE] ===== EVALUANDO PROSPECTO =====`);
+        console.log(`🔥🔥🔥 [PROSPECT-SERVICE] Username: ${prospect.username}`);
+        console.log(`🔥🔥🔥 [PROSPECT-SERVICE] ID: ${prospect.prospect_instagram_id}`);
+        console.log(`🔥🔥🔥 [PROSPECT-SERVICE] last_message_from_prospect (antes): ${prospect.last_message_from_prospect}`);
         
         const taskStatus = taskStatuses?.find(task => 
           task.prospect_sender_id === prospect.prospect_instagram_id
         );
         
-        console.log(`🔍 [PROSPECT-SERVICE] TaskStatus para ${prospect.username}:`, taskStatus);
+        console.log(`🔥🔥🔥 [PROSPECT-SERVICE] TaskStatus encontrado:`, taskStatus);
         
         if (!taskStatus) {
           // No hay estado de tarea = incluir
@@ -291,7 +299,14 @@ export class ProspectService implements ProspectServiceInterface {
         })
       );
 
-      console.log(`✅ [PROSPECT-SERVICE] ${prospectsWithAnalysis?.length || 0} prospectos finales con análisis`);
+      console.log(`🔥🔥🔥 [PROSPECT-SERVICE] ===== RESULTADO FINAL =====`);
+      console.log(`🔥🔥🔥 [PROSPECT-SERVICE] ${prospectsWithAnalysis?.length || 0} prospectos finales con análisis`);
+      
+      // Debug: Verificar el estado final de last_message_from_prospect
+      prospectsWithAnalysis.forEach(prospect => {
+        console.log(`🔥🔥🔥 [PROSPECT-SERVICE] Final ${prospect.username}: last_message_from_prospect = ${prospect.last_message_from_prospect}`);
+      });
+      
       return prospectsWithAnalysis || [];
 
     } catch (error) {
