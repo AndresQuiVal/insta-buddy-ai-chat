@@ -214,12 +214,17 @@ export class ProspectService implements ProspectServiceInterface {
         const { is_completed, completed_at, last_message_type } = taskStatus;
         
         // 🔥 LÓGICA DE RECONTACTO: Solo aplica si hay completed_at y last_message_type = 'sent'
+        console.log(`🔍 [PROSPECT-SERVICE] Evaluando recontacto para ${prospect.username}: last_message_type=${last_message_type}, completed_at=${completed_at}`);
+        
         if (last_message_type === 'sent' && completed_at) {
           const completedDate = new Date(completed_at);
           const now = new Date();
           const hoursSinceCompleted = (now.getTime() - completedDate.getTime()) / (1000 * 60 * 60);
           
+          console.log(`⏰ [PROSPECT-SERVICE] ${prospect.username}: ${Math.round(hoursSinceCompleted)}h desde completed_at`);
+          
           const shouldReappear = hoursSinceCompleted > 24;
+          console.log(`🎯 [PROSPECT-SERVICE] ${prospect.username}: shouldReappear = ${shouldReappear} (>24h)`);
           
           if (shouldReappear) {
             console.log(`🔄 [PROSPECT-SERVICE] Prospecto ${prospect.username} reapareció para recontacto (${Math.round(hoursSinceCompleted)}h desde completado)`);
@@ -267,6 +272,8 @@ export class ProspectService implements ProspectServiceInterface {
             
             return prospect;
           }
+        } else {
+          console.log(`❌ [PROSPECT-SERVICE] ${prospect.username}: NO cumple condiciones de recontacto (last_message_type=${last_message_type}, completed_at=${completed_at})`);
         }
         
         // 🔥 LÓGICA ORIGINAL: Si no está completado = incluir siempre
