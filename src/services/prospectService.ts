@@ -224,6 +224,13 @@ export class ProspectService implements ProspectServiceInterface {
             // Sobreescribir last_owner_message_at con completed_at para correcta categorización UI
             prospect.last_owner_message_at = completed_at;
             
+            // Actualizar last_owner_message_at en la base de datos también
+            await supabase
+              .from('prospects')
+              .update({ last_owner_message_at: completed_at })
+              .eq('instagram_user_id', prospect.instagram_user_id)
+              .eq('prospect_instagram_id', prospect.prospect_instagram_id);
+            
             // Destachar el prospecto (marcar como no completado)
             await supabase
               .from('prospect_task_status')
@@ -232,7 +239,7 @@ export class ProspectService implements ProspectServiceInterface {
               .eq('prospect_sender_id', prospect.prospect_instagram_id)
               .eq('task_type', 'pending');
             
-            console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} destachado automáticamente`);
+            console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} destachado automáticamente y last_owner_message_at actualizado`);
             
             return prospect;
           } else {
