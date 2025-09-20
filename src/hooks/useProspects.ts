@@ -80,11 +80,9 @@ export const useProspects = (currentInstagramUserId?: string) => {
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
     const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
     
     const isOverOneDay = lastOwnerMessageTime <= oneDayAgo;
     const isOverSevenDays = lastOwnerMessageTime <= sevenDaysAgo;
-    const isOverThirtyDays = lastOwnerMessageTime <= thirtyDaysAgo;
     const hoursSinceLastOwnerMessage = (now.getTime() - lastOwnerMessageTime.getTime()) / (1000 * 60 * 60);
     const daysSinceLastOwnerMessage = hoursSinceLastOwnerMessage / 24;
 
@@ -93,24 +91,15 @@ export const useProspects = (currentInstagramUserId?: string) => {
     console.log(`🔥 [RECONTACTAR-DEBUG] - Hace cuántos días: ${daysSinceLastOwnerMessage.toFixed(2)} días`);
     console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 1 día?: ${isOverOneDay}`);
     console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 7 días?: ${isOverSevenDays}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 30 días?: ${isOverThirtyDays}`);
 
-    // 🚨 CLASIFICACIÓN CORRECTA PARA RECONTACTAR CON FILTRO 7-30 DÍAS
-    if (isOverSevenDays && !isOverThirtyDays) {
-      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ RECONTACTAR 7 DÍAS (7-30 días): ${daysSinceLastOwnerMessage.toFixed(1)} días`);
+    // 🚨 CLASIFICACIÓN CORRECTA PARA RECONTACTAR
+    if (isOverSevenDays) {
+      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ RECONTACTAR 7 DÍAS: ${daysSinceLastOwnerMessage.toFixed(1)} días`);
       return { 
         state: 'week', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
         lastSentMessageTime: prospect.last_owner_message_at 
       };
-    } else if (isOverThirtyDays) {
-      console.log(`🔥 [RECONTACTAR-DEBUG] ❌ FILTRADO POR MÁS DE 30 DÍAS: ${daysSinceLastOwnerMessage.toFixed(1)} días`);
-      // Si tiene más de 30 días, no aparece en recontactar pero sí puede ser pending si el prospecto respondió
-      if (prospect.last_message_from_prospect === true) {
-        return { state: 'pending' };
-      } else {
-        return { state: 'yesterday' }; // Lo ponemos en ayer como fallback
-      }
     } else if (isOverOneDay) {
       console.log(`🔥 [RECONTACTAR-DEBUG] ✅ RECONTACTAR AYER: ${daysSinceLastOwnerMessage.toFixed(1)} días`);
       return { 
