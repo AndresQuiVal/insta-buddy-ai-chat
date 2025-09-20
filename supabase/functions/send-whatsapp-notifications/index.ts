@@ -269,38 +269,167 @@ async function getUserStats(instagramUserId: string) {
       }
     );
 
+    let howerUsernames: string[] = [];
     if (!howerError && howerResponse?.success && howerResponse?.data?.usernames) {
-      console.log('📞 Got Hower usernames, using filtered stats:', { 
-        usernameCount: howerResponse.data.usernames.length 
+      howerUsernames = howerResponse.data.usernames;
+      console.log('📞 Got Hower usernames:', { 
+        usernameCount: howerUsernames.length 
       });
-      
-      // Usar la función que acepta usernames como parámetro
-      const { data: howerStats, error: howerStatsError } = await supabase.rpc(
-        'grok_get_stats_with_usernames_filter',
-        {
-          p_instagram_user_id: instagramUserId,
-          p_hower_usernames: howerResponse.data.usernames
-        }
-      );
-
-      if (!howerStatsError && howerStats) {
-        console.log('📊 Using Hower-filtered stats:', howerStats[0]);
-        const stats = howerStats[0];
-        return { 
-          abiertas: stats?.respuestas || 0, 
-          seguimientos: stats?.seguimientos || 0, 
-          agendados: stats?.agendados || 0 
-        };
-      }
-
-      console.log('⚠️ Hower-filtered stats failed:', howerStatsError?.message);
     } else {
       console.log('⚠️ No Hower credentials or error getting usernames:', howerError?.message || 'No credentials');
+      // 🎯 FILTRO HOWER ES OBLIGATORIO: Si no hay credenciales Hower, retornar stats = 0
+      console.log('🚫 No Hower credentials available - returning zero stats (Hower filter is mandatory)');
+      return { abiertas: 0, seguimientos: 0, agendados: 0 };
     }
 
-    // 🎯 FILTRO HOWER ES OBLIGATORIO: Si no hay credenciales Hower, retornar stats = 0
-    console.log('🚫 No Hower credentials available - returning zero stats (Hower filter is mandatory)');
-    return { abiertas: 0, seguimientos: 0, agendados: 0 };
+    // 🔥 NUEVA LÓGICA: Replicar exactamente la lógica del prospectService
+    console.log('🔥 Aplicando lógica actualizada del prospectService...');
+
+    // Obtener todos los prospectos
+    const { data: prospects, error: prospectsError } = await supabase
+      .from('prospects')
+      .select('*')
+      .eq('instagram_user_id', (await supabase
+        .from('instagram_users')
+        .select('id')
+        .eq('instagram_user_id', instagramUserId)
+        .single()
+      ).data?.id);
+
+    if (prospectsError) {
+      console.error('❌ Error obteniendo prospectos:', prospectsError);
+      return { abiertas: 0, seguimientos: 0, agendados: 0 };
+    }
+
+    // Obtener estados de tareas
+    const { data: taskStatuses, error: taskError } = await supabase
+      .from('prospect_task_status')
+      .select('*')
+      .eq('instagram_user_id', instagramUserId)
+      .eq('task_type', 'pending');
+
+    if (taskError) {
+      console.error('❌ Error obteniendo task statuses:', taskError);
+    }
+
+    console.log(`📊 Procesando ${prospects?.length || 0} prospectos con lógica actualizada`);
+
+    let abiertas = 0;
+    let seguimientos = 0;
+
+    for (const prospect of prospects || []) {
+      // 🎯 FILTRO HOWER: Solo procesar si está en la lista de Hower
+      const isInHowerList = howerUsernames.some(username => 
+        prospect.username === username || 
+        prospect.username.replace('@', '') === username ||
+        prospect.username === '@' + username
+      );
+
+      if (!isInHowerList) {
+        continue;
+      }
+
+      const taskStatus = taskStatuses?.find(task => 
+        task.prospect_sender_id === prospect.prospect_instagram_id
+      );
+
+      console.log(`🔍 Procesando ${prospect.username}: taskStatus=${JSON.stringify(taskStatus)}`);
+
+      if (!taskStatus) {
+        // No hay estado de tarea - evaluar según last_message_from_prospect
+        if (prospect.last_message_from_prospect) {
+          console.log(`✅ ${prospect.username} → ABIERTA (sin taskStatus, último mensaje del prospecto)`);
+          abiertas++;
+        }
+        continue;
+      }
+
+      const { is_completed, completed_at, last_message_type } = taskStatus;
+
+      // 🔥 LÓGICA PRINCIPAL: Si no está completado, evaluar categoría
+      if (!is_completed) {
+        if (prospect.last_message_from_prospect && !prospect.last_owner_message_at) {
+          console.log(`✅ ${prospect.username} → ABIERTA (no completado, nunca le envié mensaje)`);
+          abiertas++;
+        } else if (prospect.last_owner_message_at) {
+          const lastOwnerMessage = new Date(prospect.last_owner_message_at);
+          const now = new Date();
+          const hoursSinceLastMessage = (now.getTime() - lastOwnerMessage.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursSinceLastMessage >= 24) {
+            console.log(`✅ ${prospect.username} → SEGUIMIENTO (no completado, ${Math.round(hoursSinceLastMessage)}h desde último mensaje)`);
+            seguimientos++;
+          }
+        }
+        continue;
+      }
+
+      // 🔥 LÓGICA DE RECONTACTO: Solo aplica si está completado Y hay datos válidos
+      if (last_message_type === 'sent' && completed_at) {
+        const completedDate = new Date(completed_at);
+        const now = new Date();
+        const hoursSinceCompleted = (now.getTime() - completedDate.getTime()) / (1000 * 60 * 60);
+        
+        console.log(`⏰ ${prospect.username}: ${Math.round(hoursSinceCompleted)}h desde completed_at`);
+        
+        if (hoursSinceCompleted > 24) {
+          console.log(`🔄 ${prospect.username} → SEGUIMIENTO (recontacto necesario, ${Math.round(hoursSinceCompleted)}h > 24h)`);
+          
+          // 🔥 ACTUALIZAR BD: Sincronizar como hace el prospectService
+          try {
+            const { error: updateError } = await supabase
+              .from('prospects')
+              .update({ 
+                last_owner_message_at: completed_at,
+                last_message_from_prospect: false
+              })
+              .eq('instagram_user_id', prospect.instagram_user_id)
+              .eq('prospect_instagram_id', prospect.prospect_instagram_id);
+            
+            if (updateError) {
+              console.error(`❌ Error actualizando prospect ${prospect.username}:`, updateError);
+            } else {
+              console.log(`✅ BD actualizada para ${prospect.username}`);
+            }
+            
+            // Destachar el prospecto
+            const { error: taskError } = await supabase
+              .from('prospect_task_status')
+              .update({ is_completed: false })
+              .eq('instagram_user_id', instagramUserId)
+              .eq('prospect_sender_id', prospect.prospect_instagram_id)
+              .eq('task_type', 'pending');
+            
+            if (taskError) {
+              console.error(`❌ Error destachando ${prospect.username}:`, taskError);
+            } else {
+              console.log(`✅ Prospecto ${prospect.username} destachado`);
+            }
+          } catch (syncError) {
+            console.error(`❌ Error sincronizando ${prospect.username}:`, syncError);
+          }
+          
+          seguimientos++;
+        } else {
+          console.log(`🚫 ${prospect.username} filtrado (completado hace ${Math.round(hoursSinceCompleted)}h < 24h)`);
+        }
+      } else if (last_message_type === 'received') {
+        // El prospecto me respondió después de que yo le escribí
+        console.log(`✅ ${prospect.username} → ABIERTA (completado pero último mensaje del prospecto)`);
+        abiertas++;
+      } else {
+        console.log(`🚫 ${prospect.username} filtrado (completado sin datos válidos)`);
+      }
+    }
+
+    const finalStats = { 
+      abiertas, 
+      seguimientos, 
+      agendados: 20 // Placeholder
+    };
+    
+    console.log('📊 Stats finales con lógica actualizada:', finalStats);
+    return finalStats;
     
   } catch (error) {
     console.error('Error in getUserStats:', error);
