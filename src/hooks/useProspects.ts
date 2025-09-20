@@ -514,6 +514,10 @@ export const useProspects = (currentInstagramUserId?: string) => {
           );
           
           if (sortedMessages.length === 0) {
+            // TODO: POsible fuente para agregar el prospecto
+            // al inicio y que aparezca en seguimiento
+            // tendriamos que ver como se agrega el mensaje dentro
+            // de mensajes! para determinar bien la logica
             console.log(`⚠️ [FETCH] Saltando prospecto sin mensajes: ${prospectData.username}`);
             continue;
           }

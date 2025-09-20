@@ -215,15 +215,11 @@ export class ProspectService implements ProspectServiceInterface {
         const { is_completed, completed_at, last_message_type } = taskStatus;
         
         // 🔥 LÓGICA PRINCIPAL: Si no está completado = incluir siempre
-        if (!is_completed) {
-          console.log(`✅ [PROSPECT-SERVICE] Prospecto ${prospect.username} incluido (no completado)`);
-          return prospect;
-        }
         
         // 🔥 LÓGICA DE RECONTACTO: Solo aplica si está completado Y hay completed_at y last_message_type = 'sent'
         console.log(`🔍 [PROSPECT-SERVICE] Evaluando recontacto para ${prospect.username}: is_completed=${is_completed}, last_message_type=${last_message_type}, completed_at=${completed_at}`);
         
-        if (is_completed && last_message_type === 'sent' && completed_at) {
+        if (last_message_type === 'sent' && completed_at) {
           const completedDate = new Date(completed_at);
           const now = new Date();
           const hoursSinceCompleted = (now.getTime() - completedDate.getTime()) / (1000 * 60 * 60);
