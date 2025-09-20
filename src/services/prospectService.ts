@@ -230,21 +230,26 @@ export class ProspectService implements ProspectServiceInterface {
             prospect.last_message_from_prospect = false; // También actualizar en memoria
             
             console.log(`📝 [PROSPECT-SERVICE] Actualizando BD para ${prospect.username}: last_owner_message_at=${completed_at}, last_message_from_prospect=false`);
+            console.log(`📝 [PROSPECT-SERVICE] UUID usado: ${prospect.instagram_user_id}, prospect_instagram_id: ${prospect.prospect_instagram_id}`);
             
             // Actualizar last_owner_message_at y last_message_from_prospect en la base de datos
-            const { error: updateError } = await supabase
+            const { data: updateData, error: updateError } = await supabase
               .from('prospects')
               .update({ 
                 last_owner_message_at: completed_at,
                 last_message_from_prospect: false  // El último mensaje fue MÍO (simulado para recontacto)
               })
               .eq('instagram_user_id', prospect.instagram_user_id)
-              .eq('prospect_instagram_id', prospect.prospect_instagram_id);
+              .eq('prospect_instagram_id', prospect.prospect_instagram_id)
+              .select(); // Agregar select para ver qué se actualizó
             
             if (updateError) {
               console.error(`❌ [PROSPECT-SERVICE] Error actualizando prospect ${prospect.username}:`, updateError);
             } else {
-              console.log(`✅ [PROSPECT-SERVICE] BD actualizada correctamente para ${prospect.username}`);
+              console.log(`✅ [PROSPECT-SERVICE] BD actualizada correctamente para ${prospect.username}. Registros actualizados:`, updateData?.length || 0);
+              if (updateData && updateData.length > 0) {
+                console.log(`✅ [PROSPECT-SERVICE] Nuevo estado para ${prospect.username}: last_message_from_prospect = ${updateData[0].last_message_from_prospect}`);
+              }
             }
             
             // Destachar el prospecto (marcar como no completado)
