@@ -32,7 +32,7 @@ export const useProspects = (currentInstagramUserId?: string) => {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const determineProspectState = (prospect: any): { state: 'pending' | 'yesterday' | 'week' | 'invited', daysSinceLastSent?: number, lastSentMessageTime?: string } | null => {
+  const determineProspectState = (prospect: any): { state: 'pending' | 'yesterday' | 'week' | 'invited', daysSinceLastSent?: number, lastSentMessageTime?: string } => {
     const senderId = prospect.prospect_instagram_id || prospect.id;
     
     console.log(`🔥 [RECONTACTAR-DEBUG] ===== ANALIZANDO PROSPECTO =====`);
@@ -80,11 +80,11 @@ export const useProspects = (currentInstagramUserId?: string) => {
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
     const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-    const fourteenDaysAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
+    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
     
     const isOverOneDay = lastOwnerMessageTime <= oneDayAgo;
     const isOverSevenDays = lastOwnerMessageTime <= sevenDaysAgo;
-    const isOverFourteenDays = lastOwnerMessageTime <= fourteenDaysAgo;
+    const isOverThirtyDays = lastOwnerMessageTime <= thirtyDaysAgo;
     const hoursSinceLastOwnerMessage = (now.getTime() - lastOwnerMessageTime.getTime()) / (1000 * 60 * 60);
     const daysSinceLastOwnerMessage = hoursSinceLastOwnerMessage / 24;
 
@@ -93,19 +93,19 @@ export const useProspects = (currentInstagramUserId?: string) => {
     console.log(`🔥 [RECONTACTAR-DEBUG] - Hace cuántos días: ${daysSinceLastOwnerMessage.toFixed(2)} días`);
     console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 1 día?: ${isOverOneDay}`);
     console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 7 días?: ${isOverSevenDays}`);
-    console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 14 días?: ${isOverFourteenDays}`);
+    console.log(`🔥 [RECONTACTAR-DEBUG] - ¿Más de 30 días?: ${isOverThirtyDays}`);
 
     // 🚨 CLASIFICACIÓN CORRECTA PARA RECONTACTAR CON FILTRO 7-30 DÍAS
-    if (isOverSevenDays && !isOverFourteenDays) {
-      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ RECONTACTAR 7 DÍAS (7-14 días): ${daysSinceLastOwnerMessage.toFixed(1)} días`);
+    if (isOverSevenDays && !isOverThirtyDays) {
+      console.log(`🔥 [RECONTACTAR-DEBUG] ✅ RECONTACTAR 7 DÍAS (7-30 días): ${daysSinceLastOwnerMessage.toFixed(1)} días`);
       return { 
         state: 'week', 
         daysSinceLastSent: Math.floor(daysSinceLastOwnerMessage),
         lastSentMessageTime: prospect.last_owner_message_at 
       };
-    } else if (isOverFourteenDays) {
-      console.log(`🔥 [RECONTACTAR-DEBUG] ❌ FILTRADO POR MÁS DE 14 DÍAS: ${daysSinceLastOwnerMessage.toFixed(1)} días`);
-      // Si tiene más de 14 días, no aparece en recontactar pero sí puede ser pending si el prospecto respondió
+    } else if (isOverThirtyDays) {
+      console.log(`🔥 [RECONTACTAR-DEBUG] ❌ FILTRADO POR MÁS DE 30 DÍAS: ${daysSinceLastOwnerMessage.toFixed(1)} días`);
+      // Si tiene más de 30 días, no aparece en recontactar pero sí puede ser pending si el prospecto respondió
       if (prospect.last_message_from_prospect === true) {
         return { state: 'pending' };
       } else {
@@ -537,13 +537,6 @@ export const useProspects = (currentInstagramUserId?: string) => {
           
           // 🔥 NUEVA LÓGICA: Usar determineProspectState con los datos del prospecto
           const stateResult = determineProspectState(prospectData);
-          
-          // Si el prospecto se desecha (más de 14 días), saltarlo
-          if (!stateResult) {
-            console.log(`🗑️ [FETCH] Prospecto desechado por ser muy antiguo: ${prospectData.username}`);
-            continue;
-          }
-          
           const state = stateResult.state;
           const daysSinceLastSent = stateResult.daysSinceLastSent;
           const lastSentMessageTime = stateResult.lastSentMessageTime;
