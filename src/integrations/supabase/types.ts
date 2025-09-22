@@ -1479,12 +1479,26 @@ export type Database = {
         Returns: string
       }
       grok_get_stats: {
-        Args: { p_instagram_user_id: string; p_period: string }
+        Args:
+          | {
+              p_hower_usernames?: string[]
+              p_instagram_user_id: string
+              p_period: string
+            }
+          | { p_instagram_user_id: string; p_period: string }
         Returns: {
           agendados: number
           respuestas: number
           seguimientos: number
         }[]
+      }
+      grok_get_stats_with_hower_filter: {
+        Args: {
+          p_hower_usernames: string
+          p_instagram_user_id: string
+          p_period: string
+        }
+        Returns: Record<string, unknown>
       }
       grok_get_stats_with_usernames_filter: {
         Args: { p_hower_usernames: string[]; p_instagram_user_id: string }
