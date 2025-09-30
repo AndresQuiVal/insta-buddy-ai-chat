@@ -139,10 +139,11 @@ const AutoresponderForm = ({ message, onSubmit, onCancel }: AutoresponderFormPro
         use_keywords: useKeywords,
         keywords: useKeywords ? keywords : null,
         use_buttons: useButtons,
-        button_text: useButtons ? buttonText.trim() : null,
-        button_url: useButtons ? buttonUrl.trim() : null,
-        instagram_user_id_ref: currentUser.instagram_user_id, // Usar el ID del usuario actual
-        instagram_user_id: currentUser.id // Mantener referencia al UUID por compatibilidad
+        buttons: useButtons ? [
+          { type: 'web_url', title: buttonText.trim(), url: buttonUrl.trim() }
+        ] : null,
+        instagram_user_id_ref: currentUser.instagram_user_id,
+        instagram_user_id: currentUser.id
       };
 
       let result;
