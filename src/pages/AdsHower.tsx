@@ -84,8 +84,11 @@ const AdsHower = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Hower Winner ADS
           </h1>
-          <p className="text-muted-foreground">
-            Descubre los anuncios más efectivos de tu nicho
+          <p className="text-muted-foreground text-lg">
+            🔍 Descubre los anuncios que llevan MESES activos y siguen generando ventas
+          </p>
+          <p className="text-sm text-muted-foreground/80 max-w-2xl mx-auto">
+            Si un anuncio lleva más de 6 meses corriendo, es porque funciona. Aquí encontrarás los mejores anuncios de tu nicho.
           </p>
         </div>
 
