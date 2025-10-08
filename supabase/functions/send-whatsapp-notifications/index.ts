@@ -519,57 +519,6 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Modo forzado - enviar a un usuario específico sin verificar horarios
-    if (body.force_send && body.instagram_user_id) {
-      console.log(`🚀 Modo forzado activado para usuario: ${body.instagram_user_id}`);
-      
-      // Get WhatsApp settings for this specific user
-      const { data: settings, error: settingsError } = await supabase
-        .from('whatsapp_notification_settings')
-        .select('*')
-        .eq('instagram_user_id', body.instagram_user_id)
-        .eq('enabled', true)
-        .single();
-      
-      if (settingsError || !settings) {
-        console.error('Error getting WhatsApp settings:', settingsError);
-        return new Response(
-          JSON.stringify({ error: "Usuario no tiene configuración de WhatsApp activa" }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // Buscar y guardar nuevos prospectos
-      await searchAndSaveProspects(body.instagram_user_id);
-      
-      // Get user stats
-      const stats = await getUserStats(body.instagram_user_id);
-      console.log(`User stats:`, stats);
-      
-      // Create message
-      const messageBody = createMotivationalMessage(stats);
-      
-      // Send WhatsApp message
-      const success = await sendWhatsAppMessage(
-        messageBody, 
-        settings.whatsapp_number
-      );
-      
-      return new Response(
-        JSON.stringify({
-          success: success,
-          message: success ? "Notificación enviada exitosamente" : "Error al enviar notificación",
-          stats: stats,
-          whatsapp_number: settings.whatsapp_number
-        }),
-        { 
-          status: success ? 200 : 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-    
     console.log("🚀 Starting WhatsApp notification process...");
     console.log("🔧 Usando endpoint simplificado de WhatsApp");
     
