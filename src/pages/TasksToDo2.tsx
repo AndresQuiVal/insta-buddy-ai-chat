@@ -107,6 +107,58 @@ const TasksToDo2: React.FC = () => {
   const [tempListName, setTempListName] = useState('');
   const [motivationalQuote, setMotivationalQuote] = useState('');
   const [newProspectsCount, setNewProspectsCount] = useState(0);
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+
+  // Función para enviar notificación de WhatsApp manual
+  const sendWhatsAppNotification = async () => {
+    if (!currentUser?.instagram_user_id) {
+      toast({
+        title: "Error",
+        description: "No hay usuario autenticado",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSendingWhatsApp(true);
+    try {
+      console.log('📤 Enviando notificación de WhatsApp manual...');
+      
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-notifications', {
+        body: {
+          test_mode: false, // Enviar notificación real
+          force_send: true, // Forzar envío sin importar horario
+          instagram_user_id: currentUser.instagram_user_id
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error enviando WhatsApp:', error);
+        toast({
+          title: "Error",
+          description: error.message || "No se pudo enviar la notificación de WhatsApp",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ Respuesta WhatsApp:', data);
+      toast({
+        title: "✅ Notificación enviada",
+        description: "Se ha enviado la notificación de WhatsApp con tus estadísticas del día",
+        variant: "default"
+      });
+    } catch (error: any) {
+      console.error('❌ Error en sendWhatsAppNotification:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Error desconocido al enviar WhatsApp",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingWhatsApp(false);
+    }
+  };
 
   // Función para cargar los usuarios de Hower - MEJORADA con verificación automática
   const loadHowerUsers = useCallback(async () => {
@@ -2061,10 +2113,34 @@ const TasksToDo2: React.FC = () => {
       }}
     >
       {/* Navbar morado visible */}
-      <div className="h-16 w-full" style={{ backgroundColor: '#724bff' }}>
+      <div className="h-16 w-full flex items-center justify-between px-6" style={{ backgroundColor: '#724bff' }}>
         {/* Hamburger Menu - positioned at top left */}
-        <div className="absolute top-6 left-6 z-50">
+        <div className="z-50">
           <TasksHamburgerMenu />
+        </div>
+        
+        {/* WhatsApp Notification Button - positioned at top right */}
+        <div className="z-50">
+          <Button
+            onClick={sendWhatsAppNotification}
+            disabled={sendingWhatsApp || !currentUser}
+            variant="outline"
+            size="sm"
+            className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white font-medium"
+            title="Enviar notificación de WhatsApp con estadísticas del día"
+          >
+            {sendingWhatsApp ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              <>
+                <Phone className="h-4 w-4 mr-2" />
+                Enviar WhatsApp
+              </>
+            )}
+          </Button>
         </div>
       </div>
       
