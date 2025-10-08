@@ -96,6 +96,3 @@ verify_jwt = false
 
 [functions.search-new-prospects]
 verify_jwt = true
-
-[functions.search-ads]
-verify_jwt = false
