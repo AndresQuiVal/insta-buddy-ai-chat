@@ -218,9 +218,9 @@ const WhatsAppConfigStep: React.FC<WhatsAppConfigStepProps> = ({ onBack, onNext,
               <SelectTrigger className="w-full sm:w-32">
                 <SelectValue placeholder="País" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-auto">
                 {countryCodes.map((code) => (
-                  <SelectItem key={code.value} value={code.value}>
+                  <SelectItem key={code.value} value={code.value} className="hover:bg-gray-100 cursor-pointer">
                     {code.label}
                   </SelectItem>
                 ))}
@@ -249,9 +249,9 @@ const WhatsAppConfigStep: React.FC<WhatsAppConfigStepProps> = ({ onBack, onNext,
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecciona tu zona horaria" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-auto">
               {commonTimezones.map((tz) => (
-                <SelectItem key={tz.value} value={tz.value}>
+                <SelectItem key={tz.value} value={tz.value} className="hover:bg-gray-100 cursor-pointer">
                   {tz.label}
                 </SelectItem>
               ))}
