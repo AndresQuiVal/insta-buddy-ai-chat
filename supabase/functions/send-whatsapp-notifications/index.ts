@@ -11,6 +11,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
 
+// Usar el mismo endpoint que está funcionando en la vista Django
 const WHATSAPP_API_URL = "https://www.howersoftware.io/clients/api/send-whatsapp/";
 
 async function sendWhatsAppMessage(message: string, toNumber: string): Promise<boolean> {
