@@ -17,7 +17,7 @@ async function sendWhatsAppMessage(message: string, toNumber: string): Promise<b
     console.log(`📱 Enviando WhatsApp a: ${toNumber}`);
     console.log(`📄 Mensaje: ${message.substring(0, 100)}...`);
     
-    const response = await fetch('https://hook.us1.make.com/7w4g5qx8g8yi8cyd0yajspja5k8wqxpq', {
+    const response = await fetch('https://www.howersoftware.io/clients/api/send-whatsapp/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -50,7 +50,8 @@ async function getUserStats(instagramUserId: string) {
     const { data: stats, error } = await supabase
       .rpc('grok_get_stats', { 
         p_instagram_user_id: instagramUserId,
-        p_period: 'today' 
+        p_period: 'today',
+        p_hower_usernames: null
       });
     
     if (error) {
