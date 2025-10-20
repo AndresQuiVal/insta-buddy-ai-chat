@@ -77,6 +77,8 @@ export const getInstagramPosts = async (): Promise<InstagramPost[]> => {
     console.log('📱 Instagram User ID:', instagramUserId);
 
     // Obtener posts de Instagram usando el ID del usuario
+    console.log('📱 Solicitando posts del usuario ID:', instagramUserId);
+    
     const postsResponse = await fetch(
       `https://graph.instagram.com/v23.0/${instagramUserId}/media?fields=id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,thumbnail_url&limit=100&access_token=${token}`
     );
@@ -84,7 +86,12 @@ export const getInstagramPosts = async (): Promise<InstagramPost[]> => {
     if (!postsResponse.ok) {
       const errorData = await postsResponse.json();
       console.error('❌ Error de Instagram API:', errorData);
-      throw new Error(errorData.error?.message || 'Error obteniendo posts');
+      console.error('❌ Status:', postsResponse.status);
+      console.error('❌ Error completo:', JSON.stringify(errorData, null, 2));
+      
+      // Capturar el mensaje de error específico
+      const errorMessage = errorData.error?.message || errorData.message || 'Error obteniendo posts';
+      throw new Error(errorMessage);
     }
     
     const postsData = await postsResponse.json();
