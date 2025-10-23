@@ -29,28 +29,28 @@ export interface InstagramUser {
  */
 export const getInstagramUserInfo = async (): Promise<InstagramUser> => {
   try {
-    const token = localStorage.getItem('hower-instagram-token');
+    console.log('📱 Obteniendo información del usuario de Instagram...');
     
-    if (!token) {
-      throw new Error('No hay token de Instagram disponible');
+    // Obtener usuario de localStorage primero (SIEMPRE usar estos datos)
+    const savedUserData = localStorage.getItem('hower-instagram-user');
+    if (!savedUserData) {
+      throw new Error('No hay usuario conectado. Por favor, conéctate primero.');
     }
-
-    console.log('🔍 Obteniendo información del usuario de Instagram...');
-
-    const response = await fetch(
-      `https://graph.instagram.com/v23.0/me?fields=id,user_id,username,name,account_type,profile_picture_url,followers_count,follows_count,media_count&access_token=${token}`
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('❌ Error obteniendo información del usuario:', errorData);
-      throw new Error(errorData.error?.message || 'Error obteniendo información del usuario');
+    
+    const userData = JSON.parse(savedUserData);
+    if (!userData?.instagram?.id) {
+      throw new Error('Datos de Instagram incompletos. Por favor, reconéctate.');
     }
-
-    const userData = await response.json();
-    console.log('✅ Información del usuario obtenida:', userData);
-
-    return userData;
+    
+    console.log('✅ Usando Instagram User ID de localStorage:', userData.instagram.id);
+    
+    return {
+      id: userData.instagram.id,
+      user_id: userData.instagram.id,
+      username: userData.instagram.username || 'Usuario',
+      account_type: 'Business',
+      profile_picture_url: userData.instagram.profile_picture_url,
+    } as InstagramUser;
   } catch (error) {
     console.error('❌ Error en getInstagramUserInfo:', error);
     throw error;
