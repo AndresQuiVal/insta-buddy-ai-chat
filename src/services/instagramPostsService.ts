@@ -62,9 +62,14 @@ export const getInstagramUserInfo = async (): Promise<InstagramUser> => {
  */
 export const getInstagramPosts = async (): Promise<InstagramPost[]> => {
   try {
+    console.log('🎬 ===== INICIANDO getInstagramPosts =====');
+    
     const token = localStorage.getItem('hower-instagram-token');
+    console.log('🔑 Token exists:', !!token);
+    console.log('🔑 Token length:', token?.length);
     
     if (!token) {
+      console.error('❌ No token found in localStorage');
       throw new Error('No hay token de Instagram disponible');
     }
 
@@ -72,23 +77,34 @@ export const getInstagramPosts = async (): Promise<InstagramPost[]> => {
     
     // Primero obtenemos la información del usuario
     const userInfo = await getInstagramUserInfo();
+    console.log('👤 UserInfo received:', userInfo);
+    
     const instagramUserId = userInfo.user_id;
-
     console.log('📱 Instagram User ID:', instagramUserId);
+    
+    if (!instagramUserId) {
+      console.error('❌ No Instagram User ID found');
+      throw new Error('No se pudo obtener el ID del usuario de Instagram');
+    }
 
     // Obtener posts de Instagram usando el ID del usuario
     console.log('📱 Solicitando posts del usuario ID:', instagramUserId);
     console.log('🔑 Token length:', token?.length);
-    console.log('🔗 URL completa:', `https://graph.instagram.com/${instagramUserId}/media`);
     
-    const postsResponse = await fetch(
-      `https://graph.instagram.com/${instagramUserId}/media?fields=id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,thumbnail_url&limit=100&access_token=${token}`
-    );
+    const apiUrl = `https://graph.instagram.com/${instagramUserId}/media?fields=id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,thumbnail_url&limit=100&access_token=${token}`;
+    console.log('🔗 URL completa (sin token):', apiUrl.replace(/access_token=[^&]+/, 'access_token=HIDDEN'));
+    
+    console.log('🚀 Haciendo request a Instagram API...');
+    const postsResponse = await fetch(apiUrl);
+    
+    console.log('📊 Response status:', postsResponse.status);
+    console.log('📊 Response ok:', postsResponse.ok);
     
     if (!postsResponse.ok) {
       const errorData = await postsResponse.json();
       console.error('❌ Error de Instagram API:', errorData);
       console.error('❌ Status:', postsResponse.status);
+      console.error('❌ StatusText:', postsResponse.statusText);
       console.error('❌ Error completo:', JSON.stringify(errorData, null, 2));
       
       // Capturar el mensaje de error específico
