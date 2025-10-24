@@ -37,7 +37,6 @@ import ICPOnboarding from "./pages/ICPOnboarding";
 import ICPEditor from "./pages/ICPEditor";
 import HowerProspector from "./pages/HowerProspector";
 import DesignVault from "./pages/DesignVault";
-import TestWhatsApp from "./pages/TestWhatsApp";
 
 const queryClient = new QueryClient();
 
@@ -78,7 +77,6 @@ const App = () => (
           <Route path="/icp-editor" element={<ICPEditor />} />
           <Route path="/hower-prospector" element={<HowerProspector />} />
           <Route path="/design-vault" element={<DesignVault />} />
-          <Route path="/test-whatsapp" element={<TestWhatsApp />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

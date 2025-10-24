@@ -59,7 +59,7 @@ const TasksToDo2: React.FC = () => {
 
   // Validación de autenticación - sin simulación
 
-  // Validación de autenticación con redirección al login
+  // Validación de autenticación mejorada - evita mensajes innecesarios
   useEffect(() => {
     console.log('🔍 [AUTH-DEBUG] Estado de autenticación:', {
       userLoading,
@@ -67,16 +67,24 @@ const TasksToDo2: React.FC = () => {
       localStorage: localStorage.getItem('hower-instagram-user') ? 'presente' : 'ausente'
     });
     
-    // Redirigir al login si no hay usuario autenticado
+    // Solo mostrar mensaje informativo si no hay usuario después de 3 segundos, pero NO redirigir
     if (!userLoading && !currentUser) {
-      console.log('ℹ️ No hay usuario autenticado, redirigiendo al login...');
-      navigate('/');
-      return;
+      console.log('ℹ️ No hay usuario autenticado');
+      // Dar un poco de tiempo para que se cargue automáticamente
+      setTimeout(() => {
+        if (!currentUser) {
+          toast({
+            title: "Información",
+            description: "Para usar esta función necesitas conectar tu cuenta de Instagram",
+            variant: "default"
+          });
+        }
+      }, 3000);
     }
 
     // NO mostrar mensaje de Hower aquí, se maneja en checkDatabaseCredentials
     // para evitar mensajes innecesarios mientras se recuperan las credenciales
-  }, [currentUser, userLoading, navigate]);
+  }, [currentUser, userLoading, toast]);
 
 
   const [loading, setLoading] = useState(true);

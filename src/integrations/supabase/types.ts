@@ -1332,48 +1332,6 @@ export type Database = {
         }
         Relationships: []
       }
-      whatsapp_notification_log: {
-        Row: {
-          created_at: string
-          day_of_week: number
-          error_message: string | null
-          id: string
-          instagram_user_id: string
-          message_sent: string
-          notification_date: string
-          scheduled_time: string
-          sent_at: string
-          status: string
-          whatsapp_number: string
-        }
-        Insert: {
-          created_at?: string
-          day_of_week: number
-          error_message?: string | null
-          id?: string
-          instagram_user_id: string
-          message_sent: string
-          notification_date?: string
-          scheduled_time: string
-          sent_at?: string
-          status?: string
-          whatsapp_number: string
-        }
-        Update: {
-          created_at?: string
-          day_of_week?: number
-          error_message?: string | null
-          id?: string
-          instagram_user_id?: string
-          message_sent?: string
-          notification_date?: string
-          scheduled_time?: string
-          sent_at?: string
-          status?: string
-          whatsapp_number?: string
-        }
-        Relationships: []
-      }
       whatsapp_notification_settings: {
         Row: {
           created_at: string
@@ -1521,26 +1479,12 @@ export type Database = {
         Returns: string
       }
       grok_get_stats: {
-        Args:
-          | {
-              p_hower_usernames?: string[]
-              p_instagram_user_id: string
-              p_period: string
-            }
-          | { p_instagram_user_id: string; p_period: string }
+        Args: { p_instagram_user_id: string; p_period: string }
         Returns: {
           agendados: number
           respuestas: number
           seguimientos: number
         }[]
-      }
-      grok_get_stats_with_hower_filter: {
-        Args: {
-          p_hower_usernames: string
-          p_instagram_user_id: string
-          p_period: string
-        }
-        Returns: Record<string, unknown>
       }
       grok_get_stats_with_usernames_filter: {
         Args: { p_hower_usernames: string[]; p_instagram_user_id: string }

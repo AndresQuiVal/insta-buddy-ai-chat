@@ -17,7 +17,7 @@ async function sendWhatsAppMessage(message: string, toNumber: string): Promise<b
     console.log(`📱 Enviando WhatsApp a: ${toNumber}`);
     console.log(`📄 Mensaje: ${message.substring(0, 100)}...`);
     
-    const response = await fetch('https://www.howersoftware.io/clients/api/send-whatsapp/', {
+    const response = await fetch('https://hook.us1.make.com/7w4g5qx8g8yi8cyd0yajspja5k8wqxpq', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -44,192 +44,50 @@ async function sendWhatsAppMessage(message: string, toNumber: string): Promise<b
   }
 }
 
-// Function to get user stats (same logic as cronjob)
+// Function to get user stats
 async function getUserStats(instagramUserId: string) {
   try {
-    console.log('🔍 Getting Hower usernames for user:', instagramUserId);
-    
-    // Llamar al edge function para obtener usernames de Hower
-    const { data: howerResponse, error: howerError } = await supabase.functions.invoke(
-      'get-hower-usernames',
-      {
-        body: { instagram_user_id: instagramUserId }
-      }
-    );
-
-    let howerUsernames: string[] = [];
-    if (!howerError && howerResponse?.success && howerResponse?.data?.usernames) {
-      howerUsernames = howerResponse.data.usernames;
-      console.log('📞 Got Hower usernames:', { 
-        usernameCount: howerUsernames.length 
+    const { data: stats, error } = await supabase
+      .rpc('grok_get_stats', { 
+        p_instagram_user_id: instagramUserId,
+        p_period: 'today' 
       });
-    } else {
-      console.log('⚠️ No Hower credentials or error getting usernames:', howerError?.message || 'No credentials');
-      console.log('🚫 No Hower credentials available - returning zero stats (Hower filter is mandatory)');
-      return { abiertas: 0, seguimientos: 0, agendados: 0 };
-    }
-
-    console.log('🔥 Aplicando lógica CORREGIDA del prospectService...');
-
-    // Obtener UUID del usuario
-    const { data: userUuidData, error: userUuidError } = await supabase
-      .from('instagram_users')
-      .select('id')
-      .eq('instagram_user_id', instagramUserId)
-      .single();
-
-    if (userUuidError || !userUuidData) {
-      console.error('❌ Error obteniendo UUID del usuario:', userUuidError);
-      return { abiertas: 0, seguimientos: 0, agendados: 0 };
-    }
-
-    const userUUID = userUuidData.id;
-
-    // Obtener todos los prospectos con filtros de calidad
-    const { data: prospects, error: prospectsError } = await supabase
-      .from('prospects')
-      .select('*')
-      .eq('instagram_user_id', userUUID)
-      .not('username', 'like', 'user_%')
-      .not('username', 'like', 'prospect_%')
-      .neq('username', '');
-
-    if (prospectsError) {
-      console.error('❌ Error obteniendo prospectos:', prospectsError);
-      return { abiertas: 0, seguimientos: 0, agendados: 0 };
-    }
-
-    // Obtener estados de tareas
-    const { data: taskStatuses, error: taskError } = await supabase
-      .from('prospect_task_status')
-      .select('prospect_sender_id, is_completed, completed_at, last_message_type')
-      .eq('instagram_user_id', instagramUserId)
-      .eq('task_type', 'pending');
-
-    if (taskError) {
-      console.error('❌ Error obteniendo task statuses:', taskError);
-    }
-
-    console.log(`📊 Procesando ${prospects?.length || 0} prospectos con lógica CORREGIDA`);
-
-    let abiertas = 0;
-    let seguimientos = 0;
-
-    for (const prospect of prospects || []) {
-      // Filtro Hower: Solo procesar si está en la lista de Hower
-      const isInHowerList = howerUsernames.some(username => 
-        prospect.username === username || 
-        prospect.username.replace('@', '') === username ||
-        prospect.username === '@' + username
-      );
-
-      if (!isInHowerList) {
-        continue;
-      }
-
-      const taskStatus = taskStatuses?.find(task => 
-        task.prospect_sender_id === prospect.prospect_instagram_id
-      );
-
-      if (!taskStatus) {
-        if (prospect.last_message_from_prospect) {
-          console.log(`✅ ${prospect.username} → ABIERTA (sin taskStatus, último mensaje del prospecto)`);
-          abiertas++;
-        }
-        continue;
-      }
-
-      const { is_completed, completed_at, last_message_type } = taskStatus;
-
-      // Lógica de recontacto principal
-      if (is_completed && last_message_type === 'sent' && completed_at) {
-        const completedDate = new Date(completed_at);
-        const now = new Date();
-        const hoursSinceCompleted = (now.getTime() - completedDate.getTime()) / (1000 * 60 * 60);
-        
-        if (hoursSinceCompleted > 24) {
-          console.log(`🔄 ${prospect.username} → SEGUIMIENTO (recontacto necesario, ${Math.round(hoursSinceCompleted)}h > 24h)`);
-          seguimientos++;
-          continue;
-        } else {
-          continue;
-        }
-      }
-
-      // Lógica normal
-      if (!is_completed) {
-        if (prospect.last_message_from_prospect) {
-          console.log(`✅ ${prospect.username} → ABIERTA (no completado, último mensaje del prospecto)`);
-          abiertas++;
-        } else if (prospect.last_owner_message_at) {
-          const lastOwnerMessage = new Date(prospect.last_owner_message_at);
-          const now = new Date();
-          const hoursSinceLastMessage = (now.getTime() - lastOwnerMessage.getTime()) / (1000 * 60 * 60);
-          const daysSinceLastMessage = hoursSinceLastMessage / 24;
-          
-          if (daysSinceLastMessage >= 7 && daysSinceLastMessage <= 14) {
-            console.log(`✅ ${prospect.username} → SEGUIMIENTO (${Math.round(daysSinceLastMessage)} días - en rango 7-14)`);
-            seguimientos++;
-          } else if (hoursSinceLastMessage >= 24 && daysSinceLastMessage < 7) {
-            console.log(`✅ ${prospect.username} → SEGUIMIENTO (${Math.round(hoursSinceLastMessage)}h desde último mensaje)`);
-            seguimientos++;
-          }
-        }
-      } else if (last_message_type === 'received') {
-        console.log(`✅ ${prospect.username} → ABIERTA (completado pero último mensaje del prospecto)`);
-        abiertas++;
-      }
-    }
-
-    const finalStats = { 
-      abiertas, 
-      seguimientos, 
-      agendados: 20
-    };
     
-    console.log('📊 Stats finales:', finalStats);
-    return finalStats;
+    if (error) {
+      console.error('Error getting user stats:', error);
+      return { abiertas: 0, seguimientos: 0, agendados: 0 };
+    }
     
+    return stats[0] || { abiertas: 0, seguimientos: 0, agendados: 0 };
   } catch (error) {
     console.error('Error in getUserStats:', error);
     return { abiertas: 0, seguimientos: 0, agendados: 0 };
   }
 }
 
-// Function to create motivational message (same as cronjob)
+// Function to create motivational message
 function createMotivationalMessage(stats: { abiertas: number, seguimientos: number, agendados: number }): string {
   const greetings = [
-    "¡Buenos días! 🌟",
-    "¡Hola campeón! 💪",
-    "¡Arranca el día con energía! ⚡",
-    "¡A conquistar el día! 🚀",
-    "¡Buenos días, prospector! 🎯"
+    "¡Buenos días! ☀️",
+    "¡Hola! 👋",
+    "¡Qué tal! 😊"
   ];
   
-  const motivationalPhrases = [
-    "¡Cada contacto te acerca más a tu objetivo! 🎯",
-    "¡El éxito está en la constancia! 💪",
-    "¡Hoy es un gran día para cerrar negocios! 🚀",
-    "¡Tu dedicación se convertirá en resultados! ⭐",
-    "¡Sigue así, vas por buen camino! 🔥"
+  const phrases = [
+    "¡Es hora de brillar! ✨",
+    "¡A por todas! 💪",
+    "¡Vamos con todo! 🚀"
   ];
   
   const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
-  const randomPhrase = motivationalPhrases[Math.floor(Math.random() * motivationalPhrases.length)];
-  
-  const totalProspects = stats.abiertas + stats.seguimientos;
+  const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
   
   return `${randomGreeting}
 
-Tienes estos prospectos por contactar:
-URGENTES de contestar: ${stats.abiertas}
-Prospectos en seguimiento: ${stats.seguimientos}
-Nuevos prospectos de hoy: ${stats.agendados}
-
-Accede a este link:
-https://preview--insta-buddy-ai-chat.lovable.app/tasks-to-do
-
-y limpia esos prospectos
+📊 Tu resumen de prospectos:
+• Conversaciones abiertas: ${stats.abiertas}
+• Seguimientos pendientes: ${stats.seguimientos}
+• Reuniones programadas: ${stats.agendados}
 
 ${randomPhrase}`;
 }
