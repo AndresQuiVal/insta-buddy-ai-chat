@@ -96,14 +96,19 @@ serve(async (req) => {
 
     // ✅ AHORA SÍ PODEMOS OBTENER INFO ADICIONAL USANDO EL USER_ID
     console.log('📋 Obteniendo username del Instagram Business Account...')
+    console.log('🔗 URL de username:', `https://graph.instagram.com/${instagramUserId}?fields=username,account_type`)
     const userInfoResponse = await fetch(`https://graph.instagram.com/${instagramUserId}?fields=username,account_type&access_token=${finalAccessToken}`)
     
     let finalUsername = username
     if (userInfoResponse.ok) {
       const userInfo = await userInfoResponse.json()
+      console.log('📊 Respuesta de username API:', userInfo)
       finalUsername = userInfo.username || username
       console.log('✅ Username obtenido:', finalUsername)
     } else {
+      const errorData = await userInfoResponse.json()
+      console.error('❌ Error obteniendo username:', errorData)
+      console.error('❌ Status:', userInfoResponse.status)
       console.log('⚠️ No se pudo obtener username, usando temporal')
     }
 
