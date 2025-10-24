@@ -71,6 +71,15 @@ serve(async (req) => {
 
     const tokenData = await tokenResponse.json()
     console.log('✅ Token de acceso obtenido exitosamente')
+    console.log('📊 Token data from Instagram:', tokenData)
+
+    // ✅ INSTAGRAM YA DEVUELVE EL USER_ID EN LA RESPUESTA DEL TOKEN
+    const instagramUserId = tokenData.user_id
+    const username = `usuario_${instagramUserId}` // Username temporal
+    
+    console.log('🆔 ===== ID DIRECTO DE INSTAGRAM =====')
+    console.log('👤 Instagram User ID:', instagramUserId)
+    console.log('📋 Este es el ID correcto del Instagram Business Account')
 
     // Intercambiar por token de larga duración
     console.log('🔄 Intercambiando por token de larga duración...')
@@ -85,26 +94,30 @@ serve(async (req) => {
       console.log('⚠️ No se pudo obtener token de larga duración, usando token normal')
     }
 
-    // ✅ OBTENER INFORMACIÓN DEL USUARIO DE INSTAGRAM GRAPH API DIRECTAMENTE
-    console.log('📋 Obteniendo información del usuario de Instagram Graph API...')
-    const userResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,instagram_business_account&access_token=${finalAccessToken}`)
+    // ✅ AHORA SÍ PODEMOS OBTENER INFO ADICIONAL USANDO EL USER_ID
+    console.log('📋 Obteniendo username del Instagram Business Account...')
+    console.log('🔗 URL de username:', `https://graph.instagram.com/${instagramUserId}?fields=username,account_type`)
+    const userInfoResponse = await fetch(`https://graph.instagram.com/${instagramUserId}?fields=username,account_type&access_token=${finalAccessToken}`)
     
-    if (!userResponse.ok) {
-      const errorData = await userResponse.json()
-      console.error('❌ Error obteniendo información del usuario:', errorData)
-      throw new Error('Error obteniendo información del usuario de Instagram')
+    let finalUsername = username
+    if (userInfoResponse.ok) {
+      const userInfo = await userInfoResponse.json()
+      console.log('📊 Respuesta de username API:', userInfo)
+      finalUsername = userInfo.username || username
+      console.log('✅ Username obtenido:', finalUsername)
+    } else {
+      const errorData = await userInfoResponse.json()
+      console.error('❌ Error obteniendo username:', errorData)
+      console.error('❌ Status:', userInfoResponse.status)
+      console.log('⚠️ No se pudo obtener username, usando temporal')
     }
-    
-    const userData = await userResponse.json()
-    console.log('👤 Datos de usuario de Instagram obtenidos:', userData)
 
-    // ✅ USAR EL ID DE INSTAGRAM GRAPH API (ESTE ES EL CORRECTO PARA BUSINESS)
-    const finalInstagramUserId = userData.instagram_business_account; // Este es el ID correcto de Instagram Business
+    // ✅ USAR EL ID QUE INSTAGRAM DEVOLVIÓ DIRECTAMENTE
+    const finalInstagramUserId = instagramUserId
     
-    console.log('🆔 ===== ID CORRECTO DE INSTAGRAM GRAPH API =====')
-    console.log('👤 Instagram User ID (Graph API):', finalInstagramUserId)
-    console.log('📋 Username:', userData.username)
-    console.log('🏢 Account Type:', userData.account_type)
+    console.log('🆔 ===== ID CORRECTO DE INSTAGRAM =====')
+    console.log('👤 Instagram User ID:', finalInstagramUserId)
+    console.log('📋 Username:', finalUsername)
     console.log('✅ Este ID es el correcto para Instagram Business y webhooks')
 
     // ✅ GUARDAR EN SUPABASE CON EL ID CORRECTO DE INSTAGRAM GRAPH API
@@ -118,8 +131,8 @@ serve(async (req) => {
     const { data: savedUser, error: saveError } = await supabase
       .from('instagram_users')
       .upsert({
-        instagram_user_id: finalInstagramUserId, // ✅ ID CORRECTO DE INSTAGRAM GRAPH API
-        username: userData.username || `Usuario_${finalInstagramUserId}`,
+        instagram_user_id: finalInstagramUserId, // ✅ ID CORRECTO DE INSTAGRAM
+        username: finalUsername,
         access_token: finalAccessToken,
         page_id: null, // No necesario para Instagram Graph API directo
         is_active: true,
@@ -151,7 +164,6 @@ serve(async (req) => {
       console.log('🆔 Usuario en BD con instagram_user_id:', verifyUser.instagram_user_id)
       console.log('👤 Username:', verifyUser.username)
       console.log('🔗 ID interno BD:', verifyUser.id)
-      console.log('🏢 Account Type:', userData.account_type)
     }
 
     console.log('🎯 ===== IMPORTANTE PARA EL WEBHOOK =====')
@@ -160,11 +172,14 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       access_token: finalAccessToken,
-      user: userData,
+      user: {
+        id: finalInstagramUserId,
+        name: finalUsername
+      },
       instagram_account: {
         id: finalInstagramUserId,
         user_id: finalInstagramUserId,
-        username: userData.username
+        username: finalUsername
       },
       business_account: {
         id: finalInstagramUserId,

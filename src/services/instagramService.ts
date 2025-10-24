@@ -6,7 +6,7 @@ const INSTAGRAM_APP_ID = "1059372749433300"; // Instagram App ID principal
 const INSTAGRAM_REDIRECT_URI =
   window.location.origin + "/auth/instagram/callback";
 const INSTAGRAM_SCOPE =
-  "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments"; // Permisos sin content_publish
+  "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish"; // Permisos incluyendo lectura de posts
 
 export interface InstagramAuthConfig {
   clientId: string;
@@ -329,9 +329,17 @@ export const getInstagramUserInfo = async () => {
   if (!token) return null;
 
   try {
-    // Primero obtenemos info básica del usuario de Facebook
+    // Obtener datos de localStorage primero
+    const userDataString = localStorage.getItem("hower-instagram-user");
+    if (userDataString) {
+      const savedData = JSON.parse(userDataString);
+      console.log('✅ Usando datos de localStorage:', savedData);
+      return savedData;
+    }
+
+    // Si no hay datos guardados, obtener de Facebook Graph API (NO Instagram Graph API)
     const userResponse = await fetch(
-      `https://graph.instagram.com/v23.0/me?fields=id,name&access_token=${token}`
+      `https://graph.facebook.com/v23.0/me?fields=id,name&access_token=${token}`
     );
 
     if (!userResponse.ok) {

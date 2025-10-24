@@ -11,6 +11,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
 
+// Usar el mismo endpoint que está funcionando en la vista Django
 const WHATSAPP_API_URL = "https://www.howersoftware.io/clients/api/send-whatsapp/";
 
 async function sendWhatsAppMessage(message: string, toNumber: string): Promise<boolean> {
@@ -601,14 +602,32 @@ serve(async (req) => {
         
         const notificationTime = notification.notification_time.substring(0, 5); // HH:MM
         
-        // Check if current time is within the notification minute (more flexible)
+        // Check if current time is within ±5 minutes of scheduled time
         const [notificationHour, notificationMinute] = notificationTime.split(':').map(Number);
         const currentHour = userDate.getHours();
         const currentMinute = userDate.getMinutes();
         
-        // Allow notification if we're in the same hour and minute
-        if (currentHour !== notificationHour || currentMinute !== notificationMinute) {
-          console.log(`Skipping user ${notification.instagram_user_id} - time mismatch (${currentHour}:${currentMinute.toString().padStart(2, '0')} vs ${notificationTime}) in timezone ${userTimezone}`);
+        // Calculate total minutes from midnight for comparison
+        const scheduledMinutes = notificationHour * 60 + notificationMinute;
+        const currentMinutes = currentHour * 60 + currentMinute;
+        const timeDifference = Math.abs(currentMinutes - scheduledMinutes);
+        
+        // Allow notification if within 5 minutes of scheduled time
+        if (timeDifference > 5) {
+          console.log(`Skipping user ${notification.instagram_user_id} - time difference ${timeDifference} minutes (${currentHour}:${currentMinute.toString().padStart(2, '0')} vs ${notificationTime}) in timezone ${userTimezone}`);
+          continue;
+        }
+        
+        // Check if notification was already sent today
+        const { data: existingLog, error: logCheckError } = await supabase
+          .from('whatsapp_notification_log')
+          .select('id')
+          .eq('instagram_user_id', notification.instagram_user_id)
+          .eq('notification_date', userDate.toISOString().split('T')[0])
+          .single();
+        
+        if (existingLog) {
+          console.log(`⏭️ Notification already sent today for user ${notification.instagram_user_id}`);
           continue;
         }
         
@@ -632,6 +651,26 @@ serve(async (req) => {
           messageBody, 
           notification.whatsapp_notification_settings.whatsapp_number
         );
+        
+        // Log the notification attempt
+        const logData = {
+          instagram_user_id: notification.instagram_user_id,
+          whatsapp_number: notification.whatsapp_notification_settings.whatsapp_number,
+          notification_date: userDate.toISOString().split('T')[0],
+          scheduled_time: notificationTime,
+          day_of_week: userDay,
+          message_sent: messageBody,
+          status: success ? 'sent' : 'failed',
+          error_message: success ? null : 'Failed to send message'
+        };
+        
+        const { error: logError } = await supabase
+          .from('whatsapp_notification_log')
+          .insert(logData);
+        
+        if (logError) {
+          console.error(`Error logging notification for ${notification.instagram_user_id}:`, logError);
+        }
         
         results.push({
           instagram_user_id: notification.instagram_user_id,
