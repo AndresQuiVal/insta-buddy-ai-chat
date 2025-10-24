@@ -78,9 +78,11 @@ export const getInstagramPosts = async (): Promise<InstagramPost[]> => {
 
     // Obtener posts de Instagram usando el ID del usuario
     console.log('📱 Solicitando posts del usuario ID:', instagramUserId);
+    console.log('🔑 Token length:', token?.length);
+    console.log('🔗 URL completa:', `https://graph.instagram.com/${instagramUserId}/media`);
     
     const postsResponse = await fetch(
-      `https://graph.instagram.com/v23.0/${instagramUserId}/media?fields=id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,thumbnail_url&limit=100&access_token=${token}`
+      `https://graph.instagram.com/${instagramUserId}/media?fields=id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,thumbnail_url&limit=100&access_token=${token}`
     );
     
     if (!postsResponse.ok) {
