@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { DeleteUserTool } from "@/components/DeleteUserTool";
 import Index from "./pages/Index";
 
 import AutoresponderOnboarding from "./pages/AutoresponderOnboarding";
@@ -47,6 +48,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/delete-tool" element={<DeleteUserTool />} />
           <Route path="/" element={<Index />} />
           <Route path="/welcome" element={<WelcomeDashboard />} />
           <Route path="/hower-auth" element={<HowerAuth />} />
