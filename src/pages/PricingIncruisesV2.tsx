@@ -16,6 +16,11 @@ const PricingIncruisesV2 = () => {
     "Grabaciones de sesiones pasadas"
   ];
 
+  const callSubBullets = [
+    "Mensajes de prospección",
+    "Estrategia de prospección por Top 1% networkers"
+  ];
+
   const plans = [
     {
       id: "3-months-incruises",
@@ -33,17 +38,15 @@ const PricingIncruisesV2 = () => {
         { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
-        { text: "Academia de Hower = aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
+        { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
-        "1 llamada exclusiva con enfoque en:",
-        "• Mensajes de prospección",
-        "• Estrategia de prospección por Top 1% networkers",
-        <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
-        "Video de 9 pasos para agendar llamadas (infalible)",
-        "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
-        "Video: Bio magnética que atrae prospectos",
-        "Lista de objeciones + IA entrenada para resolverlas"
+        { text: "1 llamada exclusiva con enfoque en:", subBullets: callSubBullets },
+        { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
+        { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
+        { text: "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)", subBullets: null },
+        { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
+        { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
       savings: "Ahorras 15 días de costo de Hower + 5 NUEVAS herramientas"
     },
@@ -65,18 +68,16 @@ const PricingIncruisesV2 = () => {
         { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
-        { text: "Academia de Hower = aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
+        { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
-        "Hower Assistant (Gratis 3 meses)",
-        "3 llamadas exclusivas con Andrés:",
-        "• Mensajes de prospección",
-        "• Estrategia de prospección por Top 1% networkers",
-        <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
-        "Video de 9 pasos para agendar llamadas (infalible)",
-        "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
-        "Video: Bio magnética que atrae prospectos",
-        "Lista de objeciones + IA entrenada para resolverlas"
+        { text: "Hower Assistant (Gratis 3 meses)", subBullets: null },
+        { text: "3 llamadas exclusivas con Andrés:", subBullets: callSubBullets },
+        { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
+        { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
+        { text: "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)", subBullets: null },
+        { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
+        { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
       savings: "1 mes gratis + 8 NUEVOS productos GRATUITOS"
     },
@@ -101,18 +102,16 @@ const PricingIncruisesV2 = () => {
         { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
-        { text: "Academia de Hower = aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
+        { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
-        "Hower Assistant (Gratis 1 año)",
-        "7 llamadas exclusivas con Andrés:",
-        "• Mensajes de prospección",
-        "• Estrategia de prospección por Top 1% networkers",
-        <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
-        "Video de 9 pasos para agendar llamadas (infalible)",
-        "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
-        "Video: Bio magnética que atrae prospectos",
-        "Lista de objeciones + IA entrenada para resolverlas"
+        { text: "Hower Assistant (Gratis 1 año)", subBullets: null },
+        { text: "7 llamadas exclusivas con Andrés:", subBullets: callSubBullets },
+        { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
+        { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
+        { text: "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)", subBullets: null },
+        { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
+        { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
       savings: "Acceso de por vida + mentoría exclusiva de $1,000"
     }
@@ -230,9 +229,21 @@ const PricingIncruisesV2 = () => {
                   </h4>
                   <ul className="space-y-2">
                     {plan.bonus.map((bonus, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <Check className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-                        <span className="font-medium text-yellow-600">{bonus}</span>
+                      <li key={i}>
+                        <div className="flex items-start gap-2 text-sm">
+                          <Check className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
+                          <span className="font-medium text-yellow-600">{bonus.text}</span>
+                        </div>
+                        {bonus.subBullets && (
+                          <ul className="ml-6 mt-1 space-y-1">
+                            {bonus.subBullets.map((sub, j) => (
+                              <li key={j} className="flex items-start gap-2 text-xs text-yellow-600/80">
+                                <span className="text-yellow-500">•</span>
+                                <span>{sub}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </li>
                     ))}
                   </ul>
