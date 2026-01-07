@@ -70,7 +70,7 @@ const PricingV2 = () => {
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
-        { text: "Hower Assistant (Gratis 3 meses)", subBullets: null },
+        
         { text: "3 llamadas exclusivas:", subBullets: callSubBullets },
         { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
         { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
@@ -104,7 +104,7 @@ const PricingV2 = () => {
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
-        { text: "Hower Assistant (Gratis 1 año)", subBullets: null },
+        
         { text: "7 llamadas exclusivas:", subBullets: callSubBullets },
         { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
         { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },

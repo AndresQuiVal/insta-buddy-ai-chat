@@ -26,7 +26,7 @@ const PricingIncruises = () => {
         "Acceso temprano a nuevas funcionalidades"
       ],
       bonus: [
-        "Hower Assistant (Gratis 1 mes)",
+        
         "Hower WhatsApp (Gratis 1 mes)"
       ],
       savings: "Ahorras 15 días de costo de Hower + 5 NUEVAS herramientas"
@@ -52,7 +52,7 @@ const PricingIncruises = () => {
         "Acceso temprano a nuevas funcionalidades"
       ],
       bonus: [
-        "Hower Assistant (Gratis 3 meses)",
+        
         "Hower WhatsApp (Gratis 3 meses)",
         "Mensajes de prospección de Roberto (actualizados diariamente)",
         ""
@@ -82,7 +82,7 @@ const PricingIncruises = () => {
         ""
       ],
       bonus: [
-        "Hower Assistant (Gratis LIFETIME)",
+        
         "Hower WhatsApp (Gratis LIFETIME)"
       ],
       savings: "Acceso de por vida + mentoría exclusiva de $1,000"
