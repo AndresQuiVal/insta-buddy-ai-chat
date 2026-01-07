@@ -31,8 +31,6 @@ const PricingV2 = () => {
       popular: false,
       icon: <Zap className="h-6 w-6" />,
       features: [
-        { text: "600 créditos de buscador", subBullets: null },
-        { text: "800 créditos de Hower Messages IA", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
         { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
@@ -60,8 +58,6 @@ const PricingV2 = () => {
       icon: <Check className="h-6 w-6" />,
       features: [
         { text: "1 mes completamente GRATIS de Hower", subBullets: null },
-        { text: "1,350 créditos de buscador", subBullets: null },
-        { text: "1,800 créditos de Hower Messages IA", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
         { text: "Mensajes de prospección de Roberto (actualizados diariamente)", subBullets: null },
         { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
@@ -90,10 +86,8 @@ const PricingV2 = () => {
       popular: false,
       icon: <Crown className="h-6 w-6" />,
       features: [
-        { text: "3,000 créditos de buscador", subBullets: null },
         { text: "2 meses GRATUITOS de Hower", subBullets: null },
         { text: "Playera EXCLUSIVA personalizada", subBullets: null },
-        { text: "3,000 créditos Hower Messages IA", subBullets: null },
         { text: "Fondo de Zoom EXCLUSIVO TOP 1%", subBullets: null },
         { text: "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
