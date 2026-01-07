@@ -35,7 +35,6 @@ const PricingIncruisesV2 = () => {
         { text: "600 créditos de buscador", subBullets: null },
         { text: "800 créditos de Hower Messages IA", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
-        { text: "3 mentorías grabadas", subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
@@ -65,7 +64,6 @@ const PricingIncruisesV2 = () => {
         { text: "1,800 créditos de Hower Messages IA", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
         { text: "Mensajes de prospección de Roberto (actualizados diariamente)", subBullets: null },
-        { text: "3 mentorías grabadas", subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
@@ -99,7 +97,7 @@ const PricingIncruisesV2 = () => {
         { text: "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
         { text: "Mensajes adaptados a tu nicho (Roberto)", subBullets: null },
-        { text: "3 mentorías grabadas", subBullets: null },
+        
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
