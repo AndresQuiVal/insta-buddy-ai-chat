@@ -18,7 +18,7 @@ const PricingIncruisesV2 = () => {
 
   const callSubBullets = [
     "Mensajes de prospección",
-    "Estrategia de prospección por Top 1% networkers"
+    "Estrategia de prospección personalizada a tu negocio"
   ];
 
   const plans = [
