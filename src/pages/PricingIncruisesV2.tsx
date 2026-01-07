@@ -1,9 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Zap } from "lucide-react";
+import { Check, Crown, Zap, Gift, Shield } from "lucide-react";
 
 const PricingIncruisesV2 = () => {
+
+  const communityBullets = [
+    "Llamadas 2 veces x semana sobre: Aprender a usar Hower; tips y estrategias de prospección del Top 1% networker",
+    <>Curso de marca personal para recibir más respuestas - impartido por <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a></>,
+    "Curso de Mensajes de Prospección de Hower efectivos",
+    "Curso de guía para identificar cómo responder a los prospectos - Seguimientos",
+    "Grabaciones de sesiones pasadas en un solo lugar"
+  ];
 
   const plans = [
     {
@@ -18,13 +26,23 @@ const PricingIncruisesV2 = () => {
       features: [
         "600 créditos de buscador",
         "800 créditos de Hower Messages IA",
-        "Acceso temprano a nuevas funcionalidades"
+        "Acceso temprano a nuevas funcionalidades",
+        <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>,
+        "Comunidad privada con +250 networkers de tu empresa MLM y otras!",
+        "Tips 3 a 4 veces x semana de Top 1% networker usando Hower a tu correo",
+        "Academia de Hower = aprende los fundamentos de la prospección digital"
       ],
       bonus: [
         "1 llamada exclusiva con enfoque en:",
         "• Mensajes de prospección",
         "• Estrategia de prospección por Top 1% networkers",
-        <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">mihailmillet</a></>
+        <>📑 50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
+        "📘 Video de 9 pasos para agendar llamadas (infalible)",
+        "🛡️ Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
+        "📝 Video: Bio magnética que atrae prospectos",
+        "📹 Grabación privada con Mihail: cómo conseguir mejores prospectos en Instagram",
+        "📹 Grabación privada con Mihail: cómo construir una Marca Personal de Top 1%",
+        "🗒️ Lista de objeciones + IA entrenada para resolverlas"
       ],
       savings: "Ahorras 15 días de costo de Hower + 5 NUEVAS herramientas"
     },
@@ -42,14 +60,24 @@ const PricingIncruisesV2 = () => {
         "1,350 créditos de buscador",
         "1,800 créditos de Hower Messages IA",
         "Acceso temprano a nuevas funcionalidades",
-        "Mensajes de prospección de Roberto (actualizados diariamente)"
+        "Mensajes de prospección de Roberto (actualizados diariamente)",
+        <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>,
+        "Comunidad privada con +250 networkers de tu empresa MLM y otras!",
+        "Tips 3 a 4 veces x semana de Top 1% networker usando Hower a tu correo",
+        "Academia de Hower = aprende los fundamentos de la prospección digital"
       ],
       bonus: [
         "Hower Assistant (Gratis 3 meses)",
         "3 llamadas exclusivas con Andrés:",
         "• Mensajes de prospección",
         "• Estrategia de prospección por Top 1% networkers",
-        <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">mihailmillet</a></>
+        <>📑 50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
+        "📘 Video de 9 pasos para agendar llamadas (infalible)",
+        "🛡️ Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
+        "📝 Video: Bio magnética que atrae prospectos",
+        "📹 Grabación privada con Mihail: cómo conseguir mejores prospectos en Instagram",
+        "📹 Grabación privada con Mihail: cómo construir una Marca Personal de Top 1%",
+        "🗒️ Lista de objeciones + IA entrenada para resolverlas"
       ],
       savings: "1 mes gratis + 8 NUEVOS productos GRATUITOS"
     },
@@ -70,14 +98,24 @@ const PricingIncruisesV2 = () => {
         "Fondo de Zoom EXCLUSIVO TOP 1%",
         "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)",
         "Acceso temprano a nuevas funcionalidades",
-        "Mensajes adaptados a tu nicho (Roberto)"
+        "Mensajes adaptados a tu nicho (Roberto)",
+        <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>,
+        "Comunidad privada con +250 networkers de tu empresa MLM y otras!",
+        "Tips 3 a 4 veces x semana de Top 1% networker usando Hower a tu correo",
+        "Academia de Hower = aprende los fundamentos de la prospección digital"
       ],
       bonus: [
         "Hower Assistant (Gratis 1 año)",
         "7 llamadas exclusivas con Andrés:",
         "• Mensajes de prospección",
         "• Estrategia de prospección por Top 1% networkers",
-        <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">mihailmillet</a></>
+        <>📑 50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
+        "📘 Video de 9 pasos para agendar llamadas (infalible)",
+        "🛡️ Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
+        "📝 Video: Bio magnética que atrae prospectos",
+        "📹 Grabación privada con Mihail: cómo conseguir mejores prospectos en Instagram",
+        "📹 Grabación privada con Mihail: cómo construir una Marca Personal de Top 1%",
+        "🗒️ Lista de objeciones + IA entrenada para resolverlas"
       ],
       savings: "Acceso de por vida + mentoría exclusiva de $1,000"
     }
@@ -173,12 +211,25 @@ const PricingIncruisesV2 = () => {
                       </li>
                     ))}
                   </ul>
+                  
+                  {/* Community Sub-bullets */}
+                  <div className="mt-4 ml-6 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Píldoras de Valor de la Comunidad:</p>
+                    <ul className="space-y-1">
+                      {communityBullets.map((bullet, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                          <span className="text-hower-primary">•</span>
+                          <span>{bullet}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
 
                 {/* Bonus */}
                 <div>
                   <h4 className="font-semibold mb-3 text-foreground flex items-center gap-2">
-                    <Crown className="h-4 w-4 text-yellow-500" />
+                    <Gift className="h-4 w-4 text-yellow-500" />
                     BONUS:
                   </h4>
                   <ul className="space-y-2">
@@ -214,13 +265,35 @@ const PricingIncruisesV2 = () => {
           ))}
         </div>
 
+        {/* Guarantee Section */}
+        <div className="max-w-3xl mx-auto mt-16 animate-fade-in">
+          <Card className="border-2 border-green-500/30 bg-gradient-to-r from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20">
+            <CardContent className="p-8 text-center">
+              <div className="flex justify-center mb-4">
+                <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
+                  <Shield className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">
+                ✅ Garantía Completa
+              </h3>
+              <p className="text-lg text-muted-foreground mb-4">
+                Si no consigues una respuesta en 7 días, <strong className="text-green-600">te devolvemos tu dinero.</strong>
+              </p>
+              <p className="text-base text-muted-foreground">
+                Además, ya tienes <strong>3 meses de acceso gratuito</strong> incluidos.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Trust indicators */}
         <div className="text-center mt-16 animate-fade-in">
           <p className="text-sm text-muted-foreground mb-4">
             Más de 1,000 emprendedores ya transformaron su prospección con Hower
           </p>
           <div className="flex justify-center items-center gap-8 opacity-60">
-            <span className="text-sm">• Garantía de 30 días</span>
+            <span className="text-sm">• Garantía de 7 días</span>
             <span className="text-sm">• Soporte 24/7</span>
           </div>
         </div>
