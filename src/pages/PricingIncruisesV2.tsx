@@ -5,10 +5,15 @@ import { Check, Crown, Zap, Gift, Shield } from "lucide-react";
 
 const PricingIncruisesV2 = () => {
 
-  const communityBullets = [
-    "Llamadas 2x/sem: uso de Hower + estrategias Top 1%",
-    <>Cursos: Marca Personal (<a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a>), Mensajes Efectivos, Seguimientos</>,
-    "Grabaciones de todas las sesiones"
+  const communitySubBullets = [
+    "Llamadas 2 veces x semana: Aprender a usar Hower + tips y estrategias del Top 1% networker"
+  ];
+
+  const academySubBullets = [
+    <>Curso de Marca Personal - impartido por <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a></>,
+    "Curso de Mensajes de Prospección efectivos",
+    "Curso de cómo responder a prospectos - Seguimientos",
+    "Grabaciones de sesiones pasadas"
   ];
 
   const plans = [
@@ -22,13 +27,13 @@ const PricingIncruisesV2 = () => {
       popular: false,
       icon: <Zap className="h-6 w-6" />,
       features: [
-        "600 créditos de buscador",
-        "800 créditos de Hower Messages IA",
-        "Acceso temprano a nuevas funcionalidades",
-        <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>,
-        "Comunidad privada con +250 networkers de tu empresa MLM y otras!",
-        "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección",
-        "Academia de Hower = aprende los fundamentos de la prospección digital"
+        { text: "600 créditos de buscador", subBullets: null },
+        { text: "800 créditos de Hower Messages IA", subBullets: null },
+        { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
+        { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
+        { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
+        { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
+        { text: "Academia de Hower = aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
         "1 llamada exclusiva con enfoque en:",
@@ -52,15 +57,15 @@ const PricingIncruisesV2 = () => {
       popular: true,
       icon: <Check className="h-6 w-6" />,
       features: [
-        "1 mes completamente GRATIS de Hower",
-        "1,350 créditos de buscador",
-        "1,800 créditos de Hower Messages IA",
-        "Acceso temprano a nuevas funcionalidades",
-        "Mensajes de prospección de Roberto (actualizados diariamente)",
-        <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>,
-        "Comunidad privada con +250 networkers de tu empresa MLM y otras!",
-        "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección",
-        "Academia de Hower = aprende los fundamentos de la prospección digital"
+        { text: "1 mes completamente GRATIS de Hower", subBullets: null },
+        { text: "1,350 créditos de buscador", subBullets: null },
+        { text: "1,800 créditos de Hower Messages IA", subBullets: null },
+        { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
+        { text: "Mensajes de prospección de Roberto (actualizados diariamente)", subBullets: null },
+        { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
+        { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
+        { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
+        { text: "Academia de Hower = aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
         "Hower Assistant (Gratis 3 meses)",
@@ -85,18 +90,18 @@ const PricingIncruisesV2 = () => {
       popular: false,
       icon: <Crown className="h-6 w-6" />,
       features: [
-        "3,000 créditos de buscador",
-        "2 meses GRATUITOS de Hower",
-        "Playera EXCLUSIVA personalizada",
-        "3,000 créditos Hower Messages IA",
-        "Fondo de Zoom EXCLUSIVO TOP 1%",
-        "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)",
-        "Acceso temprano a nuevas funcionalidades",
-        "Mensajes adaptados a tu nicho (Roberto)",
-        <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>,
-        "Comunidad privada con +250 networkers de tu empresa MLM y otras!",
-        "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección",
-        "Academia de Hower = aprende los fundamentos de la prospección digital"
+        { text: "3,000 créditos de buscador", subBullets: null },
+        { text: "2 meses GRATUITOS de Hower", subBullets: null },
+        { text: "Playera EXCLUSIVA personalizada", subBullets: null },
+        { text: "3,000 créditos Hower Messages IA", subBullets: null },
+        { text: "Fondo de Zoom EXCLUSIVO TOP 1%", subBullets: null },
+        { text: "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)", subBullets: null },
+        { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
+        { text: "Mensajes adaptados a tu nicho (Roberto)", subBullets: null },
+        { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
+        { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
+        { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
+        { text: "Academia de Hower = aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
         "Hower Assistant (Gratis 1 año)",
@@ -197,25 +202,24 @@ const PricingIncruisesV2 = () => {
                   <h4 className="font-semibold mb-3 text-foreground">Incluye:</h4>
                   <ul className="space-y-2">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm">
-                        <Check className="h-4 w-4 text-hower-primary shrink-0 mt-0.5" />
-                        <span>{feature}</span>
+                      <li key={i}>
+                        <div className="flex items-start gap-2 text-sm">
+                          <Check className="h-4 w-4 text-hower-primary shrink-0 mt-0.5" />
+                          <span>{feature.text}</span>
+                        </div>
+                        {feature.subBullets && (
+                          <ul className="ml-6 mt-1 space-y-1">
+                            {feature.subBullets.map((sub, j) => (
+                              <li key={j} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                <span className="text-hower-primary">•</span>
+                                <span>{sub}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </li>
                     ))}
                   </ul>
-                  
-                  {/* Community Sub-bullets */}
-                  <div className="mt-4 ml-6 p-3 bg-muted/50 rounded-lg">
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">Píldoras de Valor de la Comunidad:</p>
-                    <ul className="space-y-1">
-                      {communityBullets.map((bullet, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                          <span className="text-hower-primary">•</span>
-                          <span>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                 </div>
 
                 {/* Bonus */}
