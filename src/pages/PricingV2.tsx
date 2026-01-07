@@ -5,11 +5,9 @@ import { Check, Crown, Zap, Gift, Shield } from "lucide-react";
 const PricingV2 = () => {
 
   const communityBullets = [
-    "Llamadas 2 veces x semana sobre: Aprender a usar Hower; tips y estrategias de prospección del Top 1% networker",
-    <>Curso de marca personal para recibir más respuestas - impartido por <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a></>,
-    "Curso de Mensajes de Prospección de Hower efectivos",
-    "Curso de guía para identificar cómo responder a los prospectos - Seguimientos",
-    "Grabaciones de sesiones pasadas en un solo lugar"
+    "Llamadas 2x/sem: uso de Hower + estrategias Top 1%",
+    <>Cursos: Marca Personal (<a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a>), Mensajes Efectivos, Seguimientos</>,
+    "Grabaciones de todas las sesiones"
   ];
 
   const plans = [
@@ -28,20 +26,18 @@ const PricingV2 = () => {
         "Acceso temprano a nuevas funcionalidades",
         <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>,
         "Comunidad privada con +250 networkers de tu empresa MLM y otras!",
-        "Tips 3 a 4 veces x semana de Top 1% networker usando Hower a tu correo",
+        "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección",
         "Academia de Hower = aprende los fundamentos de la prospección digital"
       ],
       bonus: [
         "1 llamada exclusiva con enfoque en:",
         "• Mensajes de prospección",
         "• Estrategia de prospección por Top 1% networkers",
-        <>📑 50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
-        "📘 Video de 9 pasos para agendar llamadas (infalible)",
-        "🛡️ Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
-        "📝 Video: Bio magnética que atrae prospectos",
-        "📹 Grabación privada con Mihail: cómo conseguir mejores prospectos en Instagram",
-        "📹 Grabación privada con Mihail: cómo construir una Marca Personal de Top 1%",
-        "🗒️ Lista de objeciones + IA entrenada para resolverlas"
+        <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
+        "Video de 9 pasos para agendar llamadas (infalible)",
+        "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
+        "Video: Bio magnética que atrae prospectos",
+        "Lista de objeciones + IA entrenada para resolverlas"
       ],
       savings: "Ahorras 15 días de costo de Hower + 5 NUEVAS herramientas"
     },
@@ -62,7 +58,7 @@ const PricingV2 = () => {
         "Mensajes de prospección de Roberto (actualizados diariamente)",
         <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>,
         "Comunidad privada con +250 networkers de tu empresa MLM y otras!",
-        "Tips 3 a 4 veces x semana de Top 1% networker usando Hower a tu correo",
+        "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección",
         "Academia de Hower = aprende los fundamentos de la prospección digital"
       ],
       bonus: [
@@ -70,13 +66,11 @@ const PricingV2 = () => {
         "3 llamadas exclusivas con Andrés:",
         "• Mensajes de prospección",
         "• Estrategia de prospección por Top 1% networkers",
-        <>📑 50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
-        "📘 Video de 9 pasos para agendar llamadas (infalible)",
-        "🛡️ Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
-        "📝 Video: Bio magnética que atrae prospectos",
-        "📹 Grabación privada con Mihail: cómo conseguir mejores prospectos en Instagram",
-        "📹 Grabación privada con Mihail: cómo construir una Marca Personal de Top 1%",
-        "🗒️ Lista de objeciones + IA entrenada para resolverlas"
+        <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
+        "Video de 9 pasos para agendar llamadas (infalible)",
+        "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
+        "Video: Bio magnética que atrae prospectos",
+        "Lista de objeciones + IA entrenada para resolverlas"
       ],
       savings: "1 mes gratis + 8 NUEVOS productos GRATUITOS"
     },
@@ -100,7 +94,7 @@ const PricingV2 = () => {
         "Mensajes adaptados a tu nicho (Roberto)",
         <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>,
         "Comunidad privada con +250 networkers de tu empresa MLM y otras!",
-        "Tips 3 a 4 veces x semana de Top 1% networker usando Hower a tu correo",
+        "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección",
         "Academia de Hower = aprende los fundamentos de la prospección digital"
       ],
       bonus: [
@@ -108,13 +102,11 @@ const PricingV2 = () => {
         "7 llamadas exclusivas con Andrés:",
         "• Mensajes de prospección",
         "• Estrategia de prospección por Top 1% networkers",
-        <>📑 50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
-        "📘 Video de 9 pasos para agendar llamadas (infalible)",
-        "🛡️ Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
-        "📝 Video: Bio magnética que atrae prospectos",
-        "📹 Grabación privada con Mihail: cómo conseguir mejores prospectos en Instagram",
-        "📹 Grabación privada con Mihail: cómo construir una Marca Personal de Top 1%",
-        "🗒️ Lista de objeciones + IA entrenada para resolverlas"
+        <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>,
+        "Video de 9 pasos para agendar llamadas (infalible)",
+        "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)",
+        "Video: Bio magnética que atrae prospectos",
+        "Lista de objeciones + IA entrenada para resolverlas"
       ],
       savings: "Acceso de por vida + mentoría exclusiva de $1,000"
     }
