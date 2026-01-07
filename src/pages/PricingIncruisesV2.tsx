@@ -71,7 +71,7 @@ const PricingIncruisesV2 = () => {
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
-        { text: "Hower Assistant (Gratis 3 meses)", subBullets: null },
+        
         { text: "3 llamadas exclusivas:", subBullets: callSubBullets },
         { text: "50+ Plantillas (probadas en mercado)", subBullets: null },
         { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
@@ -105,7 +105,7 @@ const PricingIncruisesV2 = () => {
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
-        { text: "Hower Assistant (Gratis 1 año)", subBullets: null },
+        
         { text: "7 llamadas exclusivas:", subBullets: callSubBullets },
         { text: "50+ Plantillas (probadas en mercado)", subBullets: null },
         { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
