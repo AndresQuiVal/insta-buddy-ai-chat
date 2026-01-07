@@ -10,7 +10,7 @@ const PricingIncruisesV2 = () => {
   ];
 
   const academySubBullets = [
-    <>Curso de Marca Personal - impartido por <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a></>,
+    "Curso de Marca Personal",
     "Curso de Mensajes de Prospección efectivos",
     "Curso de cómo responder a prospectos - Seguimientos",
     "Grabaciones de sesiones pasadas"
@@ -35,14 +35,14 @@ const PricingIncruisesV2 = () => {
         { text: "600 créditos de buscador", subBullets: null },
         { text: "800 créditos de Hower Messages IA", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
-        { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
+        { text: "3 mentorías grabadas", subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
       bonus: [
         { text: "1 llamada exclusiva con enfoque en:", subBullets: callSubBullets },
-        { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
+        { text: "50+ Plantillas (probadas en mercado)", subBullets: null },
         { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
         { text: "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)", subBullets: null },
         { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
@@ -65,7 +65,7 @@ const PricingIncruisesV2 = () => {
         { text: "1,800 créditos de Hower Messages IA", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
         { text: "Mensajes de prospección de Roberto (actualizados diariamente)", subBullets: null },
-        { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
+        { text: "3 mentorías grabadas", subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
@@ -73,7 +73,7 @@ const PricingIncruisesV2 = () => {
       bonus: [
         { text: "Hower Assistant (Gratis 3 meses)", subBullets: null },
         { text: "3 llamadas exclusivas:", subBullets: callSubBullets },
-        { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
+        { text: "50+ Plantillas (probadas en mercado)", subBullets: null },
         { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
         { text: "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)", subBullets: null },
         { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
@@ -99,7 +99,7 @@ const PricingIncruisesV2 = () => {
         { text: "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
         { text: "Mensajes adaptados a tu nicho (Roberto)", subBullets: null },
-        { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
+        { text: "3 mentorías grabadas", subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
@@ -107,7 +107,7 @@ const PricingIncruisesV2 = () => {
       bonus: [
         { text: "Hower Assistant (Gratis 1 año)", subBullets: null },
         { text: "7 llamadas exclusivas:", subBullets: callSubBullets },
-        { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
+        { text: "50+ Plantillas (probadas en mercado)", subBullets: null },
         { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
         { text: "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)", subBullets: null },
         { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
