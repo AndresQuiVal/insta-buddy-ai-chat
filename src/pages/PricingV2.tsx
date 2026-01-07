@@ -71,7 +71,7 @@ const PricingV2 = () => {
       ],
       bonus: [
         { text: "Hower Assistant (Gratis 3 meses)", subBullets: null },
-        { text: "3 llamadas exclusivas con Andrés:", subBullets: callSubBullets },
+        { text: "3 llamadas exclusivas:", subBullets: callSubBullets },
         { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
         { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
         { text: "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)", subBullets: null },
@@ -105,7 +105,7 @@ const PricingV2 = () => {
       ],
       bonus: [
         { text: "Hower Assistant (Gratis 1 año)", subBullets: null },
-        { text: "7 llamadas exclusivas con Andrés:", subBullets: callSubBullets },
+        { text: "7 llamadas exclusivas:", subBullets: callSubBullets },
         { text: <>50+ Plantillas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-700">Mihail Millet</a> (probadas en mercado)</>, subBullets: null },
         { text: "Video de 9 pasos para agendar llamadas (infalible)", subBullets: null },
         { text: "Guía Anti-Baneos Instagram (evita bloqueos al prospectar)", subBullets: null },
