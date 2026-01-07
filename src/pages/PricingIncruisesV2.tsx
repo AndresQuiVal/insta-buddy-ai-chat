@@ -287,9 +287,17 @@ const PricingIncruisesV2 = () => {
               <p className="text-lg text-muted-foreground mb-4">
                 Si no consigues una respuesta en 7 días, <strong className="text-green-600">te devolvemos tu dinero.</strong>
               </p>
-              <p className="text-base text-muted-foreground">
+              <p className="text-base text-muted-foreground mb-4">
                 Además, ya tienes <strong>3 meses de acceso gratuito</strong> incluidos.
               </p>
+              <a 
+                href="https://www.howersoftware.io/clients/refund-policy/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-green-600 hover:text-green-700 underline"
+              >
+                Ver políticas de garantía
+              </a>
             </CardContent>
           </Card>
         </div>
