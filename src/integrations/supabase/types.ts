@@ -1332,6 +1332,48 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_notification_log: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          error_message: string | null
+          id: string
+          instagram_user_id: string
+          message_sent: string
+          notification_date: string
+          scheduled_time: string
+          sent_at: string
+          status: string
+          whatsapp_number: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          error_message?: string | null
+          id?: string
+          instagram_user_id: string
+          message_sent: string
+          notification_date?: string
+          scheduled_time: string
+          sent_at?: string
+          status?: string
+          whatsapp_number: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          error_message?: string | null
+          id?: string
+          instagram_user_id?: string
+          message_sent?: string
+          notification_date?: string
+          scheduled_time?: string
+          sent_at?: string
+          status?: string
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
       whatsapp_notification_settings: {
         Row: {
           created_at: string
@@ -1416,7 +1458,7 @@ export type Database = {
         Returns: string
       }
       calculate_advanced_metrics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avg_response_time_seconds: number
           invitations_per_inscription: number
@@ -1478,13 +1520,34 @@ export type Database = {
         Args: { user_instagram_id: string }
         Returns: string
       }
-      grok_get_stats: {
-        Args: { p_instagram_user_id: string; p_period: string }
-        Returns: {
-          agendados: number
-          respuestas: number
-          seguimientos: number
-        }[]
+      grok_get_stats:
+        | {
+            Args: { p_instagram_user_id: string; p_period: string }
+            Returns: {
+              agendados: number
+              respuestas: number
+              seguimientos: number
+            }[]
+          }
+        | {
+            Args: {
+              p_hower_usernames?: string[]
+              p_instagram_user_id: string
+              p_period: string
+            }
+            Returns: {
+              agendados: number
+              respuestas: number
+              seguimientos: number
+            }[]
+          }
+      grok_get_stats_with_hower_filter: {
+        Args: {
+          p_hower_usernames: string
+          p_instagram_user_id: string
+          p_period: string
+        }
+        Returns: Record<string, unknown>
       }
       grok_get_stats_with_usernames_filter: {
         Args: { p_hower_usernames: string[]; p_instagram_user_id: string }
@@ -1519,7 +1582,7 @@ export type Database = {
         Returns: undefined
       }
       process_pending_followups: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           details: Json
           processed_count: number
@@ -1529,16 +1592,13 @@ export type Database = {
         Args: { p_instagram_user_id: string; p_prospect_sender_id: string }
         Returns: undefined
       }
-      reset_inactive_prospect_traits: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      reset_inactive_prospect_traits: { Args: never; Returns: number }
       reset_nuevos_prospectos_by_instagram_id: {
         Args: { user_instagram_id: string }
         Returns: undefined
       }
       sync_prospect_last_owner_message_at: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           updated_count: number
         }[]
