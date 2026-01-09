@@ -1,8 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Crown, Zap, Gift, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Check, Crown, Zap, Gift, Shield, UserCheck } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 const PricingV2 = () => {
+  const [searchParams] = useSearchParams();
+  const referralUsername = searchParams.get("username");
 
   const communitySubBullets = [
     "Llamadas 2 veces x semana: Aprender a usar Hower + tips y estrategias del Top 1% networker"
@@ -137,6 +141,14 @@ const PricingV2 = () => {
               className="h-16 w-auto"
             />
           </div>
+          {referralUsername && (
+            <div className="flex justify-center mb-4">
+              <Badge variant="secondary" className="text-sm px-4 py-2 bg-hower-primary/10 text-hower-primary border border-hower-primary/20">
+                <UserCheck className="h-4 w-4 mr-2" />
+                Referido por: {referralUsername}
+              </Badge>
+            </div>
+          )}
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-hower-primary to-hower-medium bg-clip-text text-transparent">
             Transforma tu Prospección
           </h1>
