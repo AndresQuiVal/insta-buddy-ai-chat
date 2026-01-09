@@ -20,6 +20,7 @@ import Pricing from "./pages/Pricing";
 import PricingIncruises from "./pages/PricingIncruises";
 import PricingV2 from "./pages/PricingV2";
 import PricingIncruisesV2 from "./pages/PricingIncruisesV2";
+import PricingMonthly from "./pages/PricingMonthly";
 import NotFound from "./pages/NotFound";
 import SignupForm from "./components/SignupForm";
 import AdminTable from "./pages/AdminTable";
@@ -68,6 +69,7 @@ const App = () => (
           <Route path="/pricing-incruises" element={<PricingIncruises />} />
           <Route path="/pricing-v2" element={<PricingV2 />} />
           <Route path="/pricing-incruises-v2" element={<PricingIncruisesV2 />} />
+          <Route path="/pricing-monthly" element={<PricingMonthly />} />
           <Route path="/admin-table" element={<AdminTable />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
