@@ -263,6 +263,14 @@ const PricingV2Discount = () => {
                   <Badge className="mt-2 bg-red-500/10 text-red-600 border-red-500/20">
                     Ahorras ${(plan.originalPrice - plan.discountedPrice).toFixed(0)} USD
                   </Badge>
+                  {/* Months saved badge */}
+                  <div className="mt-2">
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                      {plan.id === "3-months" && "🎁 Ahorras casi 1 mes"}
+                      {plan.id === "6-months" && "🎁 Ahorras casi 2 meses"}
+                      {plan.id === "12-months" && "🎁 Ahorras 3 meses"}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
 
