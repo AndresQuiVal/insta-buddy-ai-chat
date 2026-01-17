@@ -1,12 +1,41 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Zap, Gift, Shield, UserCheck, Sparkles } from "lucide-react";
+import { Check, Crown, Zap, Gift, Shield, UserCheck, Sparkles, Clock } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 const PricingV2Discount = () => {
   const [searchParams] = useSearchParams();
   const referralUsername = searchParams.get("username");
+
+  // Countdown timer - ends Monday January 20, 2025 at 23:59:59
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const endDate = new Date('2025-01-21T00:00:00');
+    
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const difference = endDate.getTime() - now.getTime();
+      
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((difference / 1000 / 60) % 60),
+          seconds: Math.floor((difference / 1000) % 60)
+        });
+      } else {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      }
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
 
   const communitySubBullets = [
     "Llamadas 2 veces x semana: Aprender a usar Hower + tips y estrategias del Top 1% networker"
@@ -145,10 +174,38 @@ const PricingV2Discount = () => {
           
           {/* Discount Banner */}
           <div className="flex justify-center mb-6">
-            <Badge className="text-base px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-lg animate-pulse">
+            <Badge className="text-lg px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-lg animate-pulse">
               <Sparkles className="h-5 w-5 mr-2" />
-              🔥 OFERTA ESPECIAL - Descuento Primer Mes 🔥
+              🔥  E Legacy 🤝 Hower  🔥
             </Badge>
+          </div>
+
+          {/* Countdown Timer */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl p-4 shadow-2xl">
+              <div className="flex items-center gap-2 text-white mb-2 justify-center">
+                <Clock className="h-5 w-5" />
+                <span className="text-sm font-semibold">¡Oferta termina en!</span>
+              </div>
+              <div className="flex gap-3 text-white">
+                <div className="flex flex-col items-center bg-white/20 rounded-lg px-4 py-2">
+                  <span className="text-3xl font-bold">{String(timeLeft.days).padStart(2, '0')}</span>
+                  <span className="text-xs uppercase">Días</span>
+                </div>
+                <div className="flex flex-col items-center bg-white/20 rounded-lg px-4 py-2">
+                  <span className="text-3xl font-bold">{String(timeLeft.hours).padStart(2, '0')}</span>
+                  <span className="text-xs uppercase">Horas</span>
+                </div>
+                <div className="flex flex-col items-center bg-white/20 rounded-lg px-4 py-2">
+                  <span className="text-3xl font-bold">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                  <span className="text-xs uppercase">Min</span>
+                </div>
+                <div className="flex flex-col items-center bg-white/20 rounded-lg px-4 py-2">
+                  <span className="text-3xl font-bold">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                  <span className="text-xs uppercase">Seg</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {referralUsername && (
