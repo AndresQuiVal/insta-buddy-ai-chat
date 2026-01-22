@@ -13,7 +13,7 @@ const PricingV2Discount = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    const endDate = new Date('2026-01-21T00:00:00');
+    const endDate = new Date('2026-01-27T00:00:00');
     
     const calculateTimeLeft = () => {
       const now = new Date();
