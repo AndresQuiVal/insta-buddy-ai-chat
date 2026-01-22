@@ -175,8 +175,7 @@ const PricingV2Discount = () => {
           {/* Discount Banner */}
           <div className="flex justify-center mb-6">
             <Badge className="text-lg px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-lg animate-pulse">
-              <Sparkles className="h-5 w-5 mr-2" />
-              🔥  E Legacy 🤝 Hower  🔥
+              E Legacy 🤝 Hower
             </Badge>
           </div>
 
