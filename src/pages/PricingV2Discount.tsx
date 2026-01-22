@@ -79,7 +79,8 @@ const PricingV2Discount = () => {
         { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
         { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
-      savings: "Ahorras $20 USD + 6 bonuses extra (+387 networkers lograron 50+ prospectos en 2 semanas)"
+      savings: "Ahorras $20 USD + 6 bonuses extra",
+      savingsStats: "+387 networkers lograron 50+ prospectos en 2 semanas"
     },
     {
       id: "6-months",
@@ -108,7 +109,8 @@ const PricingV2Discount = () => {
         { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
         { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
-      savings: "Ahorras $40 USD + 8 bonuses extra (+241 networkers lograron 100+ prospectos en 1 semana)"
+      savings: "Ahorras $40 USD + 8 bonuses extra",
+      savingsStats: "+241 networkers lograron 100+ prospectos en 1 semana"
     },
     {
       id: "12-months",
@@ -140,7 +142,8 @@ const PricingV2Discount = () => {
         { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
         { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
-      savings: "Ahorras $82 USD"
+      savings: "Ahorras $82 USD",
+      savingsStats: null
     }
   ];
 
@@ -336,6 +339,11 @@ const PricingV2Discount = () => {
                   <p className="text-sm font-semibold text-hower-primary text-center">
                     {plan.savings}
                   </p>
+                  {plan.savingsStats && (
+                    <p className="text-xs text-muted-foreground text-center mt-1">
+                      ({plan.savingsStats})
+                    </p>
+                  )}
                 </div>
 
                 <Button
