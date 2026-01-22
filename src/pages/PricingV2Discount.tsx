@@ -143,7 +143,7 @@ const PricingV2Discount = () => {
         { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
       savings: "Ahorras $82 USD",
-      savingsStats: null
+      savingsStats: "¡Tienes 3 a 4 meses gratuitos de Hower!"
     }
   ];
 
