@@ -124,7 +124,7 @@ const PricingV2Discount = () => {
         { text: "2 meses GRATUITOS de Hower", subBullets: null },
         { text: "Playera EXCLUSIVA personalizada", subBullets: null },
         { text: "Fondo de Zoom EXCLUSIVO TOP 1%", subBullets: null },
-        { text: "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)", subBullets: null },
+        
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
         { text: "Mensajes adaptados a tu nicho (Roberto)", subBullets: null },
         { text: "3 mentorías grabadas", subBullets: null },
@@ -140,7 +140,7 @@ const PricingV2Discount = () => {
         { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
         { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
-      savings: "Ahorras $82 USD + mentoría exclusiva de $1,000"
+      savings: "Ahorras $82 USD"
     }
   ];
 
