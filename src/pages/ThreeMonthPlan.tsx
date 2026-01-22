@@ -307,16 +307,6 @@ const ThreeMonthPlan = () => {
                         Curtis Harding
                         <ExternalLink className="w-3 h-3" />
                       </a>
-                      ,{' '}
-                      <a 
-                        href="https://www.instagram.com/p/DIu5fZqtqFi/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-                      >
-                        Mihail Millet
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
                       {' '}y más.
                     </span>
                   </div>
@@ -389,7 +379,7 @@ const ThreeMonthPlan = () => {
                 <h3 className="text-xl font-bold text-orange-800 mb-4">📝 Recursos Pro</h3>
                 <div className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                  <span className="font-medium">50+ Plantillas de Mihail Millet probadas en el mercado</span>
+                  <span className="font-medium">50+ Plantillas de prospección probadas en el mercado</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
