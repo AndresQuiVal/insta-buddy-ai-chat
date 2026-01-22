@@ -79,7 +79,7 @@ const PricingV2Discount = () => {
         { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
         { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
-      savings: "Ahorras $20 USD + 5 NUEVAS herramientas"
+      savings: "Ahorras $20 USD + 6 bonuses extra (+387 networkers lograron 50+ prospectos en 2 semanas)"
     },
     {
       id: "6-months",
@@ -108,7 +108,7 @@ const PricingV2Discount = () => {
         { text: "Video: Bio magnética que atrae prospectos", subBullets: null },
         { text: "Lista de objeciones + IA entrenada para resolverlas", subBullets: null }
       ],
-      savings: "Ahorras $40 USD + 8 NUEVOS productos GRATUITOS"
+      savings: "Ahorras $40 USD + 8 bonuses extra (+241 networkers lograron 100+ prospectos en 1 mes)"
     },
     {
       id: "12-months",
