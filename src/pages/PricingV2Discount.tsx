@@ -362,38 +362,8 @@ const PricingV2Discount = () => {
           ))}
         </div>
 
-        {/* Guarantee Section */}
-        <div className="max-w-3xl mx-auto mt-16 animate-fade-in">
-          <Card className="border-2 border-green-500/30 bg-gradient-to-r from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20">
-            <CardContent className="p-8 text-center">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
-                  <Shield className="h-8 w-8 text-green-600" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">
-                ✅ Garantía Completa
-              </h3>
-              <p className="text-lg text-muted-foreground mb-4">
-                Si no consigues una respuesta en 7 días, <strong className="text-green-600">te devolvemos tu dinero.</strong>
-              </p>
-              <p className="text-base text-muted-foreground mb-4">
-                Además, ya tienes <strong>3 meses de acceso gratuito</strong> incluidos.
-              </p>
-              <a 
-                href="https://www.howersoftware.io/clients/refund-policy/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-sm text-green-600 hover:text-green-700 underline"
-              >
-                Ver políticas de garantía
-              </a>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Payment Instructions Section */}
-        <div className="max-w-md mx-auto mt-12 animate-fade-in">
+        <div className="max-w-md mx-auto mt-16 animate-fade-in">
           <Card className="bg-white rounded-3xl p-8 shadow-2xl border-2 border-[#7C3AED]/20">
             {/* Email Icon and Title */}
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -452,6 +422,36 @@ const PricingV2Discount = () => {
                 Soporte
               </a>
             </div>
+          </Card>
+        </div>
+
+        {/* Guarantee Section */}
+        <div className="max-w-3xl mx-auto mt-12 animate-fade-in">
+          <Card className="border-2 border-green-500/30 bg-gradient-to-r from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20">
+            <CardContent className="p-8 text-center">
+              <div className="flex justify-center mb-4">
+                <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
+                  <Shield className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">
+                ✅ Garantía Completa
+              </h3>
+              <p className="text-lg text-muted-foreground mb-4">
+                Si no consigues una respuesta en 7 días, <strong className="text-green-600">te devolvemos tu dinero.</strong>
+              </p>
+              <p className="text-base text-muted-foreground mb-4">
+                Además, ya tienes <strong>3 meses de acceso gratuito</strong> incluidos.
+              </p>
+              <a 
+                href="https://www.howersoftware.io/clients/refund-policy/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-green-600 hover:text-green-700 underline"
+              >
+                Ver políticas de garantía
+              </a>
+            </CardContent>
           </Card>
         </div>
 
