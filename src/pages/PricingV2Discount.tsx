@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Zap, Gift, Shield, UserCheck, Sparkles, Clock } from "lucide-react";
+import { Check, Crown, Zap, Gift, Shield, UserCheck, Sparkles, Clock, Mail, MessageCircle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 
@@ -389,6 +389,69 @@ const PricingV2Discount = () => {
                 Ver políticas de garantía
               </a>
             </CardContent>
+          </Card>
+        </div>
+
+        {/* Payment Instructions Section */}
+        <div className="max-w-md mx-auto mt-12 animate-fade-in">
+          <Card className="bg-white rounded-3xl p-8 shadow-2xl border-2 border-[#7C3AED]/20">
+            {/* Email Icon and Title */}
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <span className="text-2xl">📧</span>
+              <h2 className="text-xl font-bold text-[#7C3AED]">Después de tu pago</h2>
+            </div>
+
+            {/* Instructions */}
+            <p className="text-center text-gray-600 mb-2">
+              Confirma tu cuenta desde el email que te enviamos.
+            </p>
+            <p className="text-center font-bold text-gray-800 mb-6">
+              ¡Solo haz clic en el enlace!
+            </p>
+
+            {/* Mock Email Preview */}
+            <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                  <Mail className="w-5 h-5 text-red-500" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-gray-800">Correo</span>
+                    <span className="text-xs text-gray-400">ahora</span>
+                  </div>
+                  <p className="font-bold text-gray-900 text-sm mt-1">
+                    ¡Crea tu cuenta - Hower!
+                  </p>
+                  <p className="text-gray-500 text-xs">
+                    Crea tu cuenta en Hower...
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Spam Notice */}
+            <div className="bg-amber-50 rounded-xl p-4 mb-6 border border-amber-100">
+              <p className="text-center text-sm text-gray-600">
+                ¿No lo ves? Busca en la carpeta de "<span className="font-bold text-gray-800">Spam</span>" o "<span className="font-bold text-gray-800">No Deseados</span>".
+              </p>
+              <p className="text-center text-sm text-gray-600 mt-1">
+                Si no aparece, contáctanos:
+              </p>
+            </div>
+
+            {/* WhatsApp Support Button */}
+            <div className="flex justify-center">
+              <a
+                href="https://wa.link/27xipi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold px-8 py-3 rounded-full flex items-center gap-2 shadow-lg transition-colors"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Soporte
+              </a>
+            </div>
           </Card>
         </div>
 
