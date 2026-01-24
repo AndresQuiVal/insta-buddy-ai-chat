@@ -218,7 +218,7 @@ const PricingV2Discount = () => {
               </Badge>
             </div>
           )}
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-hower-primary to-hower-medium bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#7C3AED] to-[#A855F7] bg-clip-text text-transparent">
             Transforma tu Prospección
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
