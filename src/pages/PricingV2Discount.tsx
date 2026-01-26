@@ -151,7 +151,7 @@ const PricingV2Discount = () => {
     const stripeLinks = {
       "3-months": "https://buy.stripe.com/5kQ3cucta8xo4n3cBi3wQ2f",
       "6-months": "https://buy.stripe.com/7sYfZg9gYaFw1aRata3wQ2g", 
-      "12-months": "https://buy.stripe.com/28EcN4eBi7tkdXDeJq3wQ0C"
+      "12-months": "https://buy.stripe.com/7sY28qbp6cNE5r78l23wQ2h"
     };
     
     const link = stripeLinks[planId as keyof typeof stripeLinks];
