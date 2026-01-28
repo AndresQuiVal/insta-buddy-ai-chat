@@ -103,3 +103,6 @@ verify_jwt = false
 
 [functions.mercadopago-process-payment]
 verify_jwt = false
+
+[functions.mercadopago-create-subscription]
+verify_jwt = false
