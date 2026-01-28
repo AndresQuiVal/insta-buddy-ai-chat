@@ -9,7 +9,7 @@ import howerLogo from "@/assets/hower-logo.png";
 
 // TODO: Replace with your actual Mercado Pago Public Key
 // Get it from: https://www.mercadopago.com.mx/developers/panel/app -> Credentials -> Public Key
-const MERCADOPAGO_PUBLIC_KEY = "YOUR_PUBLIC_KEY_HERE";
+const MERCADOPAGO_PUBLIC_KEY = "APP_USR-c2ad54f0-856c-4a63-ab2a-078998a7a173";
 
 type PaymentStatus = "idle" | "loading_sdk" | "ready" | "processing" | "approved" | "rejected" | "error";
 
@@ -66,7 +66,7 @@ const CheckoutMercadoPago = () => {
   const initializeBrick = async () => {
     if (brickInitialized.current || !brickContainerRef.current) return;
     
-    if (MERCADOPAGO_PUBLIC_KEY === "YOUR_PUBLIC_KEY_HERE") {
+    if (!MERCADOPAGO_PUBLIC_KEY || MERCADOPAGO_PUBLIC_KEY.length < 10) {
       setPaymentStatus("error");
       setErrorMessage("Falta configurar la Public Key de Mercado Pago");
       return;
