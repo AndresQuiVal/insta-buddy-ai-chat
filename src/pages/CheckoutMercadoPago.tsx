@@ -1,216 +1,71 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, XCircle, Loader2, CreditCard, Shield } from "lucide-react";
+import { CheckCircle2, Loader2, CreditCard, Shield, Calendar, RefreshCw } from "lucide-react";
 import howerLogo from "@/assets/hower-logo.png";
 
-// TODO: Replace with your actual Mercado Pago Public Key
-// Get it from: https://www.mercadopago.com.mx/developers/panel/app -> Credentials -> Public Key
-const MERCADOPAGO_PUBLIC_KEY = "APP_USR-c2ad54f0-856c-4a63-ab2a-078998a7a173";
-
-type PaymentStatus = "idle" | "loading_sdk" | "ready" | "processing" | "approved" | "rejected" | "error";
-
-declare global {
-  interface Window {
-    MercadoPago: any;
-    cardPaymentBrickController: any;
-  }
-}
+type PaymentStatus = "idle" | "processing" | "success" | "error";
 
 const CheckoutMercadoPago = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("loading_sdk");
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const brickContainerRef = useRef<HTMLDivElement>(null);
-  const brickInitialized = useRef(false);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
+  const [email, setEmail] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const AMOUNT = 200;
-  const PRODUCT_TITLE = "Hower - Plan Personalizado";
+  const PRODUCT_TITLE = "Hower - Suscripción Mensual";
   const PRODUCT_DESCRIPTION = "Acceso completo a Hower Software para automatizar tu prospección en Instagram";
 
-  useEffect(() => {
-    // Load Mercado Pago SDK script
-    const loadMercadoPagoSDK = async () => {
-      if (window.MercadoPago) {
-        initializeBrick();
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = "https://sdk.mercadopago.com/js/v2";
-      script.async = true;
-      script.onload = () => {
-        initializeBrick();
-      };
-      script.onerror = () => {
-        setPaymentStatus("error");
-        setErrorMessage("Error al cargar el SDK de Mercado Pago");
-      };
-      document.body.appendChild(script);
-    };
-
-    loadMercadoPagoSDK();
-
-    return () => {
-      // Cleanup brick on unmount
-      if (window.cardPaymentBrickController) {
-        window.cardPaymentBrickController.unmount();
-      }
-    };
-  }, []);
-
-  const initializeBrick = async () => {
-    if (brickInitialized.current || !brickContainerRef.current) return;
-    
-    if (!MERCADOPAGO_PUBLIC_KEY || MERCADOPAGO_PUBLIC_KEY.length < 10) {
-      setPaymentStatus("error");
-      setErrorMessage("Falta configurar la Public Key de Mercado Pago");
+  const handleSubscribe = async () => {
+    if (!email || !email.includes("@")) {
+      toast({
+        title: "Email requerido",
+        description: "Por favor ingresa un email válido para continuar",
+        variant: "destructive",
+      });
       return;
     }
 
-    try {
-      brickInitialized.current = true;
-      const mp = new window.MercadoPago(MERCADOPAGO_PUBLIC_KEY, {
-        locale: "es-MX"
-      });
-
-      const bricksBuilder = mp.bricks();
-      
-      window.cardPaymentBrickController = await bricksBuilder.create(
-        "cardPayment",
-        "cardPaymentBrick_container",
-        {
-          initialization: {
-            amount: AMOUNT,
-          },
-          customization: {
-            paymentMethods: {
-              maxInstallments: 12,
-            },
-            visual: {
-              style: {
-                theme: "default",
-              },
-            },
-          },
-          callbacks: {
-            onReady: () => {
-              setPaymentStatus("ready");
-            },
-            onSubmit: async (cardFormData: any) => {
-              await handlePaymentSubmit(cardFormData);
-            },
-            onError: (error: any) => {
-              console.error("Brick error:", error);
-              toast({
-                title: "Error",
-                description: "Error en el formulario de pago",
-                variant: "destructive",
-              });
-            },
-          },
-        }
-      );
-    } catch (error) {
-      console.error("Error initializing brick:", error);
-      setPaymentStatus("error");
-      setErrorMessage("Error al inicializar el formulario de pago");
-    }
-  };
-
-  const handlePaymentSubmit = async (formData: any) => {
-    console.log("Payment form submitted:", formData);
     setPaymentStatus("processing");
     setErrorMessage("");
 
     try {
-      const { data, error } = await supabase.functions.invoke("mercadopago-process-payment", {
+      const { data, error } = await supabase.functions.invoke("mercadopago-create-subscription", {
         body: {
-          token: formData.token,
+          payer_email: email,
+          reason: PRODUCT_TITLE,
           transaction_amount: AMOUNT,
-          installments: formData.installments || 1,
-          payment_method_id: formData.payment_method_id,
-          payer_email: formData.payer?.email || "cliente@hower.app",
-          description: PRODUCT_TITLE
         }
       });
 
-      console.log("Payment response:", data, error);
+      console.log("Subscription response:", data, error);
 
       if (error) {
-        throw new Error(error.message || "Error al procesar el pago");
+        throw new Error(error.message || "Error al crear la suscripción");
       }
 
-      if (data.success && data.status === "approved") {
-        setPaymentStatus("approved");
-        toast({
-          title: "¡Pago exitoso!",
-          description: "Tu pago ha sido procesado correctamente.",
-        });
-        setTimeout(() => {
-          navigate("/thank-you");
-        }, 2000);
-      } else if (data.status === "rejected" || data.status === "cancelled") {
-        setPaymentStatus("rejected");
-        setErrorMessage(getStatusMessage(data.status_detail));
-        toast({
-          title: "Pago rechazado",
-          description: getStatusMessage(data.status_detail),
-          variant: "destructive",
-        });
+      if (data.success && data.init_point) {
+        // Redirect to Mercado Pago subscription checkout
+        window.location.href = data.init_point;
       } else {
-        setPaymentStatus("ready");
-        toast({
-          title: "Pago pendiente",
-          description: "Tu pago está siendo procesado.",
-        });
+        throw new Error(data.error || "No se pudo crear el link de suscripción");
       }
     } catch (err: any) {
-      console.error("Payment error:", err);
+      console.error("Subscription error:", err);
       setPaymentStatus("error");
-      setErrorMessage(err.message || "Error al procesar el pago");
+      setErrorMessage(err.message || "Error al procesar la suscripción");
       toast({
         title: "Error",
-        description: err.message || "Error al procesar el pago",
+        description: err.message || "Error al procesar la suscripción",
         variant: "destructive",
       });
     }
-  };
-
-  const getStatusMessage = (statusDetail: string): string => {
-    const messages: Record<string, string> = {
-      cc_rejected_bad_filled_card_number: "Número de tarjeta incorrecto",
-      cc_rejected_bad_filled_date: "Fecha de vencimiento incorrecta",
-      cc_rejected_bad_filled_other: "Datos de tarjeta incorrectos",
-      cc_rejected_bad_filled_security_code: "Código de seguridad incorrecto",
-      cc_rejected_blacklist: "Tu tarjeta no puede ser utilizada",
-      cc_rejected_call_for_authorize: "Debes autorizar el pago con tu banco",
-      cc_rejected_card_disabled: "Tu tarjeta está deshabilitada",
-      cc_rejected_card_error: "Tu tarjeta no pudo procesar el pago",
-      cc_rejected_duplicated_payment: "Ya realizaste un pago similar",
-      cc_rejected_high_risk: "Tu pago fue rechazado por seguridad",
-      cc_rejected_insufficient_amount: "Tu tarjeta no tiene fondos suficientes",
-      cc_rejected_invalid_installments: "Tu tarjeta no permite esta cantidad de cuotas",
-      cc_rejected_max_attempts: "Llegaste al límite de intentos permitidos",
-      cc_rejected_other_reason: "Tu tarjeta no pudo procesar el pago",
-    };
-    return messages[statusDetail] || "Tu pago fue rechazado. Por favor intenta con otra tarjeta.";
-  };
-
-  const resetPayment = () => {
-    setPaymentStatus("loading_sdk");
-    setErrorMessage("");
-    brickInitialized.current = false;
-    if (window.cardPaymentBrickController) {
-      window.cardPaymentBrickController.unmount();
-    }
-    setTimeout(() => {
-      initializeBrick();
-    }, 100);
   };
 
   return (
@@ -226,7 +81,7 @@ const CheckoutMercadoPago = () => {
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
               <CreditCard className="h-6 w-6 text-primary" />
-              Checkout Seguro
+              Suscripción Mensual
             </CardTitle>
             <CardDescription className="text-base">
               {PRODUCT_DESCRIPTION}
@@ -236,57 +91,69 @@ const CheckoutMercadoPago = () => {
           <CardContent>
             {/* Amount Display */}
             <div className="bg-primary/5 rounded-lg p-4 mb-6 text-center">
-              <p className="text-sm text-muted-foreground mb-1">Total a pagar</p>
+              <p className="text-sm text-muted-foreground mb-1">Pago mensual</p>
               <p className="text-4xl font-bold text-primary">${AMOUNT} MXN</p>
               <p className="text-sm text-muted-foreground mt-1">{PRODUCT_TITLE}</p>
+              
+              {/* Subscription Benefits */}
+              <div className="flex flex-wrap justify-center gap-3 mt-4">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground bg-background px-2 py-1 rounded-full">
+                  <RefreshCw className="h-3 w-3" />
+                  <span>Cobro automático</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground bg-background px-2 py-1 rounded-full">
+                  <Calendar className="h-3 w-3" />
+                  <span>Cancela cuando quieras</span>
+                </div>
+              </div>
             </div>
 
-            {/* Loading SDK */}
-            {paymentStatus === "loading_sdk" && (
-              <div className="flex flex-col items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-                <p className="text-muted-foreground">Cargando formulario de pago...</p>
-              </div>
-            )}
-
-            {/* Processing Payment */}
             {paymentStatus === "processing" && (
               <div className="flex flex-col items-center justify-center py-8">
                 <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                <p className="text-lg font-medium">Procesando tu pago...</p>
-                <p className="text-sm text-muted-foreground">Por favor espera, no cierres esta página.</p>
+                <p className="text-lg font-medium">Creando tu suscripción...</p>
+                <p className="text-sm text-muted-foreground">Serás redirigido a Mercado Pago</p>
               </div>
             )}
 
-            {/* Payment Approved */}
-            {paymentStatus === "approved" && (
-              <div className="flex flex-col items-center justify-center py-8">
-                <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
-                <p className="text-xl font-bold text-green-600">¡Pago Exitoso!</p>
-                <p className="text-sm text-muted-foreground mt-2">Redirigiendo...</p>
+            {paymentStatus === "error" && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-4">
+                <p className="text-sm text-destructive text-center">{errorMessage}</p>
               </div>
             )}
 
-            {/* Payment Rejected/Error */}
-            {(paymentStatus === "rejected" || paymentStatus === "error") && (
-              <div className="flex flex-col items-center justify-center py-6">
-                <XCircle className="h-12 w-12 text-destructive mb-4" />
-                <p className="text-lg font-bold text-destructive">
-                  {paymentStatus === "rejected" ? "Pago Rechazado" : "Error"}
-                </p>
-                <p className="text-sm text-muted-foreground text-center mt-2 mb-4">{errorMessage}</p>
-                <Button onClick={resetPayment} variant="outline">
-                  Intentar de nuevo
+            {(paymentStatus === "idle" || paymentStatus === "error") && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Tu correo electrónico</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="tu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="text-base"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Recibirás confirmaciones y recibos en este correo
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={handleSubscribe} 
+                  className="w-full h-12 text-lg"
+                  disabled={!email}
+                >
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Suscribirme por ${AMOUNT} MXN/mes
                 </Button>
+
+                <div className="text-center text-xs text-muted-foreground space-y-1">
+                  <p>• Se te cobrará ${AMOUNT} MXN hoy y cada mes</p>
+                  <p>• Puedes cancelar en cualquier momento desde tu cuenta de Mercado Pago</p>
+                </div>
               </div>
             )}
-
-            {/* Mercado Pago Card Payment Brick Container */}
-            <div 
-              id="cardPaymentBrick_container" 
-              ref={brickContainerRef}
-              className={paymentStatus === "ready" || paymentStatus === "loading_sdk" ? "" : "hidden"}
-            />
 
             {/* Security Badge */}
             <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t text-sm text-muted-foreground">
