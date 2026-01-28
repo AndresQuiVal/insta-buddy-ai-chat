@@ -43,6 +43,7 @@ import ICPEditor from "./pages/ICPEditor";
 import HowerProspector from "./pages/HowerProspector";
 import DesignVault from "./pages/DesignVault";
 import ThankYou from "./pages/ThankYou";
+import CheckoutMercadoPago from "./pages/CheckoutMercadoPago";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +91,7 @@ const App = () => (
           <Route path="/design-vault" element={<DesignVault />} />
           <Route path="/thank-you" element={<ThankYou />} />
           <Route path="/gracias" element={<ThankYou />} />
+          <Route path="/checkout-mercadopago" element={<CheckoutMercadoPago />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
