@@ -1,5 +1,3 @@
-
-# The name of your organization or company
 project_id = "rpogkbqcuqrihynbpnsi"
 
 [api]
@@ -96,3 +94,9 @@ verify_jwt = false
 
 [functions.search-new-prospects]
 verify_jwt = true
+
+[functions.mercadopago-create-preference]
+verify_jwt = false
+
+[functions.mercadopago-webhook]
+verify_jwt = false
