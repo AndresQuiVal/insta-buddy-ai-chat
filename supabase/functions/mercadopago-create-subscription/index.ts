@@ -59,6 +59,7 @@ serve(async (req) => {
       },
       payer_email,
       back_url: "https://insta-buddy-ai-chat.lovable.app/thank-you",
+      notification_url: "https://rpogkbqcuqrihynbpnsi.supabase.co/functions/v1/mercadopago-webhook",
       external_reference: external_reference || `hower_sub_${Date.now()}`
     };
 

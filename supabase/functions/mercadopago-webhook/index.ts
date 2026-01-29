@@ -19,10 +19,11 @@ serve(async (req) => {
 
     // Obtener el body del webhook
     const body = await req.json();
-    console.log('Webhook received:', JSON.stringify(body));
+    console.log('🔔 Webhook received - Full payload:', JSON.stringify(body, null, 2));
 
     // Mercado Pago envía diferentes tipos de notificaciones
     const { type, data, action } = body;
+    console.log(`📋 Notification type: ${type}, action: ${action}, data.id: ${data?.id}`);
 
     // Procesar notificaciones de pago
     if (type === 'payment' || action === 'payment.created' || action === 'payment.updated') {
@@ -81,7 +82,8 @@ serve(async (req) => {
             console.log('Missing payer email or mercadopago ID, skipping Hower registration');
           }
         } else {
-          console.log(`Payment ${paymentId} status: ${paymentData.status} - not approved, skipping`);
+          console.log(`⚠️ Payment ${paymentId} NOT approved - status: ${paymentData.status}, status_detail: ${paymentData.status_detail}`);
+          console.log(`📊 Payment rejection info - description: ${paymentData.description}, payer: ${JSON.stringify(paymentData.payer)}`);
         }
       }
     }
@@ -101,7 +103,8 @@ serve(async (req) => {
         );
 
         const preapprovalData = await preapprovalResponse.json();
-        console.log('Preapproval data:', JSON.stringify(preapprovalData));
+        console.log('📦 Preapproval full data:', JSON.stringify(preapprovalData, null, 2));
+        console.log(`📋 Preapproval status: ${preapprovalData.status}, payer_email: ${preapprovalData.payer_email}`);
 
         // Si la suscripción fue autorizada
         if (preapprovalData.status === 'authorized') {
