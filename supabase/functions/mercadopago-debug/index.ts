@@ -18,10 +18,34 @@ serve(async (req) => {
     }
 
     const url = new URL(req.url);
-    const preapprovalId = url.searchParams.get('preapproval_id');
-    const paymentId = url.searchParams.get('payment_id');
+    let preapprovalId = url.searchParams.get('preapproval_id');
+    let paymentId = url.searchParams.get('payment_id');
 
-    console.log('🔍 Debug request - preapproval_id:', preapprovalId, 'payment_id:', paymentId);
+    // NOTE: When calling via tools, Content-Type might not be application/json.
+    // So we parse body as text and JSON.parse if possible.
+    if (!preapprovalId && !paymentId && req.method !== 'GET') {
+      try {
+        const raw = await req.text();
+        if (raw) {
+          const body = JSON.parse(raw);
+          if (body && typeof body === 'object') {
+            const candidatePreapproval = (body.preapproval_id || body.preapprovalId) as unknown;
+            const candidatePayment = (body.payment_id || body.paymentId) as unknown;
+
+            if (typeof candidatePreapproval === 'string' && candidatePreapproval.trim()) {
+              preapprovalId = candidatePreapproval.trim();
+            }
+            if (typeof candidatePayment === 'string' && candidatePayment.trim()) {
+              paymentId = candidatePayment.trim();
+            }
+          }
+        }
+      } catch {
+        // ignore body parse errors
+      }
+    }
+
+    console.log('🔍 Debug request - method:', req.method, '- preapproval_id:', preapprovalId, 'payment_id:', paymentId);
 
     const results: Record<string, unknown> = {};
 
