@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,10 +16,6 @@ serve(async (req) => {
     if (!accessToken) {
       throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured');
     }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Obtener el body del webhook
     const body = await req.json();
@@ -47,18 +42,103 @@ serve(async (req) => {
         const paymentData = await paymentResponse.json();
         console.log('Payment data:', JSON.stringify(paymentData));
 
-        // Aquí puedes guardar la información del pago en tu base de datos
-        // Por ejemplo:
-        // await supabase.from('payments').upsert({
-        //   payment_id: paymentData.id,
-        //   status: paymentData.status,
-        //   amount: paymentData.transaction_amount,
-        //   payer_email: paymentData.payer?.email,
-        //   external_reference: paymentData.external_reference,
-        //   created_at: paymentData.date_created,
-        // });
+        // Solo procesar pagos aprobados
+        if (paymentData.status === 'approved') {
+          const payerEmail = paymentData.payer?.email;
+          const mercadopagoId = paymentData.id?.toString();
+          
+          console.log(`Payment approved! Email: ${payerEmail}, MercadoPago ID: ${mercadopagoId}`);
 
-        console.log(`Payment ${paymentId} processed with status: ${paymentData.status}`);
+          if (payerEmail && mercadopagoId) {
+            // Llamar al endpoint de Hower para crear credenciales
+            try {
+              const howerResponse = await fetch(
+                'https://www.howersoftware.io/clients/stripe/create-checkout-session/',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    userEmail: payerEmail,
+                    mercadopagoId: mercadopagoId,
+                  }),
+                }
+              );
+
+              const howerResult = await howerResponse.json();
+              console.log('Hower API response:', JSON.stringify(howerResult));
+
+              if (howerResult.status === 'success') {
+                console.log(`✅ Usuario creado exitosamente en Hower para ${payerEmail}`);
+              } else {
+                console.error(`❌ Error al crear usuario en Hower: ${howerResult.message}`);
+              }
+            } catch (howerError) {
+              console.error('Error calling Hower API:', howerError);
+            }
+          } else {
+            console.log('Missing payer email or mercadopago ID, skipping Hower registration');
+          }
+        } else {
+          console.log(`Payment ${paymentId} status: ${paymentData.status} - not approved, skipping`);
+        }
+      }
+    }
+
+    // Procesar notificaciones de suscripción (preapproval)
+    if (type === 'subscription_preapproval' || action?.includes('preapproval')) {
+      const preapprovalId = data?.id;
+      
+      if (preapprovalId) {
+        const preapprovalResponse = await fetch(
+          `https://api.mercadopago.com/preapproval/${preapprovalId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        const preapprovalData = await preapprovalResponse.json();
+        console.log('Preapproval data:', JSON.stringify(preapprovalData));
+
+        // Si la suscripción fue autorizada
+        if (preapprovalData.status === 'authorized') {
+          const payerEmail = preapprovalData.payer_email;
+          const mercadopagoId = preapprovalData.id;
+
+          console.log(`Subscription authorized! Email: ${payerEmail}, ID: ${mercadopagoId}`);
+
+          if (payerEmail && mercadopagoId) {
+            try {
+              const howerResponse = await fetch(
+                'https://www.howersoftware.io/clients/stripe/create-checkout-session/',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    userEmail: payerEmail,
+                    mercadopagoId: mercadopagoId,
+                  }),
+                }
+              );
+
+              const howerResult = await howerResponse.json();
+              console.log('Hower API response (subscription):', JSON.stringify(howerResult));
+
+              if (howerResult.status === 'success') {
+                console.log(`✅ Usuario creado exitosamente en Hower para suscripción ${payerEmail}`);
+              } else {
+                console.error(`❌ Error al crear usuario en Hower: ${howerResult.message}`);
+              }
+            } catch (howerError) {
+              console.error('Error calling Hower API for subscription:', howerError);
+            }
+          }
+        }
       }
     }
 
