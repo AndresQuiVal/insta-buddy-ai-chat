@@ -5,6 +5,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const isEmail = (value: string) => {
+  // Simple & safe email heuristic (avoid strict RFC parsing)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+};
+
+const resolveUserEmail = (externalReference: unknown, fallbackEmail: unknown) => {
+  if (typeof externalReference === 'string') {
+    const ref = externalReference.trim();
+    if (ref.startsWith('email:')) {
+      const candidate = ref.slice('email:'.length).trim();
+      if (isEmail(candidate)) return candidate;
+    }
+    if (isEmail(ref)) return ref;
+  }
+
+  if (typeof fallbackEmail === 'string' && isEmail(fallbackEmail)) {
+    return fallbackEmail.trim();
+  }
+
+  return null;
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -46,11 +68,14 @@ serve(async (req) => {
         // Solo procesar pagos aprobados
         if (paymentData.status === 'approved') {
           const payerEmail = paymentData.payer?.email;
+          const userEmail = resolveUserEmail(paymentData.external_reference, payerEmail);
           const mercadopagoId = paymentData.id?.toString();
           
-          console.log(`Payment approved! Email: ${payerEmail}, MercadoPago ID: ${mercadopagoId}`);
+          console.log(
+            `Payment approved! userEmail: ${userEmail}, payerEmail: ${payerEmail}, external_reference: ${paymentData.external_reference}, MercadoPago ID: ${mercadopagoId}`
+          );
 
-          if (payerEmail && mercadopagoId) {
+          if (userEmail && mercadopagoId) {
             // Llamar al endpoint de Hower para crear credenciales
             try {
               const howerResponse = await fetch(
@@ -61,7 +86,7 @@ serve(async (req) => {
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
-                    userEmail: payerEmail,
+                    userEmail,
                     mercadopagoId: mercadopagoId,
                   }),
                 }
@@ -70,8 +95,8 @@ serve(async (req) => {
               const howerResult = await howerResponse.json();
               console.log('Hower API response:', JSON.stringify(howerResult));
 
-              if (howerResult.status === 'success') {
-                console.log(`✅ Usuario creado exitosamente en Hower para ${payerEmail}`);
+               if (howerResult.status === 'success') {
+                 console.log(`✅ Usuario creado exitosamente en Hower para ${userEmail}`);
               } else {
                 console.error(`❌ Error al crear usuario en Hower: ${howerResult.message}`);
               }
@@ -79,7 +104,7 @@ serve(async (req) => {
               console.error('Error calling Hower API:', howerError);
             }
           } else {
-            console.log('Missing payer email or mercadopago ID, skipping Hower registration');
+            console.log('Missing user email or mercadopago ID, skipping Hower registration');
           }
         } else {
           console.log(`⚠️ Payment ${paymentId} NOT approved - status: ${paymentData.status}, status_detail: ${paymentData.status_detail}`);
@@ -109,11 +134,14 @@ serve(async (req) => {
         // Si la suscripción fue autorizada
         if (preapprovalData.status === 'authorized') {
           const payerEmail = preapprovalData.payer_email;
+          const userEmail = resolveUserEmail(preapprovalData.external_reference, payerEmail);
           const mercadopagoId = preapprovalData.id;
 
-          console.log(`Subscription authorized! Email: ${payerEmail}, ID: ${mercadopagoId}`);
+          console.log(
+            `Subscription authorized! userEmail: ${userEmail}, payerEmail: ${payerEmail}, external_reference: ${preapprovalData.external_reference}, ID: ${mercadopagoId}`
+          );
 
-          if (payerEmail && mercadopagoId) {
+          if (userEmail && mercadopagoId) {
             try {
               const howerResponse = await fetch(
                 'https://www.howersoftware.io/clients/stripe/create-checkout-session/',
@@ -123,7 +151,7 @@ serve(async (req) => {
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
-                    userEmail: payerEmail,
+                    userEmail,
                     mercadopagoId: mercadopagoId,
                   }),
                 }
@@ -133,7 +161,7 @@ serve(async (req) => {
               console.log('Hower API response (subscription):', JSON.stringify(howerResult));
 
               if (howerResult.status === 'success') {
-                console.log(`✅ Usuario creado exitosamente en Hower para suscripción ${payerEmail}`);
+                console.log(`✅ Usuario creado exitosamente en Hower para suscripción ${userEmail}`);
               } else {
                 console.error(`❌ Error al crear usuario en Hower: ${howerResult.message}`);
               }

@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Loader2, CreditCard, Shield, Calendar, RefreshCw } from "lucide-react";
+import { Loader2, CreditCard, Shield, Calendar, RefreshCw } from "lucide-react";
 import howerLogo from "@/assets/hower-logo.png";
 
 type PaymentStatus = "idle" | "processing" | "success" | "error";
@@ -15,7 +16,9 @@ const CheckoutMercadoPago = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
-  const [email, setEmail] = useState("");
+  const [payerEmail, setPayerEmail] = useState("");
+  const [accessEmail, setAccessEmail] = useState("");
+  const [useDifferentAccessEmail, setUseDifferentAccessEmail] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const AMOUNT = 200;
@@ -23,10 +26,20 @@ const CheckoutMercadoPago = () => {
   const PRODUCT_DESCRIPTION = "Acceso completo a Hower Software para automatizar tu prospección en Instagram";
 
   const handleSubscribe = async () => {
-    if (!email || !email.includes("@")) {
+    if (!payerEmail || !payerEmail.includes("@")) {
       toast({
         title: "Email requerido",
-        description: "Por favor ingresa un email válido para continuar",
+        description: "Por favor ingresa el email de tu cuenta de Mercado Pago",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const finalAccessEmail = (useDifferentAccessEmail ? accessEmail : payerEmail).trim();
+    if (useDifferentAccessEmail && (!finalAccessEmail || !finalAccessEmail.includes("@"))) {
+      toast({
+        title: "Email de acceso requerido",
+        description: "Ingresa un email válido donde quieras recibir tus accesos",
         variant: "destructive",
       });
       return;
@@ -38,9 +51,12 @@ const CheckoutMercadoPago = () => {
     try {
       const { data, error } = await supabase.functions.invoke("mercadopago-create-subscription", {
         body: {
-          payer_email: email,
+          payer_email: payerEmail.trim(),
           reason: PRODUCT_TITLE,
           transaction_amount: AMOUNT,
+          // Usamos external_reference para guardar el email donde debe crearse el acceso en Hower
+          // (puede ser distinto al email de la cuenta de Mercado Pago)
+          external_reference: finalAccessEmail || payerEmail.trim(),
         }
       });
 
@@ -125,27 +141,69 @@ const CheckoutMercadoPago = () => {
             {(paymentStatus === "idle" || paymentStatus === "error") && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Tu correo electrónico</Label>
+                  <Label htmlFor="payerEmail">Email de tu cuenta de Mercado Pago</Label>
                   <Input
-                    id="email"
+                    id="payerEmail"
                     type="email"
-                    placeholder="tu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="email@mercadopago.com"
+                    value={payerEmail}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setPayerEmail(next);
+                      if (!useDifferentAccessEmail) setAccessEmail(next);
+                    }}
                     className="text-base"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Recibirás confirmaciones y recibos en este correo
+                    Debe coincidir con el email con el que inicias sesión en Mercado Pago (si no, suele salir “Rechazado por
+                    seguridad”).
                   </p>
                 </div>
+
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="useDifferentAccessEmail"
+                    checked={useDifferentAccessEmail}
+                    onCheckedChange={(v) => {
+                      const enabled = Boolean(v);
+                      setUseDifferentAccessEmail(enabled);
+                      if (!enabled) setAccessEmail(payerEmail);
+                    }}
+                  />
+                  <div className="space-y-1">
+                    <Label htmlFor="useDifferentAccessEmail" className="text-sm">
+                      Quiero recibir accesos en otro email
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Útil si pagas con una cuenta MP distinta, pero quieres que el acceso a Hower se cree en otro correo.
+                    </p>
+                  </div>
+                </div>
+
+                {useDifferentAccessEmail && (
+                  <div className="space-y-2">
+                    <Label htmlFor="accessEmail">Email para recibir accesos</Label>
+                    <Input
+                      id="accessEmail"
+                      type="email"
+                      placeholder="tu@email.com"
+                      value={accessEmail}
+                      onChange={(e) => setAccessEmail(e.target.value)}
+                      className="text-base"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Ahí te llegará el correo de bienvenida/activación.
+                    </p>
+                  </div>
+                )}
 
                 <Button 
                   onClick={handleSubscribe} 
                   className="w-full h-12 text-lg"
-                  disabled={!email}
+                  disabled={!payerEmail}
                 >
                   <CreditCard className="mr-2 h-5 w-5" />
-                  Suscribirme por ${AMOUNT} MXN/mes
+                  Continuar a Mercado Pago (${AMOUNT} MXN/mes)
                 </Button>
 
                 <div className="text-center text-xs text-muted-foreground space-y-1">
