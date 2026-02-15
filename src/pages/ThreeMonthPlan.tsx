@@ -10,7 +10,7 @@ const ThreeMonthPlan = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGetPlan = () => {
-    window.open('https://buy.stripe.com/bJe6oG9gYbJA2eV9p63wQ0A', '_blank');
+    window.open('https://buy.stripe.com/3cI4gBelp7JBcOR6nb5J601', '_blank');
   };
 
   const testimonials = [
