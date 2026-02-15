@@ -127,8 +127,8 @@ const Beta: React.FC = () => {
 
   const handlePurchase = (planType: string) => {
     const links = {
-      "3-meses": "https://buy.stripe.com/bJe6oG9gYbJA2eV9p63wQ0A",
-      "1-mes": "https://buy.stripe.com/00g4is64BcHI0IU9B0"
+      "3-meses": "https://buy.stripe.com/3cI4gBelp7JBcOR6nb5J601",
+      "1-mes": "https://buy.stripe.com/7sY28t7X15Bt0259zn5J60b"
     };
     window.open(links[planType as keyof typeof links], '_blank');
   };

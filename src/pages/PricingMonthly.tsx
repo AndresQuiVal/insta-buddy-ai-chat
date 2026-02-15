@@ -73,9 +73,9 @@ const PricingMonthly = () => {
 
   const handlePurchase = (planId: string) => {
     const stripeLinks = {
-      "basic": "https://buy.stripe.com/5kAeX678F6jk8bmaF6",
-      "intermediate": "https://buy.stripe.com/dR68yI50x8rsdvG3cF",
-      "pro": "https://buy.stripe.com/8wM16gakRfTU0IU5kL"
+      "basic": "https://buy.stripe.com/5kQ00la59bZRg13aDr5J605",
+      "intermediate": "https://buy.stripe.com/bJedRbcdhaVNeWZeTH5J606",
+      "pro": "https://buy.stripe.com/dRm7sN3GLgg76qt8vj5J607"
     };
     
     const link = stripeLinks[planId as keyof typeof stripeLinks];
