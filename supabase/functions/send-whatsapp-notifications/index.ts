@@ -500,6 +500,18 @@ serve(async (req) => {
   }
 
   try {
+    // 🚫 PAUSADO TEMPORALMENTE - No enviar notificaciones hasta previo aviso
+    console.log('⏸️ Notificaciones WhatsApp PAUSADAS temporalmente. No se enviarán mensajes.');
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Notificaciones pausadas temporalmente',
+      paused: true,
+      notifications_sent: 0
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
+    });
+
     const body = await req.json().catch(() => ({}));
     
     // Modo de test - solo buscar prospectos sin enviar WhatsApp
