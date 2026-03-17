@@ -65,6 +65,7 @@ const PricingIncruisesV2 = () => {
           "Grabación: cómo conseguir mejores prospectos en Instagram (Mihail)",
           "Grabación: cómo construir una Marca Personal de Top 1% (Mihail)"
         ] },
+        { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ],
