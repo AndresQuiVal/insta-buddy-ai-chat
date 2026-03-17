@@ -19,6 +19,15 @@ const PricingV2 = () => {
     "Grabaciones de sesiones pasadas"
   ];
 
+  const sessionSubBullets = [
+    <><a href="https://www.loom.com/share/b7b82ecc6a1a4465bc7aa485ebc0acdc" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Encuentra cuentas ideales a prospectar con Hower</a> (Curtis Harding)</>,
+    <><a href="https://www.youtube.com/watch?si=t-vPU8mu6_IjPNZv&v=oTQizDP0Pxg&feature=youtu.be" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Video: Bio magnética que atrae prospectos</a></>,
+    <><a href="https://us06web.zoom.us/rec/share/NeR1wgmg07lm8Zv0G6rS0eTPPyhjXx6YGUbYBka_p4_8M-cALU17zNpTYOOl2tSB.OvKWQOAl06d0BmOy" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Grabación: cómo conseguir mejores prospectos en Instagram</a> (Mihail)</>,
+    <><a href="https://us06web.zoom.us/rec/share/NeR1wgmg07lm8Zv0G6rS0eTPPyhjXx6YGUbYBka_p4_8M-cALU17zNpTYOOl2tSB.OvKWQOAl06d0BmOy" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Grabación: cómo construir una Marca Personal de Top 1%</a> (Mihail)</>,
+    <>Conoce a <a href="https://business.vanderbilt.edu/stories/curtis-harding/" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Curtis Harding</a> · <a href="https://www.instagram.com/papapoderoso" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Instagram</a></>,
+    <>Conoce a <a href="https://vivaelnetworking.com/historias/mihail-millet/" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a> · <a href="https://www.instagram.com/mihailmillet/" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Instagram</a></>
+  ];
+
   const callSubBullets = [
     "Mensajes de prospección",
     "Estrategia de prospección personalizada a tu negocio"
