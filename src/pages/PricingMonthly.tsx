@@ -63,8 +63,6 @@ const PricingMonthly = () => {
       icon: <Crown className="h-6 w-6" />,
       features: [
         { text: "Todo lo del Plan Intermedio", subBullets: null },
-        { text: "Mensajes de prospección de Roberto (actualizados diariamente)", subBullets: null },
-        { text: "Mensajes adaptados a tu nicho (Roberto)", subBullets: null },
         { text: "Soporte prioritario 24/7", subBullets: null },
         { text: "Acceso a todas las funcionalidades premium", subBullets: null }
       ]
