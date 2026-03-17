@@ -63,7 +63,7 @@ const PricingV2 = () => {
       features: [
         { text: "1 mes completamente GRATIS de Hower", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
-        { text: "Mensajes de prospección de Roberto (actualizados diariamente)", subBullets: null },
+        
         { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
@@ -95,7 +95,7 @@ const PricingV2 = () => {
         { text: "Fondo de Zoom EXCLUSIVO TOP 1%", subBullets: null },
         { text: "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
-        { text: "Mensajes adaptados a tu nicho (Roberto)", subBullets: null },
+        
         { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
