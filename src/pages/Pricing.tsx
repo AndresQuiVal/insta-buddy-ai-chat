@@ -54,7 +54,7 @@ const Pricing = () => {
       bonus: [
         
         "Hower WhatsApp (Gratis 3 meses)",
-        "Mensajes de prospección de Roberto (actualizados diariamente)",
+        
         "6 mentorías grabadas"
       ],
       savings: "1 mes gratis + 8 NUEVOS productos GRATUITOS"
