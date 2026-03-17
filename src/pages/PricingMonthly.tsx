@@ -47,7 +47,12 @@ const PricingMonthly = () => {
       features: [
         { text: "Todo lo del Plan Básico", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
-        { text: <>3 mentorías grabadas de <a href="https://www.instagram.com/mihailmillet" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">mihailmillet</a></>, subBullets: null },
+        { text: <>🎓 4 Sesiones Grabadas de <a href="https://www.instagram.com/mihailmillet/" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a></>, subBullets: [
+          "Encuentra cuentas ideales a prospectar con Hower (Curtis Harding)",
+          "Video: Bio magnética que atrae prospectos",
+          "Grabación: cómo conseguir mejores prospectos en Instagram (Mihail)",
+          "Grabación: cómo construir una Marca Personal de Top 1% (Mihail)"
+        ] },
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Academia de Hower, aprende los fundamentos de la prospección digital", subBullets: academySubBullets }
       ]
