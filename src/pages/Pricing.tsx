@@ -55,7 +55,7 @@ const Pricing = () => {
         
         "Hower WhatsApp (Gratis 3 meses)",
         
-        "6 mentorías grabadas"
+        "🎓 4 Sesiones Grabadas de Mihail Millet"
       ],
       savings: "1 mes gratis + 8 NUEVOS productos GRATUITOS"
     },
