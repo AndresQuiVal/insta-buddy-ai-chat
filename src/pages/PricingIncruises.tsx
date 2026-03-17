@@ -78,7 +78,7 @@ const PricingIncruises = () => {
         "7 llamadas exclusivas con Andrés",
         "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)",
         "Acceso temprano a nuevas funcionalidades",
-        "Mensajes adaptados a tu nicho (Roberto)",
+        
         ""
       ],
       bonus: [

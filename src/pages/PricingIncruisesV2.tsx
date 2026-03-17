@@ -90,7 +90,7 @@ const PricingIncruisesV2 = () => {
         { text: "Fondo de Zoom EXCLUSIVO TOP 1%", subBullets: null },
         { text: "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
-        { text: "Mensajes adaptados a tu nicho (Roberto)", subBullets: null },
+        
         
         { text: "Comunidad privada con +250 networkers de tu empresa MLM y otras!", subBullets: communitySubBullets },
         { text: "Tips por Correo 3 veces x semana c/ tips paso a paso de prospección", subBullets: null },
