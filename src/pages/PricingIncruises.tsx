@@ -54,7 +54,7 @@ const PricingIncruises = () => {
       bonus: [
         
         "Hower WhatsApp (Gratis 3 meses)",
-        "Mensajes de prospección de Roberto (actualizados diariamente)",
+        
         ""
       ],
       savings: "1 mes gratis + 8 NUEVOS productos GRATUITOS"
