@@ -47,7 +47,7 @@ const PricingMonthly = () => {
       features: [
         { text: "Todo lo del Plan Básico", subBullets: null },
         { text: "Acceso temprano a nuevas funcionalidades", subBullets: null },
-        { text: <>🎓 4 Sesiones Grabadas de <a href="https://www.instagram.com/mihailmillet/" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a></>, subBullets: [
+        { text: <>🎓 4 Sesiones Grabadas de <a href="https://www.instagram.com/mihailmillet/" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Mihail Millet</a> y <a href="https://www.instagram.com/papapoderoso/" target="_blank" rel="noopener noreferrer" className="underline hover:text-hower-primary">Curtis Harding</a></>, subBullets: [
           "Encuentra cuentas ideales a prospectar con Hower (Curtis Harding)",
           "Video: Bio magnética que atrae prospectos",
           "Grabación: cómo conseguir mejores prospectos en Instagram (Mihail)",
