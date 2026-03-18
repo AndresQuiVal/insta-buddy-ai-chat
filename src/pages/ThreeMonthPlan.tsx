@@ -330,19 +330,18 @@ const ThreeMonthPlan = () => {
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                    <span>
-                      Curso de Marca Personal por{' '}
-                      <a 
-                        href="https://www.instagram.com/papapoderoso/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-                      >
-                        Curtis Harding
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                      {' '}(top 1% de Doterra).
-                    </span>
+                     <span>
+                       Curso de Marca Personal impartido por{' '}
+                       <a 
+                         href="https://www.instagram.com/mihailmillet/" 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+                       >
+                         Mihail Millet
+                         <ExternalLink className="w-3 h-3" />
+                       </a>
+                     </span>
                   </div>
                   <div className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
