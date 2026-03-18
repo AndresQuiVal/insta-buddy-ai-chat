@@ -10,7 +10,7 @@ const ThreeMonthPlan = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGetPlan = () => {
-    window.open('https://buy.stripe.com/3cI4gBelp7JBcOR6nb5J601', '_blank');
+    window.open('https://aihower.com/agendar-llamada', '_blank');
   };
 
   const testimonials = [
