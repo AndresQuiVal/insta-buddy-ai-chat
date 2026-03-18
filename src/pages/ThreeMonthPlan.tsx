@@ -397,7 +397,7 @@ const ThreeMonthPlan = () => {
 
             <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
               <CardContent className="space-y-4">
-                 <h3 className="text-xl font-bold text-blue-800 mb-4">🎓 4 Sesiones Grabadas de Mihail Millet</h3>
+                 <h3 className="text-xl font-bold text-blue-800 mb-4">🎓 4 Sesiones Grabadas de Mihail Millet y Curtis Harding</h3>
                  <div className="flex items-start gap-3">
                    <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
                    <span className="font-medium">Encuentra cuentas ideales a prospectar con Hower (Curtis Harding)</span>
