@@ -55,7 +55,7 @@ const Pricing = () => {
         
         "Hower WhatsApp (Gratis 3 meses)",
         
-        "🎓 4 Sesiones Grabadas de Mihail Millet"
+        "🎓 4 Sesiones Grabadas de Mihail Millet y Curtis Harding"
       ],
       savings: "1 mes gratis + 8 NUEVOS productos GRATUITOS"
     },
@@ -79,7 +79,7 @@ const Pricing = () => {
         "1 llamada EXCLUSIVA con Curtis Harding (+$1,000 USD valor)",
         "Acceso temprano a nuevas funcionalidades",
         
-        "🎓 4 Sesiones Grabadas de Mihail Millet"
+        "🎓 4 Sesiones Grabadas de Mihail Millet y Curtis Harding"
       ],
       bonus: [
         
