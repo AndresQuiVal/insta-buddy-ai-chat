@@ -10,7 +10,7 @@ const ThreeMonthPlan = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGetPlan = () => {
-    window.open('https://buy.stripe.com/3cI4gBelp7JBcOR6nb5J601', '_blank');
+    window.open('https://aihower.com/agendar-llamada', '_blank');
   };
 
   const testimonials = [
@@ -330,19 +330,18 @@ const ThreeMonthPlan = () => {
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                    <span>
-                      Curso de Marca Personal por{' '}
-                      <a 
-                        href="https://www.instagram.com/papapoderoso/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-                      >
-                        Curtis Harding
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                      {' '}(top 1% de Doterra).
-                    </span>
+                     <span>
+                       Curso de Marca Personal impartido por{' '}
+                       <a 
+                         href="https://www.instagram.com/mihailmillet/" 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+                       >
+                         Mihail Millet
+                         <ExternalLink className="w-3 h-3" />
+                       </a>
+                     </span>
                   </div>
                   <div className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
@@ -398,19 +397,27 @@ const ThreeMonthPlan = () => {
 
             <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
               <CardContent className="space-y-4">
-                <h3 className="text-xl font-bold text-blue-800 mb-4">🎯 Sesiones Exclusivas</h3>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                  <span className="font-medium">Llamada 1-a-1 de configuración completa (45 min)</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                  <span className="font-medium">Masterclass con Mihail: Mejores prospectos Instagram</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                  <span className="font-medium">Masterclass: Marca Personal de Top 1%</span>
-                </div>
+                 <h3 className="text-xl font-bold text-blue-800 mb-4">🎓 4 Sesiones Grabadas de Mihail Millet</h3>
+                 <div className="flex items-start gap-3">
+                   <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                   <span className="font-medium">Encuentra cuentas ideales a prospectar con Hower (Curtis Harding)</span>
+                 </div>
+                 <div className="flex items-start gap-3">
+                   <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                   <span className="font-medium">Video: Bio magnética que atrae prospectos</span>
+                 </div>
+                 <div className="flex items-start gap-3">
+                   <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                   <span className="font-medium">Grabación: cómo conseguir mejores prospectos en Instagram (Mihail)</span>
+                 </div>
+                 <div className="flex items-start gap-3">
+                   <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                   <span className="font-medium">Grabación: cómo construir una Marca Personal de Top 1% (Mihail)</span>
+                 </div>
+                 <div className="flex items-start gap-3">
+                   <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                   <span className="font-medium">Llamada 1-a-1 de configuración completa (45 min)</span>
+                 </div>
                 <div className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
                   <span className="font-medium">Lista de objeciones + IA para resolverlas</span>
