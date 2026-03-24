@@ -28,7 +28,7 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
   const [result, setResult] = useState<RadarResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [animationStep, setAnimationStep] = useState(0);
+  const [showProspectModal, setShowProspectModal] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   const { currentUser } = useInstagramUsers();
