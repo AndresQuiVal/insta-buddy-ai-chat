@@ -1101,6 +1101,81 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
           </div>
         </div>
 
+        {/* Modal de búsqueda de prospectos */}
+        {result && result.searchKeywords && result.searchKeywords.length > 0 && (
+          <Dialog open={showProspectModal} onOpenChange={setShowProspectModal}>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold text-center">
+                  🔍 Encuentra cuentas para prospectar de tu nicho
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6 mt-4">
+                {/* Paso 1 */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <span className="bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold">1</span>
+                    Copia cualquiera de los {result.searchKeywords.length} prompts
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    {result.searchKeywords.map((keyword, idx) => {
+                      const promptText = `Actuarás como un experto en localizar cuentas de instagram acorde a mi nicho\n\nTe centrarás en encontrar cuentas de instagram que tengan entre 1,000 seguidores a 2,000,000 seguidores relacionadas a "${keyword}" que llamaremos de ahora en adelante NICHO [y que sean de esta ubicación CUALQUIERA que de ahora en adelante llamaremos UBICACIÓN]\n\nCriterios de preferencia de cuentas de instagram a encontrar:\n1. Cuentas de instagram que hablen de tips sobre NICHO y de la UBICACIÓN especificada\n2. Cuentas de instagram que estén cerca de la UBICACIÓN especificada y que además se relacione de alguna manera con nicho\n3. Cuentas de instagram que estén cerca de la UBICACIÓN\n4. Posts con +100 comentarios relacionados a NICHO donde los comentarios sean personas que comenten con interés y se muestren prospectos\n\nNOTA: si mi ubicación es super específica Y diferente de un país, entonces el criterio #3 se vuelve el #1, siendo el más preferente, y por lo tanto tendrás que buscar cuentas de instagram con ese criterio\n\nadelante`;
+                      
+                      return (
+                        <div key={idx} className="bg-muted/50 rounded-xl p-4 border border-border">
+                          <div className="flex items-center justify-between mb-2">
+                            <Badge className="bg-primary/10 text-primary border-primary/20">
+                              Prompt #{idx + 1}: "{keyword}"
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                navigator.clipboard.writeText(promptText);
+                                toast({
+                                  title: "✅ Prompt copiado",
+                                  description: `Prompt con "${keyword}" copiado al portapapeles`,
+                                });
+                              }}
+                              className="gap-1"
+                            >
+                              <Copy className="w-4 h-4" />
+                              Copiar
+                            </Button>
+                          </div>
+                          <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed max-h-32 overflow-y-auto">
+                            {promptText}
+                          </pre>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Paso 2 */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <span className="bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold">2</span>
+                    Pega el prompt en ChatGPT
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Haz click en el botón para abrir ChatGPT y pega el prompt que copiaste.
+                  </p>
+                  <Button
+                    onClick={() => window.open('https://www.google.com/search?sca_esv=21a6b12fa57c4177&sxsrf=ANbL-n58kzxxwp4vFQxhZizRNAgmqawnEg%3A1774374258991&fbs=ADc_l-bpk8W4E-qsVlOvbGJcDwpn60DczFdcvPnuv8WQohHLTaf9fS4tJ71bi2aHS-Pmeg0IA2nDWC3A9mnYKHxHonOwrj9iWEd2qhtK5hq7tRJECQPnKI43rIZ7x63nBiZMJKQcToO1iOPN17n4Dv-mXDoAn0awW8mir_Wb-9-QHG1q7zgHQIeisHyJEcHptCmIXh1Taa6j33sP93V_hN2RtZqTv6AfmA&aep=1&ntc=1&sa=X&ved=2ahUKEwi92PSpi7mTAxV_ETQIHT9eCpQQoo4PegYIAQgAEAE&udm=50&biw=1278&bih=944&dpr=1', '_blank')}
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold py-4 text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    <ExternalLink className="w-5 h-5 mr-2" />
+                    🚀 Abrir buscador de cuentas
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
         <ShareModal />
       </div>
     </div>
