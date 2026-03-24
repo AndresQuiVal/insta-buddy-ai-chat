@@ -237,6 +237,13 @@ Responde en formato JSON exactamente así:
             description: "ICP perfecto. Palabras de búsqueda desbloqueadas.",
           });
         }, 2000);
+      } else if (parsedResult.score === 3) {
+        setTimeout(() => {
+          toast({
+            title: "⚡ ¡Casi en el Bullseye!",
+            description: "3/4 bloques completos. Palabras de búsqueda desbloqueadas.",
+          });
+        }, 2000);
       } else if (parsedResult.score >= 2) {
         setTimeout(() => {
           toast({
