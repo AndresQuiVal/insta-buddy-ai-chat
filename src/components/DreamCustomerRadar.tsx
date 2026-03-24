@@ -1078,6 +1078,15 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                       <Share2 className="w-6 h-6 mr-2" />
                       🚀 Compartir mi resultado
                     </Button>
+                    {result.score >= 3 && result.searchKeywords && result.searchKeywords.length > 0 && (
+                      <Button 
+                        onClick={() => setShowProspectModal(true)} 
+                        className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white font-bold py-4 text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                      >
+                        <Search className="w-6 h-6 mr-2" />
+                        🔍 Encontrar cuentas para prospectar
+                      </Button>
+                    )}
                     <Button 
                       onClick={() => setResult(null)} 
                       variant="outline" 
