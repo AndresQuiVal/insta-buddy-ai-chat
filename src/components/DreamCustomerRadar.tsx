@@ -162,7 +162,7 @@ Responde en formato JSON exactamente así:
   "completedBlocks": ["WHO", "WHERE", "BAIT", "RESULT"] [solo los que están completos],
   "missingBlocks": ["WHO", "WHERE", "BAIT", "RESULT"] [solo los que faltan],
   "suggestions": ["sugerencia 1", "sugerencia 2"] [IMPORTANTE: Cada sugerencia debe ser SÚPER FÁCIL de entender, como si le explicaras a un niño de 5 años qué debe hacer. Usa palabras simples y da ejemplos concretos. En lugar de decir "Definir ubicación geográfica" di "Escribe en qué ciudad vive tu cliente ideal". En lugar de "Identificar recursos digitales" di "¿Qué páginas de Instagram o YouTube ve tu cliente?". Máximo 3 sugerencias muy simples.],
-  "searchKeywords": ["frase1", "frase2", "frase3", "frase4", "frase5"] [solo si score es 4, genera 8-10 frases de 2-4 palabras para buscar en Instagram/Google cuentas que tengan seguidores similares al ICP. Ejemplos: "coaching empresarial", "madre emprendedora", "fitness mujeres", "inversión Bitcoin", "motivación personal"]
+  "searchKeywords": ["frase1", "frase2", "frase3", "frase4", "frase5"] [si score es 3 o 4, genera 8-10 frases de 2-4 palabras para buscar en Instagram/Google cuentas que tengan seguidores similares al ICP. Ejemplos: "coaching empresarial", "madre emprendedora", "fitness mujeres", "inversión Bitcoin", "motivación personal"]
 }`
         },
       });
@@ -235,6 +235,13 @@ Responde en formato JSON exactamente así:
           toast({
             title: "🎯 ¡BULLSEYE ALCANZADO!",
             description: "ICP perfecto. Palabras de búsqueda desbloqueadas.",
+          });
+        }, 2000);
+      } else if (parsedResult.score === 3) {
+        setTimeout(() => {
+          toast({
+            title: "⚡ ¡Casi en el Bullseye!",
+            description: "3/4 bloques completos. Palabras de búsqueda desbloqueadas.",
           });
         }, 2000);
       } else if (parsedResult.score >= 2) {
@@ -1036,7 +1043,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                        </div>
                      </div>
                    )}
-                  {result.score === 4 && result.searchKeywords.length > 0 && (
+                  {result.score >= 3 && result.searchKeywords.length > 0 && (
                     <div className="bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 p-6 rounded-xl border-3 border-yellow-400 relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-yellow-300/20 to-orange-300/20 animate-pulse"></div>
                       <div className="relative">
