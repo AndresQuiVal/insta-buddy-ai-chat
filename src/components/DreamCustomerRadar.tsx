@@ -1043,7 +1043,7 @@ ${result.score === 4 ? '🚀 ¡ICP perfectamente definido!' : '🚀 ¡Vamos por 
                        </div>
                      </div>
                    )}
-                  {result.score === 4 && result.searchKeywords.length > 0 && (
+                  {result.score >= 3 && result.searchKeywords.length > 0 && (
                     <div className="bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 p-6 rounded-xl border-3 border-yellow-400 relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-yellow-300/20 to-orange-300/20 animate-pulse"></div>
                       <div className="relative">
