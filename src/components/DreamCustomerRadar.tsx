@@ -335,8 +335,12 @@ Responde en formato JSON exactamente así:
       const maxRadius = Math.min(centerX, centerY) - 20;
 
       let animationFrame = 0;
+      let rafId: number | null = null;
+      let isActive = true;
       
       const animate = () => {
+        if (!isActive) return;
+        
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         // Background gradient
@@ -354,30 +358,27 @@ Responde en formato JSON exactamente así:
         ];
 
         rings.forEach((ringData, index) => {
-          // Ring glow effect
           ctx.beginPath();
           ctx.arc(centerX, centerY, ringData.radius, 0, 2 * Math.PI);
           ctx.strokeStyle = ringData.color;
           ctx.lineWidth = 4;
           ctx.stroke();
           
-          // Ring solid line
           ctx.beginPath();
           ctx.arc(centerX, centerY, ringData.radius, 0, 2 * Math.PI);
           ctx.strokeStyle = ringData.labelColor;
           ctx.lineWidth = 2;
           ctx.stroke();
 
-          // Labels
           ctx.font = 'bold 14px monospace';
           ctx.fillStyle = ringData.labelColor;
           ctx.textAlign = 'center';
           
-          if (index === 0) { // Externo - arriba
+          if (index === 0) {
             ctx.fillText(ringData.label, centerX, centerY - ringData.radius - 10);
-          } else if (index === 1) { // Intermedio - derecha
+          } else if (index === 1) {
             ctx.fillText(ringData.label, centerX + ringData.radius + 40, centerY + 5);
-          } else { // Bullseye - centro
+          } else {
             ctx.fillText(ringData.label, centerX, centerY - 5);
           }
         });
@@ -414,7 +415,6 @@ Responde en formato JSON exactamente así:
           const dotX = centerX + Math.cos(sweepAngle + Math.PI/4) * targetRadius;
           const dotY = centerY + Math.sin(sweepAngle + Math.PI/4) * targetRadius;
           
-          // Dot glow
           const dotGradient = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, 15);
           dotGradient.addColorStop(0, score === 4 ? '#10B981' : score >= 2 ? '#F59E0B' : '#EF4444');
           dotGradient.addColorStop(1, 'transparent');
@@ -423,7 +423,6 @@ Responde en formato JSON exactamente así:
           ctx.arc(dotX, dotY, 15, 0, 2 * Math.PI);
           ctx.fill();
           
-          // Dot
           ctx.beginPath();
           ctx.arc(dotX, dotY, 8, 0, 2 * Math.PI);
           ctx.fillStyle = score === 4 ? '#10B981' : score >= 2 ? '#F59E0B' : '#EF4444';
@@ -437,12 +436,19 @@ Responde en formato JSON exactamente así:
         }
 
         animationFrame++;
-        if (showAnimation) {
-          requestAnimationFrame(animate);
+        if (isActive) {
+          rafId = requestAnimationFrame(animate);
         }
       };
 
       animate();
+      
+      return () => {
+        isActive = false;
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+        }
+      };
     }, [showAnimation, score, result]);
 
     return (
