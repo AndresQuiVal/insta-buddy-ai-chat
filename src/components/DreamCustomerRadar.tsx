@@ -141,9 +141,9 @@ const DreamCustomerRadar: React.FC<DreamCustomerRadarProps> = ({ onBack }) => {
     setAnimationStep(0);
     
     try {
-      console.log('📡 [ICP ANÁLISIS] Llamando a edge function chatgpt-response...');
+      console.log('📡 [ICP ANÁLISIS] Llamando a edge function analyze-icp...');
       
-      const { data, error } = await supabase.functions.invoke('chatgpt-response', {
+      const { data, error } = await supabase.functions.invoke('analyze-icp', {
         body: {
           prompt: `Analiza esta descripción de cliente ideal y evalúa qué tan completa está según estos 4 bloques:
 
